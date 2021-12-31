@@ -113,6 +113,8 @@ namespace VoxelOptimizer
             GroupNode ProcessGroupNode();
             ShapeNode ProcessShapeNode();
 
+            void SkipDict();
+
             std::map<int, int> m_ColorMapping;
             std::map<int, int> m_MaterialMapping;
 

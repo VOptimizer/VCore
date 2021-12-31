@@ -39,6 +39,14 @@ namespace VoxelOptimizer
 {
     Loader ILoader::CreateAndLoad(const std::string &filename)
     {
+        auto loader = Create(GetType(filename));
+        loader->Load(filename);
+
+        return loader;
+    }
+
+    LoaderTypes ILoader::GetType(const std::string &filename)
+    {
         std::string ext = GetFileExt(filename);
         LoaderTypes type = LoaderTypes::UNKNOWN;
         
@@ -57,10 +65,7 @@ namespace VoxelOptimizer
         else if(ext == "qbcl")
             type = LoaderTypes::QUBICLE;
 
-        auto loader = Create(type);
-        loader->Load(filename);
-
-        return loader;
+        return type;
     }
 
     Loader ILoader::Create(LoaderTypes type)

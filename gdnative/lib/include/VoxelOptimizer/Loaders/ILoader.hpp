@@ -72,6 +72,11 @@ namespace VoxelOptimizer
             static Loader CreateAndLoad(const std::string &filename);
 
             /**
+             * @return Returns the loader type of a given file.
+             */
+            static LoaderTypes GetType(const std::string &filename);
+
+            /**
              * @brief Creates an instance of a the given loader;
              */
             static Loader Create(LoaderTypes type);

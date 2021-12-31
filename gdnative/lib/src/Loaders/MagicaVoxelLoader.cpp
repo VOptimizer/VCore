@@ -382,14 +382,7 @@ namespace VoxelOptimizer
         Ret->NodeID = ReadData<int>();
         
         // Skips the dictionary
-        int keys = ReadData<int>();
-        for (size_t i = 0; i < keys; i++)
-        {
-            int size = ReadData<int>();
-            Skip(size);
-            size = ReadData<int>();
-            Skip(size);
-        }
+        SkipDict();
 
         Ret->ChildID = ReadData<int>();
         Skip(sizeof(int));
@@ -398,7 +391,7 @@ namespace VoxelOptimizer
         int frames = ReadData<int>();
         for (size_t i = 0; i < frames; i++)
         {
-            keys = ReadData<int>();
+            int keys = ReadData<int>();
             for (size_t j = 0; j < keys; j++)
             {
                 int size = ReadData<int>();
@@ -477,7 +470,7 @@ namespace VoxelOptimizer
         GroupNode Ret = GroupNode(new SGroupNode());
 
         Ret->NodeID = ReadData<int>();
-        Skip(sizeof(int));
+        SkipDict();
 
         int childs = ReadData<int>();
         for (size_t i = 0; i < childs; i++)
@@ -491,7 +484,7 @@ namespace VoxelOptimizer
         ShapeNode Ret = ShapeNode(new SShapeNode());
 
         Ret->NodeID = ReadData<int>();
-        Skip(sizeof(int));
+        SkipDict();
 
         int childs = ReadData<int>();
         for (size_t i = 0; i < childs; i++)
@@ -508,5 +501,17 @@ namespace VoxelOptimizer
         }
 
         return Ret;
+    }
+
+    void CMagicaVoxelLoader::SkipDict()
+    {
+        int keys = ReadData<int>();
+        for (size_t i = 0; i < keys; i++)
+        {
+            int size = ReadData<int>();
+            Skip(size);
+            size = ReadData<int>();
+            Skip(size);
+        }
     }
 } // namespace VoxelOptimizer
