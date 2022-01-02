@@ -134,6 +134,16 @@ namespace VoxelOptimizer
                 return ret;
             }
 
+            inline static CMat4x4 Scale(const CVector &scale)
+            {
+                CMat4x4 ret;
+                ret.x.x = scale.x;
+                ret.y.y = scale.y;
+                ret.z.z = scale.z;
+
+                return ret;
+            }
+
             inline static CMat4x4 Rotation(const CVector &rotation)
             {
                 return CMat4x4(CVector4(cos(rotation.y), -sin(rotation.y), 0, 0),
@@ -148,6 +158,35 @@ namespace VoxelOptimizer
                         CVector4(0, cos(rotation.x), -sin(rotation.x), 0),
                         CVector4(0, sin(rotation.x), cos(rotation.x), 0),
                         CVector4(0, 0, 0, 1));
+            }
+
+            inline CMat4x4 Rotation()
+            {
+                CVector rotation;
+
+                // Calculates the euler angle of the roation matrix.
+                // Source: http://eecs.qmul.ac.uk/~gslabaugh/publications/euler.pdf (09.10.2021)
+                if(z.x != 1 && z.x != -1)
+                {
+                    rotation.y = -asin(z.x);
+                    rotation.x = atan2(z.y / cos(rotation.y), z.z / cos(rotation.y));
+                    rotation.z = atan2(y.x / cos(rotation.y), x.x / cos(rotation.y));
+                }
+                else
+                {
+                    if(z.x == -1)
+                    {
+                        rotation.y = M_PI / 2.f;
+                        rotation.x = atan2(x.y, x.z);
+                    }
+                    else
+                    {
+                        rotation.y = -M_PI / 2.f;
+                        rotation.x = atan2(-x.y, -x.z);
+                    }
+                }
+
+                return Rotation(rotation);
             }
 
             ~CMat4x4() {}

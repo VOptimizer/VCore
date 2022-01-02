@@ -25,10 +25,11 @@
 #ifndef TEXTURE_HPP
 #define TEXTURE_HPP
 
-#include <VoxelOptimizer/Color.hpp>
+#include <map>
 #include <memory>
 #include <stddef.h>
 #include <vector>
+#include <VoxelOptimizer/Color.hpp>
 #include <VoxelOptimizer/Vector.hpp>
 
 namespace VoxelOptimizer
@@ -54,7 +55,6 @@ namespace VoxelOptimizer
             }
 
             uint32_t Pixel(const CVector &pos);
-
             std::vector<char> AsPNG();
 
             ~CTexture() = default;
