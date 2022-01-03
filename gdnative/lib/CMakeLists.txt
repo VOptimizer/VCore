@@ -14,6 +14,10 @@ set(SRCS "${PROJECT_SOURCE_DIR}/src/Loaders/MagicaVoxelLoader.cpp"
          "${PROJECT_SOURCE_DIR}/src/Loaders/QubicleBinaryTreeLoader.cpp"
          "${PROJECT_SOURCE_DIR}/src/Loaders/QubicleExchangeLoader.cpp"
          "${PROJECT_SOURCE_DIR}/src/Loaders/QubicleLoader.cpp"
+
+         "${PROJECT_SOURCE_DIR}/src/Formats/IVoxelFormat.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/VEditFormat.cpp"
+
          "${PROJECT_SOURCE_DIR}/src/Meshers/SimpleMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshers/GreedyMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshers/IMesher.cpp"

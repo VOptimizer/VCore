@@ -29,6 +29,8 @@
 #include <VoxelOptimizer/BBox.hpp>
 #include <list>
 #include <VoxelOptimizer/Mat4x4.hpp>
+#include <VoxelOptimizer/Material.hpp>
+#include <VoxelOptimizer/Texture.hpp>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -90,8 +92,8 @@ namespace VoxelOptimizer
 
     struct SChunk
     {
-        CBBox BBox;
-        std::map<CVector, CBBox> Transparent;
+        CBBox BBox; //!< Bounding box of the chunk.
+        std::map<CVector, CBBox> Transparent; // Bounding box of transparent voxels inside the chunk.
     };
 
     using Chunk = std::shared_ptr<SChunk>;
@@ -246,6 +248,19 @@ namespace VoxelOptimizer
             {
                 m_RemeshAll = val;
             }
+
+            /**
+             * @brief Materials used by this mesh. 
+             */
+            inline std::vector<Material> &Materials()
+            {
+                return m_Materials;
+            }
+
+            inline std::map<TextureType, Texture> &Colorpalettes()
+            {
+                return m_Colorpalettes;
+            }
             
             ~CVoxelMesh() = default;
         private:   
@@ -263,6 +278,8 @@ namespace VoxelOptimizer
             std::map<CVector, Voxel> m_Voxels;
             std::map<CVector, Chunk> m_Chunks;
             std::map<CVector, Chunk> m_ChunksToRemesh;
+            std::vector<Material> m_Materials;
+            std::map<TextureType, Texture> m_Colorpalettes;
 
             bool m_RemeshAll;
             size_t m_BlockCount;

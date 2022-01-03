@@ -48,6 +48,7 @@
 #include <VoxelOptimizer/Loaders/QubicleBinaryTreeLoader.hpp>
 #include <VoxelOptimizer/Loaders/QubicleExchangeLoader.hpp>
 #include <VoxelOptimizer/Loaders/QubicleLoader.hpp>
+#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 #include <VoxelOptimizer/Meshers/GreedyMesher.hpp>
 #include <VoxelOptimizer/Meshers/SimpleMesher.hpp>
 #include <VoxelOptimizer/Meshers/MarchingCubesMesher.hpp>

@@ -52,7 +52,8 @@ namespace VoxelOptimizer
         QUBICLE_BIN,
         QUBICLE_BIN_TREE,
         QUBICLE_EXCHANGE,
-        QUBICLE
+        QUBICLE,
+        VEDIT
     };
 
     enum class TextureType
