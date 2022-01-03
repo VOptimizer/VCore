@@ -27,7 +27,7 @@
 
 #include <VoxelOptimizer/Mat4x4.hpp>
 #include <VoxelOptimizer/Material.hpp>
-#include <VoxelOptimizer/Loaders/ILoader.hpp>
+#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 #include <memory>
 #include <vector>
 #include <VoxelOptimizer/Vector.hpp>

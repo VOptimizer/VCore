@@ -27,22 +27,31 @@
 #include <VoxelOptimizer/Exceptions.hpp>
 #include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 
+#include "../FileUtils.hpp"
+
 #include "Implementations/VEditFormat.hpp"
+#include "Implementations/MagicaVoxelFormat.hpp"
+#include "Implementations/KenshapeFormat.hpp"
+#include "Implementations/GoxelFormat.hpp"
+#include "Implementations/Qubicle/QubicleBinaryFormat.hpp"
+#include "Implementations/Qubicle/QubicleBinaryTreeFormat.hpp"
+#include "Implementations/Qubicle/QubicleExchangeFormat.hpp"
+#include "Implementations/Qubicle/QubicleFormat.hpp"
 
 namespace VoxelOptimizer
 {
-    VoxelFormat IVoxelFormat::Create(LoaderTypes type)
+    VoxelFormat IVoxelFormat::Create(LoaderType type)
     {
         switch (type)
         {
-            case LoaderTypes::VEDIT: return VoxelFormat(new CVEditFormat());
-            // case LoaderTypes::MAGICAVOXEL: return Loader(new CMagicaVoxelLoader());
-            // case LoaderTypes::GOXEL: return Loader(new CGoxelLoader());
-            // case LoaderTypes::KENSHAPE: return Loader(new CKenshapeLoader());
-            // case LoaderTypes::QUBICLE_BIN: return Loader(new CQubicleBinaryLoader());
-            // case LoaderTypes::QUBICLE_BIN_TREE: return Loader(new CQubicleBinaryTreeLoader());
-            // case LoaderTypes::QUBICLE_EXCHANGE: return Loader(new CQubicleExchangeLoader());
-            // case LoaderTypes::QUBICLE: return Loader(new CQubicleLoader());
+            case LoaderType::VEDIT: return VoxelFormat(new CVEditFormat());
+            case LoaderType::MAGICAVOXEL: return VoxelFormat(new CMagicaVoxelFormat());
+            case LoaderType::GOXEL: return VoxelFormat(new CGoxelFormat());
+            case LoaderType::KENSHAPE: return VoxelFormat(new CKenshapeFormat());
+            case LoaderType::QUBICLE_BIN: return VoxelFormat(new CQubicleBinaryFormat());
+            case LoaderType::QUBICLE_BIN_TREE: return VoxelFormat(new CQubicleBinaryTreeFormat());
+            case LoaderType::QUBICLE_EXCHANGE: return VoxelFormat(new CQubicleExchangeFormat());
+            case LoaderType::QUBICLE: return VoxelFormat(new CQubicleFormat());
 
             default: throw CVoxelLoaderException("Unknown file type!");
         }
@@ -71,5 +80,115 @@ namespace VoxelOptimizer
     std::vector<char> IVoxelFormat::Save(const std::vector<VoxelMesh> &meshes)
     {
         throw std::runtime_error("IVoxelFormat::Save not implemented!");
+    }
+
+    void IVoxelFormat::ClearCache()
+    {
+        m_Models.clear();
+        m_Materials.clear();
+        m_Textures.clear();
+
+        m_SceneTree = SceneNode(new CSceneNode());
+    }
+
+    VoxelFormat IVoxelFormat::CreateAndLoad(const std::string &filename)
+    {
+        auto loader = Create(GetType(filename));
+        loader->Load(filename);
+
+        return loader;
+    }
+
+    LoaderType IVoxelFormat::GetType(const std::string &filename)
+    {
+        std::string ext = GetFileExt(filename);
+        LoaderType type = LoaderType::UNKNOWN;
+        
+        if(ext == "vox")
+            type = LoaderType::MAGICAVOXEL;
+        else if(ext == "gox")
+            type = LoaderType::GOXEL;
+        else if(ext == "kenshape")
+            type = LoaderType::KENSHAPE;
+        else if(ext == "qb")
+            type = LoaderType::QUBICLE_BIN;
+        else if(ext == "qbt")
+            type = LoaderType::QUBICLE_BIN_TREE;
+        else if(ext == "qef")
+            type = LoaderType::QUBICLE_EXCHANGE;
+        else if(ext == "qbcl")
+            type = LoaderType::QUBICLE;
+        else if(ext == "vedit")
+            type = LoaderType::VEDIT;
+
+        return type;
+    }
+
+    void IVoxelFormat::Load(const std::string &File)
+    {
+        std::ifstream in(File, std::ios::binary);
+        if(in.is_open())
+        {
+            m_Pos = 0;
+
+            in.seekg(0, in.end);
+            size_t Len = in.tellg();
+            in.seekg(0, in.beg);
+
+            m_Data.resize(Len);
+            in.read(&m_Data[0], Len);
+            in.close();
+
+            ParseFormat();
+        }
+        else
+            throw CVoxelLoaderException("Failed to open '" + File + "'");
+    }
+
+    void IVoxelFormat::Load(const char *Data, size_t Length)
+    {
+        m_Pos = 0;
+        m_Data = std::vector<char>(Data, Data + Length);
+        ClearCache();
+        ParseFormat();
+    }
+
+    void IVoxelFormat::ReadData(char *Buf, size_t Size)
+    {
+        if(m_Pos + Size > m_Data.size())
+            throw CVoxelLoaderException("Unexpected file ending.");
+
+        memcpy(Buf, m_Data.data() + m_Pos, Size);
+        m_Pos += Size;
+    }
+
+    bool IVoxelFormat::IsEof()
+    {
+        return m_Pos >= m_Data.size();
+    }
+
+    size_t IVoxelFormat::Tellg()
+    {
+        return m_Pos;
+    }
+
+    void IVoxelFormat::Skip(size_t Bytes)
+    {
+        m_Pos += Bytes;
+    }
+
+    void IVoxelFormat::Reset()
+    {
+        m_Pos = 0;
+    }
+
+    size_t IVoxelFormat::Size()
+    {
+        return m_Data.size();
+    }
+
+    char *IVoxelFormat::Ptr()
+    {
+        return m_Data.data() + m_Pos;
     }
 } // namespace VoxelOptimizer

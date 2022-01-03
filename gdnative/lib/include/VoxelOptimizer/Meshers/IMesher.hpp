@@ -29,7 +29,6 @@
 
 #include <VoxelOptimizer/Material.hpp>
 #include <VoxelOptimizer/Loaders/VoxelMesh.hpp>
-#include <VoxelOptimizer/Loaders/ILoader.hpp>
 
 #include <VoxelOptimizer/Mesh.hpp>
 
@@ -60,7 +59,7 @@ namespace VoxelOptimizer
              * 
              * @param m: Voxel mesh to meshify.
              */
-            virtual std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m, Loader Loader) = 0;
+            virtual std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m) = 0;
 
             virtual ~IMesher() = default;
         protected:
@@ -86,7 +85,9 @@ namespace VoxelOptimizer
             std::map<CVector, int> m_UVIndex;
             std::map<int, GroupedFaces> m_FacesIndex;
 
-            Loader m_Loader;
+            std::vector<Material> m_CurrentUsedMaterials;
+
+            CMat4x4 CalculateModelMatrix(SceneNode reverseTree);
     };
 } // namespace VoxelOptimizer
 

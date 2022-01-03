@@ -22,22 +22,17 @@
  * SOFTWARE.
  */
 
-#include <VoxelOptimizer/Loaders/QubicleBinaryLoader.hpp>
-#include <VoxelOptimizer/Exceptions.hpp>
 #include <stdint.h>
+#include <VoxelOptimizer/Exceptions.hpp>
+#include "QubicleBinaryFormat.hpp"
 
 namespace VoxelOptimizer
 {
     const static int CODEFLAG = 2;
 	const static int NEXTSLICEFLAG = 6;
 
-    void CQubicleBinaryLoader::ParseFormat()
+    void CQubicleBinaryFormat::ParseFormat()
     {
-        m_Models.clear();
-        m_Materials.clear();
-        m_Materials.clear();
-        m_Textures.clear();
-
         m_Header = ReadData<SQubicleBinaryHeader>();
         if(m_Header.Version[0] != 1 || m_Header.Version[1] != 1 || m_Header.Version[2] != 0 || m_Header.Version[3] != 0)
             throw CVoxelLoaderException("Version: " + std::to_string(m_Header.Version[0]) + "." + std::to_string(m_Header.Version[1]) + "." + std::to_string(m_Header.Version[2]) + "." + std::to_string(m_Header.Version[3]) + " is not supported");
@@ -47,6 +42,7 @@ namespace VoxelOptimizer
         for (int i = 0; i < m_Header.MatrixCount; i++)
         {
             VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
+            mesh->Materials() = m_Materials;
 
             uint8_t nameLen = ReadData<uint8_t>();
             Skip(nameLen);
@@ -62,7 +58,11 @@ namespace VoxelOptimizer
             if(m_Header.ZAxisOrientation == 1)
                 pos.z *= -1;
 
-            mesh->SetModelMatrix(CMat4x4::Translation(pos));
+            auto sceneNode = SceneNode(new CSceneNode());
+            sceneNode->Position(pos);
+            sceneNode->Mesh(mesh);
+            mesh->SetSceneNode(sceneNode);
+            m_SceneTree->AddChild(sceneNode);
 
             if(m_Header.Compression == 0)
                 ReadUncompressed(mesh);
@@ -73,9 +73,11 @@ namespace VoxelOptimizer
         }
 
         m_ColorIdx.clear();
+        for (auto &&m : m_Models)
+            m->Colorpalettes() = m_Textures;
     }
 
-    CVector CQubicleBinaryLoader::ReadVector()
+    CVector CQubicleBinaryFormat::ReadVector()
     {
         CVector ret;
 
@@ -86,7 +88,7 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    void CQubicleBinaryLoader::ReadUncompressed(VoxelMesh mesh)
+    void CQubicleBinaryFormat::ReadUncompressed(VoxelMesh mesh)
     {
         CVector Beg(1000, 1000, 1000), End;
         for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().y; z++)
@@ -116,7 +118,7 @@ namespace VoxelOptimizer
         mesh->SetBBox(CBBox(Beg, End));
     }
 
-    void CQubicleBinaryLoader::ReadRLECompressed(VoxelMesh mesh)
+    void CQubicleBinaryFormat::ReadRLECompressed(VoxelMesh mesh)
     {
         CVector Beg(1000, 1000, 1000), End;
         for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().y; z++)
@@ -184,7 +186,7 @@ namespace VoxelOptimizer
         mesh->SetBBox(CBBox(Beg, End));
     }
 
-    int CQubicleBinaryLoader::GetColorIdx(int color)
+    int CQubicleBinaryFormat::GetColorIdx(int color)
     {
         int ret = 0;
 

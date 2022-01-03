@@ -34,7 +34,7 @@ namespace VoxelOptimizer
         public:
             CGreedyMesher() = default;
 
-            std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m, Loader Loader) override;
+            std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m) override;
 
             ~CGreedyMesher() = default;
 

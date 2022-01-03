@@ -22,11 +22,11 @@
  * SOFTWARE.
  */
 
+#include "MagicaVoxelFormat.hpp"
 #include <string.h>
-#include <VoxelOptimizer/Loaders/MagicaVoxelLoader.hpp>
-#include <VoxelOptimizer/Exceptions.hpp>
-#include <stack>
 #include <sstream>
+#include <stack>
+#include <VoxelOptimizer/Exceptions.hpp>
 
 namespace VoxelOptimizer
 {
@@ -50,19 +50,20 @@ namespace VoxelOptimizer
         0xff880000, 0xff770000, 0xff550000, 0xff440000, 0xff220000, 0xff110000, 0xffeeeeee, 0xffdddddd, 0xffbbbbbb, 0xffaaaaaa, 0xff888888, 0xff777777, 0xff555555, 0xff444444, 0xff222222, 0xff111111
     };
 
-    void CMagicaVoxelLoader::ParseFormat()
+    void CMagicaVoxelFormat::ClearCache()
     {
-        m_Models.clear();
+        IVoxelFormat::ClearCache();
         LoadDefaultPalette();
-        m_Index = 0;
+
         m_UsedColorsPos = 0;
-        m_Materials.clear();
         m_ColorMapping.clear();
         m_MaterialMapping.clear();
-        m_Materials.clear();
-        m_Textures.clear();
+        m_ModelSceneTreeMapping.clear();
         m_HasEmission = false;
-       
+    }
+
+    void CMagicaVoxelFormat::ParseFormat()
+    {   
         std::string Signature(4, '\0');
         ReadData(&Signature[0], 4);
         Signature += "\0";
@@ -105,16 +106,17 @@ namespace VoxelOptimizer
                         // 3. Add the distance from object center to space center and add the start position of the voxel mesh
 
                         CVector spaceCenter = halfSize.Fract() + m->GetBBox().Beg + (m->GetBBox().GetSize() / 2 - halfSize);
+                        std::swap(spaceCenter.y, spaceCenter.z);
+                        spaceCenter.z *= -1;
 
-                        auto modelMatrix = m_ModelMatrices.at(m_Models.size() - 1);
+                        auto treeNode = m_ModelSceneTreeMapping.at(m_Models.size() - 1);
 
-                        // TODO: This is dumb! The model matrix should be created on a central point!
-                        modelMatrix += CMat4x4(CVector4(0, 0, 0, spaceCenter.x),
-                                               CVector4(0, 0, 0, spaceCenter.z),
-                                               CVector4(0, 0, 0, -spaceCenter.y),
-                                               CVector4(0, 0, 0, 0));
+                        auto pos = treeNode->Position();
+                        treeNode->Position(pos + spaceCenter);
 
-                        m->SetModelMatrix(modelMatrix);
+                        // TODO: Animation support.
+                        treeNode->Mesh(m); 
+                        m->SetSceneNode(treeNode);                       
                     }
                     else if(strncmp(Tmp.ID, "RGBA", sizeof(Tmp.ID)) == 0)
                     {
@@ -154,9 +156,14 @@ namespace VoxelOptimizer
                     m_Textures[TextureType::EMISSION]->AddPixel(m_ColorPalette[c.first - 1], CVector(c.second, 0, 0));
             }
         }
+
+        for (auto &&m : m_Models)
+        {
+            m->Colorpalettes() = m_Textures;
+        }
     }
 
-    void CMagicaVoxelLoader::LoadDefaultPalette()
+    void CMagicaVoxelFormat::LoadDefaultPalette()
     {
         m_ColorPalette.resize(256);
         for (size_t i = 0; i < m_ColorPalette.size(); i++)
@@ -165,7 +172,7 @@ namespace VoxelOptimizer
         }
     }
 
-    VoxelMesh CMagicaVoxelLoader::ProcessSize()
+    VoxelMesh CMagicaVoxelFormat::ProcessSize()
     {
         VoxelMesh Ret = VoxelMesh(new CVoxelMesh());
 
@@ -180,11 +187,14 @@ namespace VoxelOptimizer
         return Ret;
     }
 
-    void CMagicaVoxelLoader::ProcessXYZI(VoxelMesh m)
+    void CMagicaVoxelFormat::ProcessXYZI(VoxelMesh m)
     {
         int VoxelCount = ReadData<int>();
 
         CVector Beg(1000, 1000, 1000), End;
+
+        // Each model has it's used material attached, so we need to map the MagicaVoxel ID to the local one of the mesh.
+        std::map<int, int> modelMaterialMapping;
 
         for (size_t i = 0; i < VoxelCount; i++)
         {
@@ -212,26 +222,37 @@ namespace VoxelOptimizer
             else
                 Color = IT->second;
 
+            int newMatIdx = 0;
             IT = m_MaterialMapping.find(MatIdx);
-            if(IT == m_MaterialMapping.end())
-                MatIdx = 0;
-            else
+            if(IT != m_MaterialMapping.end())
             {
-                MatIdx = IT->second;
-                Transparent = m_Materials[MatIdx]->Transparency != 0.0;
+                newMatIdx = IT->second;
+                Transparent = m_Materials[newMatIdx]->Transparency != 0.0;
                 if(Transparent)
                 {
                     int k= 0;
                     k++;
                 }
             }
+
+            // Remaps the material index to the local one.
+            IT = modelMaterialMapping.find(MatIdx);
+            if(IT != modelMaterialMapping.end())
+                MatIdx = IT->second;
+            else
+            {
+                m->Materials().push_back(m_Materials[newMatIdx]);
+                modelMaterialMapping[MatIdx] = m->Materials().size() - 1;
+                MatIdx = m->Materials().size() - 1;
+            }
+
             m->SetVoxel(vec, MatIdx, Color, Transparent);
         } 
 
         m->SetBBox(CBBox(Beg, End));
     }
 
-    void CMagicaVoxelLoader::ProcessMaterialAndSceneGraph()
+    void CMagicaVoxelFormat::ProcessMaterialAndSceneGraph()
     {
         std::map<int, Node> nodes;
         m_Materials.push_back(Material(new CMaterial()));
@@ -315,10 +336,9 @@ namespace VoxelOptimizer
         }
 
         std::stack<int> nodeIDs;
-        std::stack<CVector> vectors;
-        std::stack<CMat4x4> rotations;
-        CVector currentTranslation;
-        CMat4x4 currentRotation;
+        std::stack<SceneNode> sceneNodes;
+
+        SceneNode currentNode = m_SceneTree;
 
         nodeIDs.push(0);
         while (!nodeIDs.empty())
@@ -332,8 +352,8 @@ namespace VoxelOptimizer
                     auto transform = std::static_pointer_cast<STransformNode>(tmp);
                     nodeIDs.pop();
 
-                    currentTranslation += transform->Translation;
-                    currentRotation *= transform->Rotation;
+                    currentNode->Position(transform->Translation);
+                    currentNode->Rotation(transform->Rotation);
 
                     nodeIDs.push(transform->ChildID);
                 } break;
@@ -343,16 +363,16 @@ namespace VoxelOptimizer
                     auto group = std::static_pointer_cast<SGroupNode>(tmp);
                     if(group->ChildIdx > 0)
                     {
-                        currentTranslation = vectors.top();
-                        currentRotation = rotations.top();
-                        vectors.pop();
-                        rotations.pop();
+                        currentNode = sceneNodes.top();
+                        sceneNodes.pop();
                     }
 
                     if(group->ChildIdx < group->ChildrensID.size())
                     {
-                        vectors.push(currentTranslation);
-                        rotations.push(currentRotation);
+                        sceneNodes.push(currentNode);
+                        auto oldCurrent = currentNode;
+                        currentNode = SceneNode(new CSceneNode());
+                        oldCurrent->AddChild(currentNode);
 
                         nodeIDs.push(group->ChildrensID[group->ChildIdx]);
                         group->ChildIdx++;
@@ -367,7 +387,7 @@ namespace VoxelOptimizer
                     auto shapes = std::static_pointer_cast<SShapeNode>(tmp);
 
                     for (auto &&m : shapes->Models)
-                        m_ModelMatrices.insert({m, CMat4x4::Translation(CVector(currentTranslation.x, currentTranslation.z, -currentTranslation.y)) * currentRotation});                
+                        m_ModelSceneTreeMapping.insert({m, currentNode});                
                 } break;
             }
         }
@@ -375,7 +395,7 @@ namespace VoxelOptimizer
         Reset();
     }
 
-    CMagicaVoxelLoader::TransformNode CMagicaVoxelLoader::ProcessTransformNode()
+    CMagicaVoxelFormat::TransformNode CMagicaVoxelFormat::ProcessTransformNode()
     {
         TransformNode Ret = TransformNode(new STransformNode());
 
@@ -421,41 +441,17 @@ namespace VoxelOptimizer
                     char idx2 = (rot >> 2) & 3;
                     char idx3 = 3 - idx1 - idx2;
 
-                    Ret->Rotation = CMat4x4(CVector4(0, 0, 0, 0),
+                    auto rotation = CMat4x4(CVector4(0, 0, 0, 0),
                                             CVector4(0, 0, 0, 0),
                                             CVector4(0, 0, 0, 0),
                                             CVector4(0, 0, 0, 1));
 
-                    Ret->Rotation.x.v[idx1] = ((rot & 0x10) == 0x10) ? -1 : 1;
-                    Ret->Rotation.y.v[idx2] = ((rot & 0x20) == 0x20) ? -1 : 1;
-                    Ret->Rotation.z.v[idx3] = ((rot & 0x40) == 0x40) ? -1 : 1;
+                    rotation.x.v[idx1] = ((rot & 0x10) == 0x10) ? -1 : 1;
+                    rotation.y.v[idx2] = ((rot & 0x20) == 0x20) ? -1 : 1;
+                    rotation.z.v[idx3] = ((rot & 0x40) == 0x40) ? -1 : 1;
 
-                    CVector rotation;
-
-                    // Calculates the euler angle of the roation matrix.
-                    // Source: http://eecs.qmul.ac.uk/~gslabaugh/publications/euler.pdf (09.10.2021)
-                    if(Ret->Rotation.z.x != 1 && Ret->Rotation.z.x != -1)
-                    {
-                        rotation.y = -asin(Ret->Rotation.z.x);
-                        rotation.x = atan2(Ret->Rotation.z.y / cos(rotation.y), Ret->Rotation.z.z / cos(rotation.y));
-                        rotation.z = atan2(Ret->Rotation.y.x / cos(rotation.y), Ret->Rotation.x.x / cos(rotation.y));
-                    }
-                    else
-                    {
-                        if(Ret->Rotation.z.x == -1)
-                        {
-                            rotation.y = M_PI / 2.f;
-                            rotation.x = atan2(Ret->Rotation.x.y, Ret->Rotation.x.z);
-                        }
-                        else
-                        {
-                            rotation.y = -M_PI / 2.f;
-                            rotation.x = atan2(-Ret->Rotation.x.y, -Ret->Rotation.x.z);
-                        }
-                    }
-
-                    // Builds a new rotation matrix, around the y-axis
-                    Ret->Rotation = CMat4x4::Rotation(rotation);
+                    // Gets the euler angle, y is the up axis.
+                    Ret->Rotation = rotation.GetEuler();
                 }
                 else if(Key == "_f")
                     Skip(ReadData<int>());
@@ -465,7 +461,7 @@ namespace VoxelOptimizer
         return Ret;
     }
     
-    CMagicaVoxelLoader::GroupNode CMagicaVoxelLoader::ProcessGroupNode()
+    CMagicaVoxelFormat::GroupNode CMagicaVoxelFormat::ProcessGroupNode()
     {
         GroupNode Ret = GroupNode(new SGroupNode());
 
@@ -479,7 +475,7 @@ namespace VoxelOptimizer
         return Ret;
     }
 
-    CMagicaVoxelLoader::ShapeNode CMagicaVoxelLoader::ProcessShapeNode()
+    CMagicaVoxelFormat::ShapeNode CMagicaVoxelFormat::ProcessShapeNode()
     {
         ShapeNode Ret = ShapeNode(new SShapeNode());
 
@@ -503,7 +499,7 @@ namespace VoxelOptimizer
         return Ret;
     }
 
-    void CMagicaVoxelLoader::SkipDict()
+    void CMagicaVoxelFormat::SkipDict()
     {
         int keys = ReadData<int>();
         for (size_t i = 0; i < keys; i++)

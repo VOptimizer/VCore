@@ -27,25 +27,24 @@
 
 namespace VoxelOptimizer
 {
-    std::map<CVector, Mesh> CGreedyMesher::GenerateMeshes(VoxelMesh m, Loader Loader)
+    std::map<CVector, Mesh> CGreedyMesher::GenerateMeshes(VoxelMesh m)
     {
         std::map<CVector, Mesh> Ret;
-
-        m_Loader = Loader;
-
         auto Chunks = m->GetChunksToRemesh();
+
+        m_CurrentUsedMaterials = m->Materials();
 
         for (auto &&c : Chunks)
         {
             Mesh RetMesh = Mesh(new SMesh());
-            RetMesh->Textures = Loader->GetTextures();
+            RetMesh->Textures = m->Colorpalettes();
 
             GenerateMesh(RetMesh, m, c->BBox, true);
             for (auto &&t : c->Transparent)
                 GenerateMesh(RetMesh, m, t.second, false);            
 
             ClearCache();
-            RetMesh->ModelMatrix = m->GetModelMatrix();
+            RetMesh->ModelMatrix = CalculateModelMatrix(m->GetSceneNode());
             Ret[c->BBox.Beg] = RetMesh;
         }
         

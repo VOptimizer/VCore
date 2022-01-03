@@ -22,20 +22,15 @@
  * SOFTWARE.
  */
 
-#include <VoxelOptimizer/Loaders/QubicleBinaryTreeLoader.hpp>
-#include <VoxelOptimizer/Exceptions.hpp>
 #include <stb_image.h>
 #include <string.h>
+#include <VoxelOptimizer/Exceptions.hpp>
+#include "QubicleBinaryTreeFormat.hpp"
 
 namespace VoxelOptimizer
 {
-    void CQubicleBinaryTreeLoader::ParseFormat()
+    void CQubicleBinaryTreeFormat::ParseFormat()
     {
-        m_Models.clear();
-        m_Materials.clear();
-        m_Materials.clear();
-        m_Textures.clear();
-
         if(ReadData<int>() != 0x32204251)
             throw CVoxelLoaderException("Unknown file format");
 
@@ -55,9 +50,12 @@ namespace VoxelOptimizer
         LoadNode();
 
         m_ColorIdx.clear();
+
+        for (auto &&m : m_Models)
+            m->Colorpalettes() = m_Textures;        
     }
 
-    void CQubicleBinaryTreeLoader::ReadColors()
+    void CQubicleBinaryTreeFormat::ReadColors()
     {
         int count = ReadData<int>();
         m_HasColormap = count > 0;
@@ -74,7 +72,7 @@ namespace VoxelOptimizer
         }
     }
 
-    void CQubicleBinaryTreeLoader::LoadNode()
+    void CQubicleBinaryTreeFormat::LoadNode()
     {
         uint32_t type = ReadData<uint32_t>();
         uint32_t size = ReadData<uint32_t>();
@@ -103,19 +101,20 @@ namespace VoxelOptimizer
         }
     }
 
-    void CQubicleBinaryTreeLoader::LoadModel()
+    void CQubicleBinaryTreeFormat::LoadModel()
     {
         uint32_t childCount = ReadData<uint32_t>();
         for (uint32_t i = 0; i < childCount; i++)
             LoadNode();
     }
 
-    void CQubicleBinaryTreeLoader::LoadMatrix()
+    void CQubicleBinaryTreeFormat::LoadMatrix()
     {
         int nameLen = ReadData<int>();
         Skip(nameLen);
 
         VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
+        mesh->Materials() = m_Materials;
         auto pos = ReadVector();
 
         Skip(6 * sizeof(int));
@@ -125,7 +124,11 @@ namespace VoxelOptimizer
         pos += halfSize;
         std::swap(pos.y, pos.z);
 
-        mesh->SetModelMatrix(CMat4x4::Translation(pos));
+        auto sceneNode = SceneNode(new CSceneNode());
+        sceneNode->Position(pos);
+        sceneNode->Mesh(mesh);
+        mesh->SetSceneNode(sceneNode);
+        m_SceneTree->AddChild(sceneNode);
 
         uint32_t dataSize = ReadData<uint32_t>();
 
@@ -171,12 +174,13 @@ namespace VoxelOptimizer
         m_Models.push_back(mesh);
     }
 
-    void CQubicleBinaryTreeLoader::LoadCompound()
+    void CQubicleBinaryTreeFormat::LoadCompound()
     {
         int nameLen = ReadData<int>();
         Skip(nameLen);
 
         VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
+        mesh->Materials() = m_Materials;
         auto pos = ReadVector();
 
         Skip(6 * sizeof(int));
@@ -186,7 +190,11 @@ namespace VoxelOptimizer
         pos += halfSize;
         std::swap(pos.y, pos.z);
 
-        mesh->SetModelMatrix(CMat4x4::Translation(pos));
+        auto sceneNode = SceneNode(new CSceneNode());
+        sceneNode->Position(pos);
+        sceneNode->Mesh(mesh);
+        mesh->SetSceneNode(sceneNode);
+        m_SceneTree->AddChild(sceneNode);
 
         uint32_t dataSize = ReadData<uint32_t>();
 
@@ -236,7 +244,7 @@ namespace VoxelOptimizer
             LoadNode();
     }
 
-    CVector CQubicleBinaryTreeLoader::ReadVector()
+    CVector CQubicleBinaryTreeFormat::ReadVector()
     {
         CVector ret;
 
@@ -247,7 +255,7 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    int CQubicleBinaryTreeLoader::GetColorIdx(int color)
+    int CQubicleBinaryTreeFormat::GetColorIdx(int color)
     {
         int ret = 0;
 

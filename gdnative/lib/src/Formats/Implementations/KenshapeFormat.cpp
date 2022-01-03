@@ -22,19 +22,15 @@
  * SOFTWARE.
  */
 
-#include <VoxelOptimizer/Exceptions.hpp>
-#include <VoxelOptimizer/Loaders/KenshapeLoader.hpp>
-#include <stb_image.h>
 #include "Kenshape.hpp"
+#include "KenshapeFormat.hpp"
+#include <stb_image.h>
+#include <VoxelOptimizer/Exceptions.hpp>
 
 namespace VoxelOptimizer
 {
-    void CKenshapeLoader::ParseFormat()
+    void CKenshapeFormat::ParseFormat()
     {
-        m_Models.clear();
-        m_Materials.clear();
-        m_Textures.clear();
-
         // Quick'n dirty gzip check.
         if(ReadData<uint8_t>() != 0x1f || ReadData<uint8_t>() != 0x8b || ReadData<uint8_t>() != 8)
             throw CVoxelLoaderException("Invalid file format!");
@@ -58,8 +54,8 @@ namespace VoxelOptimizer
             throw CVoxelLoaderException("Invalid file format!");
         }
 
-        m_Materials.push_back(Material(new CMaterial()));
         VoxelMesh m = VoxelMesh(new CVoxelMesh());
+        m->Materials().push_back(Material(new CMaterial()));
         m->SetSize(Content->Size);
 
         std::map<int, int> ColorIdx;
@@ -110,6 +106,12 @@ namespace VoxelOptimizer
             }
         }
 
+        auto sceneNode = SceneNode(new CSceneNode());
+        m_SceneTree->AddChild(sceneNode);
+        sceneNode->Mesh(m);
+        m->SetSceneNode(sceneNode); 
+
+        m->Colorpalettes() = m_Textures;
         m->SetBBox(CBBox(Beg, End));
         m_Models.push_back(m);
     }

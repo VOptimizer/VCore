@@ -22,22 +22,19 @@
  * SOFTWARE.
  */
 
-#ifndef GOXELLOADER_HPP
-#define GOXELLOADER_HPP
+#ifndef GOXELFORMAT_HPP
+#define GOXELFORMAT_HPP
 
-#include <VoxelOptimizer/Loaders/ILoader.hpp>
+#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 #include <string.h>
 
 namespace VoxelOptimizer
 {
-    class CGoxelLoader : public ILoader
+    class CGoxelFormat : public IVoxelFormat
     {
         public:
-            CGoxelLoader() = default;
-
-            using ILoader::Load;
-        
-            ~CGoxelLoader() = default;
+            CGoxelFormat() = default;        
+            ~CGoxelFormat() = default;
 
         private:
             struct SChunkHeader
@@ -95,4 +92,4 @@ namespace VoxelOptimizer
     };
 } // namespace VoxelOptimizer
 
-#endif //GOXELLOADER_HPP
+#endif //GOXELFORMAT_HPP

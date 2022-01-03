@@ -5,15 +5,16 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-set(SRCS "${PROJECT_SOURCE_DIR}/src/Loaders/MagicaVoxelLoader.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Loaders/VoxelMesh.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Loaders/ILoader.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Loaders/GoxelLoader.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Loaders/KenshapeLoader.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Loaders/QubicleBinaryLoader.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Loaders/QubicleBinaryTreeLoader.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Loaders/QubicleExchangeLoader.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Loaders/QubicleLoader.cpp"
+set(SRCS "${PROJECT_SOURCE_DIR}/src/Loaders/VoxelMesh.cpp"
+
+         "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/MagicaVoxelFormat.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/GoxelFormat.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/KenshapeFormat.cpp"
+
+         "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/Qubicle/QubicleBinaryFormat.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/Qubicle/QubicleBinaryTreeFormat.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/Qubicle/QubicleExchangeFormat.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/Qubicle/QubicleFormat.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Formats/IVoxelFormat.cpp"
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/VEditFormat.cpp"

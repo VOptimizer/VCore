@@ -34,6 +34,12 @@
 
 namespace VoxelOptimizer
 {
+    enum class TextureType
+    {
+        DIFFIUSE,
+        EMISSION
+    };
+
     class CTexture
     {
         public:

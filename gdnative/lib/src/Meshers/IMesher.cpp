@@ -28,6 +28,21 @@
 #include <VoxelOptimizer/Meshers/SimpleMesher.hpp>
 namespace VoxelOptimizer
 {
+    CMat4x4 IMesher::CalculateModelMatrix(SceneNode reverseTree)
+    {
+        CMat4x4 ret;
+
+        CSceneNode *node = reverseTree.get();
+        while (node)
+        {
+            CMat4x4 modelMatrix = CMat4x4::Translation(reverseTree->Position()) * CMat4x4::Rotation(reverseTree->Rotation()) * CMat4x4::Scale(reverseTree->Scale());
+            ret = modelMatrix * ret;
+            node = node->Parent();
+        }
+
+        return ret;
+    }
+
     Mesher IMesher::Create(MesherTypes type)
     {
         switch (type)
@@ -62,7 +77,7 @@ namespace VoxelOptimizer
             Mesh->Faces.push_back(Faces);
 
             Faces->MaterialIndex = v1.Material;
-            Faces->FaceMaterial = m_Loader->GetMaterials()[v1.Material];
+            Faces->FaceMaterial = m_CurrentUsedMaterials[v1.Material];
             m_FacesIndex.insert({v1.Material, Faces});
         }
         else
@@ -109,7 +124,7 @@ namespace VoxelOptimizer
             Mesh->Faces.push_back(Faces);
 
             Faces->MaterialIndex = Material;
-            Faces->FaceMaterial = m_Loader->GetMaterials()[Material];
+            Faces->FaceMaterial = m_CurrentUsedMaterials[Material];
             m_FacesIndex.insert({Material, Faces});
         }
         else

@@ -48,7 +48,8 @@ namespace VoxelOptimizer
             m_CurrentMesh->Faces.push_back(Faces);
 
             Faces->MaterialIndex = Material;
-            Faces->FaceMaterial = m_Loader->GetMaterials()[Material];
+            //FIXME:
+            // Faces->FaceMaterial = m_Loader->GetMaterials()[Material];
             m_FacesIndex.insert({Material, Faces});
         }
         else
@@ -96,7 +97,8 @@ namespace VoxelOptimizer
             m_CurrentMesh->Faces.push_back(Faces);
 
             Faces->MaterialIndex = v1.Material;
-            Faces->FaceMaterial = m_Loader->GetMaterials()[v1.Material];
+            //FIXME:
+            // Faces->FaceMaterial = m_Loader->GetMaterials()[v1.Material];
             m_FacesIndex.insert({v1.Material, Faces});
         }
         else

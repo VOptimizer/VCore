@@ -39,6 +39,9 @@
 
 namespace VoxelOptimizer
 {
+    class CSceneNode;
+    using SceneNode = std::shared_ptr<CSceneNode>;
+
     class CVoxel
     {
         public:
@@ -112,16 +115,6 @@ namespace VoxelOptimizer
 
                 // m_Voxels.clear();
                 // m_Voxels.resize(m_Size.x * m_Size.y * m_Size.z);
-            }
-
-            inline void SetModelMatrix(const CMat4x4 &m)
-            {
-                m_ModelMatrix = m;
-            }
-
-            inline CMat4x4 GetModelMatrix()
-            {
-                return m_ModelMatrix;
             }
 
             /**
@@ -261,6 +254,16 @@ namespace VoxelOptimizer
             {
                 return m_Colorpalettes;
             }
+
+            inline SceneNode GetSceneNode() const
+            {
+                return m_SceneNode;
+            }
+            
+            inline void SetSceneNode(SceneNode SceneNode)
+            {
+                m_SceneNode = SceneNode;
+            }
             
             ~CVoxelMesh() = default;
         private:   
@@ -269,8 +272,6 @@ namespace VoxelOptimizer
             void SetNormal(const CVector &Pos, const CVector &Neighbor, bool IsInvisible = true);
             void MarkChunk(const CVector &Pos, Voxel voxel = nullptr);
             void InsertMarkedChunk(Chunk chunk);
-
-            CMat4x4 m_ModelMatrix;
 
             CVector m_Size;
             CBBox m_BBox;
@@ -284,6 +285,8 @@ namespace VoxelOptimizer
             bool m_RemeshAll;
             size_t m_BlockCount;
             mutable std::recursive_mutex m_Lock;
+
+            SceneNode m_SceneNode; 
     };
 
     using VoxelMesh = std::shared_ptr<CVoxelMesh>;

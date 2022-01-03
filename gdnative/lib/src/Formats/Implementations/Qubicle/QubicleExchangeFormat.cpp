@@ -22,19 +22,14 @@
  * SOFTWARE.
  */
 
-#include <VoxelOptimizer/Loaders/QubicleExchangeLoader.hpp>
-#include <VoxelOptimizer/Exceptions.hpp>
 #include <sstream>
+#include <VoxelOptimizer/Exceptions.hpp>
+#include "QubicleExchangeFormat.hpp"
 
 namespace VoxelOptimizer
 {
-    void CQubicleExchangeLoader::ParseFormat()
+    void CQubicleExchangeFormat::ParseFormat()
     {
-        m_Models.clear();
-        m_Materials.clear();
-        m_Materials.clear();
-        m_Textures.clear();
-
         if(ReadLine() != "Qubicle Exchange Format")
             throw CVoxelLoaderException("Unknown file format");
 
@@ -44,15 +39,21 @@ namespace VoxelOptimizer
         ReadLine();
 
         VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
-        m_Materials.push_back(Material(new CMaterial()));
+        mesh->Materials().push_back(Material(new CMaterial()));
         mesh->SetSize(ReadVector());
         ReadColors();
         ReadVoxels(mesh);
 
+        auto sceneNode = SceneNode(new CSceneNode());
+        sceneNode->Mesh(mesh);
+        mesh->SetSceneNode(sceneNode);
+        m_SceneTree->AddChild(sceneNode);
+
+        mesh->Colorpalettes() = m_Textures;
         m_Models.push_back(mesh);
     }
 
-    std::string CQubicleExchangeLoader::ReadLine()
+    std::string CQubicleExchangeFormat::ReadLine()
     {
         std::string ret;
 
@@ -68,7 +69,7 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    CVector CQubicleExchangeLoader::ReadVector()
+    CVector CQubicleExchangeFormat::ReadVector()
     {
         std::stringstream strm;
         strm << ReadLine();
@@ -80,7 +81,7 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    void CQubicleExchangeLoader::ReadColors()
+    void CQubicleExchangeFormat::ReadColors()
     {
         std::stringstream strm;
         strm << ReadLine();
@@ -105,7 +106,7 @@ namespace VoxelOptimizer
         }
     }
 
-    void CQubicleExchangeLoader::ReadVoxels(VoxelMesh mesh)
+    void CQubicleExchangeFormat::ReadVoxels(VoxelMesh mesh)
     {
         CVector Beg(1000, 1000, 1000), End;
         while (!IsEof())

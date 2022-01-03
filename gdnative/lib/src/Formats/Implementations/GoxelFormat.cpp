@@ -26,17 +26,14 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#include <VoxelOptimizer/Loaders/GoxelLoader.hpp>
+#include "GoxelFormat.hpp"
 #include <string.h>
 #include <VoxelOptimizer/Exceptions.hpp>
 
 namespace VoxelOptimizer
 {
-    void CGoxelLoader::ParseFormat()
+    void CGoxelFormat::ParseFormat()
     {
-        m_Models.clear();
-        m_Materials.clear();
-        m_Textures.clear();
         m_HasEmission = false;
 
         ReadFile();
@@ -49,6 +46,7 @@ namespace VoxelOptimizer
             CVector Beg(INFINITY, INFINITY, INFINITY), End, TranslationBeg(INFINITY, INFINITY, INFINITY);
             VoxelMesh m = VoxelMesh(new CVoxelMesh());
             m->SetSize(m_BBox.End + m_BBox.Beg.Abs());
+            std::map<int, int> meshMaterialMapping;
 
             for (auto &&b : l.Blocks)
             {
@@ -70,6 +68,18 @@ namespace VoxelOptimizer
                             {
                                 int IdxC = 0;
                                 bool found = false;
+                                int matIdx = 0;
+
+                                auto it = meshMaterialMapping.find(l.MatIdx);
+                                if(it != meshMaterialMapping.end())
+                                    matIdx = it->second;
+                                else
+                                {
+                                    auto material = m_Materials[l.MatIdx];
+                                    m->Materials().push_back(material);
+                                    matIdx = m->Materials().size() - 1;
+                                    meshMaterialMapping[l.MatIdx] = matIdx;
+                                }
 
                                 if(m_HasEmission)
                                 {
@@ -123,7 +133,7 @@ namespace VoxelOptimizer
                                 Beg = Beg.Min(vi);
                                 End = End.Max(vi);
 
-                                m->SetVoxel(vi, l.MatIdx, IdxC, false);
+                                m->SetVoxel(vi, matIdx, IdxC, false);
                             }
                         }
                     }
@@ -136,17 +146,25 @@ namespace VoxelOptimizer
             CVector translation = TranslationBeg + (m->GetBBox().GetSize() / 2);
             std::swap(translation.y, translation.z);
             translation.z *= -1;
-            m->SetModelMatrix(CMat4x4::Translation(translation));
+
+            auto sceneNode = SceneNode(new CSceneNode());
+            sceneNode->Mesh(m);
+            sceneNode->Position(translation);
+            m_SceneTree->AddChild(sceneNode);
+            m->SetSceneNode(sceneNode);
 
             m_Models.push_back(m);
         }
 
+        for (auto &&m : m_Models)
+            m->Colorpalettes() = m_Textures;
+        
         m_BBox = CBBox();
         m_BL16s.clear();
         m_Layers.clear();
     }
 
-    void CGoxelLoader::ReadFile()
+    void CGoxelFormat::ReadFile()
     {
         std::string Signature(4, '\0');
         ReadData(&Signature[0], 4);
@@ -175,7 +193,7 @@ namespace VoxelOptimizer
         }
     }
 
-    void CGoxelLoader::ProcessMaterial(const SChunkHeader &Chunk)
+    void CGoxelFormat::ProcessMaterial(const SChunkHeader &Chunk)
     {
         auto Dict = ReadDict(Chunk, Tellg());
         m_Materials.push_back(Material(new CMaterial()));
@@ -194,7 +212,7 @@ namespace VoxelOptimizer
         Skip(sizeof(int));
     }
 
-    void CGoxelLoader::ProcessLayer(const SChunkHeader &Chunk)
+    void CGoxelFormat::ProcessLayer(const SChunkHeader &Chunk)
     {
         Layer l;
         size_t StartPos = Tellg();
@@ -227,7 +245,7 @@ namespace VoxelOptimizer
         Skip(sizeof(int));
     }
 
-    void CGoxelLoader::ProcessBL16(const SChunkHeader &Chunk)
+    void CGoxelFormat::ProcessBL16(const SChunkHeader &Chunk)
     {
         stbi_uc *PngData = new stbi_uc[Chunk.Size];
         ReadData((char*)PngData, Chunk.Size);
@@ -242,7 +260,7 @@ namespace VoxelOptimizer
         Skip(sizeof(int));
     }
 
-    std::map<std::string, std::string> CGoxelLoader::ReadDict(const SChunkHeader &Chunk, size_t StartPos)
+    std::map<std::string, std::string> CGoxelFormat::ReadDict(const SChunkHeader &Chunk, size_t StartPos)
     {
         std::map<std::string, std::string> Ret;
 

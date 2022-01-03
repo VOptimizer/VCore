@@ -160,7 +160,7 @@ namespace VoxelOptimizer
                         CVector4(0, 0, 0, 1));
             }
 
-            inline CMat4x4 Rotation()
+            inline CVector GetEuler()
             {
                 CVector rotation;
 
@@ -186,7 +186,12 @@ namespace VoxelOptimizer
                     }
                 }
 
-                return Rotation(rotation);
+                return rotation;
+            }
+
+            inline CMat4x4 Rotation()
+            {
+                return Rotation(GetEuler());
             }
 
             ~CMat4x4() {}

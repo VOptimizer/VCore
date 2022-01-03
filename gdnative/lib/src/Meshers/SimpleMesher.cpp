@@ -27,11 +27,10 @@
 
 namespace VoxelOptimizer
 {
-    std::map<CVector, Mesh> CSimpleMesher::GenerateMeshes(VoxelMesh m, Loader Loader)
+    std::map<CVector, Mesh> CSimpleMesher::GenerateMeshes(VoxelMesh m)
     {
         std::map<CVector, Mesh> Ret;
-
-        m_Loader = Loader;
+        m_CurrentUsedMaterials = m->Materials();
 
         auto Chunks = m->GetChunksToRemesh();
         auto BBox = m->GetBBox();
@@ -46,7 +45,7 @@ namespace VoxelOptimizer
         for (auto &&c : Chunks)
         {          
             Mesh M = Mesh(new SMesh());
-            M->Textures = Loader->GetTextures();
+            M->Textures = m->Colorpalettes();
 
             for(float x = c->BBox.Beg.x; x < c->BBox.End.x; x++)
             {
@@ -111,7 +110,7 @@ namespace VoxelOptimizer
                 }
             }
 
-            M->ModelMatrix = m->GetModelMatrix();
+            M->ModelMatrix = CalculateModelMatrix(m->GetSceneNode());
             Ret[c->BBox.Beg] = M;
             ClearCache();
         }

@@ -28,9 +28,9 @@
 
 namespace VoxelOptimizer
 {
-    void CSpriteStackingExporter::Save(const std::string &Path, VoxelMesh m, Loader Loader)
+    void CSpriteStackingExporter::Save(const std::string &Path, VoxelMesh m)
     {
-        auto Image = Generate(m, Loader);
+        auto Image = Generate(m);
         std::ofstream out(Path, std::ios::binary);
         if(out.is_open())
         {
@@ -39,12 +39,12 @@ namespace VoxelOptimizer
         }
     }
 
-    std::vector<char> CSpriteStackingExporter::Generate(VoxelMesh m, Loader Loader)
+    std::vector<char> CSpriteStackingExporter::Generate(VoxelMesh m)
     {
         CVector Size = m->GetSize();
         std::vector<uint32_t> Pixels(Size.x * Size.y * Size.z, 0);
 
-        auto diffuse = Loader->GetTextures().at(TextureType::DIFFIUSE);
+        auto diffuse = m->Colorpalettes().at(TextureType::DIFFIUSE);
 
         for (size_t z = 0; z < Size.z; z++)
         {

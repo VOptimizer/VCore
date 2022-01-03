@@ -25,7 +25,7 @@
 #ifndef SPRITESTACKINGEXPORTER_HPP
 #define SPRITESTACKINGEXPORTER_HPP
 
-#include <VoxelOptimizer/Loaders/MagicaVoxelLoader.hpp>
+#include <VoxelOptimizer/Loaders/VoxelMesh.hpp>
 #include <string>
 #include <vector>
 
@@ -42,7 +42,7 @@ namespace VoxelOptimizer
              * @param Path: Path of the file.
              * @param Mesh: Mesh to save.
              */
-            void Save(const std::string &Path, VoxelMesh m, Loader Loader);
+            void Save(const std::string &Path, VoxelMesh m);
 
             /**
              * @brief Generates the file stream.
@@ -51,7 +51,7 @@ namespace VoxelOptimizer
              * 
              * @return Returns a png image.
              */
-            std::vector<char> Generate(VoxelMesh m, Loader Loader); 
+            std::vector<char> Generate(VoxelMesh m); 
 
             ~CSpriteStackingExporter() = default;
         private:

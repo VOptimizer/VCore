@@ -22,40 +22,22 @@
  * SOFTWARE.
  */
 
-#ifndef QUBICLEBINARYLOADER_HPP
-#define QUBICLEBINARYLOADER_HPP
+#ifndef KENSHAPEFORMAT_HPP
+#define KENSHAPEFORMAT_HPP
 
-#include <VoxelOptimizer/Mat4x4.hpp>
-#include <VoxelOptimizer/Loaders/ILoader.hpp>
+#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 
 namespace VoxelOptimizer
 {
-    class CQubicleBinaryLoader : public ILoader
+    class CKenshapeFormat : public IVoxelFormat
     {
         public:
-            CQubicleBinaryLoader() = default;
-            ~CQubicleBinaryLoader() = default;
-
-        protected:
-            struct SQubicleBinaryHeader
-            {
-                char Version[4];        // major, minor, release, build
-                int ColorFormat;        // 0 = RGBA, 1 = BGRA
-                int ZAxisOrientation;   // 0 = Left hand, 1 = Right hand
-                int Compression;        // 1 = RLE, 0 = Uncompressed
-                int VisibilityMask;     // 0 = If Alpha is 0 means invisible 255 visible, 1 = A tells which side is visible
-                int MatrixCount;        // Number of matrices(Models) inside this file.
-            };
-            SQubicleBinaryHeader m_Header;
-            std::map<int, int> m_ColorIdx;
-            
-            void ParseFormat() override;
-            void ReadUncompressed(VoxelMesh mesh);
-            void ReadRLECompressed(VoxelMesh mesh);
-            int GetColorIdx(int color);
-
-            CVector ReadVector();
+            CKenshapeFormat() = default;
+            ~CKenshapeFormat() = default;
+        private:
+            void ParseFormat() override;   
     };
 } // namespace VoxelOptimizer
 
-#endif //QUBICLEBINARYLOADER_HPP
+
+#endif //KENSHAPEFORMAT_HPP

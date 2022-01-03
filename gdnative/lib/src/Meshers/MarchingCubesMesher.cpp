@@ -385,10 +385,11 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    std::map<CVector, Mesh> CMarchingCubesMesher::GenerateMeshes(VoxelMesh m, Loader Loader)
+    std::map<CVector, Mesh> CMarchingCubesMesher::GenerateMeshes(VoxelMesh m)
     {
+        m_CurrentUsedMaterials = m->Materials();
+
         std::map<CVector, Mesh> Ret;
-        m_Loader = Loader;
 
         auto Chunks = m->GetChunksToRemesh();
         auto BBox = m->GetBBox();
@@ -404,7 +405,7 @@ namespace VoxelOptimizer
         for (auto &&c : Chunks)
         {
             Mesh M = Mesh(new SMesh());
-            M->Textures = Loader->GetTextures();
+            M->Textures = m->Colorpalettes();
 
             for(float x = c->BBox.Beg.x - 1; x < c->BBox.End.x + 1; x++)
             {
@@ -420,7 +421,7 @@ namespace VoxelOptimizer
                 }
             }
 
-            M->ModelMatrix = m->GetModelMatrix();
+            M->ModelMatrix = CalculateModelMatrix(m->GetSceneNode());
             Ret.insert({c->BBox.Beg, M});
             ClearCache();
         }

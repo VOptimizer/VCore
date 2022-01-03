@@ -22,22 +22,26 @@
  * SOFTWARE.
  */
 
-#ifndef QUBICLELOADER_HPP
-#define QUBICLE_HPP
+#ifndef QUBICLEBINARYTREEFORMAT_HPP
+#define QUBICLEBINARYTREEFORMAT_HPP
 
 #include <VoxelOptimizer/Mat4x4.hpp>
-#include <VoxelOptimizer/Loaders/ILoader.hpp>
+#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 
 namespace VoxelOptimizer
 {
-    class CQubicleLoader : public ILoader
+    class CQubicleBinaryTreeFormat : public IVoxelFormat
     {
         public:
-            CQubicleLoader() = default;
-            ~CQubicleLoader() = default;
-        private:
+            CQubicleBinaryTreeFormat() = default;
+            ~CQubicleBinaryTreeFormat() = default;
+
+        protected:
             std::map<int, int> m_ColorIdx;
+            bool m_HasColormap;
+
             void ParseFormat() override;
+            void ReadColors();
 
             void LoadNode();
             void LoadModel();
@@ -45,11 +49,9 @@ namespace VoxelOptimizer
             void LoadCompound();
 
             int GetColorIdx(int color);
-            void AddVoxel(VoxelMesh mesh, int color, CVector pos, CVector &Beg, CVector &End);
 
             CVector ReadVector();
     };
 } // namespace VoxelOptimizer
 
-
-#endif //QUBICLELOADER_HPP
+#endif //QUBICLEBINARYTREEFORMAT_HPP

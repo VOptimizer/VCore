@@ -22,24 +22,23 @@
  * SOFTWARE.
  */
 
-#ifndef VOXELLOADER_HPP
-#define VOXELLOADER_HPP
+#ifndef VOXELFORMAT_HPP
+#define VOXELFORMAT_HPP
 
 #include <VoxelOptimizer/Mat4x4.hpp>
-#include <VoxelOptimizer/Loaders/ILoader.hpp>
+#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 
 namespace VoxelOptimizer
 {
-    class CMagicaVoxelLoader : public ILoader
+    class CMagicaVoxelFormat : public IVoxelFormat
     {
         public:  
-            CMagicaVoxelLoader() = default;
+            CMagicaVoxelFormat() = default;
 
-            using ILoader::Load;
-
-            ~CMagicaVoxelLoader() = default;
+            ~CMagicaVoxelFormat() = default;
         private:
             void ParseFormat() override;
+            void ClearCache() override;
 
             enum NodeType
             {
@@ -68,7 +67,7 @@ namespace VoxelOptimizer
                     int LayerID;
                     int NumFrames;
                     CVector Translation;
-                    CMat4x4 Rotation;
+                    CVector Rotation;
 
                     int ChildID;
             };
@@ -118,15 +117,14 @@ namespace VoxelOptimizer
             std::map<int, int> m_ColorMapping;
             std::map<int, int> m_MaterialMapping;
 
-            std::map<int, CMat4x4> m_ModelMatrices;
+            std::map<int, SceneNode> m_ModelSceneTreeMapping;
 
             std::vector<CColor> m_ColorPalette;
 
-            size_t m_Index;
             size_t m_UsedColorsPos;
             bool m_HasEmission;
     };
 } // namespace VoxelOptimizer
 
 
-#endif //VOXELLOADER_HPP
+#endif //VOXELFORMAT_HPP

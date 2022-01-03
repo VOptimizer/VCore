@@ -28,7 +28,7 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include <VoxelOptimizer/Loaders/ILoader.hpp>
+#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 #include <VoxelOptimizer/Mesh.hpp>
 
 namespace VoxelOptimizer
@@ -45,14 +45,6 @@ namespace VoxelOptimizer
     {
         public:
             CMeshBuilder();
-
-            /**
-             * @brief Sets the loader to use to generate the mesh.
-             */
-            void UseLoader(Loader loader)
-            {
-                m_Loader = loader;
-            }
 
             /**
              * @brief Adds a new quad to the mesh.
@@ -91,7 +83,6 @@ namespace VoxelOptimizer
             std::map<int, GroupedFaces> m_FacesIndex;
 
             Mesh m_CurrentMesh;
-            Loader m_Loader;
     };
 } // namespace VoxelOptimizer
 

@@ -22,25 +22,34 @@
  * SOFTWARE.
  */
 
-#ifndef KENSHAPELOADER_HPP
-#define KENSHAPELOADER_HPP
+#ifndef QUBICLEFORMAT_HPP
+#define QUBICLE_HPP
 
-#include <VoxelOptimizer/Loaders/ILoader.hpp>
+#include <VoxelOptimizer/Mat4x4.hpp>
+#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 
 namespace VoxelOptimizer
 {
-    class CKenshapeLoader : public ILoader
+    class CQubicleFormat : public IVoxelFormat
     {
         public:
-            CKenshapeLoader() = default;
-
-            using ILoader::Load;
-
-            ~CKenshapeLoader() = default;
+            CQubicleFormat() = default;
+            ~CQubicleFormat() = default;
         private:
-            void ParseFormat() override;   
+            std::map<int, int> m_ColorIdx;
+            void ParseFormat() override;
+
+            void LoadNode();
+            void LoadModel();
+            void LoadMatrix();
+            void LoadCompound();
+
+            int GetColorIdx(int color);
+            void AddVoxel(VoxelMesh mesh, int color, CVector pos, CVector &Beg, CVector &End);
+
+            CVector ReadVector();
     };
 } // namespace VoxelOptimizer
 
 
-#endif //KENSHAPELOADER_HPP
+#endif //QUBICLEFORMAT_HPP

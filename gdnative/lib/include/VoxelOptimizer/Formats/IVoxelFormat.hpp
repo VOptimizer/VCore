@@ -27,108 +27,82 @@
 
 #include <string>
 #include <vector>
-#include <VoxelOptimizer/Loaders/ILoader.hpp>
+#include <VoxelOptimizer/Formats/SceneNode.hpp>
 #include <VoxelOptimizer/Loaders/VoxelMesh.hpp>
 
 namespace VoxelOptimizer
 {
-    class CSceneNode;
-    using SceneNode = std::shared_ptr<CSceneNode>;
-
-    class CSceneNode
+    enum class LoaderType
     {
-        public:
-            CSceneNode() = default;
-
-            inline CVector Position() const
-            {
-                return m_Position;
-            }
-            
-            inline void Position(const CVector &position)
-            {
-                m_Position = position;
-            }
-
-            inline CVector Rotation() const
-            {
-                return m_Rotation;
-            }
-            
-            inline void Rotation(const CVector &rotation)
-            {
-                m_Position = rotation;
-            }
-
-            inline CVector Scale() const
-            {
-                return m_Scale;
-            }
-            
-            inline void Scale(const CVector &scale)
-            {
-                m_Scale = scale;
-            }
-
-            inline VoxelMesh Mesh() const
-            {
-                return m_Mesh;
-            }
-            
-            inline void Mesh(VoxelMesh mesh)
-            {
-                m_Mesh = mesh;
-            }
-
-            inline CMat4x4 ModelMatrix() const
-            {
-                return CMat4x4::Translation(m_Position) * CMat4x4::Rotation(m_Rotation) * CMat4x4::Scale(m_Scale);
-            }
-
-            auto begin()
-            {
-                return m_Childs.begin();
-            }
-
-            auto end()
-            {
-                return m_Childs.begin();
-            }
-
-            auto begin() const
-            {
-                return m_Childs.begin();
-            }
-
-            auto end() const
-            {
-                return m_Childs.begin();
-            }
-        private:
-            CVector m_Position;
-            CVector m_Rotation;
-            CVector m_Scale;
-
-            VoxelMesh m_Mesh;
-            std::list<SceneNode> m_Childs;
+        UNKNOWN = -1,
+        MAGICAVOXEL,
+        GOXEL,
+        KENSHAPE,
+        QUBICLE_BIN,
+        QUBICLE_BIN_TREE,
+        QUBICLE_EXCHANGE,
+        QUBICLE,
+        VEDIT
     };
 
     class IVoxelFormat;
     using VoxelFormat = std::shared_ptr<IVoxelFormat>;
 
-    class IVoxelFormat : public ILoader
+    class IVoxelFormat
     {
         public:
-            void UseLoader(Loader loader)
-            {
-                m_Materials = loader->GetMaterials();
-                m_Textures = loader->GetTextures();
-            }
+            /**
+             * @brief Creates an instance of a loader, which then loads the given file.
+             * 
+             * @throws CVoxelLoaderException If there is no loader for the given file or the file couldn't be load.
+             */
+            static VoxelFormat CreateAndLoad(const std::string &filename);
+
+            /**
+             * @return Returns the loader type of a given file.
+             */
+            static LoaderType GetType(const std::string &filename);
 
             /**
              * @brief Creates an instance of a the given loader;
              */
-            static VoxelFormat Create(LoaderTypes type);
+            static VoxelFormat Create(LoaderType type);
+
+            /**
+             * @brief Loads a voxel file from disk.
+             * 
+             * @param File: Path to the voxel file.
+             * @throws CVoxelLoaderException If the file couldn't be load.
+             */
+            virtual void Load(const std::string &File);
+
+            /**
+             * @brief Loads voxel file from memory.
+             * 
+             * @param Data: Data of the file.
+             * @param Lenght: Data size.
+             * 
+             * @throws CVoxelLoaderException If the file couldn't be load.
+             */
+            virtual void Load(const char *Data, size_t Length);
+
+            /**
+             * @return Gets a list with all models inside the voxel file.
+             */
+            inline std::vector<VoxelMesh> GetModels() const
+            {
+                return m_Models;
+            }
+
+            inline std::map<TextureType, Texture> GetTextures() const
+            {
+                return m_Textures;
+            }
+
+            inline std::vector<Material> GetMaterials() const
+            {
+                return m_Materials;
+            }
 
             /**
              * @brief Saves the voxel mesh as a voxel file.
@@ -158,7 +132,35 @@ namespace VoxelOptimizer
                 m_SceneTree = tree;
             }
         protected:
+            virtual void ClearCache();
+
             SceneNode m_SceneTree;
+
+            std::vector<VoxelMesh> m_Models;
+            std::vector<Material> m_Materials;
+            std::map<TextureType, Texture> m_Textures;
+
+            virtual void ParseFormat() = 0;
+
+            template<class T>
+            T ReadData()
+            {
+                T Ret;
+                ReadData((char*)&Ret, sizeof(Ret));
+                return Ret;
+            }
+
+            void ReadData(char *Buf, size_t Size);
+            bool IsEof();
+            size_t Tellg();
+            void Skip(size_t Bytes);
+            void Reset();
+            size_t Size();
+            char *Ptr();
+
+        private:
+            std::vector<char> m_Data;
+            size_t m_Pos;
     };
 } // namespace VoxelOptimizer
 

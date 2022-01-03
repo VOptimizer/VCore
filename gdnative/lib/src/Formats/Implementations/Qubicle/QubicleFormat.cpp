@@ -22,15 +22,16 @@
  * SOFTWARE.
  */
 
-#include <VoxelOptimizer/Loaders/QubicleLoader.hpp>
-#include <VoxelOptimizer/Exceptions.hpp>
-#include <stb_image.h>
-#include <string.h>
 
 #include <fstream>
 
 #include <iostream>
 #include <iomanip>
+
+#include <stb_image.h>
+#include <string.h>
+#include <VoxelOptimizer/Exceptions.hpp>
+#include "QubicleFormat.hpp"
 
 using namespace std;
 
@@ -38,7 +39,7 @@ namespace VoxelOptimizer
 {
     static int counter111 = 1;
 
-    void CQubicleLoader::ParseFormat()
+    void CQubicleFormat::ParseFormat()
     {
         m_Models.clear();
         m_Materials.clear();
@@ -78,9 +79,12 @@ namespace VoxelOptimizer
 
         Skip(16);   //Timestamp?
         LoadNode();
+
+        for (auto &&m : m_Models)
+            m->Colorpalettes() = m_Textures;     
     }
 
-    void CQubicleLoader::LoadNode()
+    void CQubicleFormat::LoadNode()
     {
         uint32_t type = ReadData<uint32_t>();
         Skip(sizeof(int));  // I dont know.
@@ -111,7 +115,7 @@ namespace VoxelOptimizer
         }
     }
 
-    void CQubicleLoader::LoadModel()
+    void CQubicleFormat::LoadModel()
     {
         uint32_t size = ReadData<uint32_t>();
         Skip(size);
@@ -122,13 +126,14 @@ namespace VoxelOptimizer
             LoadNode();        
     }
 
-    void CQubicleLoader::LoadMatrix()
+    void CQubicleFormat::LoadMatrix()
     {
         uint32_t size = ReadData<uint32_t>();
         Skip(size);
         Skip(3); //Mysterious 3 bytes always 0x01 0x01 0x00
 
         VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
+        mesh->Materials() = m_Materials;
         mesh->SetSize(ReadVector());
 
         auto pos = ReadVector();
@@ -136,7 +141,11 @@ namespace VoxelOptimizer
         pos += halfSize;
         std::swap(pos.y, pos.z);
 
-        mesh->SetModelMatrix(CMat4x4::Translation(pos));
+        auto sceneNode = SceneNode(new CSceneNode());
+        sceneNode->Position(pos);
+        sceneNode->Mesh(mesh);
+        mesh->SetSceneNode(sceneNode);
+        m_SceneTree->AddChild(sceneNode);
         Skip(3 * sizeof(float));    //Pivot position.
 
         uint32_t dataSize = ReadData<uint32_t>();
@@ -240,12 +249,12 @@ namespace VoxelOptimizer
         m_Models.push_back(mesh);
     }
 
-    void CQubicleLoader::LoadCompound()
+    void CQubicleFormat::LoadCompound()
     {
 
     }
 
-    CVector CQubicleLoader::ReadVector()
+    CVector CQubicleFormat::ReadVector()
     {
         CVector ret;
 
@@ -256,7 +265,7 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    int CQubicleLoader::GetColorIdx(int color)
+    int CQubicleFormat::GetColorIdx(int color)
     {
         int ret = 0;
 
@@ -284,7 +293,7 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    void CQubicleLoader::AddVoxel(VoxelMesh mesh, int color, CVector pos, CVector &Beg, CVector &End)
+    void CQubicleFormat::AddVoxel(VoxelMesh mesh, int color, CVector pos, CVector &Beg, CVector &End)
     {
         int cid = GetColorIdx(color);
         if(cid == -1)

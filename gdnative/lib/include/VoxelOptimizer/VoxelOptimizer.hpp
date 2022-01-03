@@ -39,16 +39,11 @@
 #include <VoxelOptimizer/Exporters/GLTFExporter.hpp>
 #include <VoxelOptimizer/Exporters/GodotSceneExporter.hpp>
 #include <VoxelOptimizer/Exporters/PLYExporter.hpp>
-#include <VoxelOptimizer/Loaders/ILoader.hpp>
-#include <VoxelOptimizer/Loaders/GoxelLoader.hpp>
-#include <VoxelOptimizer/Loaders/MagicaVoxelLoader.hpp>
-#include <VoxelOptimizer/Loaders/VoxelMesh.hpp>
-#include <VoxelOptimizer/Loaders/KenshapeLoader.hpp>
-#include <VoxelOptimizer/Loaders/QubicleBinaryLoader.hpp>
-#include <VoxelOptimizer/Loaders/QubicleBinaryTreeLoader.hpp>
-#include <VoxelOptimizer/Loaders/QubicleExchangeLoader.hpp>
-#include <VoxelOptimizer/Loaders/QubicleLoader.hpp>
 #include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <VoxelOptimizer/Formats/SceneNode.hpp>
+
+#include <VoxelOptimizer/Loaders/VoxelMesh.hpp>
+
 #include <VoxelOptimizer/Meshers/GreedyMesher.hpp>
 #include <VoxelOptimizer/Meshers/SimpleMesher.hpp>
 #include <VoxelOptimizer/Meshers/MarchingCubesMesher.hpp>
