@@ -22,10 +22,12 @@
  * SOFTWARE.
  */
 
+#include <stdexcept>
 #include <VoxelOptimizer/Meshers/GreedyMesher.hpp>
 #include <VoxelOptimizer/Meshers/IMesher.hpp>
 #include <VoxelOptimizer/Meshers/MarchingCubesMesher.hpp>
 #include <VoxelOptimizer/Meshers/SimpleMesher.hpp>
+
 namespace VoxelOptimizer
 {
     CMat4x4 IMesher::CalculateModelMatrix(SceneNode reverseTree)
@@ -35,9 +37,37 @@ namespace VoxelOptimizer
         CSceneNode *node = reverseTree.get();
         while (node)
         {
-            CMat4x4 modelMatrix = CMat4x4::Translation(reverseTree->Position()) * CMat4x4::Rotation(reverseTree->Rotation()) * CMat4x4::Scale(reverseTree->Scale());
+            CMat4x4 modelMatrix = node->ModelMatrix();
             ret = modelMatrix * ret;
-            node = node->Parent();
+            node = node->GetParent();
+        }
+
+        return ret;
+    }
+
+    std::list<std::map<CVector, Mesh>> IMesher::GenerateScene(SceneNode sceneTree)
+    {
+        return GenerateScene(sceneTree, CMat4x4());
+    }
+
+    std::list<std::map<CVector, Mesh>> IMesher::GenerateScene(SceneNode sceneTree, CMat4x4 modelMatrix)
+    {
+        std::list<std::map<CVector, Mesh>> ret;
+        modelMatrix = modelMatrix * sceneTree->ModelMatrix();
+
+        if(sceneTree->GetMesh())
+        {
+            auto meshes = GenerateMeshes(sceneTree->GetMesh());
+            for (auto &&m : meshes)
+                m.second->ModelMatrix = modelMatrix;
+
+            ret.push_back(meshes);
+        }
+
+        for (auto &&node : *sceneTree)
+        {
+            auto res = GenerateScene(node, modelMatrix);
+            ret.insert(ret.end(), res.begin(), res.end());
         }
 
         return ret;
@@ -50,6 +80,8 @@ namespace VoxelOptimizer
             case MesherTypes::SIMPLE: return Mesher(new CSimpleMesher());
             case MesherTypes::GREEDY: return Mesher(new CGreedyMesher());
             case MesherTypes::MARCHING_CUBES: return Mesher(new CMarchingCubesMesher());
+            default:
+                throw std::runtime_error("Invalid mesher type!");
         }
     }
 

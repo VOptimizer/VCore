@@ -46,6 +46,7 @@ namespace VoxelOptimizer
             CTexture() = default;
             CTexture(const CVector &_size);
             CTexture(const CTexture &_texture);
+            CTexture(const CVector &_size, uint32_t *_data);
 
             void AddPixel(const CColor &color, const CVector &pos);
             void AddPixel(const CColor &color);

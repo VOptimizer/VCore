@@ -45,7 +45,7 @@ namespace VoxelOptimizer
         ReadVoxels(mesh);
 
         auto sceneNode = SceneNode(new CSceneNode());
-        sceneNode->Mesh(mesh);
+        sceneNode->SetMesh(mesh);
         mesh->SetSceneNode(sceneNode);
         m_SceneTree->AddChild(sceneNode);
 

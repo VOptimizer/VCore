@@ -38,7 +38,9 @@ namespace VoxelOptimizer
         Skip(7);
 
         int OutSize = 0;
-        char *Data = stbi_zlib_decode_noheader_malloc(Ptr(), Size() - Tellg(), &OutSize);
+
+        std::vector<char> data = ReadDataChunk(m_DataStream.size() - m_DataStream.offset());
+        char *Data = stbi_zlib_decode_noheader_malloc(data.data(), data.size(), &OutSize);
 
         CJSON json;
         Kenshape Content;
@@ -108,7 +110,7 @@ namespace VoxelOptimizer
 
         auto sceneNode = SceneNode(new CSceneNode());
         m_SceneTree->AddChild(sceneNode);
-        sceneNode->Mesh(m);
+        sceneNode->SetMesh(m);
         m->SetSceneNode(sceneNode); 
 
         m->Colorpalettes() = m_Textures;

@@ -129,16 +129,17 @@ namespace VoxelOptimizer
         std::ifstream in(File, std::ios::binary);
         if(in.is_open())
         {
-            m_Pos = 0;
-
             in.seekg(0, in.end);
             size_t Len = in.tellg();
             in.seekg(0, in.beg);
 
-            m_Data.resize(Len);
-            in.read(&m_Data[0], Len);
+            std::vector<char> data;
+            data.resize(Len);
+            in.read(&data[0], Len);
             in.close();
 
+            m_DataStream = CBinaryStream(data.data(), data.size());
+            data.clear();
             ParseFormat();
         }
         else
@@ -147,48 +148,45 @@ namespace VoxelOptimizer
 
     void IVoxelFormat::Load(const char *Data, size_t Length)
     {
-        m_Pos = 0;
-        m_Data = std::vector<char>(Data, Data + Length);
+        m_DataStream = CBinaryStream(Data, Length);
+
         ClearCache();
         ParseFormat();
     }
 
     void IVoxelFormat::ReadData(char *Buf, size_t Size)
     {
-        if(m_Pos + Size > m_Data.size())
+        if((size_t)m_DataStream.offset() + Size > m_DataStream.size())
             throw CVoxelLoaderException("Unexpected file ending.");
 
-        memcpy(Buf, m_Data.data() + m_Pos, Size);
-        m_Pos += Size;
+        m_DataStream.read(Buf, Size);
     }
 
     bool IVoxelFormat::IsEof()
     {
-        return m_Pos >= m_Data.size();
+        return m_DataStream.offset() >= m_DataStream.size();
     }
 
     size_t IVoxelFormat::Tellg()
     {
-        return m_Pos;
+        return m_DataStream.offset();
     }
 
     void IVoxelFormat::Skip(size_t Bytes)
     {
-        m_Pos += Bytes;
+        m_DataStream.skip(Bytes);
     }
 
     void IVoxelFormat::Reset()
     {
-        m_Pos = 0;
+        m_DataStream.reset();
     }
 
-    size_t IVoxelFormat::Size()
+    std::vector<char> IVoxelFormat::ReadDataChunk(size_t size)
     {
-        return m_Data.size();
-    }
+        std::vector<char> data(size, 0);
+        ReadData(&data[0], data.size());
 
-    char *IVoxelFormat::Ptr()
-    {
-        return m_Data.data() + m_Pos;
+        return data;
     }
 } // namespace VoxelOptimizer

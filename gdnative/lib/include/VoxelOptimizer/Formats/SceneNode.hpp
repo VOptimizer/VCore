@@ -39,44 +39,54 @@ namespace VoxelOptimizer
 
             CSceneNode() : m_Scale(1, 1, 1), m_Parent(nullptr) {}
 
-            inline CVector Position() const
+            inline CVector GetPosition() const
             {
                 return m_Position;
             }
             
-            inline void Position(const CVector &position)
+            inline void SetPosition(const CVector &position)
             {
                 m_Position = position;
             }
 
-            inline CVector Rotation() const
+            inline CVector GetRotation() const
             {
                 return m_Rotation;
             }
             
-            inline void Rotation(const CVector &rotation)
+            inline void SetRotation(const CVector &rotation)
             {
-                m_Position = rotation;
+                m_Rotation = rotation;
             }
 
-            inline CVector Scale() const
+            inline CVector GetScale() const
             {
                 return m_Scale;
             }
             
-            inline void Scale(const CVector &scale)
+            inline void SetScale(const CVector &scale)
             {
                 m_Scale = scale;
             }
 
-            inline VoxelMesh Mesh() const
+            inline VoxelMesh GetMesh() const
             {
                 return m_Mesh;
             }
             
-            inline void Mesh(VoxelMesh mesh)
+            inline void SetMesh(VoxelMesh mesh)
             {
                 m_Mesh = mesh;
+            }
+
+            inline std::string GetName() const
+            {
+                return m_Name;
+            }
+            
+            inline void SetName(const std::string &name)
+            {
+                m_Name = name;
             }
 
             inline CMat4x4 ModelMatrix() const
@@ -110,9 +120,14 @@ namespace VoxelOptimizer
                 m_Childs.push_back(node);
             }
 
-            CSceneNode *Parent()
+            CSceneNode *GetParent()
             {
                 return m_Parent;
+            }
+
+            uint32_t ChildCount() const
+            {
+                return m_Childs.size();
             }
         private:
             CVector m_Position;
@@ -122,6 +137,7 @@ namespace VoxelOptimizer
             VoxelMesh m_Mesh;
             CSceneNode* m_Parent;
             SceneNodes m_Childs;
+            std::string m_Name;
     };
 } // namespace VoxelOptimizer
 

@@ -37,8 +37,9 @@ namespace VoxelOptimizer
     class IExporter;
     using Exporter = std::shared_ptr<IExporter>;
 
-    enum class ExporterTypes
+    enum class ExporterType
     {
+        UNKNOWN,
         OBJ,
         GLTF,
         GLB,
@@ -54,7 +55,12 @@ namespace VoxelOptimizer
             /**
              * @brief Creates a new exporter instance.
              */
-            static Exporter Create(ExporterTypes type);
+            static Exporter Create(ExporterType type);
+
+            /**
+             * @return Returns the exporter type of a given file.
+             */
+            static ExporterType GetType(const std::string &filename);
 
             /**
              * @brief Generates and saves a mesh.

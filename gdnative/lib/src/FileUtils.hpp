@@ -66,7 +66,26 @@ namespace VoxelOptimizer
 
         return Path;
     }
-} // namespace VoxelOptimizer
 
+    /**
+     * @brief Const adler32 implementation to use strings in switch cases.
+     */
+    const static int BASE = 65521;
+    inline constexpr size_t Adler32(const char *Data)
+    {
+        size_t S1 = 1 & 0xFFFF;
+        size_t S2 = (1 >> 16) & 0xFFFF;
+
+        const char *Beg = Data;
+        while (*Beg)
+        {
+            S1 = (S1 + *Beg) % BASE;
+            S2 = (S2 + S1) % BASE;
+            Beg++;
+        }
+
+        return (S2 << 16) + S1;
+    }
+} // namespace VoxelOptimizer
 
 #endif //FILEUTILS_HPP

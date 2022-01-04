@@ -59,8 +59,8 @@ namespace VoxelOptimizer
                 pos.z *= -1;
 
             auto sceneNode = SceneNode(new CSceneNode());
-            sceneNode->Position(pos);
-            sceneNode->Mesh(mesh);
+            sceneNode->SetPosition(pos);
+            sceneNode->SetMesh(mesh);
             mesh->SetSceneNode(sceneNode);
             m_SceneTree->AddChild(sceneNode);
 

@@ -26,6 +26,7 @@
 #define IMESHER_HPP
 
 #include <map>
+#include <list>
 
 #include <VoxelOptimizer/Material.hpp>
 #include <VoxelOptimizer/Loaders/VoxelMesh.hpp>
@@ -55,6 +56,11 @@ namespace VoxelOptimizer
             static Mesher Create(MesherTypes type);
 
             /**
+             * @brief Generates the scene
+             */
+            std::list<std::map<CVector, Mesh>> GenerateScene(SceneNode sceneTree);
+
+            /**
              * @brief Generates list of meshed chunks.
              * 
              * @param m: Voxel mesh to meshify.
@@ -71,6 +77,7 @@ namespace VoxelOptimizer
                 int Material;
             };
 
+            std::list<std::map<CVector, Mesh>> GenerateScene(SceneNode sceneTree, CMat4x4 modelMatrix);
             void ClearCache();
 
             void AddFace(Mesh Mesh, CVector v1, CVector v2, CVector v3, CVector v4, CVector Normal, int Color, int Material);

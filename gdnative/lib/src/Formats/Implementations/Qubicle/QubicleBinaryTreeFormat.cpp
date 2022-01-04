@@ -125,15 +125,17 @@ namespace VoxelOptimizer
         std::swap(pos.y, pos.z);
 
         auto sceneNode = SceneNode(new CSceneNode());
-        sceneNode->Position(pos);
-        sceneNode->Mesh(mesh);
+        sceneNode->SetPosition(pos);
+        sceneNode->SetMesh(mesh);
         mesh->SetSceneNode(sceneNode);
         m_SceneTree->AddChild(sceneNode);
 
         uint32_t dataSize = ReadData<uint32_t>();
 
         int OutSize = 0;
-        char *Data = stbi_zlib_decode_malloc(Ptr(), dataSize, &OutSize);
+
+        std::vector<char> data = ReadDataChunk(dataSize);
+        char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         Skip(dataSize);
         int strmPos = 0;
 
@@ -191,15 +193,16 @@ namespace VoxelOptimizer
         std::swap(pos.y, pos.z);
 
         auto sceneNode = SceneNode(new CSceneNode());
-        sceneNode->Position(pos);
-        sceneNode->Mesh(mesh);
+        sceneNode->SetPosition(pos);
+        sceneNode->SetMesh(mesh);
         mesh->SetSceneNode(sceneNode);
         m_SceneTree->AddChild(sceneNode);
 
         uint32_t dataSize = ReadData<uint32_t>();
 
         int OutSize = 0;
-        char *Data = stbi_zlib_decode_malloc(Ptr(), dataSize, &OutSize);
+        std::vector<char> data = ReadDataChunk(dataSize);
+        char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         Skip(dataSize);
         int strmPos = 0;
 

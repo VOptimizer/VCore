@@ -148,8 +148,8 @@ namespace VoxelOptimizer
             translation.z *= -1;
 
             auto sceneNode = SceneNode(new CSceneNode());
-            sceneNode->Mesh(m);
-            sceneNode->Position(translation);
+            sceneNode->SetMesh(m);
+            sceneNode->SetPosition(translation);
             m_SceneTree->AddChild(sceneNode);
             m->SetSceneNode(sceneNode);
 

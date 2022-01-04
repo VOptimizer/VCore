@@ -29,6 +29,7 @@
 #include <vector>
 #include <VoxelOptimizer/Formats/SceneNode.hpp>
 #include <VoxelOptimizer/Loaders/VoxelMesh.hpp>
+#include <VoxelOptimizer/BinaryStream.hpp>
 
 namespace VoxelOptimizer
 {
@@ -119,7 +120,7 @@ namespace VoxelOptimizer
             /**
              * @return Gets the scene tree of this file.
              */
-            inline SceneNode SceneTree() const
+            inline SceneNode GetSceneTree() const
             {
                 return m_SceneTree;
             }
@@ -127,7 +128,7 @@ namespace VoxelOptimizer
             /**
              * @brief Sets the scene tree.
              */
-            inline SceneNode SceneTree(SceneNode tree)
+            inline void SetSceneTree(SceneNode tree)
             {
                 m_SceneTree = tree;
             }
@@ -135,6 +136,7 @@ namespace VoxelOptimizer
             virtual void ClearCache();
 
             SceneNode m_SceneTree;
+            CBinaryStream m_DataStream;
 
             std::vector<VoxelMesh> m_Models;
             std::vector<Material> m_Materials;
@@ -155,12 +157,7 @@ namespace VoxelOptimizer
             size_t Tellg();
             void Skip(size_t Bytes);
             void Reset();
-            size_t Size();
-            char *Ptr();
-
-        private:
-            std::vector<char> m_Data;
-            size_t m_Pos;
+            std::vector<char> ReadDataChunk(size_t size);
     };
 } // namespace VoxelOptimizer
 

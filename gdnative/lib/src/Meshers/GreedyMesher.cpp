@@ -44,7 +44,7 @@ namespace VoxelOptimizer
                 GenerateMesh(RetMesh, m, t.second, false);            
 
             ClearCache();
-            RetMesh->ModelMatrix = CalculateModelMatrix(m->GetSceneNode());
+            // RetMesh->ModelMatrix = CalculateModelMatrix(m->GetSceneNode());
             Ret[c->BBox.Beg] = RetMesh;
         }
         

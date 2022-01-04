@@ -111,11 +111,11 @@ namespace VoxelOptimizer
 
                         auto treeNode = m_ModelSceneTreeMapping.at(m_Models.size() - 1);
 
-                        auto pos = treeNode->Position();
-                        treeNode->Position(pos + spaceCenter);
+                        auto pos = treeNode->GetPosition();
+                        treeNode->SetPosition(pos + spaceCenter);
 
                         // TODO: Animation support.
-                        treeNode->Mesh(m); 
+                        treeNode->SetMesh(m); 
                         m->SetSceneNode(treeNode);                       
                     }
                     else if(strncmp(Tmp.ID, "RGBA", sizeof(Tmp.ID)) == 0)
@@ -352,8 +352,8 @@ namespace VoxelOptimizer
                     auto transform = std::static_pointer_cast<STransformNode>(tmp);
                     nodeIDs.pop();
 
-                    currentNode->Position(transform->Translation);
-                    currentNode->Rotation(transform->Rotation);
+                    currentNode->SetPosition(transform->Translation);
+                    currentNode->SetRotation(transform->Rotation);
 
                     nodeIDs.push(transform->ChildID);
                 } break;

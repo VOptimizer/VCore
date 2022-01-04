@@ -42,6 +42,14 @@ namespace VoxelOptimizer
         memcpy(&m_Pixels[0], &_texture.m_Pixels[0], m_Pixels.size() * sizeof(uint32_t));
     }
 
+    CTexture::CTexture(const CVector &_size, uint32_t *_data)
+    {
+        m_Size = _size;
+        m_Pixels.resize(m_Size.x * m_Size.y);
+
+        memcpy(&m_Pixels[0], _data, m_Pixels.size() * sizeof(uint32_t));
+    }
+
     void CTexture::AddPixel(const CColor &color, const CVector &pos)
     {
         if(pos >= m_Size)

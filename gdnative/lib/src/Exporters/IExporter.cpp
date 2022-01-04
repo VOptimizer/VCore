@@ -25,6 +25,7 @@
 #include "../FileUtils.hpp"
 #include <algorithm>
 #include <fstream>
+#include <stdexcept>
 #include <VoxelOptimizer/Exporters/GLTFExporter.hpp>
 #include <VoxelOptimizer/Exporters/GodotSceneExporter.hpp>
 #include <VoxelOptimizer/Exporters/IExporter.hpp>
@@ -33,24 +34,46 @@
 
 namespace VoxelOptimizer
 {
-    Exporter IExporter::Create(ExporterTypes type)
+    Exporter IExporter::Create(ExporterType type)
     {
         switch (type)
         {
-            case ExporterTypes::OBJ: return Exporter(new CWavefrontObjExporter());
+            case ExporterType::OBJ: return Exporter(new CWavefrontObjExporter());
 
-            case ExporterTypes::GLTF: 
-            case ExporterTypes::GLB:
+            case ExporterType::GLTF: 
+            case ExporterType::GLB:
             {
                 auto tmp = Exporter(new CGLTFExporter());
-                tmp->Settings()->Binary = type == ExporterTypes::GLB;
+                tmp->Settings()->Binary = type == ExporterType::GLB;
 
                 return tmp;
             } 
 
-            case ExporterTypes::PLY: return Exporter(new CPLYExporter());
-            case ExporterTypes::ESCN: return Exporter(new CGodotSceneExporter());
+            case ExporterType::PLY: return Exporter(new CPLYExporter());
+            case ExporterType::ESCN: return Exporter(new CGodotSceneExporter());
+
+            default:
+                throw std::runtime_error("Invalid export type!");
         }
+    }
+
+    ExporterType IExporter::GetType(const std::string &filename)
+    {
+        std::string ext = GetFileExt(filename);
+        ExporterType type = ExporterType::UNKNOWN;
+        
+        if(ext == "obj")
+            type = ExporterType::OBJ;
+        else if(ext == "gltf")
+            type = ExporterType::GLTF;
+        else if(ext == "glb")
+            type = ExporterType::GLB;
+        else if(ext == "escn")
+            type = ExporterType::ESCN;
+        else if(ext == "ply")
+            type = ExporterType::PLY;
+
+        return type;
     }
 
     IExporter::IExporter() : m_Settings(new CExportSettings())

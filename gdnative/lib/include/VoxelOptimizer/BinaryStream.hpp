@@ -30,6 +30,7 @@
 #include <sstream>
 #include <type_traits>
 #include <vector>
+#include <VoxelOptimizer/Vector.hpp>
 
 namespace VoxelOptimizer
 {
@@ -41,7 +42,25 @@ namespace VoxelOptimizer
                 std::noskipws(m_Data);
             }
 
-            template<class T, typename std::enable_if<!std::is_same<T, std::string>::value>::type* = nullptr>
+            CBinaryStream(const char *data, size_t size) : CBinaryStream()
+            {
+                m_Data.write(data, size);
+            }
+
+            CBinaryStream(const CBinaryStream &strm) : CBinaryStream() 
+            {
+                m_Data << strm.m_Data.rdbuf();
+            }
+
+            CBinaryStream &operator=(const CBinaryStream &strm)
+            {
+                m_Data.clear();
+                m_Data.str("");
+                m_Data << strm.m_Data.rdbuf();
+                return *this;
+            }
+
+            template<class T, typename std::enable_if<!std::is_same<T, std::string>::value && !std::is_same<T, CVector>::value>::type* = nullptr>
             inline CBinaryStream &operator<<(T val)
             {
                 m_Data.write((char*)&val, sizeof(T));
@@ -58,9 +77,47 @@ namespace VoxelOptimizer
                 return *this;
             }
 
+            template<class T, typename std::enable_if<std::is_same<T, CVector>::value>::type* = nullptr>
+            inline CBinaryStream &operator<<(const T &val)
+            {
+                m_Data.write((char*)val.v, sizeof(val.v));
+                return *this;
+            }
+
+            template<class T, typename std::enable_if<!std::is_same<T, std::string>::value && !std::is_same<T, CVector>::value>::type* = nullptr>
+            inline CBinaryStream &operator>>(T &val)
+            {
+                m_Data.read((char*)&val, sizeof(T));
+                return *this;
+            }
+
+            template<class T, typename std::enable_if<std::is_same<T, std::string>::value>::type* = nullptr>
+            inline CBinaryStream &operator>>(T &val)
+            {
+                uint32_t len = 0;
+                m_Data.read((char*)&len, sizeof(len));
+
+                val.resize(len);
+                m_Data.read(&val[0], len);
+
+                return *this;
+            }
+
+            template<class T, typename std::enable_if<std::is_same<T, CVector>::value>::type* = nullptr>
+            inline CBinaryStream &operator>>(T &val)
+            {
+                m_Data.read((char*)val.v, sizeof(val.v));
+                return *this;
+            }
+
             inline void write(const char *data, uint32_t size)
             {
                 m_Data.write(data, size);
+            }
+
+            inline void read(char *data, uint32_t size)
+            {
+                m_Data.read(data, size);
             }
 
             std::vector<char> data()
@@ -74,8 +131,31 @@ namespace VoxelOptimizer
 
             inline std::streampos offset()
             {
-                m_Data.seekg(0, m_Data.end);
                 return m_Data.tellg();
+            }
+
+            inline std::streampos size()
+            {
+                auto pos = offset();
+                m_Data.seekg(0, m_Data.end);
+                auto size = offset();
+                m_Data.seekg(pos, m_Data.beg);
+                return size;
+            }
+
+            inline void skip(std::streampos bytes)
+            {
+                m_Data.seekg(bytes, m_Data.cur);
+            }
+
+            inline void seek(std::streampos pos)
+            {
+                m_Data.seekg(pos, m_Data.beg);
+            }
+
+            inline void reset()
+            {
+                m_Data.seekg(0, m_Data.beg);
             }
 
             ~CBinaryStream() = default;
