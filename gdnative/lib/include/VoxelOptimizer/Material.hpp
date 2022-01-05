@@ -26,6 +26,7 @@
 #define MATERIAL_HPP
 
 #include <memory>
+#include <string>
 #include <VoxelOptimizer/Color.hpp>
 
 namespace VoxelOptimizer
@@ -33,14 +34,29 @@ namespace VoxelOptimizer
     class CMaterial
     {
         public:
-            CMaterial() : Metallic(0), Specular(0), Roughness(1), IOR(0), Power(0), Transparency(0) {}
+            CMaterial() : Name(), Metallic(0), Specular(0), Roughness(1), IOR(0), Power(0), Transparency(0) {}
 
+            std::string Name;
             float Metallic;
             float Specular;
             float Roughness;
             float IOR;
             float Power;    //!< For emissive.
             float Transparency;
+
+            inline bool operator==(const CMaterial &other)
+            {
+                bool equal = false;
+                equal = Name == other.Name;
+                equal = Metallic == other.Metallic && equal;
+                equal = Specular == other.Specular && equal;
+                equal = Roughness == other.Roughness && equal;
+                equal = IOR == other.IOR && equal;
+                equal = Power == other.Power && equal;
+                equal = Transparency == other.Transparency && equal;
+
+                return equal;
+            }
 
             ~CMaterial() {}
     };

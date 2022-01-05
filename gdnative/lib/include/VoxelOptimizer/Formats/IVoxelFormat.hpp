@@ -132,6 +132,15 @@ namespace VoxelOptimizer
             {
                 m_SceneTree = tree;
             }
+
+            /**
+             * @brief Merges all colors and materials into one list. With this helper method it is possible to merge multiple voxel files together.
+             * 
+             * @param textures: Map in which the colors are merged into
+             * @param materials: vector in which the materials are merged into
+             * @param meshes: Voxel meshes from another file
+             */
+            static void Combine(std::map<TextureType, Texture> &textures, std::vector<Material> &materials, const std::vector<VoxelMesh> &meshes);
         protected:
             virtual void ClearCache();
 

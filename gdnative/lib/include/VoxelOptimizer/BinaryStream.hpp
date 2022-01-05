@@ -50,6 +50,7 @@ namespace VoxelOptimizer
             CBinaryStream(const CBinaryStream &strm) : CBinaryStream() 
             {
                 m_Data << strm.m_Data.rdbuf();
+                reset();
             }
 
             CBinaryStream &operator=(const CBinaryStream &strm)
@@ -57,6 +58,7 @@ namespace VoxelOptimizer
                 m_Data.clear();
                 m_Data.str("");
                 m_Data << strm.m_Data.rdbuf();
+                reset();
                 return *this;
             }
 

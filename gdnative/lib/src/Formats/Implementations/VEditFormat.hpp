@@ -78,6 +78,8 @@ namespace VoxelOptimizer
 
         protected:
             void SkipAnyType(CBinaryStream &strm, AnyType type);
+            char *CompressStream(CBinaryStream &strm, int &dataSize);
+            CBinaryStream DecompressStream(CBinaryStream &strm, int dataSize);
 
             int32_t m_Type;
     };

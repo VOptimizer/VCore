@@ -427,7 +427,8 @@ namespace VoxelOptimizer
                     std::stringstream tmp;
                     tmp << Value;
 
-                    tmp >> Ret->Translation.x >> Ret->Translation.y >> Ret->Translation.z;
+                    // Scenetree always in OpenGL Y-UP Space
+                    tmp >> Ret->Translation.x >> Ret->Translation.z >> Ret->Translation.y;
                 }
                 else if(Key == "_r")
                 {
@@ -452,6 +453,7 @@ namespace VoxelOptimizer
 
                     // Gets the euler angle, y is the up axis.
                     Ret->Rotation = rotation.GetEuler();
+                    std::swap(Ret->Rotation.y, Ret->Rotation.z);
                 }
                 else if(Key == "_f")
                     Skip(ReadData<int>());

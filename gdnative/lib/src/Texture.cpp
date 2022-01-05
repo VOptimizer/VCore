@@ -31,7 +31,7 @@ namespace VoxelOptimizer
     CTexture::CTexture(const CVector &_size)
     {
         m_Size = _size;
-        m_Pixels.resize(m_Size.x * m_Size.y);
+        m_Pixels.resize(m_Size.x * m_Size.y, 0xFF000000);
     }
 
     CTexture::CTexture(const CTexture &_texture)

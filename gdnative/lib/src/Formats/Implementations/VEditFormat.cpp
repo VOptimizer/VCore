@@ -25,6 +25,7 @@
 #include "../../FileUtils.hpp"
 #include "VEditFormat.hpp"
 #include <stb_image.h>
+#include <stb_image_write.h>
 #include <VoxelOptimizer/Exceptions.hpp>
 
 namespace VoxelOptimizer
@@ -66,6 +67,28 @@ namespace VoxelOptimizer
             default:
                 throw CVoxelLoaderException("Invalid type!");
         }
+    }
+
+    char *ISection::CompressStream(CBinaryStream &strm, int &dataSize)
+    {
+        auto data = strm.data();
+        return (char*)stbi_zlib_compress((uint8_t*)data.data(), data.size(), &dataSize, 6);
+    }
+
+    CBinaryStream ISection::DecompressStream(CBinaryStream &strm, int dataSize)
+    {
+        CBinaryStream ret;
+
+        std::vector<char> data(dataSize, 0);
+        strm.read(&data[0], dataSize);
+        int decompressSize = 0;
+
+        char *decompressedData = stbi_zlib_decode_malloc(data.data(), dataSize, &decompressSize);
+        ret.write(decompressedData, decompressSize);
+        free(decompressedData);
+
+        ret.reset();
+        return ret;
     }
 
     void CMetaSection::Serialize(CBinaryStream &strm)
@@ -255,26 +278,36 @@ namespace VoxelOptimizer
         if(Thumbnail)
             thumbnail = Thumbnail->AsPNG();
 
-        uint32_t size = sizeof(uint32_t) + sizeof(uint32_t) + sizeof(CVector) + sizeof(uint32_t) + thumbnail.size() + Mesh->GetVoxels().size() * (sizeof(CVector) + sizeof(uint32_t) * 4);
+        CBinaryStream voxels;
+
+        // Array
+        voxels << (uint32_t)Mesh->GetVoxels().size();
+        for (auto &&v : Mesh->GetVoxels())
+        {
+            voxels << v.first;
+
+            auto mat = Mesh->Materials()[v.second->Material];
+
+            voxels << m_MaterialMapping.at(mat);
+            voxels << v.second->Color;
+            voxels << (uint32_t)0; // Type
+            voxels << (uint32_t)0; // Properties
+        }
+
+        int dataSize = 0;
+        char *data = CompressStream(voxels, dataSize);
+
+        uint32_t size = sizeof(uint32_t) + sizeof(uint32_t) + sizeof(CVector) + sizeof(uint32_t) + thumbnail.size() + sizeof(uint32_t) + dataSize;
         strm << size;
         strm << (uint32_t)0; //Properties
         strm << (uint32_t)0; //Name
         strm << (uint32_t)thumbnail.size();
         strm.write(thumbnail.data(), thumbnail.size());
         strm.write((char*)Mesh->GetSize().v, sizeof(float) * 3);
-        strm << (uint32_t)Mesh->GetVoxels().size();
 
-        for (auto &&v : Mesh->GetVoxels())
-        {
-            strm.write((char*)v.first.v, sizeof(float) * 3);
-
-            auto mat = Mesh->Materials()[v.second->Material];
-
-            strm << m_MaterialMapping.at(mat);
-            strm << v.second->Color;
-            strm << (uint32_t)0; // Type
-            strm << (uint32_t)0; // Properties
-        }
+        strm << dataSize;
+        strm.write(data, dataSize);
+        free(data);
     }
 
     void CVoxelSection::Deserialize(CBinaryStream &strm)
@@ -306,17 +339,21 @@ namespace VoxelOptimizer
 
         std::map<int, int> modelMaterialMapping;
 
+        uint32_t compressedDataSize = 0;
+        strm >> compressedDataSize;
+        CBinaryStream voxelStrm = DecompressStream(strm, compressedDataSize);
+
         uint32_t voxels;
-        strm >> voxels;
+        voxelStrm >> voxels;
         for (size_t i = 0; i < voxels; i++)
         {
             CVector pos;
             uint32_t matIdx, colorIdx;
 
-            strm >> pos;
-            strm >> matIdx;
-            strm >> colorIdx;
-            strm.skip(sizeof(uint32_t) * 2); // Type + Properties
+            voxelStrm >> pos;
+            voxelStrm >> matIdx;
+            voxelStrm >> colorIdx;
+            voxelStrm.skip(sizeof(uint32_t) * 2); // Type + Properties
 
             auto mat = m_Materials[matIdx];
 
