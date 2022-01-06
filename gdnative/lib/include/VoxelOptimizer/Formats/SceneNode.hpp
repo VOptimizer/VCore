@@ -91,7 +91,14 @@ namespace VoxelOptimizer
 
             inline CMat4x4 ModelMatrix() const
             {
-                return CMat4x4::Translation(m_Position) * CMat4x4::Rotation(m_Rotation) * CMat4x4::Scale(m_Scale);
+                CMat4x4 mm; //* CMat4x4::Rotation(m_Rotation); // * CMat4x4::Scale(m_Scale);
+                mm
+                    .Rotate(CVector(0, 0, 1), m_Rotation.z)
+                    .Rotate(CVector(1, 0, 0), m_Rotation.x)
+                    .Rotate(CVector(0, 1, 0), m_Rotation.y);
+
+                mm *= CMat4x4::Scale(m_Scale);
+                return CMat4x4::Translation(m_Position) * mm;
             }
 
             SceneNodes::iterator begin()

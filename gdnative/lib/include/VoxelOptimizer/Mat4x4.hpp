@@ -144,21 +144,85 @@ namespace VoxelOptimizer
                 return ret;
             }
 
-            inline static CMat4x4 Rotation(const CVector &rotation)
+            inline CMat4x4 &Rotate(const CVector &axis, float phi)
             {
-                return CMat4x4(CVector4(cos(rotation.y), -sin(rotation.y), 0, 0),
-                        CVector4(sin(rotation.y), cos(rotation.y), 0, 0),
-                        CVector4(0, 0, 1, 0),
-                        CVector4(0, 0, 0, 1)) *
-                CMat4x4(CVector4(cos(rotation.z), 0, sin(rotation.z), 0),
-                        CVector4(0, 1, 0, 0),
-                        CVector4(-sin(rotation.z), 0, cos(rotation.z), 0),
-                        CVector4(0, 0, 0, 1)) *
-                CMat4x4(CVector4(1, 0, 0, 0),
-                        CVector4(0, cos(rotation.x), -sin(rotation.x), 0),
-                        CVector4(0, sin(rotation.x), cos(rotation.x), 0),
-                        CVector4(0, 0, 0, 1));
+                float c = cos(phi), s = sin(phi);
+                CVector powAxis = axis * axis;
+
+                CMat4x4 rotMat(
+                    CVector4(c + powAxis.x * (1 - c), axis.x * axis.y * (1 - c) - axis.z * s, axis.x * axis.z * (1 - c) + axis.y * s, 0),
+                    CVector4(axis.y * axis.x * (1 - c) + axis.z * s, c + powAxis.y * (1 - c), axis.y * axis.z * (1 - c) - axis.x * s, 0),
+                    CVector4(axis.z * axis.x * (1 - c) - axis.y * s, axis.z * axis.y * (1 - c) + axis.x * s, c + powAxis.z * (1 - c), 0),
+                    CVector4(0, 0, 0, 1)
+                );
+
+                *this = rotMat * (*this);
+                return *this;
             }
+
+            // inline static CMat4x4 Rotation(const CVector &rotation)
+            // {
+            //     float c, s;
+
+            //     c = cos(rotation.x);
+            //     s = sin(rotation.x);
+
+            //     CMat4x4 xmat(
+            //         CVector4(1, 0, 0, 0),
+            //         CVector4(0, c, -s, 0),
+            //         CVector4(0, s, c, 0),
+            //         CVector4(0, 0, 0, 1)
+            //     );
+
+            //     c = cos(rotation.y);
+            //     s = sin(rotation.y);
+
+            //     CMat4x4 ymat(
+            //         CVector4(c, 0, s, 0),
+            //         CVector4(0, 1, 0, 0),
+            //         CVector4(-s, 0, c, 0),
+            //         CVector4(0, 0, 0, 1)
+            //     );
+
+            //     c = cos(rotation.z);
+            //     s = sin(rotation.z);
+            //     CMat4x4 zmat(
+            //         CVector4(c, -s, 0, 0),
+            //         CVector4(s, c, 0, 0),
+            //         CVector4(0, 0, 1, 0),
+            //         CVector4(0, 0, 0, 1)
+            //     );
+
+            //     // return zmat * xmat * ymat; //xmat * (ymat * zmat);
+
+            //     float cx, cy, cz, sx, sy, sz;
+                
+            //     cx = cos(rotation.x);
+            //     sx = sin(rotation.x);
+
+            //     cy = cos(rotation.y);
+            //     sy = sin(rotation.y);
+
+            //     cz = cos(rotation.z);
+            //     sz = sin(rotation.z);
+
+            //     return CMat4x4(
+            //         CVector4(cy * cz, -)
+            //     );
+
+            //     // return CMat4x4(CVector4(cos(rotation.y), -sin(rotation.y), 0, 0),
+            //     //         CVector4(sin(rotation.y), cos(rotation.y), 0, 0),
+            //     //         CVector4(0, 0, 1, 0),
+            //     //         CVector4(0, 0, 0, 1)) *
+            //     // CMat4x4(CVector4(cos(rotation.z), 0, sin(rotation.z), 0),
+            //     //         CVector4(0, 1, 0, 0),
+            //     //         CVector4(-sin(rotation.z), 0, cos(rotation.z), 0),
+            //     //         CVector4(0, 0, 0, 1)) *
+            //     // CMat4x4(CVector4(1, 0, 0, 0),
+            //     //         CVector4(0, cos(rotation.x), -sin(rotation.x), 0),
+            //     //         CVector4(0, sin(rotation.x), cos(rotation.x), 0),
+            //     //         CVector4(0, 0, 0, 1));
+            // }
 
             inline CVector GetEuler()
             {
@@ -189,10 +253,10 @@ namespace VoxelOptimizer
                 return rotation;
             }
 
-            inline CMat4x4 Rotation()
-            {
-                return Rotation(GetEuler());
-            }
+            // inline CMat4x4 Rotation()
+            // {
+            //     return Rotation(GetEuler());
+            // }
 
             ~CMat4x4() {}
         private:

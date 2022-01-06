@@ -47,7 +47,8 @@ namespace VoxelOptimizer
         STRING,
         FLOAT,
         INT32,
-        UINT32
+        UINT32,
+        VECTOR3
     };
 
     class CFileHeader

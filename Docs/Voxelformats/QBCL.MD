@@ -46,18 +46,18 @@ The tree starts always with a model node.
 | Name | Type | Size in bytes   | Description   |
 |-------------- | -------------- | -------------- | -------------- |
 | type | int | 4 | Type of the node (1 for model) |
-| unknown | int | 4 | It is presented in all nodes. I don't know exactly what this value means.  |
+| unknown | int | 4 | It is presented in all nodes. I don't know exactly what this value means. (Always 1) |
 | nameLen | uint | 4 | Size of the name of this node. |
 | name | string | nameLen | Name of this node |
-| unknown | bytes | 3 | It is presented in all nodes. I don't know exactly what this value means. |
-| unknown | bytes | 36 | I don't know exactly what this value means. (Always the same) |
+| unknown | bytes | 3 | It is presented in all nodes. I don't know exactly what this value means. (Always 0x1 0x1 0x0) |
+| unknown | bytes | 36 | I don't know exactly what this value means. Maybe its a 3x3 matrix. (Always the same (0x01 0x00 0x00 0x00 0x01 0x00 0x00 0x00 0x01 Rest 0x00)) |
 | childCount | uint | 4 | The count of the child nodes. |
 
 ## Matrix
 
 | Name | Type | Size in bytes   | Description   |
 |-------------- | -------------- | -------------- | -------------- |
-| type | int | 4 | Type of the node (1 for model) |
+| type | int | 4 | Type of the node (0 for matrix) |
 | unknown | int | 4 | It is presented in all nodes. I don't know exactly what this value means.  |
 | nameLen | uint | 4 | Size of the name of this node. |
 | name | string | nameLen | Name of this node |
@@ -67,6 +67,24 @@ The tree starts always with a model node.
 | pivot | vecf3 | 12 | The pivot position |
 | compressedDataSize | uint | 4 | The size of the following compressed data |
 | compressedData | bytes | compressedDataSize | Zlib compressed voxel data |
+
+## Compounds
+
+A compound is a collection of matrices. The compressedData contains a merged version of all matrices childs.
+
+| Name | Type | Size in bytes   | Description   |
+|-------------- | -------------- | -------------- | -------------- |
+| type | int | 4 | Type of the node (2 for compounds) |
+| unknown | int | 4 | It is presented in all nodes. I don't know exactly what this value means.  |
+| nameLen | uint | 4 | Size of the name of this node. |
+| name | string | nameLen | Name of this node |
+| unknown | bytes | 3 | It is presented in all nodes. I don't know exactly what this value means. |
+| size | veci3 | 12 | The size of the model |
+| position | veci3 | 12 | The position in 3D space |
+| pivot | vecf3 | 12 | The pivot position |
+| compressedDataSize | uint | 4 | The size of the following compressed data |
+| compressedData | bytes | compressedDataSize | Zlib compressed voxel data |
+| childCount | uint | 4 | The count of the child nodes. |
 
 ### Zlib data
 
@@ -80,10 +98,6 @@ The structure of the rle data is as follows:
 | data | array of int | dataNum | Voxel data |
 
 Difference between RGBM and RLE data. If the M (or alpha) byte is 2, the red channel contains the number of how many times the next 4 bytes(RGBM value, always 0x00000000) should be repeated. The G and B value are some sort of metadata. If the M byte is not 2, this is an RGB value. The M byte is the mask byte.
-
-## Compounds
-
-Not found
 
 ## Parsing
 
@@ -136,9 +150,9 @@ function loadNode(stream)
             loadModel(stream)
         break
 
-        //case 2: //Compound like in QBT
-
-        //break
+        case 2: //Compound
+            loadCompound(stream)
+        break
 
         default
             return ERROR
@@ -202,5 +216,57 @@ function loadMatrix(stream)
 
         index++
     }
+}
+
+function loadCompound(stream)
+{
+    size = stream.readVeci3
+    position = stream.readVeci3
+    pivot = stream.readVecf3
+
+    compressedDataSize = stream.readUInt
+    zlibStream = new zlibStream(stream, compressedDataSize)
+
+    index = 0
+
+    while(!zlibStream.isEOF)
+    {
+        y = 0
+        dataSize = zlibStream.readUShort
+
+        for(i = 0; i < dataSize; i++)
+        {
+            data = zlibStream.readColor
+
+            if(data.A == 2) //RLE
+            {
+                color = zlibStream.readColor
+                for(j = 0; j < data.R; j++)
+                {
+                    x = (index / size.z);
+                    z = index % size.z;
+
+                    voxelGrid[x, y, z] = color.toUInt;
+                    y++
+                }
+
+                i++
+            }
+            else    // Uncompressed
+            {
+                x = (index / size.z);
+                z = index % size.z;
+
+                voxelGrid[x, y, z] = data.toUInt;
+                y++
+            }
+        }
+
+        index++
+    }
+    
+    childCount = stream.readUInt
+    for(i = 0; i < childCount; i++)
+        loadNode(stream)
 }
 ```
