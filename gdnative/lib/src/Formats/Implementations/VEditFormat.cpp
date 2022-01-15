@@ -275,8 +275,8 @@ namespace VoxelOptimizer
         ISection::Serialize(strm);
         std::vector<char> thumbnail;
         
-        if(Thumbnail)
-            thumbnail = Thumbnail->AsPNG();
+        if(Mesh->GetThumbnail())
+            thumbnail = Mesh->GetThumbnail()->AsPNG();
 
         CBinaryStream voxels;
 
@@ -320,6 +320,7 @@ namespace VoxelOptimizer
         uint32_t thumbSize;
         strm >> thumbSize;
 
+        Mesh = VoxelMesh(new CVoxelMesh());
         if(thumbSize > 0)
         {
             std::vector<char> img(thumbSize, 0);
@@ -327,12 +328,13 @@ namespace VoxelOptimizer
 
             int w, h, c;
             uint32_t *ImgData = (uint32_t*)stbi_load_from_memory((unsigned char*)img.data(), thumbSize, &w, &h, &c, 4);
-
-            Thumbnail = Texture(new CTexture(CVector(w, h, 0), ImgData));
-            free(ImgData);
+            if(ImgData)
+            {
+                Mesh->SetThumbnail(Texture(new CTexture(CVector(w, h, 0), ImgData)));
+                free(ImgData);
+            }
         }
 
-        Mesh = VoxelMesh(new CVoxelMesh());
         CVector voxlespaceSize;
         strm >> voxlespaceSize;
         Mesh->SetSize(voxlespaceSize);
@@ -390,6 +392,7 @@ namespace VoxelOptimizer
     void CSceneTreeSection::SerializeTree(SceneNode tree, CBinaryStream &strm)
     {
         strm << tree->GetName();
+        strm << tree->GetLocalOffset();
         strm << tree->GetPosition();
         strm << tree->GetRotation();
         strm << tree->GetScale();
@@ -415,14 +418,16 @@ namespace VoxelOptimizer
         SceneNode ret = SceneNode(new CSceneNode());
 
         std::string name;
-        CVector pos, rot, scale;
+        CVector pos, rot, scale, localOffset;
 
         strm >> name;
+        strm >> localOffset;
         strm >> pos;
         strm >> rot;
         strm >> scale;
 
         ret->SetName(name);
+        ret->SetLocalOffset(localOffset);
         ret->SetPosition(pos);
         ret->SetRotation(rot);
         ret->SetScale(scale);

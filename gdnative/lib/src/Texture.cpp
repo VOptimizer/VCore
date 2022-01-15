@@ -80,7 +80,7 @@ namespace VoxelOptimizer
         stbi_write_png_to_func([](void *context, void *data, int size){
             std::vector<char> *InnerTexture = (std::vector<char>*)context;
             InnerTexture->insert(InnerTexture->end(), (char*)data, ((char*)data) + size);
-        }, &Texture, m_Size.x, m_Size.y, 4, m_Pixels.data(), sizeof(uint32_t) * m_Pixels.size());
+        }, &Texture, m_Size.x, m_Size.y, 4, m_Pixels.data(), sizeof(uint32_t) * m_Size.x);
 
         return Texture;
     }

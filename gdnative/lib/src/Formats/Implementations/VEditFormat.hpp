@@ -131,7 +131,6 @@ namespace VoxelOptimizer
             virtual void Serialize(CBinaryStream &strm) override;
             virtual void Deserialize(CBinaryStream &strm) override;
 
-            Texture Thumbnail;
             VoxelMesh Mesh;
 
         private:

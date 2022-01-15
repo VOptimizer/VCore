@@ -34,6 +34,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <vector>
 #include <VoxelOptimizer/Vector.hpp>
 
@@ -265,6 +266,26 @@ namespace VoxelOptimizer
                 m_SceneNode = SceneNode;
             }
             
+            inline std::string GetName() const
+            {
+                return m_Name;
+            }
+            
+            inline void SetName(std::string name)
+            {
+                m_Name = name;
+            }
+
+            inline Texture GetThumbnail() const
+            {
+                return m_Thumbnail;
+            }
+            
+            inline void SetThumbnail(Texture thumbnail)
+            {
+                m_Thumbnail = thumbnail;
+            }
+            
             ~CVoxelMesh() = default;
         private:   
             const static CVector CHUNK_SIZE;
@@ -272,6 +293,10 @@ namespace VoxelOptimizer
             void SetNormal(const CVector &Pos, const CVector &Neighbor, bool IsInvisible = true);
             void MarkChunk(const CVector &Pos, Voxel voxel = nullptr);
             void InsertMarkedChunk(Chunk chunk);
+
+            // For the gui
+            std::string m_Name;
+            Texture m_Thumbnail;
 
             CVector m_Size;
             CBBox m_BBox;

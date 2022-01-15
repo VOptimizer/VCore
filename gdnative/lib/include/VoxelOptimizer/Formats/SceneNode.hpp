@@ -89,6 +89,16 @@ namespace VoxelOptimizer
                 m_Name = name;
             }
 
+            inline CVector GetLocalOffset() const
+            {
+                return m_LocalOffset;
+            }
+            
+            inline void SetLocalOffset(CVector localOffset)
+            {
+                m_LocalOffset = localOffset;
+            }
+
             inline CMat4x4 ModelMatrix() const
             {
                 CMat4x4 mm; //* CMat4x4::Rotation(m_Rotation); // * CMat4x4::Scale(m_Scale);
@@ -140,6 +150,7 @@ namespace VoxelOptimizer
             CVector m_Position;
             CVector m_Rotation;
             CVector m_Scale;
+            CVector m_LocalOffset;  // Or origin like in Blender. Localoffset beginning by zero.
 
             VoxelMesh m_Mesh;
             CSceneNode* m_Parent;
