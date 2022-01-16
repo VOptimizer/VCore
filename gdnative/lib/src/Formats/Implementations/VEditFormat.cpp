@@ -246,14 +246,32 @@ namespace VoxelOptimizer
     void CColorpaletteSection::Serialize(CBinaryStream &strm)
     {
         ISection::Serialize(strm);
-        strm << (uint32_t)(Colors->Size().x * Colors->Size().y * 4);
+
+        // Array of colors
+        CBinaryStream colors;
+        colors << (uint32_t)Colors->Pixels().size();
         for (auto &&p : Colors->Pixels())
         {
             CColor c;
             c.FromRGBA(p);
 
-            strm.write((char*)c.c, sizeof(c.c));
+            colors.write((char*)c.c, sizeof(c.c));
         }
+
+        // Compresses the color palette.
+        int dataSize;
+        auto data = CompressStream(colors, dataSize);
+
+        // Calculates the size of this section.
+        uint32_t size = sizeof(uint32_t) * 2 + (uint32_t)dataSize;
+
+        // Write section.
+        strm << size;
+        strm << (uint32_t)0;    // Name
+        strm << (uint32_t)dataSize;
+        strm.write(data, dataSize);  
+
+        free(data);
     }
 
     void CColorpaletteSection::Deserialize(CBinaryStream &strm)
@@ -261,11 +279,20 @@ namespace VoxelOptimizer
         uint32_t size;
         strm >> size;
 
+        strm.skip(sizeof(uint32_t)); // Name
+        uint32_t datasize;
+        strm >> datasize;
+
+        auto data = DecompressStream(strm, datasize);
+
         Colors = Texture(new CTexture());
-        for (size_t i = 0; i < size; i += 4)
+        uint32_t arraySize;
+        data >> arraySize;
+
+        for (size_t i = 0; i < arraySize; i++)
         {
             CColor c;
-            strm.read((char*)c.c, sizeof(c.c));
+            data.read((char*)c.c, sizeof(c.c));
             Colors->AddPixel(c);
         }
     }
@@ -280,18 +307,19 @@ namespace VoxelOptimizer
 
         CBinaryStream voxels;
 
-        // Array
+        // Array of voxel data
+        // Array size
         voxels << (uint32_t)Mesh->GetVoxels().size();
         for (auto &&v : Mesh->GetVoxels())
         {
-            voxels << v.first;
+            voxels << v.first;  // Position
 
             auto mat = Mesh->Materials()[v.second->Material];
 
-            voxels << m_MaterialMapping.at(mat);
-            voxels << v.second->Color;
-            voxels << (uint32_t)0; // Type
-            voxels << (uint32_t)0; // Properties
+            voxels << m_MaterialMapping.at(mat);    // Gets the material index
+            voxels << v.second->Color;              // Color index
+            voxels << (uint32_t)0;                  // Type. Reserved for future
+            voxels << (uint32_t)0;                  // Properties. Reserved for future.
         }
 
         int dataSize = 0;
@@ -299,14 +327,15 @@ namespace VoxelOptimizer
 
         uint32_t size = sizeof(uint32_t) + sizeof(uint32_t) + sizeof(CVector) + sizeof(uint32_t) + thumbnail.size() + sizeof(uint32_t) + dataSize;
         strm << size;
-        strm << (uint32_t)0; //Properties
-        strm << (uint32_t)0; //Name
+        strm << (uint32_t)0;                                        // Properties
+        strm << Mesh->GetName();                                        // Name
         strm << (uint32_t)thumbnail.size();
         strm.write(thumbnail.data(), thumbnail.size());
-        strm.write((char*)Mesh->GetSize().v, sizeof(float) * 3);
+        strm << (uint32_t)0;                                        // Colorpalette id. Reserved for the future.
+        strm.write((char*)Mesh->GetSize().v, sizeof(float) * 3);    // Voxel space size.
 
-        strm << dataSize;
-        strm.write(data, dataSize);
+        strm << dataSize;                                           // Compressed voxel data size
+        strm.write(data, dataSize);                                 // Compressed voxel data
         free(data);
     }
 
@@ -316,11 +345,15 @@ namespace VoxelOptimizer
         strm >> size;
         auto startOff = strm.offset();
 
-        strm.skip(sizeof(uint32_t) * 2); // Properties + Name
+        strm.skip(sizeof(uint32_t)); // Properties
+        std::string name;
+        strm >> name;   // Name
+
         uint32_t thumbSize;
         strm >> thumbSize;
 
         Mesh = VoxelMesh(new CVoxelMesh());
+        Mesh->SetName(name);
         if(thumbSize > 0)
         {
             std::vector<char> img(thumbSize, 0);
@@ -334,6 +367,7 @@ namespace VoxelOptimizer
                 free(ImgData);
             }
         }
+        strm.skip(sizeof(uint32_t)); // Colorpalette id. Reserved for the future.
 
         CVector voxlespaceSize;
         strm >> voxlespaceSize;
@@ -461,6 +495,8 @@ namespace VoxelOptimizer
 
     std::vector<char> CVEditFormat::Save(const std::vector<VoxelMesh> &meshes)
     {
+        m_Materials.clear();
+
         CBinaryStream stream;
         CFileHeader header;
         header.Serialize(stream);
@@ -468,28 +504,36 @@ namespace VoxelOptimizer
         int materialIdxCounter = 0;
         std::map<Material, int> materials;
 
+        // Creates an index map where each material is given its own unique index.
         for (auto &&m : meshes)
         {
             for (auto &&mat : m->Materials())
             {
                 auto it = materials.find(mat);
                 if(it == materials.end())
-                    materials[mat] = materialIdxCounter++;
+                {
+                    m_Materials.push_back(mat);
+                    materials[mat] = materialIdxCounter++;  // Generates a new index for a newly found material.
+                }
             }
         }
 
-        for (auto &&m : materials)
+        // Writes all materials to the file.
+        for (auto &&m : m_Materials)
         {
             CMaterialSection mat;
-            mat.Mat = m.first;
+            mat.Mat = m;
 
             mat.Serialize(stream);
         }
+        m_Materials.clear();
 
+        // Writes the color palette to the file.
         CColorpaletteSection colors;
         colors.Colors = meshes.front()->Colorpalettes()[TextureType::DIFFIUSE];
         colors.Serialize(stream);
 
+        // Writes all models to the file.
         for (auto &&m : meshes)
         {
             CVoxelSection voxel(materials);
@@ -498,6 +542,7 @@ namespace VoxelOptimizer
             voxel.Serialize(stream);
         }
 
+        // Writes the scene tree.
         CSceneTreeSection sceneTree(meshes);
         sceneTree.Tree = m_SceneTree;
         sceneTree.Serialize(stream);
