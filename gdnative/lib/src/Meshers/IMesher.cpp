@@ -26,6 +26,7 @@
 #include <VoxelOptimizer/Meshers/GreedyMesher.hpp>
 #include <VoxelOptimizer/Meshers/IMesher.hpp>
 #include <VoxelOptimizer/Meshers/MarchingCubesMesher.hpp>
+#include <VoxelOptimizer/Meshers/MeshBuilder.hpp>
 #include <VoxelOptimizer/Meshers/SimpleMesher.hpp>
 
 namespace VoxelOptimizer
@@ -45,15 +46,19 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    std::list<std::map<CVector, Mesh>> IMesher::GenerateScene(SceneNode sceneTree)
+    std::list<std::map<CVector, Mesh>> IMesher::GenerateScene(SceneNode sceneTree, bool mergeChilds)
     {
-        return GenerateScene(sceneTree, CMat4x4());
+        return GenerateScene(sceneTree, CMat4x4(), mergeChilds);
     }
 
-    std::list<std::map<CVector, Mesh>> IMesher::GenerateScene(SceneNode sceneTree, CMat4x4 modelMatrix)
+    std::list<std::map<CVector, Mesh>> IMesher::GenerateScene(SceneNode sceneTree, CMat4x4 modelMatrix, bool mergeChilds)
     {
         std::list<std::map<CVector, Mesh>> ret;
-        modelMatrix = modelMatrix * sceneTree->ModelMatrix();
+
+        if(!mergeChilds)
+            modelMatrix = modelMatrix * sceneTree->ModelMatrix();
+        else
+            modelMatrix = sceneTree->ModelMatrix();
 
         if(sceneTree->GetMesh())
         {
@@ -66,8 +71,26 @@ namespace VoxelOptimizer
 
         for (auto &&node : *sceneTree)
         {
-            auto res = GenerateScene(node, modelMatrix);
-            ret.insert(ret.end(), res.begin(), res.end());
+            auto res = GenerateScene(node, modelMatrix, mergeChilds);
+
+            if(!mergeChilds || ret.back().size() > 1 || !sceneTree->GetMesh())
+                ret.insert(ret.end(), res.begin(), res.end());
+            else
+            {
+                CMeshBuilder builder;
+
+                std::vector<Mesh> meshes;
+                for (auto &&mm : res)
+                {
+                    for (auto &&m : mm)
+                    {
+                        meshes.push_back(m.second);
+                    }
+                }
+
+                builder.Merge(ret.back().begin()->second, meshes);
+                ret.back().begin()->second = builder.Build();
+            }
         }
 
         return ret;

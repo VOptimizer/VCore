@@ -38,7 +38,8 @@ namespace VoxelOptimizer
         CVector Pos;
         CVector UV;
         CVector Normal;
-        int Material;
+        Material Mat;
+        int MaterialIndex;
     };
 
     class CMeshBuilder
@@ -62,7 +63,7 @@ namespace VoxelOptimizer
             /**
              * @brief Merges a list of meshes into one.
              */
-            void Merge(const std::vector<Mesh> &meshes);
+            void Merge(Mesh mergeInto, const std::vector<Mesh> &meshes);
 
             /**
              * @brief Generates the new mesh.
@@ -77,10 +78,13 @@ namespace VoxelOptimizer
             int AddNormal(CVector Normal);
             int AddUV(CVector UV);
 
+            void MergeIntoThis(Mesh m);
+            void GenerateCache();
+
             std::map<CVector, int> m_Index;
             std::map<CVector, int> m_NormalIndex;
             std::map<CVector, int> m_UVIndex;
-            std::map<int, GroupedFaces> m_FacesIndex;
+            std::map<Material, GroupedFaces> m_FacesIndex;
 
             Mesh m_CurrentMesh;
     };

@@ -584,6 +584,7 @@ namespace VoxelOptimizer
                     colors.Deserialize(m_DataStream);
 
                     m_Textures[TextureType::DIFFIUSE] = colors.Colors;
+                    m_Textures[TextureType::EMISSION] = colors.Colors;
                 }break;
 
                 case SectionType::VOXELS:

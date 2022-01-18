@@ -58,7 +58,7 @@ namespace VoxelOptimizer
             /**
              * @brief Generates the scene
              */
-            std::list<std::map<CVector, Mesh>> GenerateScene(SceneNode sceneTree);
+            std::list<std::map<CVector, Mesh>> GenerateScene(SceneNode sceneTree, bool mergeChilds = false);
 
             /**
              * @brief Generates list of meshed chunks.
@@ -77,7 +77,7 @@ namespace VoxelOptimizer
                 int Material;
             };
 
-            std::list<std::map<CVector, Mesh>> GenerateScene(SceneNode sceneTree, CMat4x4 modelMatrix);
+            std::list<std::map<CVector, Mesh>> GenerateScene(SceneNode sceneTree, CMat4x4 modelMatrix, bool mergeChilds = false);
             void ClearCache();
 
             void AddFace(Mesh Mesh, CVector v1, CVector v2, CVector v3, CVector v4, CVector Normal, int Color, int Material);
