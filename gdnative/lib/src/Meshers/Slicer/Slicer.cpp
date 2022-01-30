@@ -109,25 +109,25 @@ namespace VoxelOptimizer
             case 0: // X-Axis
             {
                 if(IsCurrent)
-                    m_Normal = v->Normals[CVoxel::RIGHT];
+                    m_Normal = CVector(1, 0, 0); //v->Normals[CVoxel::RIGHT];
                 else
-                    m_Normal = v->Normals[CVoxel::LEFT];
+                    m_Normal = CVector(-1, 0, 0);//v->Normals[CVoxel::LEFT];
             }break;
 
             case 1: // Y-Axis
             {
                 if(IsCurrent)
-                    m_Normal = v->Normals[CVoxel::FORWARD];
+                    m_Normal = CVector(0, 1, 0);//v->Normals[CVoxel::FORWARD];
                 else
-                    m_Normal = v->Normals[CVoxel::BACKWARD];
+                    m_Normal = CVector(0, -1, 0);//v->Normals[CVoxel::BACKWARD];
             }break;
 
             case 2: // Z-Axis
             {
                 if(IsCurrent)
-                    m_Normal = v->Normals[CVoxel::UP];
+                    m_Normal = CVector(0, 0, 1);//v->Normals[CVoxel::UP];
                 else
-                    m_Normal = v->Normals[CVoxel::DOWN];
+                    m_Normal = CVector(0, 0, -1);//v->Normals[CVoxel::DOWN];
             }break;
         }
     }

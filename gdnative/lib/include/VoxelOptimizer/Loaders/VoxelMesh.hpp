@@ -30,6 +30,7 @@
 #include <list>
 #include <VoxelOptimizer/Mat4x4.hpp>
 #include <VoxelOptimizer/Material.hpp>
+#include <VoxelOptimizer/Loaders/Octree.hpp>
 #include <VoxelOptimizer/Texture.hpp>
 #include <map>
 #include <memory>
@@ -46,14 +47,17 @@ namespace VoxelOptimizer
     class CVoxel
     {
         public:
-            enum Direction
+            enum Visibility : uint8_t
             {
-                UP,
-                DOWN,
-                LEFT,
-                RIGHT,
-                FORWARD,
-                BACKWARD
+                INVISIBLE = 0,
+                UP = 1,
+                DOWN = 2,
+                LEFT = 4,
+                RIGHT = 8,
+                FORWARD = 16,
+                BACKWARD = 32,
+
+                VISIBLE = (UP | DOWN | LEFT | RIGHT | FORWARD | BACKWARD)
             };
 
             // Normal face directions inside the voxel space.
@@ -72,25 +76,23 @@ namespace VoxelOptimizer
             int Color;      //!< Index of the color.
             bool Transparent;
 
-            // A normal of (0, 0, 0) means invisible face.
-            std::array<CVector, 6> Normals;
+            Visibility VisibilityMask;
 
             /**
-             * @return Returns true if at least one normal is not (0, 0, 0).
+             * @return Returns true if at leas one side is visible.
              */
             inline bool IsVisible() const
-            {
-                for (auto &&n : Normals)
-                {
-                    if(!n.IsZero())
-                        return true;
-                }
-                
-                return false;
+            {                
+                return VisibilityMask != Visibility::INVISIBLE;
             }
 
             ~CVoxel() = default;
     };
+
+    inline CVoxel::Visibility operator&(CVoxel::Visibility lhs, CVoxel::Visibility rhs)
+    {
+        return static_cast<CVoxel::Visibility>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
+    }
 
     using Voxel = std::shared_ptr<CVoxel>;
 
@@ -102,10 +104,20 @@ namespace VoxelOptimizer
 
     using Chunk = std::shared_ptr<SChunk>;
 
+    enum class VoxelMode : uint8_t
+    {
+        KEEP_ALL,
+        KEEP_ONLY_VISIBLE = 1
+    };
+
     class CVoxelMesh
     {
         public:
-            CVoxelMesh() : m_RemeshAll(true), m_BlockCount(0), m_GlobalChunk(new SChunk()) { }
+            CVoxelMesh(VoxelMode mode = VoxelMode::KEEP_ALL) : m_RemeshAll(true), m_BlockCount(0), m_GlobalChunk(new SChunk()), m_Mode(mode) 
+            {
+                InsertTimeTotal = 0;
+                SearchTimeTotal = 0;
+            }
 
             /**
              * @brief Sets the size of the voxel space.
@@ -113,6 +125,7 @@ namespace VoxelOptimizer
             inline void SetSize(const CVector &Size)
             {
                 m_Size = Size;
+                m_Voxels = COctree<Voxel>(m_Size, 5);
 
                 // m_Voxels.clear();
                 // m_Voxels.resize(m_Size.x * m_Size.y * m_Size.z);
@@ -166,10 +179,16 @@ namespace VoxelOptimizer
              * 
              * @return Returns the list of voxels.
              */
-            inline std::map<CVector, Voxel> GetVoxels() const
+            inline COctree<Voxel> GetVoxels() const
             {
                 std::lock_guard<std::recursive_mutex> lock(m_Lock);
                 return m_Voxels;
+            }
+
+            inline std::map<CVector, Voxel> &GetVisibleVoxels()
+            {
+                // std::lock_guard<std::recursive_mutex> lock(m_Lock);
+                return m_VisibleVoxels;
             }
 
             inline std::vector<Chunk> GetChunksToRemesh()
@@ -285,6 +304,10 @@ namespace VoxelOptimizer
             {
                 m_Thumbnail = thumbnail;
             }
+
+            //TODO: REMOVE
+            size_t InsertTimeTotal;
+            size_t SearchTimeTotal;
             
             ~CVoxelMesh() = default;
         private:   
@@ -293,6 +316,7 @@ namespace VoxelOptimizer
             void SetNormal(const CVector &Pos, const CVector &Neighbor, bool IsInvisible = true);
             void MarkChunk(const CVector &Pos, Voxel voxel = nullptr);
             void InsertMarkedChunk(Chunk chunk);
+            void CheckInvisible(Voxel v);
 
             // For the gui
             std::string m_Name;
@@ -301,7 +325,9 @@ namespace VoxelOptimizer
             CVector m_Size;
             CBBox m_BBox;
             Chunk m_GlobalChunk;
-            std::map<CVector, Voxel> m_Voxels;
+            
+            COctree<Voxel> m_Voxels;
+            std::map<CVector, Voxel> m_VisibleVoxels;
             std::map<CVector, Chunk> m_Chunks;
             std::map<CVector, Chunk> m_ChunksToRemesh;
             std::vector<Material> m_Materials;
@@ -309,6 +335,7 @@ namespace VoxelOptimizer
 
             bool m_RemeshAll;
             size_t m_BlockCount;
+            VoxelMode m_Mode;
             mutable std::recursive_mutex m_Lock;
 
             SceneNode m_SceneNode; 

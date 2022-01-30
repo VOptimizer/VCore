@@ -57,21 +57,31 @@ namespace VoxelOptimizer
 
                         if(v && v->IsVisible())
                         {
-                            for (char i = 0; i < v->Normals.size(); i++)
+                            for (uint8_t i = 0; i < 6; i++)
                             {
+                                CVoxel::Visibility visiblity = (CVoxel::Visibility )((uint8_t)v->VisibilityMask & (uint8_t)(1 << i));
+
                                 // Invisible
-                                if(v->Normals[i] == CVector(0, 0, 0))
+                                if(visiblity == CVoxel::Visibility::INVISIBLE)
                                     continue;
 
-                                CVector v1, v2, v3, v4, Normal = v->Normals[i];
-                                std::swap(Normal.y, Normal.z);
+                                CVector v1, v2, v3, v4, Normal;// = v->Normals[i];
+                                // std::swap(Normal.y, Normal.z);
                                 
-                                switch (i)
+                                switch (visiblity)
                                 {
-                                    case CVoxel::Direction::UP:
-                                    case CVoxel::Direction::DOWN:
+                                    case CVoxel::Visibility::UP:
+                                    case CVoxel::Visibility::DOWN:
                                     {
-                                        float PosZ = v->Normals[i].z < 0 ? 0 : v->Normals[i].z;
+                                        float PosZ = 0;
+                                        if(visiblity == CVoxel::Visibility::UP)
+                                        {
+                                            Normal = CVector(0, 1, 0);
+                                            PosZ = 1;
+                                        }
+                                        else
+                                            Normal = CVector(0, -1, 0);
+
 
                                         v1 = CVector(v->Pos.x, v->Pos.z + PosZ, -v->Pos.y - 1.f) - BoxCenter;
                                         v2 = CVector(v->Pos.x, v->Pos.z + PosZ, -v->Pos.y) - BoxCenter;
@@ -79,10 +89,17 @@ namespace VoxelOptimizer
                                         v4 = CVector(v->Pos.x + 1.f, v->Pos.z + PosZ, -v->Pos.y - 1.f) - BoxCenter;
                                     }break;
 
-                                    case CVoxel::Direction::LEFT:
-                                    case CVoxel::Direction::RIGHT:
+                                    case CVoxel::Visibility::LEFT:
+                                    case CVoxel::Visibility::RIGHT:
                                     {
-                                        float Posx = v->Normals[i].x < 0 ? 0 : v->Normals[i].x;
+                                        float Posx = 0;
+                                        if(visiblity == CVoxel::Visibility::RIGHT)
+                                        {
+                                            Normal = CVector(1, 0, 0);
+                                            Posx = 1;
+                                        }
+                                        else
+                                            Normal = CVector(-1, 0, 0);
 
                                         v1 = CVector(v->Pos.x + Posx, v->Pos.z, -v->Pos.y) - BoxCenter;
                                         v2 = CVector(v->Pos.x + Posx, v->Pos.z, -v->Pos.y - 1.f) - BoxCenter;
@@ -90,11 +107,17 @@ namespace VoxelOptimizer
                                         v4 = CVector(v->Pos.x + Posx, v->Pos.z + 1.f, -v->Pos.y) - BoxCenter;
                                     }break;
 
-                                    case CVoxel::Direction::FORWARD:
-                                    case CVoxel::Direction::BACKWARD:
+                                    case CVoxel::Visibility::FORWARD:
+                                    case CVoxel::Visibility::BACKWARD:
                                     {
-                                        float PosY = v->Normals[i].y < 0 ? 0 : -v->Normals[i].y;
-                                        Normal.z *= -1;
+                                        float PosY = 0;
+                                        if(visiblity == CVoxel::Visibility::FORWARD)
+                                        {
+                                            Normal = CVector(0, 0, -1);
+                                            PosY = -1;
+                                        }
+                                        else
+                                            Normal = CVector(0, 0, 1);
 
                                         v4 = CVector(v->Pos.x, v->Pos.z + 1.f, -v->Pos.y + PosY) - BoxCenter;
                                         v3 = CVector(v->Pos.x, v->Pos.z, -v->Pos.y + PosY) - BoxCenter;

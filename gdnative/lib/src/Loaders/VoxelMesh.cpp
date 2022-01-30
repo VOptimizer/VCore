@@ -23,6 +23,7 @@
  */
 
 #include <map>
+#include <VoxelOptimizer/Loaders/Octree.hpp>
 #include <VoxelOptimizer/Loaders/VoxelMesh.hpp>
 
 namespace VoxelOptimizer
@@ -38,12 +39,7 @@ namespace VoxelOptimizer
 
     CVoxel::CVoxel()
     {
-        Normals[Direction::UP] = FACE_UP;
-        Normals[Direction::DOWN] = FACE_DOWN;
-        Normals[Direction::LEFT] = FACE_LEFT;
-        Normals[Direction::RIGHT] = FACE_RIGHT;
-        Normals[Direction::FORWARD] = FACE_FORWARD;
-        Normals[Direction::BACKWARD] = FACE_BACKWARD;
+        VisibilityMask = Visibility::VISIBLE;
     }
 
     void CVoxelMesh::SetVoxel(const CVector &Pos, int Material, int Color, bool Transparent)
@@ -55,7 +51,10 @@ namespace VoxelOptimizer
         Tmp->Color = Color;
         Tmp->Transparent = Transparent;
 
+        std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
         m_Voxels.insert({Pos, Tmp});
+        std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
+        InsertTimeTotal += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
 
         SetNormal(Pos, CVoxel::FACE_UP);
         SetNormal(Pos, CVoxel::FACE_DOWN);
@@ -109,7 +108,13 @@ namespace VoxelOptimizer
     Voxel CVoxelMesh::GetVoxel(const CVector &Pos)
     {
         std::lock_guard<std::recursive_mutex> lock(m_Lock);
+
+        std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
         auto IT = m_Voxels.find(Pos);
+        std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
+        SearchTimeTotal += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
+
+        
         if(IT == m_Voxels.end())
             return nullptr;
 
@@ -132,15 +137,15 @@ namespace VoxelOptimizer
 
     void CVoxelMesh::SetNormal(const CVector &Pos, const CVector &Neighbor, bool IsInvisible)
     {
-        static const std::map<CVector, std::pair<CVoxel::Direction, CVoxel::Direction>> NEIGHBOR_INDEX = {
-            {CVoxel::FACE_UP, {CVoxel::Direction::UP, CVoxel::Direction::DOWN}},
-            {CVoxel::FACE_DOWN, {CVoxel::Direction::DOWN, CVoxel::Direction::UP}},
+        static const std::map<CVector, std::pair<CVoxel::Visibility, CVoxel::Visibility>> NEIGHBOR_INDEX = {
+            {CVoxel::FACE_UP, {CVoxel::Visibility::UP, CVoxel::Visibility::DOWN}},
+            {CVoxel::FACE_DOWN, {CVoxel::Visibility::DOWN, CVoxel::Visibility::UP}},
 
-            {CVoxel::FACE_LEFT, {CVoxel::Direction::LEFT, CVoxel::Direction::RIGHT}},
-            {CVoxel::FACE_RIGHT, {CVoxel::Direction::RIGHT, CVoxel::Direction::LEFT}},
+            {CVoxel::FACE_LEFT, {CVoxel::Visibility::LEFT, CVoxel::Visibility::RIGHT}},
+            {CVoxel::FACE_RIGHT, {CVoxel::Visibility::RIGHT, CVoxel::Visibility::LEFT}},
 
-            {CVoxel::FACE_FORWARD, {CVoxel::Direction::FORWARD, CVoxel::Direction::BACKWARD}},
-            {CVoxel::FACE_BACKWARD, {CVoxel::Direction::BACKWARD, CVoxel::Direction::FORWARD}},
+            {CVoxel::FACE_FORWARD, {CVoxel::Visibility::FORWARD, CVoxel::Visibility::BACKWARD}},
+            {CVoxel::FACE_BACKWARD, {CVoxel::Visibility::BACKWARD, CVoxel::Visibility::FORWARD}},
         };
 
         Voxel cur = GetVoxel(Pos);
@@ -148,7 +153,7 @@ namespace VoxelOptimizer
             return;
 
         Voxel neighbor = GetVoxel(Pos + Neighbor);
-        auto directions = NEIGHBOR_INDEX.at(Neighbor);
+        auto visibility = NEIGHBOR_INDEX.at(Neighbor);
 
         // 1. Both opaque touching faces invisible
         // 2. One transparent touching faces visible
@@ -176,14 +181,41 @@ namespace VoxelOptimizer
 
             if(hideFaces)
             {
-                neighbor->Normals[directions.second] = IsInvisible ? CVoxel::FACE_ZERO : (Neighbor * -1.f);
-                cur->Normals[directions.first] = IsInvisible ? CVoxel::FACE_ZERO : Neighbor;
+                neighbor->VisibilityMask = IsInvisible ? (CVoxel::Visibility)(neighbor->VisibilityMask & ~visibility.second) : (CVoxel::Visibility)(neighbor->VisibilityMask | visibility.second);
+                cur->VisibilityMask = IsInvisible ? (CVoxel::Visibility)(cur->VisibilityMask & ~visibility.first) : (CVoxel::Visibility)(cur->VisibilityMask | visibility.first);
             }
             else
-                cur->Normals[directions.first] = Neighbor;
+                cur->VisibilityMask = (CVoxel::Visibility)(cur->VisibilityMask | visibility.first);
         }
         else
-            cur->Normals[directions.first] = Neighbor;
+            cur->VisibilityMask = (CVoxel::Visibility)(cur->VisibilityMask | visibility.first);
+
+        // CheckInvisible(cur);
+        // if(neighbor)
+        //     CheckInvisible(neighbor);
+    }
+
+    void CVoxelMesh::CheckInvisible(Voxel v)
+    {
+        if(v->IsVisible())
+        {
+            if(m_VisibleVoxels.find(v->Pos) == m_VisibleVoxels.end())
+                m_VisibleVoxels.insert({v->Pos, v});
+        }
+        else
+        {
+            auto it = m_VisibleVoxels.find(v->Pos);
+            if(it != m_VisibleVoxels.end())
+            {
+                m_VisibleVoxels.erase(it);
+                if(((uint8_t)m_Mode & (uint8_t)VoxelMode::KEEP_ONLY_VISIBLE) == (uint8_t)VoxelMode::KEEP_ONLY_VISIBLE)
+                {
+                    // it = m_Voxels.find(v->Pos);
+                    // if(it != m_Voxels.end())
+                    //     m_Voxels.erase(it);
+                }
+            }
+        }
     }
 
     void CVoxelMesh::MarkChunk(const CVector &Pos, Voxel voxel)

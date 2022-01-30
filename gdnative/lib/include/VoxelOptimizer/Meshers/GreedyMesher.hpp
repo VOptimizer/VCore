@@ -25,6 +25,7 @@
 #ifndef OPTIMIZEMESHER_HPP
 #define OPTIMIZEMESHER_HPP
 
+#include <list>
 #include <VoxelOptimizer/Meshers/IMesher.hpp>
 
 namespace VoxelOptimizer
@@ -39,7 +40,24 @@ namespace VoxelOptimizer
             ~CGreedyMesher() = default;
 
         private:
+            struct SSlice
+            {
+                public:
+                    SSlice() : BBox(CVector(INFINITY, INFINITY, INFINITY), CVector()) {}
+
+                    CBBox BBox;
+                    std::list<CBBox> Transparent;
+            };
+
+            std::map<float, SSlice> m_XSlices;
+            std::map<float, SSlice> m_YSlices;
+            std::map<float, SSlice> m_ZSlices;
+
             void GenerateMesh(Mesh RetMesh, VoxelMesh m, const CBBox &BBox, bool Opaque);
+
+            Mesh GenerateSliceMesh(const SSlice &slice, VoxelMesh m, int axis);
+
+            void GenerateSlices(VoxelMesh m);
     };
 } // namespace VoxelOptimizer
 
