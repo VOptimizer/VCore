@@ -36,7 +36,11 @@ namespace VoxelOptimizer
     class CSlicer
     {
         public:
-            CSlicer(VoxelMesh Mesh, bool Opaque) : m_Mesh(Mesh), m_Opaque(Opaque) {}
+            CSlicer(VoxelMesh Mesh, bool Opaque) : m_Mesh(Mesh), m_Opaque(Opaque) 
+            {
+                auto &voxels = m_Mesh->GetVoxels();
+                m_Voxels = voxels.queryVisible();
+            }
 
             /**
              * @brief Sets the axis which is currently the main axis.
@@ -73,6 +77,7 @@ namespace VoxelOptimizer
             ~CSlicer() = default;
         private:
             void SetFaceNormal(Voxel v, bool IsCurrent);
+            Voxel GetVoxel(const CVector &v);
 
             VoxelMesh m_Mesh;
             CVector m_Neighbour;
@@ -83,6 +88,7 @@ namespace VoxelOptimizer
             bool m_Opaque;
 
             std::vector<std::pair<CVector, CVector>> m_ProcessedQuads;
+            std::map<CVector, Voxel> m_Voxels;
     };
 } // namespace VoxelOptimizer
 

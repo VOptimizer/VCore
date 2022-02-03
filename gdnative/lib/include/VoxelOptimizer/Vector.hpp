@@ -95,6 +95,8 @@ namespace VoxelOptimizer
                     return y > vr.y;
 
                 return z > vr.z;
+
+                return (x > vr.x) || (y > vr.y) || (z > vr.z);
             }
 
             inline bool operator>=(const CVector &vr) const
@@ -106,6 +108,8 @@ namespace VoxelOptimizer
                     return y >= vr.y;
 
                 return z >= vr.z;
+
+                return (x >= vr.x) || (y >= vr.y) || (z >= vr.z);
             }
 
             inline bool operator<(const CVector &vr) const
@@ -117,6 +121,8 @@ namespace VoxelOptimizer
                     return y < vr.y;
 
                 return z < vr.z;
+
+                return (x < vr.x) || (y < vr.y) || (z < vr.z);
             }
 
             inline bool operator<=(const CVector &vr) const
@@ -128,6 +134,8 @@ namespace VoxelOptimizer
                     return y <= vr.y;
 
                 return z <= vr.z;
+
+                return (x <= vr.x) || (y <= vr.y) || (z <= vr.z);
             }
 
             // Upon here just math. Math is magic :D

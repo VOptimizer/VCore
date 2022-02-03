@@ -42,53 +42,52 @@ namespace VoxelOptimizer
         std::map<CVector, Mesh> Ret;
         auto Chunks = m->GetChunksToRemesh();
 
-        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        GenerateSlices(m);
-        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
-        auto count = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+        // std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        // GenerateSlices(m);
+        // std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        // auto count = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
         m_CurrentUsedMaterials = m->Materials();
         std::vector<Mesh> meshes;
 
-        for (auto &&s : m_XSlices)
-        {
-            ClearCache();
-            meshes.push_back(GenerateSliceMesh(s.second, m, 0));
-        }
-        
-        for (auto &&s : m_YSlices)
-        {
-            ClearCache();
-            meshes.push_back(GenerateSliceMesh(s.second, m, 1));
-        }
-
-        for (auto &&s : m_ZSlices)
-        {
-            ClearCache();
-            meshes.push_back(GenerateSliceMesh(s.second, m, 2));
-        }
-
-        Mesh retMesh = Mesh(new SMesh());
-        retMesh->Textures = m->Colorpalettes();
-        CMeshBuilder builder;
-        builder.Merge(retMesh, meshes);
-
-        Ret[CVector()] = builder.Build();
-
-        // for (auto &&c : Chunks)
+        // for (auto &&s : m_XSlices)
         // {
-        //     Mesh RetMesh = Mesh(new SMesh());
-        //     RetMesh->Textures = m->Colorpalettes();
-
-        //     GenerateMesh(RetMesh, m, c->BBox, true);
-        //     for (auto &&t : c->Transparent)
-        //         GenerateMesh(RetMesh, m, t.second, false);            
-
         //     ClearCache();
-        //     // RetMesh->ModelMatrix = CalculateModelMatrix(m->GetSceneNode());
-        //     Ret[c->BBox.Beg] = RetMesh;
+        //     meshes.push_back(GenerateSliceMesh(s.second, m, 0));
         // }
+        
+        // for (auto &&s : m_YSlices)
+        // {
+        //     ClearCache();
+        //     meshes.push_back(GenerateSliceMesh(s.second, m, 1));
+        // }
+
+        // for (auto &&s : m_ZSlices)
+        // {
+        //     ClearCache();
+        //     meshes.push_back(GenerateSliceMesh(s.second, m, 2));
+        // }
+
+        // Mesh retMesh = Mesh(new SMesh());
+        // retMesh->Textures = m->Colorpalettes();
+        // CMeshBuilder builder;
+        // builder.Merge(retMesh, meshes);
+
+        // Ret[CVector()] = builder.Build();
+
+        for (auto &&c : Chunks)
+        {
+            Mesh RetMesh = Mesh(new SMesh());
+            RetMesh->Textures = m->Colorpalettes();
+
+            GenerateMesh(RetMesh, m, c->BBox, true);
+            for (auto &&t : c->Transparent)
+                GenerateMesh(RetMesh, m, t.second, false);            
+
+            ClearCache();
+            // RetMesh->ModelMatrix = CalculateModelMatrix(m->GetSceneNode());
+            Ret[c->BBox.Beg] = RetMesh;
+        }
         
         m_XSlices.clear();
         m_YSlices.clear();

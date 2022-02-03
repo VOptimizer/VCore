@@ -105,7 +105,13 @@ namespace VoxelOptimizer
                         std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
                         ProcessXYZI(m);
                         std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
-                        auto count1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1 - begin1).count();
+                        auto count1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
+
+                        // begin1 = std::chrono::steady_clock::now();
+                        // auto &voxels = m->GetVoxels();
+                        // auto visible = voxels.queryVisible();
+                        // end1 = std::chrono::steady_clock::now();
+                        // auto count2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
 
                         m_Models.push_back(m);
                         auto halfSize = (m->GetSize() / 2.0);
@@ -223,40 +229,40 @@ namespace VoxelOptimizer
             int Color = 0;
             bool Transparent = false;
 
-//             // Remaps the indices.
-//             auto IT = m_ColorMapping.find(MatIdx);
-//             if(IT == m_ColorMapping.end())
-//             {
-//                 m_ColorMapping.insert({MatIdx, m_UsedColorsPos});
-//                 Color = m_UsedColorsPos;
-//                 m_UsedColorsPos++;
-//             }
-//             else
-//                 Color = IT->second;
+            // Remaps the indices.
+            auto IT = m_ColorMapping.find(MatIdx);
+            if(IT == m_ColorMapping.end())
+            {
+                m_ColorMapping.insert({MatIdx, m_UsedColorsPos});
+                Color = m_UsedColorsPos;
+                m_UsedColorsPos++;
+            }
+            else
+                Color = IT->second;
 
-//             int newMatIdx = 0;
-//             IT = m_MaterialMapping.find(MatIdx);
-//             if(IT != m_MaterialMapping.end())
-//             {
-//                 newMatIdx = IT->second;
-//                 Transparent = m_Materials[newMatIdx]->Transparency != 0.0;
-//                 if(Transparent)
-//                 {
-//                     int k= 0;
-//                     k++;
-//                 }
-//             }
+            int newMatIdx = 0;
+            IT = m_MaterialMapping.find(MatIdx);
+            if(IT != m_MaterialMapping.end())
+            {
+                newMatIdx = IT->second;
+                Transparent = m_Materials[newMatIdx]->Transparency != 0.0;
+                if(Transparent)
+                {
+                    int k= 0;
+                    k++;
+                }
+            }
 
-//             // Remaps the material index to the local one.
-//             IT = modelMaterialMapping.find(MatIdx);
-//             if(IT != modelMaterialMapping.end())
-//                 MatIdx = IT->second;
-//             else
-//             {
-//                 m->Materials().push_back(m_Materials[newMatIdx]);
-//                 modelMaterialMapping[MatIdx] = m->Materials().size() - 1;
-//                 MatIdx = m->Materials().size() - 1;
-//             }
+            // Remaps the material index to the local one.
+            IT = modelMaterialMapping.find(MatIdx);
+            if(IT != modelMaterialMapping.end())
+                MatIdx = IT->second;
+            else
+            {
+                m->Materials().push_back(m_Materials[newMatIdx]);
+                modelMaterialMapping[MatIdx] = m->Materials().size() - 1;
+                MatIdx = m->Materials().size() - 1;
+            }
 
 //             std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
             m->SetVoxel(vec, MatIdx, Color, Transparent);

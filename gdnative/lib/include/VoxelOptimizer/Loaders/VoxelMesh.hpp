@@ -112,6 +112,8 @@ namespace VoxelOptimizer
 
     class CVoxelMesh
     {
+        using VoxelData = COctree<Voxel>;
+
         public:
             CVoxelMesh(VoxelMode mode = VoxelMode::KEEP_ALL) : m_RemeshAll(true), m_BlockCount(0), m_GlobalChunk(new SChunk()), m_Mode(mode) 
             {
@@ -179,7 +181,7 @@ namespace VoxelOptimizer
              * 
              * @return Returns the list of voxels.
              */
-            inline COctree<Voxel> GetVoxels() const
+            inline VoxelData &GetVoxels() //const
             {
                 std::lock_guard<std::recursive_mutex> lock(m_Lock);
                 return m_Voxels;
@@ -326,7 +328,7 @@ namespace VoxelOptimizer
             CBBox m_BBox;
             Chunk m_GlobalChunk;
             
-            COctree<Voxel> m_Voxels;
+            VoxelData m_Voxels;
             std::map<CVector, Voxel> m_VisibleVoxels;
             std::map<CVector, Chunk> m_Chunks;
             std::map<CVector, Chunk> m_ChunksToRemesh;

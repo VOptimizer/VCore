@@ -58,8 +58,8 @@ namespace VoxelOptimizer
         Voxel V1, V2;
         CVector Size = m_Mesh->GetSize();
 
-        V1 = m_Mesh->GetVoxel(Pos, m_Opaque);
-        V2 = m_Mesh->GetVoxel(Pos + m_Neighbour, m_Opaque);
+        V1 = GetVoxel(Pos);//m_Mesh->GetVoxel(Pos, m_Opaque);
+        V2 = GetVoxel(Pos + m_Neighbour);//m_Mesh->GetVoxel(Pos + m_Neighbour, m_Opaque);
 
         if(!m_Opaque)
         {
@@ -89,6 +89,15 @@ namespace VoxelOptimizer
     
         // Checks if there is a visible face.
         return BlockCurrent != BlockCompare;
+    }
+
+    Voxel CSlicer::GetVoxel(const CVector &v)
+    {
+        auto it = m_Voxels.find(v);
+        if(it == m_Voxels.end())
+            return nullptr;
+
+        return it->second;
     }
 
     void CSlicer::AddProcessedQuad(CVector Pos, CVector Size)

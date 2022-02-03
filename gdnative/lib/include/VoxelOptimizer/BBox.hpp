@@ -43,6 +43,11 @@ namespace VoxelOptimizer
                 return (End - Beg).Max(CVector(1, 1, 1));
             }
 
+            inline bool ContainsPoint(const CVector &v) const
+            {
+                return (Beg.x <= v.x && Beg.y <= v.y && Beg.z <= v.z) && (End.x >= v.x && End.y >= v.y && End.z >= v.z);
+            }
+
             ~CBBox() = default;
     };
 } // namespace VoxelOptimizer

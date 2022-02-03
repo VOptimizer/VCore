@@ -45,7 +45,7 @@ namespace VoxelOptimizer
     void CVoxelMesh::SetVoxel(const CVector &Pos, int Material, int Color, bool Transparent)
     {
         std::lock_guard<std::recursive_mutex> lock(m_Lock);
-        Voxel Tmp = Voxel(new CVoxel());
+        Voxel Tmp = std::make_shared<CVoxel>(); //Voxel(new CVoxel());
         Tmp->Pos = Pos;
         Tmp->Material = Material;
         Tmp->Color = Color;
@@ -56,18 +56,18 @@ namespace VoxelOptimizer
         std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
         InsertTimeTotal += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
 
-        SetNormal(Pos, CVoxel::FACE_UP);
-        SetNormal(Pos, CVoxel::FACE_DOWN);
+        // SetNormal(Pos, CVoxel::FACE_UP);
+        // SetNormal(Pos, CVoxel::FACE_DOWN);
 
-        SetNormal(Pos, CVoxel::FACE_LEFT);
-        SetNormal(Pos, CVoxel::FACE_RIGHT);
+        // SetNormal(Pos, CVoxel::FACE_LEFT);
+        // SetNormal(Pos, CVoxel::FACE_RIGHT);
 
-        SetNormal(Pos, CVoxel::FACE_FORWARD);
-        SetNormal(Pos, CVoxel::FACE_BACKWARD);
+        // SetNormal(Pos, CVoxel::FACE_FORWARD);
+        // SetNormal(Pos, CVoxel::FACE_BACKWARD);
 
         m_BlockCount++;
 
-        MarkChunk(Pos, Transparent ? Tmp : nullptr);
+        // MarkChunk(Pos, Transparent ? Tmp : nullptr);
     }
 
     void CVoxelMesh::RemoveVoxel(const CVector &Pos)
@@ -114,7 +114,6 @@ namespace VoxelOptimizer
         std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
         SearchTimeTotal += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
 
-        
         if(IT == m_Voxels.end())
             return nullptr;
 
@@ -190,9 +189,9 @@ namespace VoxelOptimizer
         else
             cur->VisibilityMask = (CVoxel::Visibility)(cur->VisibilityMask | visibility.first);
 
-        // CheckInvisible(cur);
-        // if(neighbor)
-        //     CheckInvisible(neighbor);
+        CheckInvisible(cur);
+        if(neighbor)
+            CheckInvisible(neighbor);
     }
 
     void CVoxelMesh::CheckInvisible(Voxel v)
