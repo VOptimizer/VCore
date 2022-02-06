@@ -61,6 +61,15 @@ namespace VoxelOptimizer
         V1 = GetVoxel(Pos);//m_Mesh->GetVoxel(Pos, m_Opaque);
         V2 = GetVoxel(Pos + m_Neighbour);//m_Mesh->GetVoxel(Pos + m_Neighbour, m_Opaque);
 
+        if(V1 || V2)
+        {
+            if(!V1)
+                V1 = m_Mesh->GetVoxel(Pos, m_Opaque);
+
+            if(!V2)
+                V2 = m_Mesh->GetVoxel(Pos + m_Neighbour, m_Opaque);
+        }
+
         if(!m_Opaque)
         {
             // Check if neighbour is same as current

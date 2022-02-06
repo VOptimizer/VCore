@@ -36,7 +36,7 @@ namespace VoxelOptimizer
 
     bool CBetterSlicer::IsFace(CVector Pos, bool secondFace)
     {
-        auto voxel = m_Mesh->GetVoxel(Pos, m_Opaque);
+        auto voxel = GetVoxel(Pos); //m_Opaque
         if(!voxel)
             return false;
 
@@ -51,12 +51,12 @@ namespace VoxelOptimizer
                 if(secondFace)
                 {
                     m_Normal = CVector(1, 0, 0);
-                    return (voxel->VisibilityMask & CVoxel::Visibility::RIGHT) == CVoxel::Visibility::RIGHT;
+                    return GetVoxelOrFromMesh(Pos + CVector(1, 0, 0)) == nullptr;//(voxel->VisibilityMask & CVoxel::Visibility::RIGHT) == CVoxel::Visibility::RIGHT;
                 }
                 else
                 {   
                     m_Normal = CVector(-1, 0, 0);
-                    return (voxel->VisibilityMask & CVoxel::Visibility::LEFT) == CVoxel::Visibility::LEFT;
+                    return GetVoxelOrFromMesh(Pos + CVector(-1, 0, 0)) == nullptr;//(voxel->VisibilityMask & CVoxel::Visibility::LEFT) == CVoxel::Visibility::LEFT;
                 }
             }break;
 
@@ -65,12 +65,12 @@ namespace VoxelOptimizer
                 if(secondFace)
                 {    
                     m_Normal = CVector(0, 1, 0);
-                    return (voxel->VisibilityMask & CVoxel::Visibility::FORWARD) == CVoxel::Visibility::FORWARD;
+                    return GetVoxelOrFromMesh(Pos + CVector(0, 1, 0)) == nullptr; // (voxel->VisibilityMask & CVoxel::Visibility::FORWARD) == CVoxel::Visibility::FORWARD;
                 }
                 else
                 {    
                     m_Normal = CVector(0, -1, 0);
-                    return (voxel->VisibilityMask & CVoxel::Visibility::BACKWARD) == CVoxel::Visibility::BACKWARD;
+                    return GetVoxelOrFromMesh(Pos + CVector(0, -1, 0)) == nullptr; //(voxel->VisibilityMask & CVoxel::Visibility::BACKWARD) == CVoxel::Visibility::BACKWARD;
                 }
             }break;
 
@@ -79,12 +79,12 @@ namespace VoxelOptimizer
                 if(secondFace)
                 {    
                     m_Normal = CVector(0, 0, 1);
-                    return (voxel->VisibilityMask & CVoxel::Visibility::UP) == CVoxel::Visibility::UP;
+                    return GetVoxelOrFromMesh(Pos + CVector(0, 0, 1)) == nullptr; //(voxel->VisibilityMask & CVoxel::Visibility::UP) == CVoxel::Visibility::UP;
                 }
                 else
                 {    
                     m_Normal = CVector(0, 0, -1);
-                    return (voxel->VisibilityMask & CVoxel::Visibility::DOWN) == CVoxel::Visibility::DOWN;
+                    return GetVoxelOrFromMesh(Pos + CVector(0, 0, -1)) == nullptr; // (voxel->VisibilityMask & CVoxel::Visibility::DOWN) == CVoxel::Visibility::DOWN;
                 }
             }break;
         }
@@ -111,8 +111,8 @@ namespace VoxelOptimizer
         // Voxel V1, V2;
         // CVector Size = m_Mesh->GetSize();
 
-        // V1 = m_Mesh->GetVoxel(Pos, m_Opaque);
-        // V2 = m_Mesh->GetVoxel(Pos + m_Neighbour, m_Opaque);
+        // V1 = GetVoxelOrFromMesh(Pos, m_Opaque);
+        // V2 = GetVoxelOrFromMesh(Pos + m_Neighbour, m_Opaque);
 
         // if(!m_Opaque)
         // {
@@ -142,6 +142,24 @@ namespace VoxelOptimizer
     
         // // Checks if there is a visible face.
         // return BlockCurrent != BlockCompare;
+    }
+
+    Voxel CBetterSlicer::GetVoxel(const CVector &v)
+    {
+        auto it = m_Voxels.find(v);
+        if(it == m_Voxels.end())
+            return nullptr;
+
+        return it->second;
+    }
+
+    Voxel CBetterSlicer::GetVoxelOrFromMesh(const CVector &v)
+    {
+        // auto ret = GetVoxel(v);
+        // if(!ret)
+        auto ret = m_Mesh->GetVoxel(v);
+
+        return ret;
     }
 
     void CBetterSlicer::AddProcessedQuad(CVector Pos, CVector Size)

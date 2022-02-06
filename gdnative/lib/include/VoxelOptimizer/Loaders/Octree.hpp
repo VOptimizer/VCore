@@ -32,8 +32,6 @@
 
 #include <cmath>
 
-#include <chrono>
-
 #define f2i(x) (int)x//lfloor() //lroundf(x - 0.5f)
 
 namespace VoxelOptimizer
@@ -65,7 +63,7 @@ namespace VoxelOptimizer
                 COctreeNode(COctreeNode<T> *_parent, const CBBox &_bbox, int _depth); 
                 COctreeNode(COctreeNode<T> *_parent, const COctreeNode<T> *_other); 
 
-                bool CanSubdivide();
+                virtual bool CanSubdivide();
                 void Subdivide();
                 COctreeNode<T> *FindNode(const CVector &v);
 
@@ -75,7 +73,7 @@ namespace VoxelOptimizer
                 void SetBBox(const CBBox &_bbox);
 
                 size_t CalcIndex(const CVector &_pos);
-                bool HasNeighbor(const CVector &_pos, const CVector &_dir);
+                bool HasNeighbor(const CVector &_pos);
 
                 bool m_HasContent;
 
@@ -156,6 +154,8 @@ namespace VoxelOptimizer
 
             virtual ~COctree() {}
         private:
+            bool CanSubdivide() override;
+
             int RoundToPowerOfTwo(int v);
             CVector RoundVectorPowerOfTwo(const CVector &vec);
 
@@ -213,9 +213,9 @@ namespace VoxelOptimizer
         }
 
         template<class T>
-        inline bool COctreeNode<T>::HasNeighbor(const CVector &_pos, const CVector &_dir)
+        inline bool COctreeNode<T>::HasNeighbor(const CVector &_pos)
         {
-            return m_Content.find(_pos + _dir) != m_Content.end();
+            return m_Content.find(_pos) != m_Content.end();
         }
 
         template<class T>
@@ -224,28 +224,33 @@ namespace VoxelOptimizer
             for (auto &&n : m_Content)
             {
                 bool visible = false;
+
+                // Goes through each axis
                 for (char i = 0; i < 3; i++)
                 {
+                    // Goes from the front to the back of the cube
                     for (char j = -1; j <= 1; j += 2)
                     {
                         CVector dir;
                         dir.v[i] = j;
 
-                        if(!m_BBox.ContainsPoint(n.first + dir))
-                            visible = !_root->FindNode(n.first + dir)->HasNeighbor(n.first, dir);
+                        CVector pos = n.first + dir;
+
+                        // Checks if the neighbor is inside this chunk
+                        if(!m_BBox.ContainsPoint(pos))
+                            visible = !_root->FindNode(pos)->HasNeighbor(pos);
                         else
-                            visible = !HasNeighbor(n.first, dir);
+                            visible = !HasNeighbor(pos);
                             
+                        // When at least one side is visible, break the loops.
                         if(visible)
                         {
+                            _visible.insert(n);
                             i = 5;
                             break;
                         }
                     }
-                }
-                
-                if(visible)
-                    _visible.insert(n);
+                }    
             }
         }
 
@@ -271,14 +276,7 @@ namespace VoxelOptimizer
         template<class T>
         inline void COctreeNode<T>::Subdivide()
         {
-            if(!CanSubdivide())
-                return;
-
-            if(m_Nodes)
-                throw std::runtime_error("Already subdivided!");
-
             m_Nodes = new COctreeNode<T>*[NODES_COUNT];
-            CVector subSize = m_BBox.GetSize() * 0.5f;
             size_t idx = 0;
 
             /**
@@ -291,8 +289,8 @@ namespace VoxelOptimizer
                 {
                     for (char x = 0; x < 2; x++)
                     {
-                        CVector position = m_BBox.Beg + subSize * CVector(x, y, z);
-                        COctreeNode<T> *node = new COctreeNode<T>(this, CBBox(position, position + subSize - CVector(1, 1, 1)), m_MaxDepth - 1);
+                        CVector position = m_BBox.Beg + m_SubSize * CVector(x, y, z);
+                        COctreeNode<T> *node = new COctreeNode<T>(this, CBBox(position, position + m_SubSize - CVector(1, 1, 1)), m_MaxDepth - 1);
                         m_Nodes[idx] = node;
                         idx++;
                     }
@@ -382,9 +380,10 @@ namespace VoxelOptimizer
         m_Size++;
         internal::COctreeNode<T> *node = this->FindNode(_pair.first);
         node->m_HasContent = true;
-        if(node->CanSubdivide() && node->m_Nodes)
-            throw std::runtime_error("BUG!!!");
 
+        /**
+         * Subdivides each cube
+         */
         while (node->CanSubdivide())
         {
             node->Subdivide();
@@ -458,7 +457,7 @@ namespace VoxelOptimizer
         size_t idx = this->CalcIndex(_v);
         if(idx < this->NODES_COUNT && this->m_Nodes[idx]->m_HasContent)
         {
-            internal::COctreeNode<T> *node = this->FindNode(_v);   
+            internal::COctreeNode<T> *node  = this->FindNode(_v);  
             typename std::map<CVector, T>::iterator current = node->m_Content.find(_v);
             if(current != node->m_Content.end())
                 return iterator(node, current);
@@ -533,6 +532,12 @@ namespace VoxelOptimizer
         }
 
         return v;
+    }
+
+    template<class T>
+    inline bool COctree<T>::CanSubdivide()
+    {
+        return true;
     }
 
     /**

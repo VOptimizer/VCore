@@ -39,60 +39,81 @@ namespace VoxelOptimizer
         // Check face visibility
         // Each list own bbox
 
+        auto &voxels = m->GetVoxels();
+        m_Voxels = voxels.queryVisible();
+
         std::map<CVector, Mesh> Ret;
         auto Chunks = m->GetChunksToRemesh();
 
-        // std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        // GenerateSlices(m);
-        // std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        // auto count = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        GenerateSlices();
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        auto count = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
 
         m_CurrentUsedMaterials = m->Materials();
         std::vector<Mesh> meshes;
 
-        // for (auto &&s : m_XSlices)
-        // {
-        //     ClearCache();
-        //     meshes.push_back(GenerateSliceMesh(s.second, m, 0));
-        // }
-        
-        // for (auto &&s : m_YSlices)
-        // {
-        //     ClearCache();
-        //     meshes.push_back(GenerateSliceMesh(s.second, m, 1));
-        // }
-
-        // for (auto &&s : m_ZSlices)
-        // {
-        //     ClearCache();
-        //     meshes.push_back(GenerateSliceMesh(s.second, m, 2));
-        // }
-
-        // Mesh retMesh = Mesh(new SMesh());
-        // retMesh->Textures = m->Colorpalettes();
-        // CMeshBuilder builder;
-        // builder.Merge(retMesh, meshes);
-
-        // Ret[CVector()] = builder.Build();
-
-        for (auto &&c : Chunks)
+        begin = std::chrono::steady_clock::now();
+        for (auto &&s : m_XSlices)
         {
-            Mesh RetMesh = Mesh(new SMesh());
-            RetMesh->Textures = m->Colorpalettes();
-
-            GenerateMesh(RetMesh, m, c->BBox, true);
-            for (auto &&t : c->Transparent)
-                GenerateMesh(RetMesh, m, t.second, false);            
-
             ClearCache();
-            // RetMesh->ModelMatrix = CalculateModelMatrix(m->GetSceneNode());
-            Ret[c->BBox.Beg] = RetMesh;
+            meshes.push_back(GenerateSliceMesh(s.second, m, 0));
         }
+        
+        for (auto &&s : m_YSlices)
+        {
+            ClearCache();
+            meshes.push_back(GenerateSliceMesh(s.second, m, 1));
+        }
+
+        for (auto &&s : m_ZSlices)
+        {
+            ClearCache();
+            meshes.push_back(GenerateSliceMesh(s.second, m, 2));
+        }
+        end = std::chrono::steady_clock::now();
+        auto count1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+
+        Mesh retMesh = Mesh(new SMesh());
+        retMesh->Textures = m->Colorpalettes();
+        CMeshBuilder builder;
+        builder.Merge(retMesh, meshes);
+
+        Ret[CVector()] = builder.Build();
+
+        // std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        // for (auto &&c : Chunks)
+        // {
+        //     Mesh RetMesh = Mesh(new SMesh());
+        //     RetMesh->Textures = m->Colorpalettes();
+
+        //     GenerateMesh(RetMesh, m, c->BBox, true);
+        //     for (auto &&t : c->Transparent)
+        //         GenerateMesh(RetMesh, m, t.second, false);            
+
+        //     ClearCache();
+        //     // RetMesh->ModelMatrix = CalculateModelMatrix(m->GetSceneNode());
+        //     Ret[c->BBox.Beg] = RetMesh;
+        // }
+        // std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        // auto count = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
         
         m_XSlices.clear();
         m_YSlices.clear();
         m_ZSlices.clear();
+        m_Voxels.clear();
         return Ret;
+    }
+
+    std::vector<Mesh> CGreedyMesher::MeshThread(VoxelMesh m, int axis, const std::map<float, SSlice> &slices)
+    {
+        std::vector<Mesh> meshes;
+        for (auto &&s : m_XSlices)
+        {
+            ClearCache();
+            meshes.push_back(GenerateSliceMesh(s.second, m, 0));
+        }
+        return meshes;
     }
 
     Mesh CGreedyMesher::GenerateSliceMesh(const SSlice &slice, VoxelMesh m, int Axis)
@@ -113,7 +134,7 @@ namespace VoxelOptimizer
         int Axis2 = (Axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
         int x[3] = {0};
 
-        CBetterSlicer Slicer(m, true);
+        CBetterSlicer Slicer(m, true, m_Voxels);
         Slicer.SetActiveAxis(Axis);
 
         for (x[Axis] = slice.BBox.Beg.v[Axis] -1; x[Axis] < slice.BBox.End.v[Axis];)
@@ -203,7 +224,9 @@ namespace VoxelOptimizer
                         if(Normal.z != 0)
                             Normal.z *= -1;
 
+                        m_Lock.lock();
                         AddFace(ret, v1, v2, v3, v4, Normal, Color, Material);
+                        m_Lock.unlock();
 
                         Slicer.AddProcessedQuad(CVector(x[0], x[1], x[2]), CVector(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2]));
 
@@ -351,40 +374,24 @@ namespace VoxelOptimizer
         }
     }
 
-    void CGreedyMesher::GenerateSlices(VoxelMesh m)
+    void CGreedyMesher::GenerateSlices()
     {
-        auto &visible = m->GetVisibleVoxels();
-        for (auto &&v : visible)
+        for (auto &&v : m_Voxels)
         {
-            if((v.second->VisibilityMask & CVoxel::Visibility::LEFT) == CVoxel::Visibility::LEFT 
-            || (v.second->VisibilityMask & CVoxel::Visibility::RIGHT) == CVoxel::Visibility::RIGHT)
-            {
-                auto bbox = m_XSlices[v.first.x].BBox;
-                bbox.Beg = bbox.Beg.Min(v.first);
-                bbox.End = bbox.End.Max(v.first + CVector(1, 1, 1));
+            auto bbox = m_XSlices[v.first.x].BBox;
+            bbox.Beg = bbox.Beg.Min(v.first);
+            bbox.End = bbox.End.Max(v.first + CVector(1, 1, 1));
+            m_XSlices[v.first.x].BBox = bbox;
 
-                m_XSlices[v.first.x].BBox = bbox;
-            }
+            auto bbox = m_YSlices[v.first.y].BBox;
+            bbox.Beg = bbox.Beg.Min(v.first);
+            bbox.End = bbox.End.Max(v.first + CVector(1, 1, 1));
+            m_YSlices[v.first.y].BBox = bbox;
 
-            if((v.second->VisibilityMask & CVoxel::Visibility::UP) == CVoxel::Visibility::UP 
-            || (v.second->VisibilityMask & CVoxel::Visibility::DOWN) == CVoxel::Visibility::DOWN)
-            {
-                auto bbox = m_YSlices[v.first.y].BBox;
-                bbox.Beg = bbox.Beg.Min(v.first);
-                bbox.End = bbox.End.Max(v.first + CVector(1, 1, 1));
-
-                m_YSlices[v.first.y].BBox = bbox;
-            }
-
-            if((v.second->VisibilityMask & CVoxel::Visibility::FORWARD) == CVoxel::Visibility::FORWARD 
-            || (v.second->VisibilityMask & CVoxel::Visibility::BACKWARD) == CVoxel::Visibility::BACKWARD)
-            {
-                auto bbox = m_ZSlices[v.first.z].BBox;
-                bbox.Beg = bbox.Beg.Min(v.first);
-                bbox.End = bbox.End.Max(v.first + CVector(1, 1, 1));
-
-                m_ZSlices[v.first.z].BBox = bbox;
-            }
+            auto bbox = m_ZSlices[v.first.z].BBox;
+            bbox.Beg = bbox.Beg.Min(v.first);
+            bbox.End = bbox.End.Max(v.first + CVector(1, 1, 1));
+            m_ZSlices[v.first.z].BBox = bbox;
         }
         
     }
