@@ -58,7 +58,7 @@ namespace VoxelOptimizer
             std::map<float, SSlice> m_YSlices;
             std::map<float, SSlice> m_ZSlices;
 
-            std::map<CVector, Voxel> m_Voxels;
+            std::map<CVectori, Voxel> m_Voxels;
 
             void GenerateMesh(Mesh RetMesh, VoxelMesh m, const CBBox &BBox, bool Opaque);
 

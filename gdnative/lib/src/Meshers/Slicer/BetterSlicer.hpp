@@ -36,7 +36,7 @@ namespace VoxelOptimizer
     class CBetterSlicer
     {
         public:
-            CBetterSlicer(VoxelMesh Mesh, bool Opaque, const std::map<CVector, Voxel> &voxels) : m_Mesh(Mesh), m_Opaque(Opaque), m_Voxels(voxels) {}
+            CBetterSlicer(VoxelMesh Mesh, bool Opaque, const std::map<CVectori, Voxel> &voxels) : m_Mesh(Mesh), m_Opaque(Opaque), m_Voxels(voxels) {}
 
             /**
              * @brief Sets the axis which is currently the main axis.
@@ -84,7 +84,7 @@ namespace VoxelOptimizer
             int m_Color;
             bool m_Opaque;
 
-            const std::map<CVector, Voxel> &m_Voxels;
+            const std::map<CVectori, Voxel> &m_Voxels;
 
             std::vector<std::pair<CVector, CVector>> m_ProcessedQuads;
     };

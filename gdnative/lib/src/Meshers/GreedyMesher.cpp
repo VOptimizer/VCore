@@ -147,11 +147,11 @@ namespace VoxelOptimizer
                 for (int WidthAxis = slice.BBox.Beg.v[Axis1]; WidthAxis < slice.BBox.End.v[Axis1];)
                 {
                     CVector Pos;
-                    Pos.v[Axis] = x[Axis];
+                    Pos.v[Axis] = slice.BBox.Beg.v[Axis]; //x[Axis];
                     Pos.v[Axis1] = WidthAxis;
                     Pos.v[Axis2] = HeightAxis;
 
-                    if(Slicer.IsFace(Pos, (x[Axis] - 1) == slice.BBox.Beg.v[Axis]))
+                    if(Slicer.IsFace(Pos, x[Axis] == slice.BBox.End.v[Axis]))
                     {
                         int w, h;
                         CVector Normal = Slicer.Normal();
@@ -383,12 +383,12 @@ namespace VoxelOptimizer
             bbox.End = bbox.End.Max(v.first + CVector(1, 1, 1));
             m_XSlices[v.first.x].BBox = bbox;
 
-            auto bbox = m_YSlices[v.first.y].BBox;
+            bbox = m_YSlices[v.first.y].BBox;
             bbox.Beg = bbox.Beg.Min(v.first);
             bbox.End = bbox.End.Max(v.first + CVector(1, 1, 1));
             m_YSlices[v.first.y].BBox = bbox;
 
-            auto bbox = m_ZSlices[v.first.z].BBox;
+            bbox = m_ZSlices[v.first.z].BBox;
             bbox.Beg = bbox.Beg.Min(v.first);
             bbox.End = bbox.End.Max(v.first + CVector(1, 1, 1));
             m_ZSlices[v.first.z].BBox = bbox;

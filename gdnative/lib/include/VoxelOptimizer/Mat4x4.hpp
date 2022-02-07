@@ -121,7 +121,7 @@ namespace VoxelOptimizer
 
             inline CVector operator*(const CVector &vec)
             {
-                return MultiplyVector(vec).ToVector3();
+                return MultiplyVector(vec).ToVector3<float>();
             }
 
             inline static CMat4x4 Translation(const CVector &pos)

@@ -32,43 +32,42 @@
 
 namespace VoxelOptimizer
 {
-    class CVector
+    template<class T>
+    class TVector
     {
         public:
             union
             {
                 struct
                 {
-                    float x;
-                    float y;
-                    float z;
+                    T x;
+                    T y;
+                    T z;
                 };
                 
-                float v[3];
+                T v[3];
             };
 
-            CVector() : x(0), y(0), z(0) {}
-            CVector(float x, float y, float z) : x(x), y(y), z(z) {}
-            CVector(const CVector &v) : x(v.x), y(v.y), z(v.z) {}
+            TVector() : x(0), y(0), z(0) {}
+            TVector(T x, T y, T z) : x(x), y(y), z(z) {}
+            TVector(const TVector &v) : x(v.x), y(v.y), z(v.z) {}
+
+            template<class O>
+            TVector(const TVector<O> &v) : x(v.x), y(v.y), z(v.z) {}
             
-            inline CVector Round()
+            inline TVector Floor()
             {
-                return CVector(roundf(x), roundf(y), roundf(z));
+                return TVector(floorf(x), floorf(y), floorf(z));
             }
 
-            inline CVector Floor()
+            inline TVector Sign()
             {
-                return CVector(floorf(x), floorf(y), floorf(z));
+                return TVector(Sign(x), Sign(y), Sign(z));
             }
 
-            inline CVector Sign()
+            inline TVector Fract()
             {
-                return CVector(Sign(x), Sign(y), Sign(z));
-            }
-
-            inline CVector Fract()
-            {
-                return CVector(x - (int)x, y - (int)y, z - (int)z);
+                return TVector(x - (int)x, y - (int)y, z - (int)z);
             }
 
             inline bool IsZero() const
@@ -76,17 +75,17 @@ namespace VoxelOptimizer
                 return x == 0 && y == 0 && z == 0;
             }
 
-            inline bool operator==(const CVector &vr) const
+            inline bool operator==(const TVector &vr) const
             {
                 return x == vr.x && y == vr.y && z == vr.z;
             }
 
-            inline bool operator!=(const CVector &vr) const
+            inline bool operator!=(const TVector &vr) const
             {
                 return x != vr.x || y != vr.y || z != vr.z;
             }
 
-            inline bool operator>(const CVector &vr) const
+            inline bool operator>(const TVector &vr) const
             {
                 if(x != vr.x)
                     return x > vr.x;
@@ -99,7 +98,7 @@ namespace VoxelOptimizer
                 return (x > vr.x) || (y > vr.y) || (z > vr.z);
             }
 
-            inline bool operator>=(const CVector &vr) const
+            inline bool operator>=(const TVector &vr) const
             {
                 if(x != vr.x)
                     return x >= vr.x;
@@ -112,7 +111,7 @@ namespace VoxelOptimizer
                 return (x >= vr.x) || (y >= vr.y) || (z >= vr.z);
             }
 
-            inline bool operator<(const CVector &vr) const
+            inline bool operator<(const TVector &vr) const
             {
                 if(x != vr.x)
                     return x < vr.x;
@@ -125,7 +124,7 @@ namespace VoxelOptimizer
                 return (x < vr.x) || (y < vr.y) || (z < vr.z);
             }
 
-            inline bool operator<=(const CVector &vr) const
+            inline bool operator<=(const TVector &vr) const
             {
                 if(x != vr.x)
                     return x <= vr.x;
@@ -140,22 +139,22 @@ namespace VoxelOptimizer
 
             // Upon here just math. Math is magic :D
 
-            inline CVector operator*(const CVector &vr) const
+            inline TVector operator*(const TVector &vr) const
             {
-                return CVector(x * vr.x, y * vr.y, z * vr.z);
+                return TVector(x * vr.x, y * vr.y, z * vr.z);
             }
 
-            inline CVector operator-(const CVector &vr) const
+            inline TVector operator-(const TVector &vr) const
             {
-                return CVector(x - vr.x, y - vr.y, z - vr.z);
+                return TVector(x - vr.x, y - vr.y, z - vr.z);
             }
 
-            inline CVector operator+(const CVector &vr) const
+            inline TVector operator+(const TVector &vr) const
             {
-                return CVector(x + vr.x, y + vr.y, z + vr.z);
+                return TVector(x + vr.x, y + vr.y, z + vr.z);
             }
 
-            inline CVector &operator+=(const CVector &vr)
+            inline TVector &operator+=(const TVector &vr)
             {
                 x += vr.x;
                 y += vr.y;
@@ -164,34 +163,34 @@ namespace VoxelOptimizer
                 return *this;
             }
 
-            inline CVector operator/(const CVector &vr) const
+            inline TVector operator/(const TVector &vr) const
             {
-                return CVector(x / vr.x, y / vr.y, z / vr.z);
+                return TVector(x / vr.x, y / vr.y, z / vr.z);
             }
 
-            inline CVector operator/(float scalar) const
+            inline TVector operator/(float scalar) const
             {
-                return CVector(x / scalar, y / scalar, z / scalar);
+                return TVector(x / scalar, y / scalar, z / scalar);
             }
 
-            inline CVector operator*(float scalar) const
+            inline TVector operator*(float scalar) const
             {
-                return CVector(x * scalar, y * scalar, z * scalar);
+                return TVector(x * scalar, y * scalar, z * scalar);
             }
 
-            inline CVector operator-() const
+            inline TVector operator-() const
             {
-                return CVector(-x, -y, -z);
+                return TVector(-x, -y, -z);
             }
 
-            inline float Dot(const CVector &vr) const
+            inline float Dot(const TVector &vr) const
             {
                 return x * vr.x + y * vr.y + z * vr.z;
             }
 
-            inline CVector Cross(const CVector &vr) const
+            inline TVector Cross(const TVector &vr) const
             {
-                return CVector(y * vr.z - z * vr.y, 
+                return TVector(y * vr.z - z * vr.y, 
                                z * vr.x - x * vr.z, 
                                x * vr.y - y * vr.x);
             }
@@ -201,10 +200,10 @@ namespace VoxelOptimizer
                 return sqrt((x * x) + (y * y) + (z * z));
             }
 
-            inline CVector Normalize() const
+            inline TVector Normalize() const
             {
                 float v = Length();
-                return CVector(x / v, y / v, z / v);
+                return TVector(x / v, y / v, z / v);
             }
 
             inline size_t hash() const
@@ -213,22 +212,22 @@ namespace VoxelOptimizer
                 return Hash(std::to_string(x) + "_" + std::to_string(y) + "_" + std::to_string(z));
             }
 
-            inline CVector Min(const CVector &vec) const
+            inline TVector Min(const TVector &vec) const
             {
-                return CVector(std::min(x, vec.x), std::min(y, vec.y), std::min(z, vec.z));
+                return TVector(std::min(x, vec.x), std::min(y, vec.y), std::min(z, vec.z));
             }
 
-            inline CVector Max(const CVector &vec) const
+            inline TVector Max(const TVector &vec) const
             {
-                return CVector(std::max(x, vec.x), std::max(y, vec.y), std::max(z, vec.z));
+                return TVector(std::max(x, vec.x), std::max(y, vec.y), std::max(z, vec.z));
             }
 
-            inline CVector Abs() const
+            inline TVector Abs() const
             {
-                return CVector(fabs(x), fabs(y), fabs(z));
+                return TVector(fabs(x), fabs(y), fabs(z));
             }
 
-            ~CVector() = default;
+            ~TVector() = default;
 
         private:
             inline float Sign(float v)
@@ -237,10 +236,14 @@ namespace VoxelOptimizer
             }
     };
 
-    inline CVector operator*(float scalar, const CVector &vr)
+    template<class T>
+    inline TVector<T> operator*(float scalar, const TVector<T> &vr)
     {
         return vr * scalar;
     }
+
+    using CVector = TVector<float>;
+    using CVectori = TVector<int>;
 
     class CVector4
     {
@@ -260,12 +263,15 @@ namespace VoxelOptimizer
 
             CVector4() : x(0), y(0), z(0), w(0) {}
             CVector4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
-            CVector4(const CVector &v) : x(v.x), y(v.y), z(v.z), w(1.0) {}
+
+            template<class T>
+            CVector4(const TVector<T> &v) : x(v.x), y(v.y), z(v.z), w(1.0) {}
             CVector4(const CVector4 &v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
 
-            inline CVector ToVector3() const
+            template<class T>
+            inline TVector<T> ToVector3() const
             {
-                return CVector(x, y, z);
+                return TVector<T> (x, y, z);
             }
 
             // Upon here just math. Math is magic :D
@@ -313,7 +319,8 @@ namespace VoxelOptimizer
             ~CVector4() = default;
     };
 
-    inline std::ostream &operator<<(std::ostream &of, const CVector &vec)
+    template<class T>
+    inline std::ostream &operator<<(std::ostream &of, const TVector<T> &vec)
     {
         of << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
         return of;

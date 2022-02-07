@@ -88,7 +88,7 @@ namespace VoxelOptimizer
             bool m_Opaque;
 
             std::vector<std::pair<CVector, CVector>> m_ProcessedQuads;
-            std::map<CVector, Voxel> m_Voxels;
+            std::map<CVectori, Voxel> m_Voxels;
     };
 } // namespace VoxelOptimizer
 
