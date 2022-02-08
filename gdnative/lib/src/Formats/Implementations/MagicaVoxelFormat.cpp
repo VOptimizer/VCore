@@ -107,11 +107,12 @@ namespace VoxelOptimizer
                         std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
                         auto count1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
 
-                        // begin1 = std::chrono::steady_clock::now();
-                        // auto &voxels = m->GetVoxels();
+                        begin1 = std::chrono::steady_clock::now();
+                        auto &voxels = m->GetVoxels();
+                        voxels.generateVisibilityMask();
                         // auto visible = voxels.queryVisible();
-                        // end1 = std::chrono::steady_clock::now();
-                        // auto count2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
+                        end1 = std::chrono::steady_clock::now();
+                        auto count2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
 
                         m_Models.push_back(m);
                         auto halfSize = (m->GetSize() / 2.0);
@@ -218,14 +219,18 @@ namespace VoxelOptimizer
         {
             CVector vec;
 
-            vec.x = ReadData<char>();
-            vec.y = ReadData<char>();
-            vec.z = ReadData<char>();
+            uint8_t data[4];
+            ReadData((char*)data, sizeof(data));
+
+            vec.x = data[0];//ReadData<char>();
+            vec.y = data[1];//ReadData<char>();
+            vec.z = data[2];//ReadData<char>();
+            int MatIdx = data[3];
 
             Beg = Beg.Min(vec);
             End = End.Max(vec);
 
-            int MatIdx = ReadData<uint8_t>();
+            // int MatIdx = ReadData<uint8_t>();
             int Color = 0;
             bool Transparent = false;
 

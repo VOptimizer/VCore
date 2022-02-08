@@ -44,7 +44,7 @@ namespace VoxelOptimizer
             struct SSlice
             {
                 public:
-                    SSlice() : BBox(CVector(INFINITY, INFINITY, INFINITY), CVector()) {}
+                    SSlice() : BBox(CVectori(INT32_MAX, INT32_MAX, INT32_MAX), CVectori()) {}
 
                     CBBox BBox;
                     std::list<CBBox> Transparent;

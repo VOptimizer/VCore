@@ -32,18 +32,18 @@ namespace VoxelOptimizer
     class CBBox
     {
         public:
-            CVector Beg;
-            CVector End;
+            CVectori Beg;
+            CVectori End;
 
             CBBox() {}
-            CBBox(CVector beg, CVector end) : Beg(beg), End(end + CVector(1, 1, 1)) {}
+            CBBox(CVectori beg, CVectori end) : Beg(beg), End(end + CVectori(1, 1, 1)) {}
 
             inline CVector GetSize() const
             {
                 return (End - Beg).Max(CVector(1, 1, 1));
             }
 
-            inline bool ContainsPoint(const CVector &v) const
+            inline bool ContainsPoint(const CVectori &v) const
             {
                 return (Beg.x <= v.x && Beg.y <= v.y && Beg.z <= v.z) && (End.x >= v.x && End.y >= v.y && End.z >= v.z);
             }

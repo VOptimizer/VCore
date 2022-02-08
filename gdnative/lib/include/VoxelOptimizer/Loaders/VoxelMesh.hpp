@@ -94,7 +94,33 @@ namespace VoxelOptimizer
         return static_cast<CVoxel::Visibility>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
     }
 
+    inline CVoxel::Visibility operator&=(CVoxel::Visibility &lhs, const CVoxel::Visibility rhs)
+    {
+        lhs = static_cast<CVoxel::Visibility>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
+        return lhs;
+    }
+
+    inline CVoxel::Visibility operator~(CVoxel::Visibility lhs)
+    {
+        return static_cast<CVoxel::Visibility>(~static_cast<uint8_t>(lhs));
+    }
+
     using Voxel = std::shared_ptr<CVoxel>;
+
+    class CVoxelOctree : public COctree<Voxel>
+    {
+        public:
+            CVoxelOctree();
+            CVoxelOctree(const CVoxelOctree &_tree);
+            CVoxelOctree(const CVectori &_size, int _depth = 10);
+
+            std::map<CVectori, Voxel> queryVisible();
+            std::list<CBBox> queryBBoxes();
+            void generateVisibilityMask();
+
+        private:
+            void CheckVisibility(Voxel _v, const CVectori &_dir, CVoxel::Visibility lhs, CVoxel::Visibility rhs);
+    };
 
     struct SChunk
     {
@@ -112,7 +138,7 @@ namespace VoxelOptimizer
 
     class CVoxelMesh
     {
-        using VoxelData = COctree<Voxel>;
+        using VoxelData = CVoxelOctree;//COctree<Voxel>;
 
         public:
             CVoxelMesh(VoxelMode mode = VoxelMode::KEEP_ALL) : m_RemeshAll(true), m_BlockCount(0), m_GlobalChunk(new SChunk()), m_Mode(mode) 
@@ -127,7 +153,7 @@ namespace VoxelOptimizer
             inline void SetSize(const CVector &Size)
             {
                 m_Size = Size;
-                m_Voxels = COctree<Voxel>(m_Size, 5);
+                m_Voxels = VoxelData(m_Size, 5);
 
                 // m_Voxels.clear();
                 // m_Voxels.resize(m_Size.x * m_Size.y * m_Size.z);
@@ -164,7 +190,7 @@ namespace VoxelOptimizer
             inline void RecalcBBox()
             {
                 std::lock_guard<std::recursive_mutex> lock(m_Lock);
-                m_BBox = CBBox(CVector(INFINITY, INFINITY, INFINITY), CVector(0, 0, 0));
+                m_BBox = CBBox(CVectori(INT32_MAX, INT32_MAX, INT32_MAX), CVectori(0, 0, 0));
 
                 for (auto &&v : m_Voxels)
                 {
@@ -344,6 +370,144 @@ namespace VoxelOptimizer
     };
 
     using VoxelMesh = std::shared_ptr<CVoxelMesh>;
+
+    //////////////////////////////////////////////////
+    // CVoxelOctree functions
+    //////////////////////////////////////////////////
+
+    inline CVoxelOctree::CVoxelOctree() : COctree<Voxel>() { }
+    inline CVoxelOctree::CVoxelOctree(const CVoxelOctree &_tree) : COctree<Voxel>(_tree) { }
+    inline CVoxelOctree::CVoxelOctree(const CVectori &_size, int _depth) : COctree<Voxel>(_size, _depth) { }
+
+    inline std::map<CVectori, Voxel> CVoxelOctree::queryVisible()
+    {
+        std::map<CVectori, Voxel> ret;
+
+        if(this->m_Nodes)
+        {
+            internal::COctreeNode<Voxel> *node = this->m_Nodes[0];
+            while(node->CanSubdivide())
+                node = node->m_Nodes[0];
+
+            while (node != this)
+            {
+                while(node->m_Content.empty())
+                {
+                    internal::COctreeNode<Voxel> *parent = node->m_Parent;
+                    if(!parent)
+                        break;
+
+                    size_t idx = parent->CalcIndex(node->m_BBox.Beg);
+                    if(idx < (this->NODES_COUNT - 1))
+                    {
+                        idx++;
+                        node = parent->m_Nodes[idx];   
+
+                        while(node->CanSubdivide() && node->m_Nodes)
+                            node = node->m_Nodes[0];                
+                    }
+                    else
+                        node = parent;
+                }
+
+                if(node != this)
+                {
+                    for (auto &&v : node->m_Content)
+                    {
+                        if(v.second->IsVisible())
+                            ret.insert(v);
+                    }
+                    
+
+                    // node->queryVisible(this, ret);
+
+                    size_t idx = node->m_Parent->CalcIndex(node->m_BBox.Beg);
+                    if(idx < (this->NODES_COUNT - 1))
+                    {
+                        idx++;
+                        node = node->m_Parent->m_Nodes[idx];   
+                    }
+                    else
+                        node = node->m_Parent;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    inline std::list<CBBox> CVoxelOctree::queryBBoxes()
+    {
+        std::list<CBBox> ret;
+
+        if(this->m_Nodes)
+        {
+            internal::COctreeNode<Voxel> *node = this->m_Nodes[0];
+            while(node->CanSubdivide())
+                node = node->m_Nodes[0];
+
+            while (node != this)
+            {
+                while(node->m_Content.empty())
+                {
+                    internal::COctreeNode<Voxel> *parent = node->m_Parent;
+                    if(!parent)
+                        break;
+
+                    size_t idx = parent->CalcIndex(node->m_BBox.Beg);
+                    if(idx < (this->NODES_COUNT - 1))
+                    {
+                        idx++;
+                        node = parent->m_Nodes[idx];   
+
+                        while(node->CanSubdivide() && node->m_Nodes)
+                            node = node->m_Nodes[0];                
+                    }
+                    else
+                        node = parent;
+                }
+
+                if(node != this)
+                {
+                    ret.push_back(node->m_InnerBBox);
+
+                    size_t idx = node->m_Parent->CalcIndex(node->m_BBox.Beg);
+                    if(idx < (this->NODES_COUNT - 1))
+                    {
+                        idx++;
+                        node = node->m_Parent->m_Nodes[idx];   
+                    }
+                    else
+                        node = node->m_Parent;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    inline void CVoxelOctree::generateVisibilityMask()
+    {
+        COctree<Voxel>::iterator it = begin();
+        while(it != end())
+        {
+            CheckVisibility(it->second, CVectori(1, 0, 0), CVoxel::Visibility::RIGHT, CVoxel::Visibility::LEFT);
+            CheckVisibility(it->second, CVectori(0, 1, 0), CVoxel::Visibility::FORWARD, CVoxel::Visibility::BACKWARD);
+            CheckVisibility(it->second, CVectori(0, 0, 1), CVoxel::Visibility::UP, CVoxel::Visibility::DOWN);
+
+            it++;
+        }
+    }
+
+    inline void CVoxelOctree::CheckVisibility(Voxel _v, const CVectori &_dir, CVoxel::Visibility lhs, CVoxel::Visibility rhs)
+    {
+        auto it = find(CVectori(_v->Pos) + _dir);
+        if(it != end())
+        {
+            _v->VisibilityMask &= ~lhs; //CVoxel::Visibility::RIGHT;
+            it->second->VisibilityMask &= ~rhs; //CVoxel::Visibility::LEFT;
+        }
+    }
 } // namespace VoxelOptimizer
 
 

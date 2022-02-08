@@ -56,18 +56,7 @@ namespace VoxelOptimizer
         std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
         InsertTimeTotal += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
 
-        // SetNormal(Pos, CVoxel::FACE_UP);
-        // SetNormal(Pos, CVoxel::FACE_DOWN);
-
-        // SetNormal(Pos, CVoxel::FACE_LEFT);
-        // SetNormal(Pos, CVoxel::FACE_RIGHT);
-
-        // SetNormal(Pos, CVoxel::FACE_FORWARD);
-        // SetNormal(Pos, CVoxel::FACE_BACKWARD);
-
         m_BlockCount++;
-
-        // MarkChunk(Pos, Transparent ? Tmp : nullptr);
     }
 
     void CVoxelMesh::RemoveVoxel(const CVector &Pos)

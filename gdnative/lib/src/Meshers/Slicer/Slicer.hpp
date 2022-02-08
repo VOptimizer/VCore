@@ -36,10 +36,10 @@ namespace VoxelOptimizer
     class CSlicer
     {
         public:
-            CSlicer(VoxelMesh Mesh, bool Opaque) : m_Mesh(Mesh), m_Opaque(Opaque) 
+            CSlicer(VoxelMesh Mesh, const std::map<CVectori, Voxel> &voxels, bool Opaque) : m_Mesh(Mesh), m_Opaque(Opaque), m_Voxels(voxels)
             {
-                auto &voxels = m_Mesh->GetVoxels();
-                m_Voxels = voxels.queryVisible();
+                // auto &voxels = m_Mesh->GetVoxels();
+                // m_Voxels = voxels.queryVisible();
             }
 
             /**
@@ -86,9 +86,10 @@ namespace VoxelOptimizer
             int m_Material;
             int m_Color;
             bool m_Opaque;
+            bool m_HasFace;
 
             std::vector<std::pair<CVector, CVector>> m_ProcessedQuads;
-            std::map<CVectori, Voxel> m_Voxels;
+            const std::map<CVectori, Voxel> &m_Voxels;
     };
 } // namespace VoxelOptimizer
 

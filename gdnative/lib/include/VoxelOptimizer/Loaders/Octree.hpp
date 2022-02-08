@@ -26,18 +26,19 @@
 #define OCTREE_HPP
 
 #include <VoxelOptimizer/BBox.hpp>
+#include <climits>
+#include <list>
 #include <map>
 #include <utility>
 #include <vector>
 
 #include <cmath>
 
-#define f2i(x) (int)x//lfloor() //lroundf(x - 0.5f)
-
 namespace VoxelOptimizer
 {
     template<class T>
     class COctree;
+    class CVoxelOctree;
 
     template<class T>
     class COctreeIterator;
@@ -49,6 +50,7 @@ namespace VoxelOptimizer
         {
             friend COctree<T>;
             friend COctreeIterator<T>;
+            friend CVoxelOctree;
             public:
                 void clear();
 
@@ -60,7 +62,7 @@ namespace VoxelOptimizer
                 const int NODES_COUNT = 8;
 
                 COctreeNode();
-                COctreeNode(COctreeNode<T> *_parent, const CBBoxi &_bbox, int _depth); 
+                COctreeNode(COctreeNode<T> *_parent, const CBBox &_bbox, int _depth); 
                 COctreeNode(COctreeNode<T> *_parent, const COctreeNode<T> *_other); 
 
                 virtual bool CanSubdivide();
@@ -70,7 +72,7 @@ namespace VoxelOptimizer
                 void CopyNode(const COctreeNode<T> *_other);
                 void queryVisible(COctreeNode<T> *_root, std::map<CVectori, T> &_visible);
 
-                void SetBBox(const CBBoxi &_bbox);
+                void SetBBox(const CBBox &_bbox);
 
                 size_t CalcIndex(const CVectori &_pos);
                 bool HasNeighbor(const CVectori &_pos);
@@ -81,7 +83,8 @@ namespace VoxelOptimizer
                 CVector m_ReciprocalSubSize;
 
                 // CBBox m_VoxelMeshSize;
-                CBBoxi m_BBox;
+                CBBox m_BBox;
+                CBBox m_InnerBBox;
                 int m_MaxDepth;
 
                 COctreeNode<T> **m_Nodes;
@@ -107,6 +110,7 @@ namespace VoxelOptimizer
             pointer operator->() const;
 
             COctreeIterator<T>& operator++();
+            COctreeIterator<T>& operator++(int);
 		    COctreeIterator<T>& operator--();
 
             bool operator!=(const COctreeIterator<T> &b);
@@ -130,16 +134,14 @@ namespace VoxelOptimizer
     template<class T>
     class COctree : public internal::COctreeNode<T>
     {
-        using pair = std::pair<CVectori, T>;
-        using value_type = T;
-        using iterator = COctreeIterator<T>;
-
         public:
+            using pair = std::pair<CVectori, T>;
+            using value_type = T;
+            using iterator = COctreeIterator<T>;
+
             COctree();
             COctree(const COctree<T> &_tree);
             COctree(const CVectori &_size, int _depth = 10);
-
-            std::map<CVectori, T> queryVisible();
 
             void insert(const pair &_pair);
             iterator erase(const iterator &_it) { return end(); }
@@ -169,14 +171,14 @@ namespace VoxelOptimizer
     namespace internal
     {
         template<class T>
-        inline COctreeNode<T>::COctreeNode() : m_MaxDepth(0), m_Parent(nullptr), m_Nodes(nullptr), m_HasContent(false)
+        inline COctreeNode<T>::COctreeNode() : m_MaxDepth(0), m_Parent(nullptr), m_Nodes(nullptr), m_HasContent(false), m_InnerBBox(CVectori(INT32_MAX, INT32_MAX, INT32_MAX), CVectori())
         {
             CalcIdxTime = 0;
             FindNodeTime = 0;
         }
 
         template<class T>
-        inline COctreeNode<T>::COctreeNode(COctreeNode<T> *_parent, const CBBoxi &_bbox, int _depth) : COctreeNode()
+        inline COctreeNode<T>::COctreeNode(COctreeNode<T> *_parent, const CBBox &_bbox, int _depth) : COctreeNode()
         {
             m_MaxDepth = _depth;
             SetBBox(_bbox);
@@ -290,7 +292,7 @@ namespace VoxelOptimizer
                     for (char x = 0; x < 2; x++)
                     {
                         CVectori position = m_BBox.Beg + m_SubSize * CVectori(x, y, z);
-                        COctreeNode<T> *node = new COctreeNode<T>(this, CBBoxi(position, position + m_SubSize - CVectori(1, 1, 1)), m_MaxDepth - 1);
+                        COctreeNode<T> *node = new COctreeNode<T>(this, CBBox(position, position + m_SubSize - CVectori(1, 1, 1)), m_MaxDepth - 1);
                         m_Nodes[idx] = node;
                         idx++;
                     }
@@ -324,7 +326,7 @@ namespace VoxelOptimizer
         }
 
         template<class T>
-        inline void COctreeNode<T>::SetBBox(const CBBoxi &_bbox)
+        inline void COctreeNode<T>::SetBBox(const CBBox &_bbox)
         {
             m_BBox = _bbox;
             m_SubSize = m_BBox.GetSize() * 0.5f;
@@ -367,10 +369,10 @@ namespace VoxelOptimizer
     }
 
     template<class T>
-    inline COctree<T>::COctree(const CVectori &_size, int _depth) : internal::COctreeNode<T>(nullptr, CBBoxi(), _depth)
+    inline COctree<T>::COctree(const CVectori &_size, int _depth) : internal::COctreeNode<T>(nullptr, CBBox(), _depth)
     {
         // Creates a voxel space that is a power of two in size.
-        this->SetBBox(CBBoxi(CVectori(), RoundVectorPowerOfTwo(_size) - CVectori(1, 1, 1)));
+        this->SetBBox(CBBox(CVectori(), RoundVectorPowerOfTwo(_size) - CVectori(1, 1, 1)));
         m_Size = 0;
     }
 
@@ -392,63 +394,14 @@ namespace VoxelOptimizer
         }
         
         node->m_Content.insert(_pair);
+        node->m_InnerBBox.Beg = node->m_InnerBBox.Beg.Min(_pair.first);
+        node->m_InnerBBox.End = node->m_InnerBBox.End.Max(_pair.first + CVectori(1, 1, 1));
     }
 
     template<class T>
     inline size_t COctree<T>::size()
     {
         return m_Size;
-    }
-
-    template<class T>
-    inline std::map<CVectori, T> COctree<T>::queryVisible()
-    {
-        std::map<CVectori, T> ret;
-
-        if(this->m_Nodes)
-        {
-            internal::COctreeNode<T> *node = this->m_Nodes[0];
-            while(node->CanSubdivide())
-                node = node->m_Nodes[0];
-
-            while (node != this)
-            {
-                while(node->m_Content.empty())
-                {
-                    internal::COctreeNode<T> *parent = node->m_Parent;
-                    if(!parent)
-                        break;
-
-                    size_t idx = parent->CalcIndex(node->m_BBox.Beg);
-                    if(idx < (this->NODES_COUNT - 1))
-                    {
-                        idx++;
-                        node = parent->m_Nodes[idx];   
-
-                        while(node->CanSubdivide() && node->m_Nodes)
-                            node = node->m_Nodes[0];                
-                    }
-                    else
-                        node = parent;
-                }
-
-                if(node != this)
-                {
-                    node->queryVisible(this, ret);
-
-                    size_t idx = node->m_Parent->CalcIndex(node->m_BBox.Beg);
-                    if(idx < (this->NODES_COUNT - 1))
-                    {
-                        idx++;
-                        node = node->m_Parent->m_Nodes[idx];   
-                    }
-                    else
-                        node = node->m_Parent;
-                }
-            }
-        }
-
-        return ret;
     }
 
     template<class T>
@@ -602,7 +555,7 @@ namespace VoxelOptimizer
                     idx++;
                     SetNode(parent->m_Nodes[idx]);
 
-                    while(m_Node->CanSubdivide() && !m_Node->m_Nodes)
+                    while(m_Node->CanSubdivide() && m_Node->m_Nodes)
                         SetNode(m_Node->m_Nodes[0]);
 
                     if(!m_Node->m_Content.empty())
@@ -614,6 +567,12 @@ namespace VoxelOptimizer
         }
 
         return *this;
+    }
+
+    template<class T>
+    inline COctreeIterator<T>& COctreeIterator<T>::operator++(int)
+    {
+        return this->operator++();
     }
 
     template<class T>

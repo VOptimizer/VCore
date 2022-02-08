@@ -26,6 +26,8 @@
 
 #include "Slicer.hpp"
 
+#define IsFaceVisible(v, f) ((v->VisibilityMask & f) == f);
+
 namespace VoxelOptimizer
 {
     void CSlicer::SetActiveAxis(int Axis)
@@ -56,48 +58,66 @@ namespace VoxelOptimizer
             return false;
 
         Voxel V1, V2;
+        bool current = true;
+        m_HasFace = false;
         CVector Size = m_Mesh->GetSize();
 
-        V1 = GetVoxel(Pos);//m_Mesh->GetVoxel(Pos, m_Opaque);
-        V2 = GetVoxel(Pos + m_Neighbour);//m_Mesh->GetVoxel(Pos + m_Neighbour, m_Opaque);
-
-        if(V1 || V2)
+        V1 = GetVoxel(Pos);
+        if(!V1)
         {
-            if(!V1)
-                V1 = m_Mesh->GetVoxel(Pos, m_Opaque);
-
-            if(!V2)
-                V2 = m_Mesh->GetVoxel(Pos + m_Neighbour, m_Opaque);
+            V1 = GetVoxel(Pos + m_Neighbour);
+            current = false;
         }
 
-        if(!m_Opaque)
-        {
-            // Check if neighbour is same as current
-            if(V1 && V2)
-            {
-                if(V1->Color != V2->Color || V1->Material != V2->Material)
-                    V2 = nullptr;
-            }
-        }
-        
-        bool BlockCurrent = 0 <= Pos.v[m_Axis] ? ((bool)V1) : false;
-        bool BlockCompare = Pos.v[m_Axis] < Size.v[m_Axis] - 1 ? ((bool)V2) : false;
-
-        if(!BlockCurrent && BlockCompare)
-        {
-            m_Color = V2->Color;
-            m_Material = V2->Material;
-            SetFaceNormal(V2, false);
-        }
-        else if(BlockCurrent && !BlockCompare)
+        if(V1)
         {
             m_Color = V1->Color;
             m_Material = V1->Material;
-            SetFaceNormal(V1, true);
+            SetFaceNormal(V1, current);
         }
+
+        return m_HasFace;
+
+        // V1 = GetVoxel(Pos);//m_Mesh->GetVoxel(Pos, m_Opaque);
+        // V2 = GetVoxel(Pos + m_Neighbour);//m_Mesh->GetVoxel(Pos + m_Neighbour, m_Opaque);
+
+        // // if(V1 || V2)
+        // // {
+        // //     if(!V1)
+        // //         V1 = m_Mesh->GetVoxel(Pos, m_Opaque);
+
+        // //     if(!V2)
+        // //         V2 = m_Mesh->GetVoxel(Pos + m_Neighbour, m_Opaque);
+        // // }
+
+        // if(!m_Opaque)
+        // {
+        //     // Check if neighbour is same as current
+        //     if(V1 && V2)
+        //     {
+        //         if(V1->Color != V2->Color || V1->Material != V2->Material)
+        //             V2 = nullptr;
+        //     }
+        // }
+        
+        // bool BlockCurrent = 0 <= Pos.v[m_Axis] ? ((bool)V1) : false;
+        // bool BlockCompare = Pos.v[m_Axis] < Size.v[m_Axis] - 1 ? ((bool)V2) : false;
+
+        // if(!BlockCurrent && BlockCompare)
+        // {
+        //     m_Color = V2->Color;
+        //     m_Material = V2->Material;
+        //     SetFaceNormal(V2, false);
+        // }
+        // else if(BlockCurrent && !BlockCompare)
+        // {
+        //     m_Color = V1->Color;
+        //     m_Material = V1->Material;
+        //     SetFaceNormal(V1, true);
+        // }
     
         // Checks if there is a visible face.
-        return BlockCurrent != BlockCompare;
+        // return BlockCurrent != BlockCompare;
     }
 
     Voxel CSlicer::GetVoxel(const CVector &v)
@@ -127,25 +147,44 @@ namespace VoxelOptimizer
             case 0: // X-Axis
             {
                 if(IsCurrent)
-                    m_Normal = CVector(1, 0, 0); //v->Normals[CVoxel::RIGHT];
+                {
+                    m_Normal = CVector(1, 0, 0);
+                    m_HasFace = IsFaceVisible(v, CVoxel::Visibility::RIGHT);
+                } //v->Normals[CVoxel::RIGHT];
                 else
-                    m_Normal = CVector(-1, 0, 0);//v->Normals[CVoxel::LEFT];
+                {
+                    m_Normal = CVector(-1, 0, 0);
+                    m_HasFace = IsFaceVisible(v, CVoxel::Visibility::LEFT);
+                }
+                    //v->Normals[CVoxel::LEFT];
             }break;
 
             case 1: // Y-Axis
             {
                 if(IsCurrent)
-                    m_Normal = CVector(0, 1, 0);//v->Normals[CVoxel::FORWARD];
+                {
+                    m_Normal = CVector(0, 1, 0);
+                    m_HasFace = IsFaceVisible(v, CVoxel::Visibility::FORWARD);
+                }//v->Normals[CVoxel::FORWARD];
                 else
-                    m_Normal = CVector(0, -1, 0);//v->Normals[CVoxel::BACKWARD];
+                {
+                    m_Normal = CVector(0, -1, 0);
+                    m_HasFace = IsFaceVisible(v, CVoxel::Visibility::BACKWARD);
+                }//v->Normals[CVoxel::BACKWARD];
             }break;
 
             case 2: // Z-Axis
             {
                 if(IsCurrent)
-                    m_Normal = CVector(0, 0, 1);//v->Normals[CVoxel::UP];
+                {
+                    m_Normal = CVector(0, 0, 1);
+                    m_HasFace = IsFaceVisible(v, CVoxel::Visibility::UP);
+                }//v->Normals[CVoxel::UP];
                 else
-                    m_Normal = CVector(0, 0, -1);//v->Normals[CVoxel::DOWN];
+                {
+                    m_Normal = CVector(0, 0, -1);
+                    m_HasFace = IsFaceVisible(v, CVoxel::Visibility::DOWN);
+                }//v->Normals[CVoxel::DOWN];
             }break;
         }
     }

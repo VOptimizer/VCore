@@ -43,37 +43,73 @@ namespace VoxelOptimizer
         m_Voxels = voxels.queryVisible();
 
         std::map<CVector, Mesh> Ret;
-        auto Chunks = m->GetChunksToRemesh();
+        // auto Chunks = m->GetChunksToRemesh();
 
-        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        GenerateSlices();
-        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        auto count = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+        // std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        // GenerateSlices();
+        // std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        // auto count = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
 
         m_CurrentUsedMaterials = m->Materials();
-        std::vector<Mesh> meshes;
+        // std::vector<Mesh> meshes;
 
-        begin = std::chrono::steady_clock::now();
-        for (auto &&s : m_XSlices)
-        {
-            ClearCache();
-            meshes.push_back(GenerateSliceMesh(s.second, m, 0));
-        }
+        // begin = std::chrono::steady_clock::now();
+        // for (auto &&s : m_XSlices)
+        // {
+        //     ClearCache();
+        //     meshes.push_back(GenerateSliceMesh(s.second, m, 0));
+        // }
         
-        for (auto &&s : m_YSlices)
-        {
-            ClearCache();
-            meshes.push_back(GenerateSliceMesh(s.second, m, 1));
-        }
+        // for (auto &&s : m_YSlices)
+        // {
+        //     ClearCache();
+        //     meshes.push_back(GenerateSliceMesh(s.second, m, 1));
+        // }
 
-        for (auto &&s : m_ZSlices)
-        {
-            ClearCache();
-            meshes.push_back(GenerateSliceMesh(s.second, m, 2));
-        }
-        end = std::chrono::steady_clock::now();
+        // for (auto &&s : m_ZSlices)
+        // {
+        //     ClearCache();
+        //     meshes.push_back(GenerateSliceMesh(s.second, m, 2));
+        // }
+        // end = std::chrono::steady_clock::now();
+        // auto count1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+
+        // Mesh retMesh = Mesh(new SMesh());
+        // retMesh->Textures = m->Colorpalettes();
+        // CMeshBuilder builder;
+        // builder.Merge(retMesh, meshes);
+
+        // Ret[CVector()] = builder.Build();
+
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        auto Chunks = voxels.queryBBoxes();
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         auto count1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
 
+        std::vector<Mesh> meshes(Chunks.size(), 0);
+        size_t idx = 0;
+
+        begin = std::chrono::steady_clock::now();
+        for (auto &&c : Chunks)
+        {
+            Mesh RetMesh = Mesh(new SMesh());
+            RetMesh->Textures = m->Colorpalettes();
+
+            GenerateMesh(RetMesh, m, c, true);
+
+            // GenerateMesh(RetMesh, m, c->BBox, true);
+            // for (auto &&t : c->Transparent)
+            //     GenerateMesh(RetMesh, m, t.second, false);            
+
+            ClearCache();
+            // RetMesh->ModelMatrix = CalculateModelMatrix(m->GetSceneNode());
+            // Ret[c.Beg] = RetMesh;
+            meshes[idx] = RetMesh;
+            idx++;
+        }
+        end = std::chrono::steady_clock::now();
+        auto count = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+        
         Mesh retMesh = Mesh(new SMesh());
         retMesh->Textures = m->Colorpalettes();
         CMeshBuilder builder;
@@ -81,23 +117,6 @@ namespace VoxelOptimizer
 
         Ret[CVector()] = builder.Build();
 
-        // std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        // for (auto &&c : Chunks)
-        // {
-        //     Mesh RetMesh = Mesh(new SMesh());
-        //     RetMesh->Textures = m->Colorpalettes();
-
-        //     GenerateMesh(RetMesh, m, c->BBox, true);
-        //     for (auto &&t : c->Transparent)
-        //         GenerateMesh(RetMesh, m, t.second, false);            
-
-        //     ClearCache();
-        //     // RetMesh->ModelMatrix = CalculateModelMatrix(m->GetSceneNode());
-        //     Ret[c->BBox.Beg] = RetMesh;
-        // }
-        // std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        // auto count = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-        
         m_XSlices.clear();
         m_YSlices.clear();
         m_ZSlices.clear();
@@ -256,7 +275,7 @@ namespace VoxelOptimizer
         std::swap(BoxCenter.y, BoxCenter.z);
         BoxCenter.z *= -1;
 
-        CSlicer Slicer(m, Opaque);
+        CSlicer Slicer(m, m_Voxels, Opaque);
 
         // For all 3 axis (x, y, z)
         for (size_t Axis = 0; Axis < 3; Axis++)
