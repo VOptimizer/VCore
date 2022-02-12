@@ -210,27 +210,33 @@ namespace VoxelOptimizer
     {
         int VoxelCount = ReadData<int>();
 
-        CVector Beg(1000, 1000, 1000), End;
+        CVectori Beg(INT32_MAX, INT32_MAX, INT32_MAX), End;
 
         // Each model has it's used material attached, so we need to map the MagicaVoxel ID to the local one of the mesh.
         std::map<int, int> modelMaterialMapping;
+        auto count1 = 0;
 
         for (size_t i = 0; i < VoxelCount; i++)
         {
-            CVector vec;
+            CVectori vec;
 
             uint8_t data[4];
-            ReadData((char*)data, sizeof(data));
 
-            vec.x = data[0];//ReadData<char>();
-            vec.y = data[1];//ReadData<char>();
-            vec.z = data[2];//ReadData<char>();
+                        std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
+            ReadData((char*)data, sizeof(data));
+                        std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
+                         count1 += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
+
+            
+
+            vec.x = data[0];
+            vec.y = data[1];
+            vec.z = data[2];
             int MatIdx = data[3];
 
             Beg = Beg.Min(vec);
             End = End.Max(vec);
 
-            // int MatIdx = ReadData<uint8_t>();
             int Color = 0;
             bool Transparent = false;
 
@@ -269,12 +275,7 @@ namespace VoxelOptimizer
                 MatIdx = m->Materials().size() - 1;
             }
 
-//             std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
             m->SetVoxel(vec, MatIdx, Color, Transparent);
-//             std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
-//             auto count1 = std::chrono::duration_cast<std::chrono::milliseconds>(end1 - begin1).count();
-// // 
-//             count1 = 0;
         } 
 
         m->SetBBox(CBBox(Beg, End));

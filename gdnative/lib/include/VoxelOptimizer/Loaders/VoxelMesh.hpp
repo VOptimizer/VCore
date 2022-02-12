@@ -120,6 +120,8 @@ namespace VoxelOptimizer
 
         private:
             void CheckVisibility(Voxel _v, const CVectori &_dir, CVoxel::Visibility lhs, CVoxel::Visibility rhs);
+
+            void CheckVisibility(const Voxel &_v, const Voxel &_v2, char _axis);
     };
 
     struct SChunk
@@ -398,7 +400,7 @@ namespace VoxelOptimizer
                         break;
 
                     size_t idx = parent->CalcIndex(node->m_BBox.Beg);
-                    if(idx < (this->NODES_COUNT - 1))
+                    if(idx < (NODES_COUNT - 1))
                     {
                         idx++;
                         node = parent->m_Nodes[idx];   
@@ -422,7 +424,7 @@ namespace VoxelOptimizer
                     // node->queryVisible(this, ret);
 
                     size_t idx = node->m_Parent->CalcIndex(node->m_BBox.Beg);
-                    if(idx < (this->NODES_COUNT - 1))
+                    if(idx < (NODES_COUNT - 1))
                     {
                         idx++;
                         node = node->m_Parent->m_Nodes[idx];   
@@ -455,7 +457,7 @@ namespace VoxelOptimizer
                         break;
 
                     size_t idx = parent->CalcIndex(node->m_BBox.Beg);
-                    if(idx < (this->NODES_COUNT - 1))
+                    if(idx < (NODES_COUNT - 1))
                     {
                         idx++;
                         node = parent->m_Nodes[idx];   
@@ -472,7 +474,7 @@ namespace VoxelOptimizer
                     ret.push_back(node->m_InnerBBox);
 
                     size_t idx = node->m_Parent->CalcIndex(node->m_BBox.Beg);
-                    if(idx < (this->NODES_COUNT - 1))
+                    if(idx < (NODES_COUNT - 1))
                     {
                         idx++;
                         node = node->m_Parent->m_Nodes[idx];   
@@ -488,24 +490,108 @@ namespace VoxelOptimizer
 
     inline void CVoxelOctree::generateVisibilityMask()
     {
-        COctree<Voxel>::iterator it = begin();
-        while(it != end())
-        {
-            CheckVisibility(it->second, CVectori(1, 0, 0), CVoxel::Visibility::RIGHT, CVoxel::Visibility::LEFT);
-            CheckVisibility(it->second, CVectori(0, 1, 0), CVoxel::Visibility::FORWARD, CVoxel::Visibility::BACKWARD);
-            CheckVisibility(it->second, CVectori(0, 0, 1), CVoxel::Visibility::UP, CVoxel::Visibility::DOWN);
+        internal::COctreeNode<Voxel> *node = this->m_Nodes[0];
+        while(node->CanSubdivide())
+            node = node->m_Nodes[0];
 
-            it++;
+        if(node->m_Content.empty())
+            node = internal::NextNoneEmptyNode(node);
+
+        while(node != this)
+        {
+            CVectori beg = node->m_InnerBBox.Beg;
+            CVectori end = node->m_InnerBBox.End;
+
+            for (char axis = 0; axis < 3; axis++)
+            {
+                int axis1 = (axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
+                int axis2 = (axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
+                Voxel current;
+
+                for (int x = beg.v[axis]; x < end.v[axis]; x++)
+                {
+                    for (int y = beg.v[axis1]; y < end.v[axis1]; y++)
+                    {
+                        // Reset current
+                        CVectori pos;
+                        pos.v[axis] = x;
+                        pos.v[axis1] = y;
+                        pos.v[axis2] = beg.v[axis2];
+
+                        auto it = node->m_Content.find(pos);
+                        if(it != node->m_Content.end())
+                            current = it->second;
+                        else
+                            current = nullptr;
+
+                        for (int z = beg.v[axis2] + 1; z < end.v[axis2]; z++)
+                        {
+                            pos.v[axis] = x;
+                            pos.v[axis1] = y;
+                            pos.v[axis2] = z;
+
+                            it = node->m_Content.find(pos);
+                            if(it != node->m_Content.end())
+                            {
+                                CheckVisibility(current, it->second, axis2);
+                                current = it->second;
+                            }
+                            else
+                                current = nullptr;
+                        }
+
+                        if(current && current->Pos.v[axis2] == (node->m_BBox.End.v[axis2] - 1))
+                        {
+                            pos = current->Pos;
+                            pos.v[axis2] += 1;
+
+                            auto ocit = find(pos);
+                            if(ocit != this->end())
+                                CheckVisibility(current, ocit->second, axis2);
+                        }
+                    }
+                }
+            }  
+
+            node = internal::NextNoneEmptyNode(node);          
         }
+
+        // +- 520,789227ms
+        // COctree<Voxel>::iterator it = begin();
+        // while(it != end())
+        // {
+        //     CheckVisibility(it->second, CVectori(1, 0, 0), CVoxel::Visibility::RIGHT, CVoxel::Visibility::LEFT);
+        //     CheckVisibility(it->second, CVectori(0, 1, 0), CVoxel::Visibility::FORWARD, CVoxel::Visibility::BACKWARD);
+        //     CheckVisibility(it->second, CVectori(0, 0, 1), CVoxel::Visibility::UP, CVoxel::Visibility::DOWN);
+
+        //     it++;
+        // }
     }
 
     inline void CVoxelOctree::CheckVisibility(Voxel _v, const CVectori &_dir, CVoxel::Visibility lhs, CVoxel::Visibility rhs)
     {
         auto it = find(CVectori(_v->Pos) + _dir);
-        if(it != end())
+        if(it != this->end())
         {
             _v->VisibilityMask &= ~lhs; //CVoxel::Visibility::RIGHT;
             it->second->VisibilityMask &= ~rhs; //CVoxel::Visibility::LEFT;
+        }
+    }
+
+    inline void CVoxelOctree::CheckVisibility(const Voxel &_v, const Voxel &_v2, char _axis)
+    {
+        const static std::pair<CVoxel::Visibility, CVoxel::Visibility> ADJACENT_FACES[3] = {
+            {~CVoxel::Visibility::RIGHT, ~CVoxel::Visibility::LEFT},
+            {~CVoxel::Visibility::FORWARD, ~CVoxel::Visibility::BACKWARD},
+            {~CVoxel::Visibility::UP, ~CVoxel::Visibility::DOWN},
+        };
+
+        if(_v)
+        {
+            const std::pair<CVoxel::Visibility, CVoxel::Visibility> &adjacent_faces = ADJACENT_FACES[_axis];
+
+            _v->VisibilityMask &= adjacent_faces.first;
+            _v2->VisibilityMask &= adjacent_faces.second;
         }
     }
 } // namespace VoxelOptimizer
