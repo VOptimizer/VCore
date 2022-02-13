@@ -45,6 +45,7 @@ namespace VoxelOptimizer
         {
             CVector Beg(INFINITY, INFINITY, INFINITY), End, TranslationBeg(INFINITY, INFINITY, INFINITY);
             VoxelMesh m = VoxelMesh(new CVoxelMesh());
+            m->SetName(l.Name);
             m->SetSize(m_BBox.End + m_BBox.Beg.Abs());
             std::map<int, int> meshMaterialMapping;
 
@@ -59,11 +60,11 @@ namespace VoxelOptimizer
                     {
                         for (int x = v.x; x < v.x + 16; x++)
                         {
-                            CVector vi(x, y, z);
+                            CVectori vi(x, y, z);
                             vi += m_BBox.Beg.Abs();
 
                             //TODO: Handle negative pos.
-                            uint32_t p = tmp.GetVoxel(CVector(x - v.x, y - v.y, z - v.z));
+                            uint32_t p = tmp.GetVoxel(CVectori(x - v.x, y - v.y, z - v.z));
                             if((p & 0xFF000000) != 0)
                             {
                                 int IdxC = 0;
@@ -143,11 +144,12 @@ namespace VoxelOptimizer
             m->SetBBox(CBBox(Beg, End));
 
             // TODO: This is dumb! The model matrix should be created on a central point!
-            CVector translation = TranslationBeg + (m->GetBBox().GetSize() / 2);
+            auto sceneNode = SceneNode(new CSceneNode());
+            sceneNode->SetLocalOffset(m->GetBBox().GetSize() / 2);
+            CVector translation = TranslationBeg + sceneNode->GetLocalOffset();
             std::swap(translation.y, translation.z);
             translation.z *= -1;
 
-            auto sceneNode = SceneNode(new CSceneNode());
             sceneNode->SetMesh(m);
             sceneNode->SetPosition(translation);
             m_SceneTree->AddChild(sceneNode);
@@ -240,6 +242,7 @@ namespace VoxelOptimizer
 
         auto Dict = ReadDict(Chunk, StartPos);
         l.MatIdx = *((int*)(Dict["material"].data()));
+        l.Name = Dict["name"];
         
         m_Layers.push_back(l);
         Skip(sizeof(int));

@@ -44,16 +44,22 @@ namespace VoxelOptimizer
 
     void CVoxelMesh::SetVoxel(const CVector &Pos, int Material, int Color, bool Transparent)
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Lock);
-        Voxel Tmp = std::make_shared<CVoxel>(); //Voxel(new CVoxel());
+        //std::lock_guard<std::recursive_mutex> lock(m_Lock);
+
+        std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
+        Voxel Tmp = m_Pool.alloc(); //std::make_shared<CVoxel>(); //Voxel(new CVoxel());
+        // Voxel Tmp = std::make_shared<CVoxel>();
+        std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
+
+        AllocTimeTotal += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
         Tmp->Pos = Pos;
         Tmp->Material = Material;
         Tmp->Color = Color;
         Tmp->Transparent = Transparent;
 
-        std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
+        begin1 = std::chrono::steady_clock::now();
         m_Voxels.insert({Pos, Tmp});
-        std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
+        end1 = std::chrono::steady_clock::now();
         InsertTimeTotal += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
 
         m_BlockCount++;

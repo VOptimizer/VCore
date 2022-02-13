@@ -56,7 +56,7 @@ namespace VoxelOptimizer
                         memcpy(&m_Data[0], Data, m_Data.size() * sizeof(uint32_t));
                     }
 
-                    inline uint32_t GetVoxel(CVector v)
+                    inline uint32_t GetVoxel(CVectori v)
                     {
                         return m_Data[(size_t)v.x + 16 * (size_t)v.y + 16 * 16 * (size_t)v.z];
                     }
@@ -75,6 +75,7 @@ namespace VoxelOptimizer
             {
                 std::vector<Block> Blocks;
                 int MatIdx;
+                std::string Name;
             };
 
             std::vector<BL16> m_BL16s;

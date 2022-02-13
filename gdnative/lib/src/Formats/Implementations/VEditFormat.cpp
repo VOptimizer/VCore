@@ -316,23 +316,25 @@ namespace VoxelOptimizer
 
             auto mat = Mesh->Materials()[v.second->Material];
 
-            voxels << m_MaterialMapping.at(mat);    // Gets the material index
-            voxels << v.second->Color;              // Color index
-            voxels << (uint32_t)0;                  // Type. Reserved for future
-            voxels << (uint32_t)0;                  // Properties. Reserved for future.
+            voxels << m_MaterialMapping.at(mat);        // Gets the material index
+            voxels << v.second->Color;                  // Color index
+            voxels << (uint8_t)v.second->VisibilityMask;// Visibility mask
+            voxels << (uint32_t)0;                      // Type. Reserved for future
+            voxels << (uint32_t)0;                      // Properties. Reserved for future.
         }
 
         int dataSize = 0;
         char *data = CompressStream(voxels, dataSize);
 
-        uint32_t size = sizeof(uint32_t) + sizeof(uint32_t) + sizeof(CVector) + sizeof(uint32_t) + thumbnail.size() + sizeof(uint32_t) + dataSize;
+        uint32_t size = sizeof(uint32_t) + sizeof(uint32_t) + sizeof(CVectori) + sizeof(bool) + sizeof(uint32_t) + thumbnail.size() + sizeof(uint32_t) + dataSize;
         strm << size;
         strm << (uint32_t)0;                                        // Properties
-        strm << Mesh->GetName();                                        // Name
+        strm << Mesh->GetName();                                    // Name
         strm << (uint32_t)thumbnail.size();
         strm.write(thumbnail.data(), thumbnail.size());
         strm << (uint32_t)0;                                        // Colorpalette id. Reserved for the future.
-        strm.write((char*)Mesh->GetSize().v, sizeof(float) * 3);    // Voxel space size.
+        strm << false;                                              // Voxel visibility is dirty
+        strm << Mesh->GetSize();                                    // Voxel space size.
 
         strm << dataSize;                                           // Compressed voxel data size
         strm.write(data, dataSize);                                 // Compressed voxel data

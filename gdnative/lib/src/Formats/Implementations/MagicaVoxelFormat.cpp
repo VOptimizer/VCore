@@ -114,24 +114,28 @@ namespace VoxelOptimizer
                         end1 = std::chrono::steady_clock::now();
                         auto count2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
 
+                        int k = sizeof(Voxel);
+
                         m_Models.push_back(m);
                         auto halfSize = (m->GetSize() / 2.0);
+
+                        auto treeNode = m_ModelSceneTreeMapping.at(m_Models.size() - 1);
 
                         // 1. Translation is always relative to the center of the voxel space size. (Without fraction)
                         // 2. All meshers centers the mehs in object space so we need to add the fractal part to the translation
                         // 3. Add the distance from object center to space center and add the start position of the voxel mesh
 
                         CVector spaceCenter = halfSize.Fract() + m->GetBBox().Beg + (m->GetBBox().GetSize() / 2 - halfSize);
+                        treeNode->SetLocalOffset(spaceCenter);
                         std::swap(spaceCenter.y, spaceCenter.z);
                         spaceCenter.z *= -1;
-
-                        auto treeNode = m_ModelSceneTreeMapping.at(m_Models.size() - 1);
 
                         auto pos = treeNode->GetPosition();
                         treeNode->SetPosition(pos + spaceCenter);
 
                         // TODO: Animation support.
                         treeNode->SetMesh(m); 
+                        m->SetName(treeNode->GetName());
                         m->SetSceneNode(treeNode);                       
                     }
                     else if(strncmp(Tmp.ID, "RGBA", sizeof(Tmp.ID)) == 0)
@@ -150,19 +154,19 @@ namespace VoxelOptimizer
 
         auto texIT = m_Textures.find(TextureType::DIFFIUSE);
         if(texIT == m_Textures.end())
-            m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture(CVector(m_ColorMapping.size(), 1, 0)));
+            m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture(CVectori(m_ColorMapping.size(), 1, 0)));
 
         if(m_HasEmission)
         {
             auto texIT = m_Textures.find(TextureType::EMISSION);
             if(texIT == m_Textures.end())
-                m_Textures[TextureType::EMISSION] = Texture(new CTexture(CVector(m_ColorMapping.size(), 1, 0)));
+                m_Textures[TextureType::EMISSION] = Texture(new CTexture(CVectori(m_ColorMapping.size(), 1, 0)));
         }
 
         // Creates the used color palette.
         for (auto &&c : m_ColorMapping)
         {
-            m_Textures[TextureType::DIFFIUSE]->AddPixel(m_ColorPalette[c.first - 1], CVector(c.second, 0, 0));
+            m_Textures[TextureType::DIFFIUSE]->AddPixel(m_ColorPalette[c.first - 1], CVectori(c.second, 0, 0));
             if(m_HasEmission)
             {
                 int MatIdx = 0;
@@ -172,7 +176,7 @@ namespace VoxelOptimizer
 
                 auto material = m_Materials[MatIdx];
                 if(material->Power > 0)
-                    m_Textures[TextureType::EMISSION]->AddPixel(m_ColorPalette[c.first - 1], CVector(c.second, 0, 0));
+                    m_Textures[TextureType::EMISSION]->AddPixel(m_ColorPalette[c.first - 1], CVectori(c.second, 0, 0));
             }
         }
 
@@ -195,7 +199,7 @@ namespace VoxelOptimizer
     {
         VoxelMesh Ret = VoxelMesh(new CVoxelMesh());
 
-        CVector Size;
+        CVectori Size;
 
         Size.x = ReadData<int>();
         Size.y = ReadData<int>();
@@ -214,7 +218,12 @@ namespace VoxelOptimizer
 
         // Each model has it's used material attached, so we need to map the MagicaVoxel ID to the local one of the mesh.
         std::map<int, int> modelMaterialMapping;
-        auto count1 = 0;
+        auto count1 = 0, count2 = 0;
+
+        std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
+        m->ReserveVoxels(VoxelCount);
+        std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
+        size_t count3 = std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
 
         for (size_t i = 0; i < VoxelCount; i++)
         {
@@ -222,10 +231,10 @@ namespace VoxelOptimizer
 
             uint8_t data[4];
 
-                        std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
+            begin1 = std::chrono::steady_clock::now();
             ReadData((char*)data, sizeof(data));
-                        std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
-                         count1 += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
+            end1 = std::chrono::steady_clock::now();
+            count1 += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
 
             
 
@@ -275,7 +284,10 @@ namespace VoxelOptimizer
                 MatIdx = m->Materials().size() - 1;
             }
 
+            begin1 = std::chrono::steady_clock::now();
             m->SetVoxel(vec, MatIdx, Color, Transparent);
+            end1 = std::chrono::steady_clock::now();
+            count2 += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
         } 
 
         m->SetBBox(CBBox(Beg, End));
@@ -383,6 +395,7 @@ namespace VoxelOptimizer
 
                     currentNode->SetPosition(transform->Translation);
                     currentNode->SetRotation(transform->Rotation);
+                    currentNode->SetName(transform->Name);
 
                     nodeIDs.push(transform->ChildID);
                 } break;
@@ -431,7 +444,25 @@ namespace VoxelOptimizer
         Ret->NodeID = ReadData<int>();
         
         // Skips the dictionary
-        SkipDict();
+        int keys = ReadData<int>();
+        for (size_t i = 0; i < keys; i++)
+        {
+            int size = ReadData<int>();
+            std::string key(size, '\0'); 
+            ReadData(&key[0], size);
+            if(key == "_name")
+            {              
+                size = ReadData<int>();
+                std::string value(size, '\0'); 
+                ReadData(&value[0], size);
+                Ret->Name = value;
+            }
+            else
+            {
+                int size = ReadData<int>();
+                Skip(size);
+            }            
+        }
 
         Ret->ChildID = ReadData<int>();
         Skip(sizeof(int));
@@ -440,7 +471,7 @@ namespace VoxelOptimizer
         int frames = ReadData<int>();
         for (size_t i = 0; i < frames; i++)
         {
-            int keys = ReadData<int>();
+            keys = ReadData<int>();
             for (size_t j = 0; j < keys; j++)
             {
                 int size = ReadData<int>();

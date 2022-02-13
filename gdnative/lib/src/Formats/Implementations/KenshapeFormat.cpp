@@ -57,7 +57,9 @@ namespace VoxelOptimizer
         }
 
         VoxelMesh m = VoxelMesh(new CVoxelMesh());
-        m->Materials().push_back(Material(new CMaterial()));
+        auto mat = Material(new CMaterial());
+        m_Materials.push_back(mat);
+        m->Materials().push_back(mat);
         m->SetSize(Content->Size);
 
         std::map<int, int> ColorIdx;
@@ -112,6 +114,7 @@ namespace VoxelOptimizer
         m_SceneTree->AddChild(sceneNode);
         sceneNode->SetMesh(m);
         m->SetSceneNode(sceneNode); 
+        sceneNode->SetLocalOffset(m->GetSize() / 2);
 
         m->Colorpalettes() = m_Textures;
         m->SetBBox(CBBox(Beg, End));

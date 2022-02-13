@@ -68,6 +68,7 @@ namespace VoxelOptimizer
                     int NumFrames;
                     CVector Translation;
                     CVector Rotation;
+                    std::string Name;
 
                     int ChildID;
             };

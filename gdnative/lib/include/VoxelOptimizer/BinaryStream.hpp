@@ -113,6 +113,13 @@ namespace VoxelOptimizer
                 return *this;
             }
 
+            // template<class T, typename std::enable_if<std::is_same<T, CVectori>::value>::type* = nullptr>
+            // inline CBinaryStream &operator<<(const T &val)
+            // {
+            //     write((char*)val.v, sizeof(val.v));
+            //     return *this;
+            // }
+
             template<class T, typename std::enable_if<!std::is_same<T, std::string>::value && !std::is_same<T, CVector>::value>::type* = nullptr>
             inline CBinaryStream &operator>>(T &val)
             {
@@ -138,6 +145,13 @@ namespace VoxelOptimizer
                 read((char*)val.v, sizeof(val.v));
                 return *this;
             }
+
+            // template<class T, typename std::enable_if<std::is_same<T, CVectori>::value>::type* = nullptr>
+            // inline CBinaryStream &operator>>(T &val)
+            // {
+            //     read((char*)val.v, sizeof(val.v));
+            //     return *this;
+            // }
 
             ~CBinaryStream() = default;
     };

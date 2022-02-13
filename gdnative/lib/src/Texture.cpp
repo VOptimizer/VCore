@@ -28,7 +28,7 @@
 
 namespace VoxelOptimizer
 {
-    CTexture::CTexture(const CVector &_size)
+    CTexture::CTexture(const CVectori &_size)
     {
         m_Size = _size;
         m_Pixels.resize(m_Size.x * m_Size.y, 0xFF000000);
@@ -42,7 +42,7 @@ namespace VoxelOptimizer
         memcpy(&m_Pixels[0], &_texture.m_Pixels[0], m_Pixels.size() * sizeof(uint32_t));
     }
 
-    CTexture::CTexture(const CVector &_size, uint32_t *_data)
+    CTexture::CTexture(const CVectori &_size, uint32_t *_data)
     {
         m_Size = _size;
         m_Pixels.resize(m_Size.x * m_Size.y);
@@ -50,7 +50,7 @@ namespace VoxelOptimizer
         memcpy(&m_Pixels[0], _data, m_Pixels.size() * sizeof(uint32_t));
     }
 
-    void CTexture::AddPixel(const CColor &color, const CVector &pos)
+    void CTexture::AddPixel(const CColor &color, const CVectori &pos)
     {
         if(pos >= m_Size)
             return;
@@ -69,7 +69,7 @@ namespace VoxelOptimizer
         m_Pixels.push_back(color.AsRGBA());
     }
 
-    uint32_t CTexture::Pixel(const CVector &pos)
+    uint32_t CTexture::Pixel(const CVectori &pos)
     {
         return m_Pixels[pos.x + m_Size.x * pos.y];
     }

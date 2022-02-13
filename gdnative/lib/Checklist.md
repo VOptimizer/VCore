@@ -4,14 +4,14 @@
 - [ ] Material list
 
 # Goxel
-- [ ] Loads
+- [x] Loads
 - [ ] Worldspace works
-- [ ] Material list
+- [x] Material list
 
 # Kenshape
 - [ ] Loads
 - [ ] Worldspace works
-- [ ] Material list
+- [x] Material list
 
 # QBCL
 - [ ] Loads
@@ -29,6 +29,11 @@
 - [ ] Material list
 
 # QBT
+- [ ] Loads
+- [ ] Worldspace works
+- [ ] Material list
+
+# VEdit
 - [ ] Loads
 - [ ] Worldspace works
 - [ ] Material list

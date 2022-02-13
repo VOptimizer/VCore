@@ -45,7 +45,7 @@ namespace VoxelOptimizer
 
             inline bool ContainsPoint(const CVectori &v) const
             {
-                return (Beg.x <= v.x && Beg.y <= v.y && Beg.z <= v.z) && (End.x >= v.x && End.y >= v.y && End.z >= v.z);
+                return (Beg.x <= v.x && Beg.y <= v.y && Beg.z <= v.z) && (End.x > v.x && End.y > v.y && End.z > v.z);
             }
 
             ~CBBox() = default;

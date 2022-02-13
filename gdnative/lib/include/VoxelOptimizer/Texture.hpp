@@ -44,14 +44,14 @@ namespace VoxelOptimizer
     {
         public:
             CTexture() = default;
-            CTexture(const CVector &_size);
+            CTexture(const CVectori &_size);
             CTexture(const CTexture &_texture);
-            CTexture(const CVector &_size, uint32_t *_data);
+            CTexture(const CVectori &_size, uint32_t *_data);
 
-            void AddPixel(const CColor &color, const CVector &pos);
+            void AddPixel(const CColor &color, const CVectori &pos);
             void AddPixel(const CColor &color);
 
-            inline CVector Size() const
+            inline CVectori Size() const
             {
                 return m_Size;
             }
@@ -61,12 +61,12 @@ namespace VoxelOptimizer
                 return m_Pixels;
             }
 
-            uint32_t Pixel(const CVector &pos);
+            uint32_t Pixel(const CVectori &pos);
             std::vector<char> AsPNG();
 
             ~CTexture() = default;
         private:
-            CVector m_Size;
+            CVectori m_Size;
             std::vector<uint32_t> m_Pixels;
     };
 

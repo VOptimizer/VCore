@@ -35,6 +35,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <VoxelOptimizer/ObjectPool.hpp>
 #include <string>
 #include <vector>
 #include <VoxelOptimizer/Vector.hpp>
@@ -105,7 +106,7 @@ namespace VoxelOptimizer
         return static_cast<CVoxel::Visibility>(~static_cast<uint8_t>(lhs));
     }
 
-    using Voxel = std::shared_ptr<CVoxel>;
+    using Voxel = CVoxel*; //std::shared_ptr<CVoxel>;
 
     class CVoxelOctree : public COctree<Voxel>
     {
@@ -147,15 +148,16 @@ namespace VoxelOptimizer
             {
                 InsertTimeTotal = 0;
                 SearchTimeTotal = 0;
+                AllocTimeTotal = 0;
             }
 
             /**
              * @brief Sets the size of the voxel space.
              */
-            inline void SetSize(const CVector &Size)
+            inline void SetSize(const CVectori &Size)
             {
                 m_Size = Size;
-                m_Voxels = VoxelData(m_Size, 5);
+                m_Voxels = VoxelData(m_Size, 10);
 
                 // m_Voxels.clear();
                 // m_Voxels.resize(m_Size.x * m_Size.y * m_Size.z);
@@ -167,7 +169,7 @@ namespace VoxelOptimizer
              * 
              * @return Returns the voxel space size of a voxel mesh.
              */
-            inline CVector GetSize() const
+            inline CVectori GetSize() const
             {
                 return m_Size;
             }
@@ -263,6 +265,11 @@ namespace VoxelOptimizer
              */
             void Clear();
 
+            void ReserveVoxels(size_t _reserve)
+            {
+                m_Pool.reserve(_reserve);
+            }
+
             /**
              * @return Gets a voxel on a given position.
              */
@@ -338,6 +345,7 @@ namespace VoxelOptimizer
             //TODO: REMOVE
             size_t InsertTimeTotal;
             size_t SearchTimeTotal;
+            size_t AllocTimeTotal;
             
             ~CVoxelMesh() = default;
         private:   
@@ -352,9 +360,11 @@ namespace VoxelOptimizer
             std::string m_Name;
             Texture m_Thumbnail;
 
-            CVector m_Size;
+            CVectori m_Size;
             CBBox m_BBox;
             Chunk m_GlobalChunk;
+
+            CObjectPool<CVoxel> m_Pool;
             
             VoxelData m_Voxels;
             std::map<CVector, Voxel> m_VisibleVoxels;
@@ -388,7 +398,7 @@ namespace VoxelOptimizer
         if(this->m_Nodes)
         {
             internal::COctreeNode<Voxel> *node = this->m_Nodes[0];
-            while(node->CanSubdivide())
+            while(node->CanSubdivide() && node->m_Nodes)
                 node = node->m_Nodes[0];
 
             while (node != this)
@@ -445,7 +455,7 @@ namespace VoxelOptimizer
         if(this->m_Nodes)
         {
             internal::COctreeNode<Voxel> *node = this->m_Nodes[0];
-            while(node->CanSubdivide())
+            while(node->CanSubdivide() && node->m_Nodes)
                 node = node->m_Nodes[0];
 
             while (node != this)
@@ -491,7 +501,7 @@ namespace VoxelOptimizer
     inline void CVoxelOctree::generateVisibilityMask()
     {
         internal::COctreeNode<Voxel> *node = this->m_Nodes[0];
-        while(node->CanSubdivide())
+        while(node->CanSubdivide() && node->m_Nodes)
             node = node->m_Nodes[0];
 
         if(node->m_Content.empty())
