@@ -26,7 +26,7 @@
 #define OBJECTPOOL_HPP
 
 #include <stddef.h>
-#include <type_traits>
+#include <VoxelOptimizer/Memory/MemoryPool.hpp>
 
 namespace VoxelOptimizer
 {
@@ -75,6 +75,8 @@ namespace VoxelOptimizer
 
             // All free objects in the pool
             Object *m_FreeObjects;
+
+            CMemoryPool<Object> m_Pool;
     };
 
     //////////////////////////////////////////////////
@@ -135,7 +137,7 @@ namespace VoxelOptimizer
     {
         for (size_t i = 0; i < _reserve; i++)
         {
-            Object *tmp = new Object();
+            Object *tmp = m_Pool.allocate(1); //new Object();
             tmp->Prev = tmp->Next = nullptr;
 
             if(m_FreeObjects)
@@ -165,7 +167,8 @@ namespace VoxelOptimizer
             T *obj = (T*)tmp->Data;
             obj->~T();
 
-            delete tmp;
+            // delete tmp;
+            m_Pool.deallocate(tmp, 1);
         }
     }
 

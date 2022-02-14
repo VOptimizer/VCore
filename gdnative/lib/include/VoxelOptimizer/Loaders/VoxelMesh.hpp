@@ -35,7 +35,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
-#include <VoxelOptimizer/ObjectPool.hpp>
+#include <VoxelOptimizer/Memory/ObjectPool.hpp>
 #include <string>
 #include <vector>
 #include <VoxelOptimizer/Vector.hpp>

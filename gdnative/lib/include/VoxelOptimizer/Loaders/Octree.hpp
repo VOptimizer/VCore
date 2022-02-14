@@ -25,11 +25,12 @@
 #ifndef OCTREE_HPP
 #define OCTREE_HPP
 
+#include <VoxelOptimizer/Memory/Allocator.hpp>
 #include <VoxelOptimizer/BBox.hpp>
 #include <climits>
 #include <list>
 #include <map>
-#include <VoxelOptimizer/ObjectPool.hpp>
+#include <VoxelOptimizer/Memory/ObjectPool.hpp>
 #include <utility>
 #include <vector>
 
@@ -55,6 +56,8 @@ namespace VoxelOptimizer
             friend COctreeIterator<T>;
             friend CVoxelOctree;
             public:
+                using VoxelMap = std::map<CVectori, T, std::less<CVectori>, CAllocator<std::pair<const CVectori, T>>>;
+
                 COctreeNode();
                 COctreeNode(COctreeNode<T> *_parent, const CBBox &_bbox, int _depth); 
                 COctreeNode(COctreeNode<T> *_parent, const COctreeNode<T> *_other); 
@@ -76,7 +79,7 @@ namespace VoxelOptimizer
                 COctreeNode<T> *FindNode(const CVectori &v);
 
                 void CopyNode(const COctreeNode<T> *_other);
-                void queryVisible(COctreeNode<T> *_root, std::map<CVectori, T> &_visible);
+                void queryVisible(COctreeNode<T> *_root, VoxelMap &_visible);
 
                 void SetBBox(const CBBox &_bbox);
 
@@ -96,7 +99,7 @@ namespace VoxelOptimizer
                 COctreeNode<T> **m_Nodes;
                 COctreeNode<T> *m_Parent;
 
-                std::map<CVectori, T> m_Content;
+                VoxelMap m_Content;
         };
 
         template<class T>
@@ -107,9 +110,9 @@ namespace VoxelOptimizer
     class COctreeIterator
     {
         using node_type = internal::COctreeNode<T>;
-        using map_iterator = typename std::map<CVectori, T>::iterator;
-        using reference = typename std::map<CVectori, T>::reference;
-        using pointer = typename std::map<CVectori, T>::pointer;
+        using map_iterator = typename internal::COctreeNode<T>::VoxelMap::iterator;
+        using reference = typename internal::COctreeNode<T>::VoxelMap::reference;
+        using pointer = typename internal::COctreeNode<T>::VoxelMap::pointer;
 
         public:
             COctreeIterator(node_type *_node);
@@ -235,7 +238,7 @@ namespace VoxelOptimizer
         }
 
         template<class T>
-        inline void COctreeNode<T>::queryVisible(COctreeNode<T> *_root, std::map<CVectori, T> &_visible)
+        inline void COctreeNode<T>::queryVisible(COctreeNode<T> *_root, VoxelMap &_visible)
         {
             for (auto &&n : m_Content)
             {
@@ -477,7 +480,7 @@ namespace VoxelOptimizer
         if(idx < NODES_COUNT && this->m_Nodes[idx]->m_HasContent)
         {
             internal::COctreeNode<T> *node  = this->FindNode(_v);  
-            typename std::map<CVectori, T>::iterator current = node->m_Content.find(_v);
+            typename internal::COctreeNode<T>::VoxelMap::iterator current = node->m_Content.find(_v);
             if(current != node->m_Content.end())
                 return iterator(node, current);
         }
