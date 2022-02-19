@@ -25,9 +25,9 @@
 #ifndef KENSHAPE_HPP
 #define KENSHAPE_HPP
 
-#include <VoxelOptimizer/Color.hpp>
+#include <VoxelOptimizer/Meshing/Color.hpp>
 #include <CJSON/JSON.hpp>
-#include <VoxelOptimizer/Vector.hpp>
+#include <VoxelOptimizer/Math/Vector.hpp>
 
 namespace VoxelOptimizer
 {

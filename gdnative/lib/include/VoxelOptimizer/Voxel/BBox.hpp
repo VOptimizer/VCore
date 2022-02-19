@@ -22,29 +22,35 @@
  * SOFTWARE.
  */
 
-#ifndef QUBICLEEXCHANGEFORMAT_HPP
-#define QUBICLEEXCHANGEFORMAT_HPP
+#ifndef BBOX_HPP
+#define BBOX_HPP
 
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <VoxelOptimizer/Math/Vector.hpp>
 
 namespace VoxelOptimizer
 {
-    class CQubicleExchangeFormat : public IVoxelFormat
+    class CBBox
     {
         public:
-            CQubicleExchangeFormat() = default;
-            ~CQubicleExchangeFormat() = default;
+            CVectori Beg;
+            CVectori End;
 
-        protected:
-            void ParseFormat() override;
+            CBBox() {}
+            CBBox(CVectori beg, CVectori end) : Beg(beg), End(end + CVectori(1, 1, 1)) {}
 
-            CVector ReadVector();
-            void ReadColors();
-            void ReadVoxels(VoxelMesh mesh);
+            inline CVector GetSize() const
+            {
+                return (End - Beg).Max(CVector(1, 1, 1));
+            }
 
-            std::string ReadLine();
+            inline bool ContainsPoint(const CVectori &v) const
+            {
+                return (Beg.x <= v.x && Beg.y <= v.y && Beg.z <= v.z) && (End.x > v.x && End.y > v.y && End.z > v.z);
+            }
+
+            ~CBBox() = default;
     };
 } // namespace VoxelOptimizer
 
-#endif //QUBICLEEXCHANGEFORMAT_HPP
+
+#endif //BBOX_HPP

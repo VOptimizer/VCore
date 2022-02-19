@@ -28,8 +28,8 @@
 #include <string>
 #include <vector>
 #include <VoxelOptimizer/Formats/SceneNode.hpp>
-#include <VoxelOptimizer/Loaders/VoxelMesh.hpp>
-#include <VoxelOptimizer/BinaryStream.hpp>
+#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
+#include <VoxelOptimizer/Misc/BinaryStream.hpp>
 
 namespace VoxelOptimizer
 {

@@ -23,7 +23,7 @@
  */
 
 #include <stdint.h>
-#include <VoxelOptimizer/Exceptions.hpp>
+#include <VoxelOptimizer/Misc/Exceptions.hpp>
 #include "QubicleBinaryFormat.hpp"
 
 namespace VoxelOptimizer

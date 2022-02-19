@@ -26,7 +26,7 @@
 #include <string.h>
 #include <sstream>
 #include <stack>
-#include <VoxelOptimizer/Exceptions.hpp>
+#include <VoxelOptimizer/Misc/Exceptions.hpp>
 
 namespace VoxelOptimizer
 {

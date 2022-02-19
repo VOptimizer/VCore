@@ -24,7 +24,7 @@
 
 #include <stb_image.h>
 #include <string.h>
-#include <VoxelOptimizer/Exceptions.hpp>
+#include <VoxelOptimizer/Misc/Exceptions.hpp>
 #include "QubicleBinaryTreeFormat.hpp"
 
 namespace VoxelOptimizer

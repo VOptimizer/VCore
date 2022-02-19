@@ -22,29 +22,42 @@
  * SOFTWARE.
  */
 
-#ifndef QUBICLEEXCHANGEFORMAT_HPP
-#define QUBICLEEXCHANGEFORMAT_HPP
+#ifndef SPRITESTACKINGEXPORTER_HPP
+#define SPRITESTACKINGEXPORTER_HPP
 
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
+#include <string>
+#include <vector>
 
 namespace VoxelOptimizer
 {
-    class CQubicleExchangeFormat : public IVoxelFormat
+    class CSpriteStackingExporter
     {
         public:
-            CQubicleExchangeFormat() = default;
-            ~CQubicleExchangeFormat() = default;
+            CSpriteStackingExporter() = default;
 
-        protected:
-            void ParseFormat() override;
+            /**
+             * @brief Generates and saves the mesh as png slices.
+             * 
+             * @param Path: Path of the file.
+             * @param Mesh: Mesh to save.
+             */
+            void Save(const std::string &Path, VoxelMesh m);
 
-            CVector ReadVector();
-            void ReadColors();
-            void ReadVoxels(VoxelMesh mesh);
+            /**
+             * @brief Generates the file stream.
+             * 
+             * @param Mesh: Mesh to save.
+             * 
+             * @return Returns a png image.
+             */
+            std::vector<char> Generate(VoxelMesh m); 
 
-            std::string ReadLine();
+            ~CSpriteStackingExporter() = default;
+        private:
+        /* data */
     };
 } // namespace VoxelOptimizer
 
-#endif //QUBICLEEXCHANGEFORMAT_HPP
+
+#endif //SPRITESTACKINGEXPORTER_HPP

@@ -24,7 +24,7 @@
 
 #include <fstream>
 #include <stdexcept>
-#include <VoxelOptimizer/Exceptions.hpp>
+#include <VoxelOptimizer/Misc/Exceptions.hpp>
 #include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 
 #include "../FileUtils.hpp"

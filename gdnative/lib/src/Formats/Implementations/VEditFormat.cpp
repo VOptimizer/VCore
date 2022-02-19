@@ -26,7 +26,7 @@
 #include "VEditFormat.hpp"
 #include <stb_image.h>
 #include <stb_image_write.h>
-#include <VoxelOptimizer/Exceptions.hpp>
+#include <VoxelOptimizer/Misc/Exceptions.hpp>
 
 namespace VoxelOptimizer
 {

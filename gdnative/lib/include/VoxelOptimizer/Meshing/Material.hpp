@@ -22,29 +22,46 @@
  * SOFTWARE.
  */
 
-#ifndef QUBICLEEXCHANGEFORMAT_HPP
-#define QUBICLEEXCHANGEFORMAT_HPP
+#ifndef MATERIAL_HPP
+#define MATERIAL_HPP
 
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <memory>
+#include <string>
+#include <VoxelOptimizer/Meshing/Color.hpp>
 
 namespace VoxelOptimizer
 {
-    class CQubicleExchangeFormat : public IVoxelFormat
+    class CMaterial
     {
         public:
-            CQubicleExchangeFormat() = default;
-            ~CQubicleExchangeFormat() = default;
+            CMaterial() : Name(), Metallic(0), Specular(0), Roughness(1), IOR(0), Power(0), Transparency(0) {}
 
-        protected:
-            void ParseFormat() override;
+            std::string Name;
+            float Metallic;
+            float Specular;
+            float Roughness;
+            float IOR;
+            float Power;    //!< For emissive.
+            float Transparency;
 
-            CVector ReadVector();
-            void ReadColors();
-            void ReadVoxels(VoxelMesh mesh);
+            inline bool operator==(const CMaterial &other)
+            {
+                bool equal = false;
+                equal = Name == other.Name;
+                equal = Metallic == other.Metallic && equal;
+                equal = Specular == other.Specular && equal;
+                equal = Roughness == other.Roughness && equal;
+                equal = IOR == other.IOR && equal;
+                equal = Power == other.Power && equal;
+                equal = Transparency == other.Transparency && equal;
 
-            std::string ReadLine();
+                return equal;
+            }
+
+            ~CMaterial() {}
     };
+
+    using Material = std::shared_ptr<CMaterial>;
 } // namespace VoxelOptimizer
 
-#endif //QUBICLEEXCHANGEFORMAT_HPP
+#endif //MATERIAL_HPP

@@ -22,29 +22,50 @@
  * SOFTWARE.
  */
 
-#ifndef QUBICLEEXCHANGEFORMAT_HPP
-#define QUBICLEEXCHANGEFORMAT_HPP
+#ifndef OPTIMIZEMESHER_HPP
+#define OPTIMIZEMESHER_HPP
 
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <list>
+#include <VoxelOptimizer/Meshing/IMesher.hpp>
+#include <thread>
 
 namespace VoxelOptimizer
 {
-    class CQubicleExchangeFormat : public IVoxelFormat
+    class CGreedyMesher : public IMesher
     {
         public:
-            CQubicleExchangeFormat() = default;
-            ~CQubicleExchangeFormat() = default;
+            CGreedyMesher() = default;
 
-        protected:
-            void ParseFormat() override;
+            std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m) override;
 
-            CVector ReadVector();
-            void ReadColors();
-            void ReadVoxels(VoxelMesh mesh);
+            ~CGreedyMesher() = default;
 
-            std::string ReadLine();
+        private:
+            struct SSlice
+            {
+                public:
+                    SSlice() : BBox(CVectori(INT32_MAX, INT32_MAX, INT32_MAX), CVectori()) {}
+
+                    CBBox BBox;
+                    std::list<CBBox> Transparent;
+            };
+
+            std::vector<Mesh> MeshThread(VoxelMesh m, int axis, const std::map<float, SSlice> &slices); 
+
+            std::mutex m_Lock;
+
+            std::map<float, SSlice> m_XSlices;
+            std::map<float, SSlice> m_YSlices;
+            std::map<float, SSlice> m_ZSlices;
+
+            std::map<CVectori, Voxel> m_Voxels;
+
+            void GenerateMesh(Mesh RetMesh, VoxelMesh m, const CBBox &BBox, bool Opaque);
+
+            Mesh GenerateSliceMesh(const SSlice &slice, VoxelMesh m, int axis);
+
+            void GenerateSlices();
     };
 } // namespace VoxelOptimizer
 
-#endif //QUBICLEEXCHANGEFORMAT_HPP
+#endif //OPTIMIZEMESHER_HPP

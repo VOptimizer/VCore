@@ -27,9 +27,9 @@
 
 #include <string>
 #include <string.h>
-#include <VoxelOptimizer/BinaryStream.hpp>
+#include <VoxelOptimizer/Misc/BinaryStream.hpp>
 #include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
-#include <VoxelOptimizer/Material.hpp>
+#include <VoxelOptimizer/Meshing/Material.hpp>
 
 namespace VoxelOptimizer
 {

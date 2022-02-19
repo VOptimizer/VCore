@@ -22,65 +22,49 @@
  * SOFTWARE.
  */
 
-#include <VoxelOptimizer/Meshing/Texture.hpp>
-#include <string.h>
+#include <fstream>
+#include "SpriteStackingExporter.hpp"
 #include <stb_image_write.h>
 
 namespace VoxelOptimizer
 {
-    CTexture::CTexture(const CVectori &_size)
+    void CSpriteStackingExporter::Save(const std::string &Path, VoxelMesh m)
     {
-        m_Size = _size;
-        m_Pixels.resize(m_Size.x * m_Size.y, 0xFF000000);
+        auto Image = Generate(m);
+        std::ofstream out(Path, std::ios::binary);
+        if(out.is_open())
+        {
+            out.write(Image.data(), Image.size());
+            out.close();
+        }
     }
 
-    CTexture::CTexture(const CTexture &_texture)
+    std::vector<char> CSpriteStackingExporter::Generate(VoxelMesh m)
     {
-        m_Size = _texture.m_Size;
-        m_Pixels.resize(m_Size.x * m_Size.y);
+        CVector Size = m->GetSize();
+        std::vector<uint32_t> Pixels(Size.x * Size.y * Size.z, 0);
 
-        memcpy(&m_Pixels[0], &_texture.m_Pixels[0], m_Pixels.size() * sizeof(uint32_t));
-    }
+        auto diffuse = m->Colorpalettes().at(TextureType::DIFFIUSE);
 
-    CTexture::CTexture(const CVectori &_size, uint32_t *_data)
-    {
-        m_Size = _size;
-        m_Pixels.resize(m_Size.x * m_Size.y);
+        for (size_t z = 0; z < Size.z; z++)
+        {
+            for (size_t x = 0; x < Size.x; x++)
+            {
+                for (size_t y = 0; y < Size.y; y++)
+                {
+                    auto Vox = m->GetVoxel(CVector(x, y, z));
 
-        memcpy(&m_Pixels[0], _data, m_Pixels.size() * sizeof(uint32_t));
-    }
-
-    void CTexture::AddPixel(const CColor &color, const CVectori &pos)
-    {
-        if(pos >= m_Size)
-            return;
-
-        m_Pixels[pos.x + m_Size.x * pos.y] = color.AsRGBA();
-    }
-
-    void CTexture::AddPixel(const CColor &color)
-    {
-        if(m_Size.y != 0 && m_Size.y != 1)
-            return;
-
-        m_Size.y = 1;
-        m_Size.x++;
-
-        m_Pixels.push_back(color.AsRGBA());
-    }
-
-    uint32_t CTexture::Pixel(const CVectori &pos)
-    {
-        return m_Pixels[pos.x + m_Size.x * pos.y];
-    }
-
-    std::vector<char> CTexture::AsPNG()
-    {
+                    if(Vox)
+                        Pixels[x + (size_t)Size.x * y + (size_t)Size.x * (size_t)Size.y * z] = diffuse->Pixel(CVector(Vox->Color, 0, 0));
+                }
+            }
+        }
+        
         std::vector<char> Texture;
         stbi_write_png_to_func([](void *context, void *data, int size){
             std::vector<char> *InnerTexture = (std::vector<char>*)context;
             InnerTexture->insert(InnerTexture->end(), (char*)data, ((char*)data) + size);
-        }, &Texture, m_Size.x, m_Size.y, 4, m_Pixels.data(), sizeof(uint32_t) * m_Size.x);
+        }, &Texture, Size.x, Size.y * Size.z, 4, Pixels.data(), sizeof(uint32_t) * Size.x);
 
         return Texture;
     }

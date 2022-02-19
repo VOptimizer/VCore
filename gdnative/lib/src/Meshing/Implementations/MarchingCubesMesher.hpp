@@ -22,29 +22,30 @@
  * SOFTWARE.
  */
 
-#ifndef QUBICLEEXCHANGEFORMAT_HPP
-#define QUBICLEEXCHANGEFORMAT_HPP
+#ifndef MARCHINGCUBESMESHER_HPP
+#define MARCHINGCUBESMESHER_HPP
 
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <VoxelOptimizer/Meshing/IMesher.hpp>
 
 namespace VoxelOptimizer
 {
-    class CQubicleExchangeFormat : public IVoxelFormat
+    class CMarchingCubesMesher : public IMesher
     {
         public:
-            CQubicleExchangeFormat() = default;
-            ~CQubicleExchangeFormat() = default;
+            CMarchingCubesMesher() = default;
 
-        protected:
-            void ParseFormat() override;
+            std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m) override;
 
-            CVector ReadVector();
-            void ReadColors();
-            void ReadVoxels(VoxelMesh mesh);
+            ~CMarchingCubesMesher() = default;
 
-            std::string ReadLine();
+        private:
+            VoxelMesh m_Mesh;
+
+            void CreateFaces(Mesh m, CVector pos, CVector beg, CVector center, short *edges);
+            int GetColorIdx(CVector pos, int edge);
+            int GetMaterialIdx(CVector pos, int edge);
     };
 } // namespace VoxelOptimizer
 
-#endif //QUBICLEEXCHANGEFORMAT_HPP
+
+#endif //MARCHINGCUBESMESHER_HPP

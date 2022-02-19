@@ -30,7 +30,7 @@
 
 #include <stb_image.h>
 #include <string.h>
-#include <VoxelOptimizer/Exceptions.hpp>
+#include <VoxelOptimizer/Misc/Exceptions.hpp>
 #include "QubicleFormat.hpp"
 
 using namespace std;

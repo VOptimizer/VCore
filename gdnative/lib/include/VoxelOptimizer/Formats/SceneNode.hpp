@@ -25,7 +25,7 @@
 #ifndef SCENENODE_HPP
 #define SCENENODE_HPP
 
-#include <VoxelOptimizer/Loaders/VoxelMesh.hpp>
+#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
 
 namespace VoxelOptimizer
 {

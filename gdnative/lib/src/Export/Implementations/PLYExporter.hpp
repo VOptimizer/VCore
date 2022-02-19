@@ -22,29 +22,23 @@
  * SOFTWARE.
  */
 
-#ifndef QUBICLEEXCHANGEFORMAT_HPP
-#define QUBICLEEXCHANGEFORMAT_HPP
+#ifndef PLYEXPORTER_HPP
+#define PLYEXPORTER_HPP
 
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <VoxelOptimizer/Export/IExporter.hpp>
 
 namespace VoxelOptimizer
 {
-    class CQubicleExchangeFormat : public IVoxelFormat
+    class CPLYExporter : public IExporter
     {
         public:
-            CQubicleExchangeFormat() = default;
-            ~CQubicleExchangeFormat() = default;
+            CPLYExporter() = default;
 
-        protected:
-            void ParseFormat() override;
+            std::map<std::string, std::vector<char>> Generate(std::vector<Mesh> Meshes) override;
 
-            CVector ReadVector();
-            void ReadColors();
-            void ReadVoxels(VoxelMesh mesh);
-
-            std::string ReadLine();
+            ~CPLYExporter() = default;
     };
 } // namespace VoxelOptimizer
 
-#endif //QUBICLEEXCHANGEFORMAT_HPP
+
+#endif //PLYEXPORTER_HPP

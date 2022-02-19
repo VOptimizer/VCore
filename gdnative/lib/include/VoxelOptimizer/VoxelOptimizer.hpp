@@ -25,29 +25,36 @@
 #ifndef VOXELOPTIMIZER_HPP
 #define VOXELOPTIMIZER_HPP
 
-#include <VoxelOptimizer/BBox.hpp>
-#include <VoxelOptimizer/Color.hpp>
-#include <VoxelOptimizer/Exceptions.hpp>
-#include <VoxelOptimizer/Material.hpp>
-#include <VoxelOptimizer/Mesh.hpp>
-#include <VoxelOptimizer/Vector.hpp>
-#include <VoxelOptimizer/Texture.hpp>
+/**
+ * Public interface of the V-SDK 
+ */
 
-#include <VoxelOptimizer/Exporters/IExporter.hpp>
-#include <VoxelOptimizer/Exporters/SpriteStackingExporter.hpp>
-#include <VoxelOptimizer/Exporters/WavefrontObjExporter.hpp>
-#include <VoxelOptimizer/Exporters/GLTFExporter.hpp>
-#include <VoxelOptimizer/Exporters/GodotSceneExporter.hpp>
-#include <VoxelOptimizer/Exporters/PLYExporter.hpp>
+// Export 
+#include <VoxelOptimizer/Export/ExportSettings.hpp>
+#include <VoxelOptimizer/Export/IExporter.hpp>
+
+// Formats
 #include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 #include <VoxelOptimizer/Formats/SceneNode.hpp>
 
-#include <VoxelOptimizer/Loaders/VoxelMesh.hpp>
+// MAth
+#include <VoxelOptimizer/Math/Mat4x4.hpp>
+#include <VoxelOptimizer/Math/Vector.hpp>
 
-#include <VoxelOptimizer/Meshers/GreedyMesher.hpp>
-#include <VoxelOptimizer/Meshers/SimpleMesher.hpp>
-#include <VoxelOptimizer/Meshers/MarchingCubesMesher.hpp>
-#include <VoxelOptimizer/Meshers/MeshBuilder.hpp>
-// #include <VoxelOptimizer/Meshers/VerticesReducer.hpp>
+// Meshing
+#include <VoxelOptimizer/Meshing/Color.hpp>
+#include <VoxelOptimizer/Meshing/IMesher.hpp>
+#include <VoxelOptimizer/Meshing/Material.hpp>
+#include <VoxelOptimizer/Meshing/Mesh.hpp>
+#include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
+#include <VoxelOptimizer/Meshing/Texture.hpp>
+// #include <VoxelOptimizer/Meshing/VerticesReducer.hpp>
+
+// Miscellaneous
+#include <VoxelOptimizer/Misc/Exceptions.hpp>
+
+// Voxel
+#include <VoxelOptimizer/Voxel/BBox.hpp>
+#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
 
 #endif //VOXELOPTIMIZER_HPP

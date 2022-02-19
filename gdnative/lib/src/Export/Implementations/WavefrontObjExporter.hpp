@@ -10,8 +10,8 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -22,29 +22,19 @@
  * SOFTWARE.
  */
 
-#ifndef QUBICLEEXCHANGEFORMAT_HPP
-#define QUBICLEEXCHANGEFORMAT_HPP
+#ifndef WAVEFRONTOBJEXPORTER_HPP
+#define WAVEFRONTOBJEXPORTER_HPP
 
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <VoxelOptimizer/Export/IExporter.hpp>
+namespace VoxelOptimizer {
+class CWavefrontObjExporter : public IExporter {
+public:
+  CWavefrontObjExporter() = default;
 
-namespace VoxelOptimizer
-{
-    class CQubicleExchangeFormat : public IVoxelFormat
-    {
-        public:
-            CQubicleExchangeFormat() = default;
-            ~CQubicleExchangeFormat() = default;
+  std::map<std::string, std::vector<char>> Generate(std::vector<Mesh> Meshes) override;
 
-        protected:
-            void ParseFormat() override;
-
-            CVector ReadVector();
-            void ReadColors();
-            void ReadVoxels(VoxelMesh mesh);
-
-            std::string ReadLine();
-    };
+  ~CWavefrontObjExporter() = default;
+};
 } // namespace VoxelOptimizer
 
-#endif //QUBICLEEXCHANGEFORMAT_HPP
+#endif // WAVEFRONTOBJEXPORTER_HPP

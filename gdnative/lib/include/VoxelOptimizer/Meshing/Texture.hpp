@@ -22,29 +22,55 @@
  * SOFTWARE.
  */
 
-#ifndef QUBICLEEXCHANGEFORMAT_HPP
-#define QUBICLEEXCHANGEFORMAT_HPP
+#ifndef TEXTURE_HPP
+#define TEXTURE_HPP
 
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <map>
+#include <memory>
+#include <stddef.h>
+#include <vector>
+#include <VoxelOptimizer/Meshing/Color.hpp>
+#include <VoxelOptimizer/Math/Vector.hpp>
 
 namespace VoxelOptimizer
 {
-    class CQubicleExchangeFormat : public IVoxelFormat
+    enum class TextureType
+    {
+        DIFFIUSE,
+        EMISSION
+    };
+
+    class CTexture
     {
         public:
-            CQubicleExchangeFormat() = default;
-            ~CQubicleExchangeFormat() = default;
+            CTexture() = default;
+            CTexture(const CVectori &_size);
+            CTexture(const CTexture &_texture);
+            CTexture(const CVectori &_size, uint32_t *_data);
 
-        protected:
-            void ParseFormat() override;
+            void AddPixel(const CColor &color, const CVectori &pos);
+            void AddPixel(const CColor &color);
 
-            CVector ReadVector();
-            void ReadColors();
-            void ReadVoxels(VoxelMesh mesh);
+            inline CVectori Size() const
+            {
+                return m_Size;
+            }
 
-            std::string ReadLine();
+            const std::vector<uint32_t> &Pixels() const
+            {
+                return m_Pixels;
+            }
+
+            uint32_t Pixel(const CVectori &pos);
+            std::vector<char> AsPNG();
+
+            ~CTexture() = default;
+        private:
+            CVectori m_Size;
+            std::vector<uint32_t> m_Pixels;
     };
+
+    using Texture = std::shared_ptr<CTexture>;
 } // namespace VoxelOptimizer
 
-#endif //QUBICLEEXCHANGEFORMAT_HPP
+#endif //TEXTURE_HPP

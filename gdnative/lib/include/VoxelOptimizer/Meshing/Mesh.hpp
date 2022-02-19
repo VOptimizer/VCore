@@ -22,29 +22,39 @@
  * SOFTWARE.
  */
 
-#ifndef QUBICLEEXCHANGEFORMAT_HPP
-#define QUBICLEEXCHANGEFORMAT_HPP
+#ifndef MESH_HPP
+#define MESH_HPP
 
 #include <VoxelOptimizer/Math/Mat4x4.hpp>
+#include <VoxelOptimizer/Meshing/Material.hpp>
 #include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <memory>
+#include <vector>
+#include <VoxelOptimizer/Math/Vector.hpp>
 
 namespace VoxelOptimizer
 {
-    class CQubicleExchangeFormat : public IVoxelFormat
+    struct SGroupedFaces
     {
-        public:
-            CQubicleExchangeFormat() = default;
-            ~CQubicleExchangeFormat() = default;
-
-        protected:
-            void ParseFormat() override;
-
-            CVector ReadVector();
-            void ReadColors();
-            void ReadVoxels(VoxelMesh mesh);
-
-            std::string ReadLine();
+        int MaterialIndex;             
+        Material FaceMaterial;              //!< Material which are applied to this faces.
+        std::vector<CVector> Indices;   //!< Indices of the faces. 3 indices are alway 1 triangle. One index is a tripple of x = vertex, y = normal, z = uv.
     };
+    using GroupedFaces = std::shared_ptr<SGroupedFaces>;
+
+    struct SMesh
+    {
+        std::vector<CVector> Vertices;      //!< All vertices of this mesh.
+        std::vector<CVector> Normals;       //!< All normals of this mesh.
+        std::vector<CVector> UVs;           //!< All uvs of this mesh.
+
+        std::vector<GroupedFaces> Faces;    //!< All faces of this mesh.
+        std::map<TextureType, Texture> Textures;        //!< Texture used by this mesh.
+
+        CMat4x4 ModelMatrix; 
+    };
+    using Mesh = std::shared_ptr<SMesh>;
 } // namespace VoxelOptimizer
 
-#endif //QUBICLEEXCHANGEFORMAT_HPP
+
+#endif //MESH_HPP

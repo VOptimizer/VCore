@@ -22,29 +22,23 @@
  * SOFTWARE.
  */
 
-#ifndef QUBICLEEXCHANGEFORMAT_HPP
-#define QUBICLEEXCHANGEFORMAT_HPP
+#ifndef SIMPLEMESHER_HPP
+#define SIMPLEMESHER_HPP
 
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <VoxelOptimizer/Meshing/IMesher.hpp>
 
 namespace VoxelOptimizer
 {
-    class CQubicleExchangeFormat : public IVoxelFormat
+    class CSimpleMesher : public IMesher
     {
         public:
-            CQubicleExchangeFormat() = default;
-            ~CQubicleExchangeFormat() = default;
+            CSimpleMesher() = default;
 
-        protected:
-            void ParseFormat() override;
+            std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m) override;
 
-            CVector ReadVector();
-            void ReadColors();
-            void ReadVoxels(VoxelMesh mesh);
-
-            std::string ReadLine();
+            ~CSimpleMesher() = default;
     };
 } // namespace VoxelOptimizer
 
-#endif //QUBICLEEXCHANGEFORMAT_HPP
+
+#endif //SIMPLEMESHER_HPP

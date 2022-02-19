@@ -25,7 +25,7 @@
 #ifndef QUBICLEBINARYFORMAT_HPP
 #define QUBICLEBINARYFORMAT_HPP
 
-#include <VoxelOptimizer/Mat4x4.hpp>
+#include <VoxelOptimizer/Math/Mat4x4.hpp>
 #include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 
 namespace VoxelOptimizer

@@ -25,7 +25,7 @@
 #include "Kenshape.hpp"
 #include "KenshapeFormat.hpp"
 #include <stb_image.h>
-#include <VoxelOptimizer/Exceptions.hpp>
+#include <VoxelOptimizer/Misc/Exceptions.hpp>
 
 namespace VoxelOptimizer
 {

@@ -23,7 +23,7 @@
  */
 
 #include <sstream>
-#include <VoxelOptimizer/Exceptions.hpp>
+#include <VoxelOptimizer/Misc/Exceptions.hpp>
 #include "QubicleExchangeFormat.hpp"
 
 namespace VoxelOptimizer

@@ -28,7 +28,7 @@
 
 #include "GoxelFormat.hpp"
 #include <string.h>
-#include <VoxelOptimizer/Exceptions.hpp>
+#include <VoxelOptimizer/Misc/Exceptions.hpp>
 
 namespace VoxelOptimizer
 {
