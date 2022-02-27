@@ -27,7 +27,6 @@
 
 #include <list>
 #include <VoxelOptimizer/Meshing/IMesher.hpp>
-#include <thread>
 
 namespace VoxelOptimizer
 {
@@ -41,30 +40,9 @@ namespace VoxelOptimizer
             ~CGreedyMesher() = default;
 
         private:
-            struct SSlice
-            {
-                public:
-                    SSlice() : BBox(CVectori(INT32_MAX, INT32_MAX, INT32_MAX), CVectori()) {}
-
-                    CBBox BBox;
-                    std::list<CBBox> Transparent;
-            };
-
-            std::vector<Mesh> MeshThread(VoxelMesh m, int axis, const std::map<float, SSlice> &slices); 
-
-            std::mutex m_Lock;
-
-            std::map<float, SSlice> m_XSlices;
-            std::map<float, SSlice> m_YSlices;
-            std::map<float, SSlice> m_ZSlices;
-
             std::map<CVectori, Voxel> m_Voxels;
 
-            void GenerateMesh(Mesh RetMesh, VoxelMesh m, const CBBox &BBox, bool Opaque);
-
-            Mesh GenerateSliceMesh(const SSlice &slice, VoxelMesh m, int axis);
-
-            void GenerateSlices();
+            Mesh GenerateMesh(VoxelMesh m, const CBBox &BBox, bool Opaque);
     };
 } // namespace VoxelOptimizer
 

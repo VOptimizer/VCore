@@ -203,6 +203,9 @@ namespace VoxelOptimizer
             inline TVector Normalize() const
             {
                 float v = Length();
+                if(v == 0)
+                    return *this;
+
                 return TVector(x / v, y / v, z / v);
             }
 

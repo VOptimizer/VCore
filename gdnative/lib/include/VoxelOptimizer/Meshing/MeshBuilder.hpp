@@ -30,6 +30,7 @@
 #include <vector>
 #include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 #include <VoxelOptimizer/Meshing/Mesh.hpp>
+#include <VoxelOptimizer/Memory/Allocator.hpp>
 
 namespace VoxelOptimizer
 {
@@ -48,12 +49,26 @@ namespace VoxelOptimizer
             CMeshBuilder();
 
             /**
+             * @brief Adds all needed textures to the mesh. This must be called before AddFace
+             * 
+             * @param _textures: Textures of the mesh.
+             */
+            void AddTextures(const std::map<TextureType, Texture> &_textures);
+
+            /**
              * @brief Adds a new quad to the mesh.
              * 
-             * @param Color: Colorindex of the face
-             * @param Material: Materialindex of the face
+             * @param _v1: Left top
+             * @param _v2: Right top
+             * @param _v3: Right bottom
+             * @param _v4: Left bottom
+             * @param _normal: Face normal
+             * @param _color: Color index of the face
+             * @param _material: Material of the face
+             * 
+             * @throws CMeshBuilderException If AddTextures has not been previously called.
              */
-            void AddFace(CVector v1, CVector v2, CVector v3, CVector v4, CVector Normal, int Color, int Material);
+            void AddFace(CVector _v1, CVector _v2, CVector _v3, CVector _v4, CVector _normal, int _color, Material _material);
 
             /**
              * @brief Adds a new triangle to the mesh.
@@ -74,17 +89,20 @@ namespace VoxelOptimizer
 
             ~CMeshBuilder() = default;
         private:
-            int AddVertex(CVector Vertex);
-            int AddNormal(CVector Normal);
-            int AddUV(CVector UV);
+            using VectorIndexMap = std::map<CVector, int, std::less<CVector>, CAllocator<CVector>>;
+            using MaterialFacesMap = std::map<Material, GroupedFaces, std::less<Material>, CAllocator<Material>>;
+
+            int AddPosition(CVector _pos);
+            int AddNormal(CVector _normal);
+            int AddUV(CVector _uv);
 
             void MergeIntoThis(Mesh m);
             void GenerateCache();
 
-            std::map<CVector, int> m_Index;
-            std::map<CVector, int> m_NormalIndex;
-            std::map<CVector, int> m_UVIndex;
-            std::map<Material, GroupedFaces> m_FacesIndex;
+            VectorIndexMap m_Index;
+            VectorIndexMap m_NormalIndex;
+            VectorIndexMap m_UVIndex;
+            MaterialFacesMap m_FacesIndex;
 
             Mesh m_CurrentMesh;
     };

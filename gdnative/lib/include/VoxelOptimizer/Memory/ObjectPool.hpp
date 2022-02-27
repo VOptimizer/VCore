@@ -68,7 +68,7 @@ namespace VoxelOptimizer
                 Object *Next;
             };
 
-            void deleteList(Object *list);
+            void deleteList(Object *list, bool destruct);
 
             // All allocated objects in the pool
             Object *m_UsedObjects;
@@ -125,6 +125,8 @@ namespace VoxelOptimizer
 
         if(prev)
             prev->Next = next;
+        else    // The first element is removed.
+            m_UsedObjects = next;
 
         tmp->Next = tmp->Prev = nullptr;
         if(m_FreeObjects)
@@ -149,23 +151,26 @@ namespace VoxelOptimizer
     template <class T>
     inline void CObjectPool<T>::clear()
     {
-        deleteList(m_FreeObjects);
-        deleteList(m_UsedObjects);
+        deleteList(m_FreeObjects, false);
+        deleteList(m_UsedObjects, true);
 
         m_FreeObjects = nullptr;
         m_UsedObjects = nullptr;
     }
 
     template <class T>
-    inline void CObjectPool<T>::deleteList(Object *list)
+    inline void CObjectPool<T>::deleteList(Object *list, bool destruct)
     {
         while (list)
         {
             Object *tmp = list;
             list = list->Next;
 
-            T *obj = (T*)tmp->Data;
-            obj->~T();
+            if(destruct)
+            {
+                T *obj = (T*)tmp->Data;
+                obj->~T();
+            }
 
             // delete tmp;
             m_Pool.deallocate(tmp, 1);
