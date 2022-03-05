@@ -79,15 +79,41 @@ namespace VoxelOptimizer
             m_Pool.dealloc(p);
         }
     }
+
+    size_t CalcIndex(long idx, size_t size)
+    {
+        if(idx < 0)
+            return size - 1;
+        else if(idx >= size)
+            return 0;
+        
+        return idx;
+    }
     
     void CVerticesReducer::CPolygon::Optimize()
     {
-        SPoint *beg = m_Points.begin()->second;
+        std::vector<SPoint *> points(m_Points.size(), nullptr);
+        auto center2d = ProjectToCube(m_Center);
+        size_t idx = 0;
+        
+        for (auto &&p : m_Points)
+        {
+            auto pos2d = ProjectToCube(p.second->Position);
+            p.second->Angle = atan2(pos2d.y - center2d.y, pos2d.x - center2d.x);
+            points[idx++] = p.second;
+            p.second->nexts.clear();
+            p.second->prevs.clear();
+        }
+
+        std::sort(points.begin(), points.end(), [](SPoint *a, SPoint *b) { return a->Angle < b->Angle; });
+
+        idx = 0;
+        SPoint *beg = points.front();
         SPoint *cur = beg;
         while (true)
         {
-            SPoint *a = cur->prevs.begin()->second;
-            SPoint *b = cur->nexts.begin()->second;
+            SPoint *a = points[CalcIndex(idx - 1, points.size())];
+            SPoint *b = points[CalcIndex(idx + 1, points.size())];
 
             CVector a2d = ProjectToCube(a->Position);
             CVector b2d = ProjectToCube(cur->Position);
@@ -104,12 +130,28 @@ namespace VoxelOptimizer
                     beg = a;
 
                 m_Points.erase(cur->Index);
+                points.erase(points.begin() + idx);
                 m_Pool.dealloc(cur);
-            }
 
-            cur = cur->nexts.begin()->second;
-            if(cur == beg)
-                break;
+                idx = CalcIndex(idx - 1, points.size());
+                cur = a;
+            }
+            else
+            {
+                idx = CalcIndex(idx + 1, points.size());
+                cur = points[idx];
+                if(cur == beg)
+                    break;
+            }
+        }      
+
+        if(!points.empty())
+        {
+            if(points.back()->nexts.empty())
+            {
+                points.back()->AddNext(points.front());
+                points.front()->AddPrev(points.back());
+            }
         }
     }
     
@@ -183,6 +225,7 @@ namespace VoxelOptimizer
 
                     m_Points[cur->Index] = cur;
                     points.insert({i, cur});
+                    m_Center += cur->Position;
                 }
 
                 if(clockwise && last)
@@ -214,6 +257,8 @@ namespace VoxelOptimizer
             
             first = last = nullptr;
         }
+
+        m_Center = m_Center / (float)m_Points.size();
     }
 
     bool CVerticesReducer::CPolygon::IsClosed()
@@ -354,51 +399,6 @@ namespace VoxelOptimizer
         }
     }
 
-    void CVerticesReducer::GeneratePoints(Mesh mesh, const CVector &_curIdx, const std::list<CVerticesReducer::Triangle> &_triangles)
-    {
-        for (auto &&t : _triangles)
-        {
-            for (auto &&i : t->Indices)
-            {
-                if(i != _curIdx)
-                {
-                    //Obtain all remaining indices
-                    if(m_Points.empty())
-                    {
-                        m_Points.push_back(Point(mesh->Vertices[i.x - 1], i));
-                        m_Points.back().CalcAngle(mesh->Vertices[_curIdx.x - 1], mesh->Normals[_curIdx.y - 1]);
-                    }
-                    else
-                    {
-                        bool found = false;
-
-                        for (auto &&p : m_Points)
-                        {
-                            if(p.Index == i)
-                            {
-                                found = true;
-                                break;
-                            }
-                        }    
-
-                        if(!found)
-                        {
-                            m_Points.push_back(Point(mesh->Vertices[i.x - 1], i));
-                            m_Points.back().CalcAngle(mesh->Vertices[_curIdx.x - 1], mesh->Normals[_curIdx.y - 1]);
-                        }
-                    }
-                    
-                    //Delete this triangle from all shared indices
-                    auto it = m_Triangles.find(i);
-                    if(it != m_Triangles.end())
-                        it->second.remove(t);
-                }
-            }   
-        }        
-
-        std::sort(m_Points.begin(), m_Points.end());
-    }
-
     Mesh CVerticesReducer::Reduce(Mesh mesh)
     {
         std::list<Triangle> newTriangles;
@@ -434,30 +434,6 @@ namespace VoxelOptimizer
                         }
                     }
 
-                    // GeneratePoints(mesh, trianglesIt->first, trianglesIt->second);
-
-                    // if(m_Points.size() < 3)
-                    // {
-                    //     m_Points.clear();
-                        
-                    //     for (auto &&triangle : trianglesIt->second)
-                    //     {
-                    //         for (auto &&i : triangle->Indices)
-                    //         {
-                    //             if(i != trianglesIt->first)
-                    //             {
-                    //                 //Delete this triangle from all shared indices
-                    //                 auto it = m_Triangles.find(i);
-                    //                 if(it != m_Triangles.end())
-                    //                     it->second.push_back(triangle);                               
-                    //             }
-                    //         }
-                    //     }
-
-                    //     trianglesIt++;
-                    //     continue;
-                    // }
-
                     auto tris = poly.Triangulate();
                     if(!tris.empty())
                     {
@@ -491,75 +467,64 @@ namespace VoxelOptimizer
                         trianglesIt++;
                         continue;
                     }
-
-                    // std::vector<CVector> polygon;
-                    // for (auto &&p : m_Points)
-                    //     polygon.push_back(p.Position2D);
-                    
-                    // std::vector<int> polyindices;
-                    // bool res = CTriangulate::Triangulate(polygon, polyindices);
-                    // if(res)
-                    // {
-                    //     for (size_t i = 0; i < polyindices.size(); i += 3)
-                    //     {
-                    //         const Point &a = m_Points[polyindices[i]];
-                    //         const Point &b = m_Points[polyindices[i + 1]];
-                    //         const Point &c = m_Points[polyindices[i + 2]];
-
-                    //         auto triangle = std::make_shared<CTriangle>();
-                    //         triangle->Indices.push_back(a.Index);
-                    //         triangle->Indices.push_back(b.Index);
-                    //         triangle->Indices.push_back(c.Index);
-                    //         triangle->Mat = trianglesIt->second.front()->Mat;
-
-                    //         // newTriangles.push_back(triangle);
-
-                    //         m_Triangles[a.Index].push_back(triangle);
-                    //         m_Triangles[b.Index].push_back(triangle);
-                    //         m_Triangles[c.Index].push_back(triangle);
-                    //     }
-                    // }
-                    // else
-                    // {
-                    //     m_Points.clear();
-                    //     for (auto &&triangle : trianglesIt->second)
-                    //     {
-                    //         for (auto &&i : triangle->Indices)
-                    //         {
-                    //             if(i != trianglesIt->first)
-                    //             {
-                    //                 //Delete this triangle from all shared indices
-                    //                 auto it = m_Triangles.find(i);
-                    //                 if(it != m_Triangles.end())
-                    //                     it->second.push_back(triangle);                               
-                    //             }
-                    //         }
-                    //     }
-
-                    //     trianglesIt++;
-                    //     continue;
-                    // }
                     
                     trianglesIt = m_Triangles.erase(trianglesIt);
-                    // m_Points.clear();
                 }
                 else
                     trianglesIt++;
             }
         }
         
-        CMeshBuilder builder;
-        builder.AddTextures(mesh->Textures);
-
+        std::list<CVector> indices;
+        std::list<Triangle> tris;
         for (auto &&t : m_Triangles)
         {
-            for (auto &&triangle : t.second)
+            auto list = t.second;
+            while (!list.empty())
             {
-                // TODO: BOOST This is slow
-                if(std::find(newTriangles.begin(), newTriangles.end(), triangle) == newTriangles.end())
-                    newTriangles.push_back(triangle);
+                for (auto &&tri : list)
+                {
+                    if(!tri->Processed)
+                    {
+                        tris.push_back(tri);
+                        for (auto &&i : tri->Indices)
+                        {
+                            if(i != t.first)
+                                indices.push_back(i);
+                        }
+
+                        tri->Processed = true;
+                    }
+                }
+
+                if(indices.empty())
+                    break;
+
+                list = m_Triangles[indices.front()];
+                indices.erase(indices.begin());
             }
+
+            if(!tris.empty())
+            {
+                CPolygon poly(tris, mesh->Vertices, mesh->Normals[t.first.y - 1]);
+                poly.Optimize();
+
+                if(poly.IsClosed())
+                {
+                    auto newTris = poly.Triangulate();
+                    newTriangles.insert(newTriangles.end(), newTris.begin(), newTris.end());
+                }
+                else
+                    newTriangles.insert(newTriangles.end(), tris.begin(), tris.end());
+            }
+
+            tris.clear();
+            indices.clear();
         }
+        
+
+        CMeshBuilder builder;
+        builder.AddTextures(mesh->Textures);
 
         for (auto &&t : newTriangles)
         {
@@ -598,225 +563,5 @@ namespace VoxelOptimizer
         }
         
         return builder.Build();
-        
-        // //Iterate over all triangles and delete all triangles which have shared indices
-        // auto trianglesIt = triangles.begin();
-        // while (trianglesIt != triangles.end())
-        // {
-        //     if (initTriangles[trianglesIt->first] % 3 == 0)
-        //     {
-        //         for (auto &&triangle : trianglesIt->second)
-        //         {
-        //             for (auto &&i : triangle->Indices)
-        //             {
-        //                 //Reduce the vertex count
-        //                 verticesCounter[i.x - 1]--;
-
-        //                 if(i != trianglesIt->first)
-        //                 {
-        //                     //Obtain all remaining indices
-        //                     if(m_Points.empty())
-        //                     {
-        //                         m_Points.push_back(Point(mesh->Vertices[i.x - 1], i));
-        //                         m_Points.back().CalcAngle(mesh->Vertices[trianglesIt->first.x - 1], mesh->Normals[trianglesIt->first.y - 1]);
-        //                     }
-        //                     else
-        //                     {
-        //                         bool found = false;
-
-        //                         for (auto &&p : m_Points)
-        //                         {
-        //                             if(p.Index == i)
-        //                             {
-        //                                 found = true;
-        //                                 break;
-        //                             }
-        //                         }    
-
-        //                         if(!found)
-        //                         {
-        //                             m_Points.push_back(Point(mesh->Vertices[i.x - 1], i));
-        //                             m_Points.back().CalcAngle(mesh->Vertices[trianglesIt->first.x - 1], mesh->Normals[trianglesIt->first.y - 1]);
-        //                         }
-        //                     }
-                            
-        //                     //Delete this triangle from all shared indices
-        //                     auto it = triangles.find(i);
-        //                     if(it != triangles.end())
-        //                         it->second.remove(triangle);
-        //                 }
-        //             }
-        //         }
-
-        //         std::sort(m_Points.begin(), m_Points.end());
-        //         if(m_Points.size() < 3)
-        //         {
-        //             m_Points.clear();
-
-        //             for (auto &&triangle : trianglesIt->second)
-        //             {
-        //                 for (auto &&i : triangle->Indices)
-        //                 {
-        //                     //Reduce the vertex count
-        //                     verticesCounter[i.x - 1]++;
-
-        //                     if(i != trianglesIt->first)
-        //                     {
-        //                         //Delete this triangle from all shared indices
-        //                         auto it = triangles.find(i);
-        //                         if(it != triangles.end())
-        //                             it->second.push_back(triangle);                               
-        //                     }
-        //                 }
-        //             }
-
-        //             trianglesIt++;
-                    
-        //             continue;
-        //         }
-
-        //         std::vector<CVector> polygon;
-
-        //         cout << "\n\n\n\n" << endl;
-        //         for (auto &&p : m_Points)
-        //         {
-        //             polygon.push_back(p.Position2D);
-        //             // cout << "Position3D: " << p.Position << " Position2D: " << p.Position2D << endl;
-        //         }
-                
-        //         std::vector<int> polyindices;
-
-        //         bool res = CTriangulate::Triangulate(polygon, polyindices);
-        //         if(res)
-        //         {
-        //             for (size_t i = 0; i < polyindices.size(); i += 3)
-        //             {
-        //                 const Point &a = m_Points[polyindices[i]];
-        //                 const Point &b = m_Points[polyindices[i + 1]];
-        //                 const Point &c = m_Points[polyindices[i + 2]];
-
-        //                 auto triangle = std::make_shared<CTriangle>();
-        //                 triangle->Indices.push_back(a.Index);
-        //                 triangle->Indices.push_back(b.Index);
-        //                 triangle->Indices.push_back(c.Index);
-
-        //                 newTriangles.push_back(triangle);
-
-        //                 // triangles[a.Index].push_back(triangle);
-        //                 // triangles[b.Index].push_back(triangle);
-        //                 // triangles[c.Index].push_back(triangle);
-
-        //                 verticesCounter[a.Index.x - 1]++;
-        //                 verticesCounter[b.Index.x - 1]++;
-        //                 verticesCounter[c.Index.x - 1]++;
-        //             }
-        //         }
-        //         else
-        //         {
-        //             for (auto &&triangle : trianglesIt->second)
-        //             {
-        //                 for (auto &&i : triangle->Indices)
-        //                 {
-        //                     //Reduce the vertex count
-        //                     verticesCounter[i.x - 1]++;
-
-        //                     if(i != trianglesIt->first)
-        //                     {
-        //                         //Delete this triangle from all shared indices
-        //                         auto it = triangles.find(i);
-        //                         if(it != triangles.end())
-        //                             it->second.push_back(triangle);                               
-        //                     }
-        //                 }
-        //             }
-
-        //             trianglesIt++;
-
-        //             int ddd = 0;
-        //             ddd++;
-        //             continue;
-        //         }
-                
-        //         trianglesIt = triangles.erase(trianglesIt);
-        //         m_Points.clear();
-        //     }
-        //     else
-        //         trianglesIt++;
-        // }
-    
-        // std::vector<int> verticesToRemove;
-        // int sub = 0;
-
-        // for (size_t i = 0; i < verticesCounter.size(); i++)
-        // {
-        //     if (verticesCounter[i] <= 0)
-        //     {
-        //         mesh->Vertices.erase(mesh->Vertices.begin() + (i - sub));
-        //         sub++;
-        //         verticesToRemove.push_back(i + 1);
-        //     }
-        // }  
-
-        // std::sort(verticesToRemove.begin(), verticesToRemove.end());
-
-        // for (auto &&t : triangles)
-        // {
-        //     for (auto &&triangle : t.second)
-        //     {
-        //         newTriangles.push_back(triangle);
-        //     }
-        // }
-
-        // std::vector<CVector> indices;
-        // for (auto &&triangle : newTriangles)
-        // {
-        //     for (auto &&i : triangle->Indices)
-        //     {
-        //         CVector index = i;
-
-        //         for (auto &&r : verticesToRemove)
-        //         {
-        //             if (i.x > r)
-        //                 index.x--;
-        //             else
-        //                 break;
-        //         }
-
-        //         indices.push_back(index);
-        //     }
-        // }
-
-        // // for (auto &&t : triangles)
-        // // {
-        // //     for (auto &&triangle : t.second)
-        // //     {
-        // //         for (auto &&i : triangle->Indices)
-        // //         {
-        // //             CVector index = i;
-
-        // //             for (auto &&r : verticesToRemove)
-        // //             {
-        // //                 if (i.x > r)
-        // //                     index.x--;
-        // //                 else
-        // //                     break;
-        // //             }
-
-        // //             indices.push_back(index);
-
-        // //             if(i != t.first)
-        // //             {
-        // //                 //Delete this triangle from all shared indices
-        // //                 auto it = triangles.find(i);
-        // //                 if(it != triangles.end())
-        // //                     it->second.remove(triangle);
-        // //             }
-        // //         }
-        // //     }
-        // // }
-
-        // mesh->Faces.front()->Indices = indices;
-
-        // return mesh;
     }
 } // namespace VoxelOptimizer
