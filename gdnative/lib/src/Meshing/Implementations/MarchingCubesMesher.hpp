@@ -26,6 +26,7 @@
 #define MARCHINGCUBESMESHER_HPP
 
 #include <VoxelOptimizer/Meshing/IMesher.hpp>
+#include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
 
 namespace VoxelOptimizer
 {
@@ -41,9 +42,8 @@ namespace VoxelOptimizer
         private:
             VoxelMesh m_Mesh;
 
-            void CreateFaces(Mesh m, CVector pos, CVector beg, CVector center, short *edges);
-            int GetColorIdx(CVector pos, int edge);
-            int GetMaterialIdx(CVector pos, int edge);
+            void CreateFaces(CMeshBuilder &builder, CVector pos, CVector beg, CVector center, short *edges);
+            Voxel GetVoxel(CVector pos, int edge);
     };
 } // namespace VoxelOptimizer
 

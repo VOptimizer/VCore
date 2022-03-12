@@ -58,7 +58,12 @@ namespace VoxelOptimizer
             /**
              * @brief Generates the scene
              */
-            std::list<std::map<CVector, Mesh>> GenerateScene(SceneNode sceneTree, bool mergeChilds = false);
+            std::list<Mesh> GenerateScene(SceneNode sceneTree, bool mergeChilds = false);
+
+            /**
+             * @return Returns the voxel mesh as triangulated vertices mesh.
+             */
+            Mesh GenerateMesh(VoxelMesh m);
 
             /**
              * @brief Generates list of meshed chunks.
@@ -69,32 +74,9 @@ namespace VoxelOptimizer
 
             virtual ~IMesher() = default;
         protected:
-            struct SVertex
-            {
-                CVector Pos;
-                CVector UV;
-                CVector Normal;
-                int Material;
-            };
-
-            std::list<std::map<CVector, Mesh>> GenerateScene(SceneNode sceneTree, CMat4x4 modelMatrix, bool mergeChilds = false);
-            void ClearCache();
-
-            void AddFace(Mesh Mesh, CVector v1, CVector v2, CVector v3, CVector v4, CVector Normal, int Color, int Material);
-            void AddFace(Mesh Mesh, SVertex v1, SVertex v2, SVertex v3);
-
-            int AddVertex(Mesh Mesh, CVector Vertex);
-            int AddNormal(Mesh Mesh, CVector Normal);
-            int AddUV(Mesh Mesh, CVector UV);
-
-            std::map<CVector, int> m_Index;
-            std::map<CVector, int> m_NormalIndex;
-            std::map<CVector, int> m_UVIndex;
-            std::map<int, GroupedFaces> m_FacesIndex;
-
+            std::list<Mesh> GenerateScene(SceneNode sceneTree, CMat4x4 modelMatrix, bool mergeChilds = false);
             std::vector<Material> m_CurrentUsedMaterials;
-
-            CMat4x4 CalculateModelMatrix(SceneNode reverseTree);
+            std::map<CVectori, Voxel> m_Voxels;
     };
 } // namespace VoxelOptimizer
 

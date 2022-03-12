@@ -144,7 +144,6 @@ namespace VoxelOptimizer
         auto sceneNode = SceneNode(new CSceneNode());
         sceneNode->SetPosition(pos);
         sceneNode->SetMesh(mesh);
-        mesh->SetSceneNode(sceneNode);
         m_SceneTree->AddChild(sceneNode);
         Skip(3 * sizeof(float));    //Pivot position.
 

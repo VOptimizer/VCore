@@ -40,8 +40,6 @@ namespace VoxelOptimizer
             ~CGreedyMesher() = default;
 
         private:
-            std::map<CVectori, Voxel> m_Voxels;
-
             Mesh GenerateMesh(VoxelMesh m, const CBBox &BBox, bool Opaque);
     };
 } // namespace VoxelOptimizer

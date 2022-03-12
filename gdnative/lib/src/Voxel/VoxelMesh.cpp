@@ -47,8 +47,7 @@ namespace VoxelOptimizer
         //std::lock_guard<std::recursive_mutex> lock(m_Lock);
 
         std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
-        Voxel Tmp = m_Pool.alloc(); //std::make_shared<CVoxel>(); //Voxel(new CVoxel());
-        // Voxel Tmp = std::make_shared<CVoxel>();
+        Voxel Tmp = m_Pool.alloc();
         std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
 
         AllocTimeTotal += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
@@ -81,7 +80,7 @@ namespace VoxelOptimizer
             SetNormal(Pos, CVoxel::FACE_BACKWARD, false);
 
             m_Voxels.erase(IT);
-            MarkChunk(Pos);
+            // MarkChunk(Pos);
         }
     }
     
@@ -184,80 +183,8 @@ namespace VoxelOptimizer
         else
             cur->VisibilityMask = (CVoxel::Visibility)(cur->VisibilityMask | visibility.first);
 
-        CheckInvisible(cur);
-        if(neighbor)
-            CheckInvisible(neighbor);
-    }
-
-    void CVoxelMesh::CheckInvisible(Voxel v)
-    {
-        if(v->IsVisible())
-        {
-            if(m_VisibleVoxels.find(v->Pos) == m_VisibleVoxels.end())
-                m_VisibleVoxels.insert({v->Pos, v});
-        }
-        else
-        {
-            auto it = m_VisibleVoxels.find(v->Pos);
-            if(it != m_VisibleVoxels.end())
-            {
-                m_VisibleVoxels.erase(it);
-                if(((uint8_t)m_Mode & (uint8_t)VoxelMode::KEEP_ONLY_VISIBLE) == (uint8_t)VoxelMode::KEEP_ONLY_VISIBLE)
-                {
-                    // it = m_Voxels.find(v->Pos);
-                    // if(it != m_Voxels.end())
-                    //     m_Voxels.erase(it);
-                }
-            }
-        }
-    }
-
-    void CVoxelMesh::MarkChunk(const CVector &Pos, Voxel voxel)
-    {
-        auto ChunkPos = (Pos / CHUNK_SIZE).Floor() * CHUNK_SIZE;
-        Chunk chunk;
-
-        // Search for chunk to mark for remeshing.
-        auto IT = m_Chunks.find(ChunkPos);
-        if(IT != m_Chunks.end())
-            chunk = IT->second;
-        else
-        {
-            //Create new chunk
-            CBBox BBox = CBBox(ChunkPos, ChunkPos + CHUNK_SIZE);
-            chunk = Chunk(new SChunk());
-            chunk->BBox = BBox;
-
-            m_Chunks[ChunkPos] = chunk;
-        }
-
-        if(voxel)
-        {
-            std::vector<Chunk> chunks = {chunk, m_GlobalChunk};
-            for (auto &&c : chunks)
-            {         
-                auto matColorVec = CVector(voxel->Color, voxel->Material, 0);
-                auto tIT = c->Transparent.find(matColorVec);
-                if(tIT != c->Transparent.end())
-                {
-                    tIT->second.Beg = tIT->second.Beg.Min(Pos);
-                    tIT->second.End = tIT->second.End.Max(Pos + CVector(1, 1, 1));
-                }
-                else
-                    c->Transparent[matColorVec] = CBBox(Pos, Pos);
-            }
-        }
-
-        if(m_RemeshAll)
-            chunk = m_GlobalChunk;
-
-        InsertMarkedChunk(chunk);
-    }
-
-    void CVoxelMesh::InsertMarkedChunk(Chunk chunk)
-    {
-        auto IT = m_ChunksToRemesh.find(chunk->BBox.Beg);
-        if(IT == m_ChunksToRemesh.end())
-            m_ChunksToRemesh[chunk->BBox.Beg] = chunk;
+        // CheckInvisible(cur);
+        // if(neighbor)
+        //     CheckInvisible(neighbor);
     }
 } // namespace VoxelOptimizer

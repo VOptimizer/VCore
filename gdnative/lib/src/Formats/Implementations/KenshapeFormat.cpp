@@ -113,7 +113,6 @@ namespace VoxelOptimizer
         auto sceneNode = SceneNode(new CSceneNode());
         m_SceneTree->AddChild(sceneNode);
         sceneNode->SetMesh(m);
-        m->SetSceneNode(sceneNode); 
         sceneNode->SetLocalOffset(m->GetSize() / 2);
 
         m->Colorpalettes() = m_Textures;

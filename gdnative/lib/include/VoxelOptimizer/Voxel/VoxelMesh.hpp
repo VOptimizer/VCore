@@ -42,9 +42,6 @@
 
 namespace VoxelOptimizer
 {
-    class CSceneNode;
-    using SceneNode = std::shared_ptr<CSceneNode>;
-
     class CVoxel
     {
         public:
@@ -125,14 +122,6 @@ namespace VoxelOptimizer
             void CheckVisibility(const Voxel &_v, const Voxel &_v2, char _axis);
     };
 
-    struct SChunk
-    {
-        CBBox BBox; //!< Bounding box of the chunk.
-        std::map<CVector, CBBox> Transparent; // Bounding box of transparent voxels inside the chunk.
-    };
-
-    using Chunk = std::shared_ptr<SChunk>;
-
     enum class VoxelMode : uint8_t
     {
         KEEP_ALL,
@@ -144,7 +133,7 @@ namespace VoxelOptimizer
         using VoxelData = CVoxelOctree;//COctree<Voxel>;
 
         public:
-            CVoxelMesh(VoxelMode mode = VoxelMode::KEEP_ALL) : m_RemeshAll(true), m_BlockCount(0), m_GlobalChunk(new SChunk()), m_Mode(mode) 
+            CVoxelMesh(VoxelMode mode = VoxelMode::KEEP_ALL) : m_BlockCount(0), m_Mode(mode) 
             {
                 InsertTimeTotal = 0;
                 SearchTimeTotal = 0;
@@ -158,9 +147,6 @@ namespace VoxelOptimizer
             {
                 m_Size = Size;
                 m_Voxels = VoxelData(m_Size, 10);
-
-                // m_Voxels.clear();
-                // m_Voxels.resize(m_Size.x * m_Size.y * m_Size.z);
             }
 
             /**
@@ -188,7 +174,6 @@ namespace VoxelOptimizer
             inline void SetBBox(CBBox BBox)
             {
                 m_BBox = BBox;
-                m_GlobalChunk->BBox = m_BBox;
             }
 
             inline void RecalcBBox()
@@ -201,8 +186,6 @@ namespace VoxelOptimizer
                     m_BBox.Beg = m_BBox.Beg.Min(v.first);
                     m_BBox.End = m_BBox.End.Max(v.first + CVector(1, 1, 1));
                 }
-
-                m_GlobalChunk->BBox = m_BBox;
             }
             
             /**
@@ -215,32 +198,6 @@ namespace VoxelOptimizer
             {
                 std::lock_guard<std::recursive_mutex> lock(m_Lock);
                 return m_Voxels;
-            }
-
-            inline std::map<CVector, Voxel> &GetVisibleVoxels()
-            {
-                // std::lock_guard<std::recursive_mutex> lock(m_Lock);
-                return m_VisibleVoxels;
-            }
-
-            inline std::vector<Chunk> GetChunksToRemesh()
-            {
-                if(m_RemeshAll)
-                    return { m_GlobalChunk };
-
-                std::lock_guard<std::recursive_mutex> lock(m_Lock);
-                std::vector<Chunk> Ret(m_ChunksToRemesh.size(), nullptr);
-                size_t Pos = 0;
-
-                for (auto &&c : m_ChunksToRemesh)
-                {
-                    Ret[Pos] = c.second;
-                    Pos++;
-                }
-
-                m_ChunksToRemesh.clear();
-
-                return Ret;
             }
 
             /**
@@ -292,14 +249,6 @@ namespace VoxelOptimizer
             }
 
             /**
-             * @brief If true, the mesh will be always completely remeshed, regardless of the chunks.
-             */
-            inline void RemeshAlways(bool val)
-            {
-                m_RemeshAll = val;
-            }
-
-            /**
              * @brief Materials used by this mesh. 
              */
             inline std::vector<Material> &Materials()
@@ -310,16 +259,6 @@ namespace VoxelOptimizer
             inline std::map<TextureType, Texture> &Colorpalettes()
             {
                 return m_Colorpalettes;
-            }
-
-            inline SceneNode GetSceneNode() const
-            {
-                return m_SceneNode;
-            }
-            
-            inline void SetSceneNode(SceneNode SceneNode)
-            {
-                m_SceneNode = SceneNode;
             }
             
             inline std::string GetName() const
@@ -352,9 +291,6 @@ namespace VoxelOptimizer
             const static CVector CHUNK_SIZE;
 
             void SetNormal(const CVector &Pos, const CVector &Neighbor, bool IsInvisible = true);
-            void MarkChunk(const CVector &Pos, Voxel voxel = nullptr);
-            void InsertMarkedChunk(Chunk chunk);
-            void CheckInvisible(Voxel v);
 
             // For the gui
             std::string m_Name;
@@ -362,23 +298,16 @@ namespace VoxelOptimizer
 
             CVectori m_Size;
             CBBox m_BBox;
-            Chunk m_GlobalChunk;
 
             CObjectPool<CVoxel> m_Pool;
             
             VoxelData m_Voxels;
-            std::map<CVector, Voxel> m_VisibleVoxels;
-            std::map<CVector, Chunk> m_Chunks;
-            std::map<CVector, Chunk> m_ChunksToRemesh;
             std::vector<Material> m_Materials;
             std::map<TextureType, Texture> m_Colorpalettes;
 
-            bool m_RemeshAll;
             size_t m_BlockCount;
             VoxelMode m_Mode;
             mutable std::recursive_mutex m_Lock;
-
-            SceneNode m_SceneNode; 
     };
 
     using VoxelMesh = std::shared_ptr<CVoxelMesh>;

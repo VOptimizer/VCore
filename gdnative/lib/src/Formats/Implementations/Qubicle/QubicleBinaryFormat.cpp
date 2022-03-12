@@ -61,7 +61,6 @@ namespace VoxelOptimizer
             auto sceneNode = SceneNode(new CSceneNode());
             sceneNode->SetPosition(pos);
             sceneNode->SetMesh(mesh);
-            mesh->SetSceneNode(sceneNode);
             m_SceneTree->AddChild(sceneNode);
 
             if(m_Header.Compression == 0)

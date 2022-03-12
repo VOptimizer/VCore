@@ -28,6 +28,7 @@
 #include "Slicer/BetterSlicer.hpp"
 #include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
 #include <VoxelOptimizer/Meshing/VerticesReducer.hpp>
+#include <vector>
 
 #include "GreedyMesher.hpp"
 
@@ -35,48 +36,48 @@ namespace VoxelOptimizer
 {
     std::map<CVector, Mesh> CGreedyMesher::GenerateMeshes(VoxelMesh m)
     {
+        std::map<CVector, Mesh> ret;
+
         auto &voxels = m->GetVoxels();
         m_Voxels = voxels.queryVisible(true);
 
-        std::map<CVector, Mesh> Ret;
-        m_CurrentUsedMaterials = m->Materials();
-
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        auto Chunks = voxels.queryBBoxes();
+        auto chunks = voxels.queryBBoxes();
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         auto count1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
 
-        std::vector<Mesh> meshes(Chunks.size(), nullptr);
         size_t idx = 0;
 
         begin = std::chrono::steady_clock::now();
-        for (auto &&c : Chunks)
+        for (auto &&c : chunks)
         {
-            meshes[idx] = GenerateMesh(m, c, true);
+            ret[c.Beg] = GenerateMesh(m, c, true);
             idx++;
         }
 
         m_Voxels = voxels.queryVisible(false);
         if(!m_Voxels.empty())
         {
-            for (auto &&c : Chunks)
-                meshes.push_back(GenerateMesh(m, c, false));
+            for (auto &&c : chunks)        
+            {
+                auto mesh = GenerateMesh(m, c, false);
+                auto it = ret.find(c.Beg);
+
+                // Merge the transparent chunk with the opaque one.
+                if(it != ret.end())
+                {
+                    CMeshBuilder builder;
+                    builder.Merge(it->second, std::vector<Mesh>() = { mesh });
+                }
+                else
+                    ret[c.Beg] = mesh;
+            }
         }
         end = std::chrono::steady_clock::now();
         auto count = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-        
-        Mesh retMesh = std::make_shared<SMesh>();
-        retMesh->Textures = m->Colorpalettes();
-        CMeshBuilder builder;
-        builder.Merge(retMesh, meshes);
-        auto mesh = builder.Build();
-
-        CVerticesReducer reducer;
-
-        Ret[CVector()] = reducer.Reduce(mesh);
-
         m_Voxels.clear();
-        return Ret;
+        
+        return ret;
     }
 
     Mesh CGreedyMesher::GenerateMesh(VoxelMesh m, const CBBox &BBox, bool Opaque)

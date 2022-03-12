@@ -127,7 +127,6 @@ namespace VoxelOptimizer
         auto sceneNode = SceneNode(new CSceneNode());
         sceneNode->SetPosition(pos);
         sceneNode->SetMesh(mesh);
-        mesh->SetSceneNode(sceneNode);
         m_SceneTree->AddChild(sceneNode);
 
         uint32_t dataSize = ReadData<uint32_t>();
@@ -195,7 +194,6 @@ namespace VoxelOptimizer
         auto sceneNode = SceneNode(new CSceneNode());
         sceneNode->SetPosition(pos);
         sceneNode->SetMesh(mesh);
-        mesh->SetSceneNode(sceneNode);
         m_SceneTree->AddChild(sceneNode);
 
         uint32_t dataSize = ReadData<uint32_t>();

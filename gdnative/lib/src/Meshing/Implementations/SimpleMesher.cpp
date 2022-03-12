@@ -24,120 +24,144 @@
 
 #include "SimpleMesher.hpp"
 #include <algorithm>
+#include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
 
 namespace VoxelOptimizer
 {
     std::map<CVector, Mesh> CSimpleMesher::GenerateMeshes(VoxelMesh m)
     {
-        std::map<CVector, Mesh> Ret;
-        m_CurrentUsedMaterials = m->Materials();
+        std::map<CVector, Mesh> ret;
+        auto &voxels = m->GetVoxels();
 
-        auto Chunks = m->GetChunksToRemesh();
-        auto BBox = m->GetBBox();
-        CVector Beg = BBox.Beg;
-        std::swap(Beg.y, Beg.z);
-        Beg.z *= -1;
+        // Mesh all opaque voxels
+        m_Voxels = voxels.queryVisible(true);
+        auto chunks = voxels.queryBBoxes();
+        for (auto &&c : chunks)        
+            ret[c.Beg] = GenerateMesh(m, c);
 
-        CVector BoxCenter = BBox.GetSize() / 2;
-        std::swap(BoxCenter.y, BoxCenter.z);
-        BoxCenter.z *= -1;
+        // Mesh all transparent voxels
+        m_Voxels = voxels.queryVisible(false);
 
-        for (auto &&c : Chunks)
-        {          
-            Mesh M = Mesh(new SMesh());
-            M->Textures = m->Colorpalettes();
-
-            for(float x = c->BBox.Beg.x; x < c->BBox.End.x; x++)
+        if(!m_Voxels.empty())
+        {
+            for (auto &&c : chunks)        
             {
-                for(float y = c->BBox.Beg.y; y < c->BBox.End.y; y++)
+                auto mesh = GenerateMesh(m, c);
+                auto it = ret.find(c.Beg);
+
+                // Merge the transparent chunk with the opaque one.
+                if(it != ret.end())
                 {
-                    for(float z = c->BBox.Beg.z; z < c->BBox.End.z; z++)
+                    CMeshBuilder builder;
+                    builder.Merge(it->second, std::vector<Mesh>() = { mesh });
+                }
+                else
+                    ret[c.Beg] = mesh;
+            }
+        }
+
+        m_Voxels.clear();
+        return ret;
+    }
+
+    Mesh CSimpleMesher::GenerateMesh(VoxelMesh m, const CBBox &chunk)
+    {
+        CMeshBuilder builder;
+        builder.AddTextures(m->Colorpalettes());
+
+        auto bbox = m->GetBBox();
+        CVector beg = bbox.Beg;
+        std::swap(beg.y, beg.z);
+        beg.z *= -1;
+
+        CVector boxCenter = bbox.GetSize() / 2;
+        std::swap(boxCenter.y, boxCenter.z);
+        boxCenter.z *= -1;
+
+        for(int x = chunk.Beg.x; x < chunk.End.x; x++)
+        {
+            for(int y = chunk.Beg.y; y < chunk.End.y; y++)
+            {
+                for(int z = chunk.Beg.z; z < chunk.End.z; z++)
+                {
+                    auto it = m_Voxels.find(CVectori(x, y, z));
+                    if(it != m_Voxels.end())
                     {
-                        Voxel v = m->GetVoxel(CVector(x, y, z));
-
-                        if(v && v->IsVisible())
+                        Voxel v = it->second;
+                        for (uint8_t i = 0; i < 6; i++)
                         {
-                            for (uint8_t i = 0; i < 6; i++)
+                            CVoxel::Visibility visiblity = (CVoxel::Visibility )((uint8_t)v->VisibilityMask & (uint8_t)(1 << i));
+
+                            // Invisible
+                            if(visiblity == CVoxel::Visibility::INVISIBLE)
+                                continue;
+
+                            CVector v1, v2, v3, v4, Normal;                            
+                            switch (visiblity)
                             {
-                                CVoxel::Visibility visiblity = (CVoxel::Visibility )((uint8_t)v->VisibilityMask & (uint8_t)(1 << i));
-
-                                // Invisible
-                                if(visiblity == CVoxel::Visibility::INVISIBLE)
-                                    continue;
-
-                                CVector v1, v2, v3, v4, Normal;// = v->Normals[i];
-                                // std::swap(Normal.y, Normal.z);
-                                
-                                switch (visiblity)
+                                case CVoxel::Visibility::UP:
+                                case CVoxel::Visibility::DOWN:
                                 {
-                                    case CVoxel::Visibility::UP:
-                                    case CVoxel::Visibility::DOWN:
+                                    float PosZ = 0;
+                                    if(visiblity == CVoxel::Visibility::UP)
                                     {
-                                        float PosZ = 0;
-                                        if(visiblity == CVoxel::Visibility::UP)
-                                        {
-                                            Normal = CVector(0, 1, 0);
-                                            PosZ = 1;
-                                        }
-                                        else
-                                            Normal = CVector(0, -1, 0);
+                                        Normal = CVector(0, 1, 0);
+                                        PosZ = 1;
+                                    }
+                                    else
+                                        Normal = CVector(0, -1, 0);
 
 
-                                        v1 = CVector(v->Pos.x, v->Pos.z + PosZ, -v->Pos.y - 1.f) - BoxCenter;
-                                        v2 = CVector(v->Pos.x, v->Pos.z + PosZ, -v->Pos.y) - BoxCenter;
-                                        v3 = CVector(v->Pos.x + 1.f, v->Pos.z + PosZ, -v->Pos.y) - BoxCenter;
-                                        v4 = CVector(v->Pos.x + 1.f, v->Pos.z + PosZ, -v->Pos.y - 1.f) - BoxCenter;
-                                    }break;
+                                    v1 = CVector(v->Pos.x, v->Pos.z + PosZ, -v->Pos.y - 1.f) - boxCenter;
+                                    v2 = CVector(v->Pos.x, v->Pos.z + PosZ, -v->Pos.y) - boxCenter;
+                                    v3 = CVector(v->Pos.x + 1.f, v->Pos.z + PosZ, -v->Pos.y) - boxCenter;
+                                    v4 = CVector(v->Pos.x + 1.f, v->Pos.z + PosZ, -v->Pos.y - 1.f) - boxCenter;
+                                }break;
 
-                                    case CVoxel::Visibility::LEFT:
-                                    case CVoxel::Visibility::RIGHT:
+                                case CVoxel::Visibility::LEFT:
+                                case CVoxel::Visibility::RIGHT:
+                                {
+                                    float Posx = 0;
+                                    if(visiblity == CVoxel::Visibility::RIGHT)
                                     {
-                                        float Posx = 0;
-                                        if(visiblity == CVoxel::Visibility::RIGHT)
-                                        {
-                                            Normal = CVector(1, 0, 0);
-                                            Posx = 1;
-                                        }
-                                        else
-                                            Normal = CVector(-1, 0, 0);
+                                        Normal = CVector(1, 0, 0);
+                                        Posx = 1;
+                                    }
+                                    else
+                                        Normal = CVector(-1, 0, 0);
 
-                                        v1 = CVector(v->Pos.x + Posx, v->Pos.z, -v->Pos.y) - BoxCenter;
-                                        v2 = CVector(v->Pos.x + Posx, v->Pos.z, -v->Pos.y - 1.f) - BoxCenter;
-                                        v3 = CVector(v->Pos.x + Posx, v->Pos.z + 1.f, -v->Pos.y - 1.f) - BoxCenter;
-                                        v4 = CVector(v->Pos.x + Posx, v->Pos.z + 1.f, -v->Pos.y) - BoxCenter;
-                                    }break;
+                                    v1 = CVector(v->Pos.x + Posx, v->Pos.z, -v->Pos.y) - boxCenter;
+                                    v2 = CVector(v->Pos.x + Posx, v->Pos.z, -v->Pos.y - 1.f) - boxCenter;
+                                    v3 = CVector(v->Pos.x + Posx, v->Pos.z + 1.f, -v->Pos.y - 1.f) - boxCenter;
+                                    v4 = CVector(v->Pos.x + Posx, v->Pos.z + 1.f, -v->Pos.y) - boxCenter;
+                                }break;
 
-                                    case CVoxel::Visibility::FORWARD:
-                                    case CVoxel::Visibility::BACKWARD:
+                                case CVoxel::Visibility::FORWARD:
+                                case CVoxel::Visibility::BACKWARD:
+                                {
+                                    float PosY = 0;
+                                    if(visiblity == CVoxel::Visibility::FORWARD)
                                     {
-                                        float PosY = 0;
-                                        if(visiblity == CVoxel::Visibility::FORWARD)
-                                        {
-                                            Normal = CVector(0, 0, -1);
-                                            PosY = -1;
-                                        }
-                                        else
-                                            Normal = CVector(0, 0, 1);
+                                        Normal = CVector(0, 0, -1);
+                                        PosY = -1;
+                                    }
+                                    else
+                                        Normal = CVector(0, 0, 1);
 
-                                        v4 = CVector(v->Pos.x, v->Pos.z + 1.f, -v->Pos.y + PosY) - BoxCenter;
-                                        v3 = CVector(v->Pos.x, v->Pos.z, -v->Pos.y + PosY) - BoxCenter;
-                                        v2 = CVector(v->Pos.x + 1.f, v->Pos.z, -v->Pos.y + PosY) - BoxCenter;
-                                        v1 = CVector(v->Pos.x + 1.f, v->Pos.z + 1.f, -v->Pos.y + PosY) - BoxCenter;
-                                     }break;
-                                }
-
-                                AddFace(M, v1 - Beg, v2 - Beg, v3 - Beg, v4 - Beg, Normal, v->Color, v->Material);
+                                    v4 = CVector(v->Pos.x, v->Pos.z + 1.f, -v->Pos.y + PosY) - boxCenter;
+                                    v3 = CVector(v->Pos.x, v->Pos.z, -v->Pos.y + PosY) - boxCenter;
+                                    v2 = CVector(v->Pos.x + 1.f, v->Pos.z, -v->Pos.y + PosY) - boxCenter;
+                                    v1 = CVector(v->Pos.x + 1.f, v->Pos.z + 1.f, -v->Pos.y + PosY) - boxCenter;
+                                }break;
                             }
+
+                            builder.AddFace(v1 - beg, v2 - beg, v3 - beg, v4 - beg, Normal, v->Color, m->Materials()[v->Material]);
                         }
                     }
                 }
             }
-
-            M->ModelMatrix = CalculateModelMatrix(m->GetSceneNode());
-            Ret[c->BBox.Beg] = M;
-            ClearCache();
         }
 
-        return Ret;
+        return builder.Build();
     }
 } // namespace VoxelOptimizer

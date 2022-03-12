@@ -37,6 +37,9 @@ namespace VoxelOptimizer
             std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m) override;
 
             ~CSimpleMesher() = default;
+
+        private:
+            Mesh GenerateMesh(VoxelMesh m, const CBBox &chunk);
     };
 } // namespace VoxelOptimizer
 

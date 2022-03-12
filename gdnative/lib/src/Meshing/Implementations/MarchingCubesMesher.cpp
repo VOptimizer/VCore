@@ -387,73 +387,61 @@ namespace VoxelOptimizer
 
     std::map<CVector, Mesh> CMarchingCubesMesher::GenerateMeshes(VoxelMesh m)
     {
-        m_CurrentUsedMaterials = m->Materials();
-
-        std::map<CVector, Mesh> Ret;
-
-        auto Chunks = m->GetChunksToRemesh();
-        auto BBox = m->GetBBox();
-        CVector Beg = BBox.Beg;
-        std::swap(Beg.y, Beg.z);
-        Beg.z *= -1;
-
-        CVector BoxCenter = BBox.GetSize() / 2;
-        std::swap(BoxCenter.y, BoxCenter.z);
-        BoxCenter.z *= -1;
+        std::map<CVector, Mesh> ret;
+        auto &voxels = m->GetVoxels();
         m_Mesh = m;
 
-        for (auto &&c : Chunks)
-        {
-            Mesh M = Mesh(new SMesh());
-            M->Textures = m->Colorpalettes();
+        auto chunks = voxels.queryBBoxes();
+        auto bbox = m->GetBBox();
+        CVector beg = bbox.Beg;
+        std::swap(beg.y, beg.z);
+        beg.z *= -1;
 
-            for(float x = c->BBox.Beg.x - 1; x < c->BBox.End.x + 1; x++)
+        CVector boxCenter = bbox.GetSize() / 2;
+        std::swap(boxCenter.y, boxCenter.z);
+        boxCenter.z *= -1;
+
+        for (auto &&c : chunks)
+        {
+            CMeshBuilder builder;
+            builder.AddTextures(m->Colorpalettes());
+
+            for(float x = c.Beg.x - 1; x < c.End.x + 1; x++)
             {
-                for(float y = c->BBox.Beg.y - 1; y < c->BBox.End.y + 1; y++)
+                for(float y = c.Beg.y - 1; y < c.End.y + 1; y++)
                 {
-                    for(float z = c->BBox.Beg.z - 1; z < c->BBox.End.z + 1; z++)
+                    for(float z = c.Beg.z - 1; z < c.End.z + 1; z++)
                     {
                         uint8_t idx = GetTableIndex(m, CVector(x, y, z));
                         auto edges = triangleConnectionTable[idx];
 
-                        CreateFaces(M, CVector(x, y, z), Beg, BoxCenter, edges);
+                        CreateFaces(builder, CVector(x, y, z), beg, boxCenter, edges);
                     }
                 }
             }
-
-            M->ModelMatrix = CalculateModelMatrix(m->GetSceneNode());
-            Ret.insert({c->BBox.Beg, M});
-            ClearCache();
+            
+            ret.insert({c.Beg, builder.Build()});
         }
 
-        for (auto &&pair : Ret)
+        for (auto &&pair : ret)
         {
             auto mesh = pair.second;
             for (auto &&uv : mesh->UVs)
                 uv = CVector(((float)(uv.x + 0.5f)) / mesh->Textures[TextureType::DIFFIUSE]->Size().x, 0.5f, 0);
         }
 
-        return Ret;
+        m_Voxels.clear();
+        return ret;
     }
 
-    int CMarchingCubesMesher::GetColorIdx(CVector pos, int edge)
+    Voxel CMarchingCubesMesher::GetVoxel(CVector pos, int edge)
     {
         auto corners = Corners[edge];
         auto voxel = m_Mesh->GetVoxel(pos + corners.first);
         if(!voxel)
             voxel = m_Mesh->GetVoxel(pos + corners.second);
 
-        return voxel->Color;
-    }
-
-    int CMarchingCubesMesher::GetMaterialIdx(CVector pos, int edge)
-    {
-        auto corners = Corners[edge];
-        auto voxel = m_Mesh->GetVoxel(pos + corners.first);
-        if(!voxel)
-            voxel = m_Mesh->GetVoxel(pos + corners.second);
-
-        return voxel->Material;
+        return voxel;
     }
 
     CVector GetSolidIndex(int &oldidx, CVector idxs)
@@ -491,7 +479,7 @@ namespace VoxelOptimizer
         return idxs;     
     }
 
-    void CMarchingCubesMesher::CreateFaces(Mesh m, CVector pos, CVector beg, CVector center, short *edges)
+    void CMarchingCubesMesher::CreateFaces(CMeshBuilder &builder, CVector pos, CVector beg, CVector center, short *edges)
     {
         int cidxtmp = -1;
 
@@ -518,32 +506,30 @@ namespace VoxelOptimizer
             v2.Pos = v2.Pos * CVector(1, 1, -1) - beg - center;
             v3.Pos = v3.Pos * CVector(1, 1, -1) - beg - center;
 
-            int cidx1 = GetColorIdx(pos, e1);
-            int cidx2 = GetColorIdx(pos, e2);
-            int cidx3 = GetColorIdx(pos, e3);
+            auto voxel1 = GetVoxel(pos, e1);
+            auto voxel2 = GetVoxel(pos, e2);
+            auto voxel3 = GetVoxel(pos, e3);
+            if(!voxel1 || !voxel2 || !voxel3)
+                continue;
 
-            CVector color(cidx1, cidx2, cidx3);
+            CVector color(voxel1->Color, voxel2->Color, voxel3->Color);
             color = GetSolidIndex(cidxtmp, color);
 
             v1.UV.x = color.x;
             v2.UV.x = color.y; 
             v3.UV.x = color.z;
 
-            int midx1 = GetMaterialIdx(pos, e1);
-            int midx2 = GetMaterialIdx(pos, e2);
-            int midx3 = GetMaterialIdx(pos, e3);
-
-            if(midx1 == midx2 || midx1 == midx3)
-                v1.Material = v2.Material = v3.Material = midx1;
-            else if(midx2 == midx3)
-                v1.Material = v2.Material = v3.Material = midx2;
+            if(voxel1->Material == voxel2->Material || voxel1->Material == voxel3->Material)
+                v1.Mat = v2.Mat = v3.Mat = m_Mesh->Materials()[voxel1->Material];
+            else if(voxel2->Material == voxel3->Material)
+                v1.Mat = v2.Mat = v3.Mat = m_Mesh->Materials()[voxel2->Material];
             else
-                v1.Material = v2.Material = v3.Material = midx1;
+                v1.Mat = v2.Mat = v3.Mat = m_Mesh->Materials()[voxel1->Material];
 
             CVector FaceNormal = (v2.Pos - v1.Pos).Cross(v3.Pos - v1.Pos).Normalize(); 
             v1.Normal = v2.Normal = v3.Normal = FaceNormal;
 
-            AddFace(m, v1, v2, v3);
+            builder.AddFace(v1, v2, v3);
         }
     }
 } // namespace VoxelOptimizer

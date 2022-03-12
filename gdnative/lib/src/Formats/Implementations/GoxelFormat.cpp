@@ -153,7 +153,6 @@ namespace VoxelOptimizer
             sceneNode->SetMesh(m);
             sceneNode->SetPosition(translation);
             m_SceneTree->AddChild(sceneNode);
-            m->SetSceneNode(sceneNode);
 
             m_Models.push_back(m);
         }

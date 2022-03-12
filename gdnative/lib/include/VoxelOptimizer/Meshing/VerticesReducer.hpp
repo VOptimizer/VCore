@@ -126,12 +126,10 @@ namespace VoxelOptimizer
                     CVector m_Center;
             };
 
-            std::vector<Point> m_Points;
             std::map<CVector, std::list<Triangle>, std::less<CVector>, CAllocator<CVector>> m_Triangles;
             std::vector<int> m_VerticesCounter;
 
             void GenerateTriangles(Mesh mesh);
-            void GeneratePoints(Mesh mesh, const CVector &_curIdx, const std::list<Triangle> &_triangles);
     };
 } // namespace VoxelOptimizer
 

@@ -135,8 +135,7 @@ namespace VoxelOptimizer
 
                         // TODO: Animation support.
                         treeNode->SetMesh(m); 
-                        m->SetName(treeNode->GetName());
-                        m->SetSceneNode(treeNode);                       
+                        m->SetName(treeNode->GetName());                     
                     }
                     else if(strncmp(Tmp.ID, "RGBA", sizeof(Tmp.ID)) == 0)
                     {
