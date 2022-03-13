@@ -135,7 +135,6 @@ namespace VoxelOptimizer
 
         std::vector<char> data = ReadDataChunk(dataSize);
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
-        Skip(dataSize);
         int strmPos = 0;
 
         CVector Beg(1000, 1000, 1000), End;
@@ -172,6 +171,7 @@ namespace VoxelOptimizer
         free(Data);
 
         mesh->SetBBox(CBBox(Beg, End));
+        mesh->GetVoxels().generateVisibilityMask();
         m_Models.push_back(mesh);
     }
 
@@ -201,7 +201,6 @@ namespace VoxelOptimizer
         int OutSize = 0;
         std::vector<char> data = ReadDataChunk(dataSize);
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
-        Skip(dataSize);
         int strmPos = 0;
 
         CVector Beg(1000, 1000, 1000), End;
@@ -238,6 +237,7 @@ namespace VoxelOptimizer
         free(Data);
 
         mesh->SetBBox(CBBox(Beg, End));
+        mesh->GetVoxels().generateVisibilityMask();
         m_Models.push_back(mesh);
 
         uint32_t childCount = ReadData<uint32_t>();

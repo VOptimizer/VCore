@@ -426,24 +426,6 @@ namespace VoxelOptimizer
     inline void COctree<T>::insert(const COctree<T>::pair &_pair)
     {
         m_Size++;
-
-        // internal::COctreeNode<T> *node = this->FindNode(_pair.first);
-        // node->m_HasContent = true;
-
-        // /**
-        //  * Subdivides each cube
-        //  */
-        // while (node->CanSubdivide())
-        // {
-        //     node->Subdivide();
-        //     node = node->FindNode(_pair.first);
-        //     node->m_HasContent = true;
-        // }
-        
-        // node->m_Content.insert(_pair);
-        // node->m_InnerBBox.Beg = node->m_InnerBBox.Beg.Min(_pair.first);
-        // node->m_InnerBBox.End = node->m_InnerBBox.End.Max(_pair.first + CVectori(1, 1, 1));
-
         if(!m_LastInsertedChunk || !m_LastInsertedChunk->m_BBox.ContainsPoint(_pair.first))
         {
             internal::COctreeNode<T> *node = this->FindNode(_pair.first);

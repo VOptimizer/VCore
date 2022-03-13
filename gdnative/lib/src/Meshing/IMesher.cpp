@@ -39,6 +39,8 @@ namespace VoxelOptimizer
     Mesh IMesher::GenerateMesh(VoxelMesh m)
     {
         auto chunks = GenerateMeshes(m);
+        if(chunks.empty())
+            return nullptr;
 
         Mesh ret;
         size_t idx = 0;
@@ -54,9 +56,6 @@ namespace VoxelOptimizer
                 idx++;
             }
         }
-
-        if(meshes.empty())
-            return ret;
 
         CMeshBuilder builder;
         builder.Merge(ret, meshes);

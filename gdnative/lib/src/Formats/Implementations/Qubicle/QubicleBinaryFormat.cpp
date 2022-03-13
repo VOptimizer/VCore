@@ -68,6 +68,7 @@ namespace VoxelOptimizer
             else
                 ReadRLECompressed(mesh);
 
+            mesh->GetVoxels().generateVisibilityMask();
             m_Models.push_back(mesh);
         }
 
@@ -104,7 +105,7 @@ namespace VoxelOptimizer
                     auto pos = CVector(x, z, y);
 
                     if(m_Header.ZAxisOrientation == 0)
-                        pos.y = (uint32_t)(mesh->GetSize().z - 1) - pos.y;
+                        pos.y = (uint32_t)(mesh->GetSize().y - 1) - pos.y;
 
                     Beg = Beg.Min(pos);
                     End = End.Max(pos);
@@ -144,7 +145,7 @@ namespace VoxelOptimizer
                         pos.z = (uint32_t)(index / (uint32_t)mesh->GetSize().x);
 
                         if(m_Header.ZAxisOrientation == 0)
-                            pos.y = (uint32_t)mesh->GetSize().y - z;
+                            pos.y = ((uint32_t)mesh->GetSize().y - 1) - z;
                         else
                             pos.y = z;
 
@@ -167,7 +168,7 @@ namespace VoxelOptimizer
                     pos.z = (uint32_t)(index / (uint32_t)mesh->GetSize().x);
 
                     if(m_Header.ZAxisOrientation == 0)
-                        pos.y = (uint32_t)mesh->GetSize().y - z;
+                        pos.y = ((uint32_t)mesh->GetSize().y - 1) - z;
                     else
                         pos.y = z;
 

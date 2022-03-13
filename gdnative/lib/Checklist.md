@@ -1,7 +1,7 @@
 # MagicaVoxel
 - [x] Loads
 - [x] Worldspace works
-- [ ] Material list
+- [x] Material list
 
 # Goxel
 - [x] Loads
@@ -9,29 +9,29 @@
 - [x] Material list
 
 # Kenshape
-- [ ] Loads
+- [x] Loads
 - [ ] Worldspace works
 - [x] Material list
 
 # QBCL
-- [ ] Loads
+- [x] Loads
 - [ ] Worldspace works
-- [ ] Material list
+- [x] Material list
 
 # QB
-- [ ] Loads
+- [x] Loads
 - [ ] Worldspace works
-- [ ] Material list
+- [x] Material list
 
 # QEF
-- [ ] Loads
+- [x] Loads
 - [ ] Worldspace works
-- [ ] Material list
+- [x] Material list
 
 # QBT
-- [ ] Loads
+- [x] Loads
 - [ ] Worldspace works
-- [ ] Material list
+- [x] Material list
 
 # VEdit
 - [ ] Loads

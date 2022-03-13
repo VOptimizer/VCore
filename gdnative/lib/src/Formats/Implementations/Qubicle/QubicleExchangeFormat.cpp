@@ -39,7 +39,8 @@ namespace VoxelOptimizer
         ReadLine();
 
         VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
-        mesh->Materials().push_back(Material(new CMaterial()));
+        m_Materials.push_back(std::make_shared<CMaterial>());
+        mesh->Materials() = m_Materials;
         mesh->SetSize(ReadVector());
         ReadColors();
         ReadVoxels(mesh);
@@ -49,6 +50,7 @@ namespace VoxelOptimizer
         m_SceneTree->AddChild(sceneNode);
 
         mesh->Colorpalettes() = m_Textures;
+        mesh->GetVoxels().generateVisibilityMask();
         m_Models.push_back(mesh);
     }
 

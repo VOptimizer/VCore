@@ -375,7 +375,7 @@ namespace VoxelOptimizer
     // CVerticesReducer functions
     //////////////////////////////////////////////////
 
-    void CVerticesReducer::GenerateTriangles(Mesh mesh)
+    void CVerticesReducer::GenerateTriangles(const Mesh &mesh)
     {
         m_Triangles.clear();
 
@@ -399,82 +399,77 @@ namespace VoxelOptimizer
         }
     }
 
-    Mesh CVerticesReducer::Reduce(Mesh mesh)
+    void CVerticesReducer::ReduceTriangles(const Mesh &mesh)
     {
-        std::list<Triangle> newTriangles;
-        GenerateTriangles(mesh);
-
-        for (size_t i = 0; i < 10; i++)
+        auto trianglesIt = m_Triangles.begin();
+        while (trianglesIt != m_Triangles.end())
         {
-            auto trianglesIt = m_Triangles.begin();
-            while (trianglesIt != m_Triangles.end())
+            CPolygon poly(trianglesIt->second, mesh->Vertices, mesh->Normals[trianglesIt->first.y - 1]);
+            poly.Remove(trianglesIt->first);
+            
+            if(poly.IsClosed())
             {
-                CPolygon poly(trianglesIt->second, mesh->Vertices, mesh->Normals[trianglesIt->first.y - 1]);
-                poly.Remove(trianglesIt->first);
-                
-                if(poly.IsClosed())
+                for (auto &&t : trianglesIt->second)
                 {
-                    // poly.Optimize();
-
-                    for (auto &&t : trianglesIt->second)
+                    for (auto &&i : t->Indices)
                     {
-                        for (auto &&i : t->Indices)
+                        if(i != trianglesIt->first)
+                        {
+                            //Delete this triangle from all shared indices
+                            auto it = m_Triangles.find(i);
+                            if(it != m_Triangles.end())
+                            {
+                                it->second.remove(t);
+                                if(it->second.empty())
+                                    m_Triangles.erase(it);
+                            }
+                        }
+                    }
+                }
+
+                auto tris = poly.Triangulate();
+                if(!tris.empty())
+                {
+                    for (auto &&t : tris)
+                    {
+                        const CVector &a = t->Indices[0];
+                        const CVector &b = t->Indices[1];
+                        const CVector &c = t->Indices[2];
+
+                        m_Triangles[a].push_back(t);
+                        m_Triangles[b].push_back(t);
+                        m_Triangles[c].push_back(t);
+                    }
+                }
+                else
+                {
+                    for (auto &&triangle : trianglesIt->second)
+                    {
+                        for (auto &&i : triangle->Indices)
                         {
                             if(i != trianglesIt->first)
                             {
-                                //Delete this triangle from all shared indices
+                                //Adds all triangles back.
                                 auto it = m_Triangles.find(i);
                                 if(it != m_Triangles.end())
-                                {
-                                    it->second.remove(t);
-                                    if(it->second.empty())
-                                        m_Triangles.erase(it);
-                                }
+                                    it->second.push_back(triangle);                               
                             }
                         }
                     }
 
-                    auto tris = poly.Triangulate();
-                    if(!tris.empty())
-                    {
-                        for (auto &&t : tris)
-                        {
-                            const CVector &a = t->Indices[0];
-                            const CVector &b = t->Indices[1];
-                            const CVector &c = t->Indices[2];
-
-                            m_Triangles[a].push_back(t);
-                            m_Triangles[b].push_back(t);
-                            m_Triangles[c].push_back(t);
-                        }
-                    }
-                    else
-                    {
-                        for (auto &&triangle : trianglesIt->second)
-                        {
-                            for (auto &&i : triangle->Indices)
-                            {
-                                if(i != trianglesIt->first)
-                                {
-                                    //Delete this triangle from all shared indices
-                                    auto it = m_Triangles.find(i);
-                                    if(it != m_Triangles.end())
-                                        it->second.push_back(triangle);                               
-                                }
-                            }
-                        }
-
-                        trianglesIt++;
-                        continue;
-                    }
-                    
-                    trianglesIt = m_Triangles.erase(trianglesIt);
-                }
-                else
                     trianglesIt++;
+                    continue;
+                }
+                
+                trianglesIt = m_Triangles.erase(trianglesIt);
             }
+            else
+                trianglesIt++;
         }
-        
+    }
+
+    void CVerticesReducer::ReduceVertices(const Mesh &mesh)
+    {
         std::list<CVector> indices;
         std::list<Triangle> tris;
         for (auto &&t : m_Triangles)
@@ -512,21 +507,27 @@ namespace VoxelOptimizer
                 if(poly.IsClosed())
                 {
                     auto newTris = poly.Triangulate();
-                    newTriangles.insert(newTriangles.end(), newTris.begin(), newTris.end());
+                    m_NewTriangles.insert(m_NewTriangles.end(), newTris.begin(), newTris.end());
                 }
                 else
-                    newTriangles.insert(newTriangles.end(), tris.begin(), tris.end());
+                    m_NewTriangles.insert(m_NewTriangles.end(), tris.begin(), tris.end());
             }
 
             tris.clear();
             indices.clear();
         }
-        
+    }
+
+    Mesh CVerticesReducer::Reduce(const Mesh &mesh)
+    {
+        GenerateTriangles(mesh);
+        ReduceTriangles(mesh);
+        ReduceVertices(mesh);
 
         CMeshBuilder builder;
         builder.AddTextures(mesh->Textures);
 
-        for (auto &&t : newTriangles)
+        for (auto &&t : m_NewTriangles)
         {
             for (size_t i = 0; i < t->Indices.size(); i += 3)
             {
@@ -561,6 +562,9 @@ namespace VoxelOptimizer
                 builder.AddFace(v1, v2, v3);
             }
         }
+
+        m_NewTriangles.clear();
+        m_Triangles.clear();
         
         return builder.Build();
     }

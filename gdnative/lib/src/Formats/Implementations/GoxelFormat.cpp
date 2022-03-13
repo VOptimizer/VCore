@@ -142,6 +142,7 @@ namespace VoxelOptimizer
             }
             
             m->SetBBox(CBBox(Beg, End));
+            m->GetVoxels().generateVisibilityMask();
 
             // TODO: This is dumb! The model matrix should be created on a central point!
             auto sceneNode = SceneNode(new CSceneNode());

@@ -36,7 +36,7 @@ namespace VoxelOptimizer
         public:
             CVerticesReducer(/* args */) {}
 
-            Mesh Reduce(Mesh mesh);
+            Mesh Reduce(const Mesh &mesh);
 
             ~CVerticesReducer() {}
 
@@ -127,9 +127,11 @@ namespace VoxelOptimizer
             };
 
             std::map<CVector, std::list<Triangle>, std::less<CVector>, CAllocator<CVector>> m_Triangles;
-            std::vector<int> m_VerticesCounter;
+            std::list<Triangle> m_NewTriangles;
 
-            void GenerateTriangles(Mesh mesh);
+            void GenerateTriangles(const Mesh &mesh);
+            void ReduceTriangles(const Mesh &mesh);
+            void ReduceVertices(const Mesh &mesh);
     };
 } // namespace VoxelOptimizer
 

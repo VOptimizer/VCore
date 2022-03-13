@@ -101,11 +101,6 @@ namespace VoxelOptimizer
             {
                 LoadModel();
             }break;
-
-            // case 2: // Compound
-            // {
-            //     LoadCompound();
-            // }break;
         
             default:
             {
@@ -152,43 +147,7 @@ namespace VoxelOptimizer
         int OutSize = 0;
         std::vector<char> data = ReadDataChunk(dataSize);
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
-        Skip(dataSize);
         int strmPos = 0;
-
-        // if(counter111 == 3)
-        // {
-        //     std::ofstream out("voxel1.bin", std::ios::binary);
-        //     if(out.is_open())
-        //     {
-        //         out.write(Data, OutSize);
-        //         out.close();
-        //     }
-        // }
-
-        // if(counter111 == 4)
-        // {
-        //     std::ofstream out("voxel2.bin", std::ios::binary);
-        //     if(out.is_open())
-        //     {
-        //         out.write(Data, OutSize);
-        //         out.close();
-        //     }
-        // }
-
-        // counter111++;
-
-        // int OutSize2 = 0;
-        // char *Data2 = stbi_zlib_decode_noheader_malloc(Data, 50, &OutSize2);
-
-        // for (size_t i = 0; i < 50; i += 4)
-        // {
-        //     cout << setfill('0') << setw(8) << hex << *((int*)(Data + i));
-        //     cout << " " << dec << *((int*)(Data + i));
-        //     cout << " (" << dec << *((short*)(Data + i));
-        //     cout << ", " << dec << *((short*)(Data + i + 2)) << ")";
-        //     cout << " " << dec << *((float*)(Data + i)) << endl;
-        // }
-        // cout << endl;
 
         CVector Beg(1000, 1000, 1000), End;
         uint32_t index = 0;
@@ -246,6 +205,7 @@ namespace VoxelOptimizer
         free(Data);
 
         mesh->SetBBox(CBBox(Beg, End));
+        mesh->GetVoxels().generateVisibilityMask();
         m_Models.push_back(mesh);
     }
 
