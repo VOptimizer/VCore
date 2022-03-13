@@ -42,7 +42,7 @@ namespace VoxelOptimizer
         VisibilityMask = Visibility::VISIBLE;
     }
 
-    void CVoxelMesh::SetVoxel(const CVector &Pos, int Material, int Color, bool Transparent)
+    void CVoxelMesh::SetVoxel(const CVector &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask)
     {
         //std::lock_guard<std::recursive_mutex> lock(m_Lock);
 
@@ -55,6 +55,7 @@ namespace VoxelOptimizer
         Tmp->Material = Material;
         Tmp->Color = Color;
         Tmp->Transparent = Transparent;
+        Tmp->VisibilityMask = mask;
 
         begin1 = std::chrono::steady_clock::now();
         m_Voxels.insert({Pos, Tmp});

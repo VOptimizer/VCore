@@ -111,10 +111,12 @@ namespace VoxelOptimizer
     void CQubicleBinaryTreeFormat::LoadMatrix()
     {
         int nameLen = ReadData<int>();
-        Skip(nameLen);
+        std::string name(nameLen + 1, '\0');
+        ReadData(&name[0], nameLen);
 
         VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
         mesh->Materials() = m_Materials;
+        mesh->SetName(name);
         auto pos = ReadVector();
 
         Skip(6 * sizeof(int));
@@ -178,10 +180,12 @@ namespace VoxelOptimizer
     void CQubicleBinaryTreeFormat::LoadCompound()
     {
         int nameLen = ReadData<int>();
-        Skip(nameLen);
+        std::string name(nameLen + 1, '\0');
+        ReadData(&name[0], nameLen);
 
         VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
         mesh->Materials() = m_Materials;
+        mesh->SetName(name);
         auto pos = ReadVector();
 
         Skip(6 * sizeof(int));
@@ -259,16 +263,18 @@ namespace VoxelOptimizer
     int CQubicleBinaryTreeFormat::GetColorIdx(int color)
     {
         int ret = 0;
+        CColor c;
+        c.FromRGBA(color);
+
+        if(c.A == 0)
+            return -1;
+
+        c.A = 255;
+        color = c.AsRGBA();
 
         auto IT = m_ColorIdx.find(color);
         if(IT == m_ColorIdx.end())
         {
-            CColor c;
-            c.FromRGBA(color);
-
-            if(c.A == 0)
-                return -1;
-
             auto texIT = m_Textures.find(TextureType::DIFFIUSE);
             if(texIT == m_Textures.end())
                 m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture());

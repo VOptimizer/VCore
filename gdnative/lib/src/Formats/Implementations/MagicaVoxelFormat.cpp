@@ -126,7 +126,7 @@ namespace VoxelOptimizer
                         // 3. Add the distance from object center to space center and add the start position of the voxel mesh
 
                         CVector spaceCenter = halfSize.Fract() + m->GetBBox().Beg + (m->GetBBox().GetSize() / 2 - halfSize);
-                        treeNode->SetLocalOffset(spaceCenter);
+                        m->SetPivot(spaceCenter);
                         std::swap(spaceCenter.y, spaceCenter.z);
                         spaceCenter.z *= -1;
 

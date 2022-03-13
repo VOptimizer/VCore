@@ -45,8 +45,10 @@ namespace VoxelOptimizer
             mesh->Materials() = m_Materials;
 
             uint8_t nameLen = ReadData<uint8_t>();
-            Skip(nameLen);
+            std::string name(nameLen + 1, '\0');
+            ReadData(&name[0], nameLen);
 
+            mesh->SetName(name);
             mesh->SetSize(ReadVector());
             auto pos = ReadVector();
 
@@ -189,19 +191,20 @@ namespace VoxelOptimizer
     int CQubicleBinaryFormat::GetColorIdx(int color)
     {
         int ret = 0;
+        CColor c;
+        if(m_Header.ColorFormat == 0)
+            c.FromRGBA(color);
+        else
+            c.FromBGRA(color);
 
+        if(c.A == 0)
+            return -1;
+
+        c.A = 255;
+        color = c.AsRGBA();
         auto IT = m_ColorIdx.find(color);
         if(IT == m_ColorIdx.end())
         {
-            CColor c;
-            if(m_Header.ColorFormat == 0)
-                c.FromRGBA(color);
-            else
-                c.FromBGRA(color);
-
-            if(c.A == 0)
-                return -1;
-
             auto texIT = m_Textures.find(TextureType::DIFFIUSE);
             if(texIT == m_Textures.end())
                 m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture());

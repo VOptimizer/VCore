@@ -146,8 +146,8 @@ namespace VoxelOptimizer
 
             // TODO: This is dumb! The model matrix should be created on a central point!
             auto sceneNode = SceneNode(new CSceneNode());
-            sceneNode->SetLocalOffset(m->GetBBox().GetSize() / 2);
-            CVector translation = TranslationBeg + sceneNode->GetLocalOffset();
+            m->SetPivot(m->GetBBox().GetSize() / 2);
+            CVector translation = TranslationBeg + m->GetPivot();
             std::swap(translation.y, translation.z);
             translation.z *= -1;
 

@@ -208,7 +208,7 @@ namespace VoxelOptimizer
              * @param Color: Color index.
              * @param Transparent: Is the block transparent?
              */
-            void SetVoxel(const CVector &Pos, int Material, int Color, bool Transparent);
+            void SetVoxel(const CVector &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask = CVoxel::Visibility::VISIBLE);
 
             /**
              * @brief Removes a voxel on a given position
@@ -281,6 +281,16 @@ namespace VoxelOptimizer
                 m_Thumbnail = thumbnail;
             }
 
+            inline CVector GetPivot() const
+            {
+                return m_Pivot;
+            }
+            
+            inline void SetPivot(CVector pivot)
+            {
+                m_Pivot = pivot;
+            }
+
             //TODO: REMOVE
             size_t InsertTimeTotal;
             size_t SearchTimeTotal;
@@ -297,6 +307,7 @@ namespace VoxelOptimizer
             Texture m_Thumbnail;
 
             CVectori m_Size;
+            CVector m_Pivot;
             CBBox m_BBox;
 
             CObjectPool<CVoxel> m_Pool;

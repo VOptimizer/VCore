@@ -123,12 +123,14 @@ namespace VoxelOptimizer
 
     void CQubicleFormat::LoadMatrix()
     {
-        uint32_t size = ReadData<uint32_t>();
-        Skip(size);
+        uint32_t nameLen = ReadData<uint32_t>();
+        std::string name(nameLen + 1, '\0');
+        ReadData(&name[0], nameLen);
         Skip(3); //Mysterious 3 bytes always 0x01 0x01 0x00
 
         VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
         mesh->Materials() = m_Materials;
+        mesh->SetName(name);
         mesh->SetSize(ReadVector());
 
         auto pos = ReadVector();
@@ -228,16 +230,18 @@ namespace VoxelOptimizer
     int CQubicleFormat::GetColorIdx(int color)
     {
         int ret = 0;
+        CColor c;
+        c.FromRGBA(color);
+
+        if(c.A == 0)
+            return -1;
+
+        c.A = 255;
+        color = c.AsRGBA();
 
         auto IT = m_ColorIdx.find(color);
         if(IT == m_ColorIdx.end())
         {
-            CColor c;
-            c.FromRGBA(color);
-
-            if(c.A == 0)
-                return -1;
-
             auto texIT = m_Textures.find(TextureType::DIFFIUSE);
             if(texIT == m_Textures.end())
                 m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture());

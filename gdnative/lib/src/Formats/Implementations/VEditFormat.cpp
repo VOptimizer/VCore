@@ -333,7 +333,7 @@ namespace VoxelOptimizer
         strm << (uint32_t)thumbnail.size();
         strm.write(thumbnail.data(), thumbnail.size());
         strm << (uint32_t)0;                                        // Colorpalette id. Reserved for the future.
-        strm << false;                                              // Voxel visibility is dirty
+        strm << Mesh->GetPivot();                                   // Pivot
         strm << Mesh->GetSize();                                    // Voxel space size.
 
         strm << dataSize;                                           // Compressed voxel data size
@@ -371,7 +371,11 @@ namespace VoxelOptimizer
         }
         strm.skip(sizeof(uint32_t)); // Colorpalette id. Reserved for the future.
 
-        CVector voxlespaceSize;
+        CVector pivot;
+        strm >> pivot;
+        Mesh->SetPivot(pivot);
+
+        CVectori voxlespaceSize;
         strm >> voxlespaceSize;
         Mesh->SetSize(voxlespaceSize);
 
@@ -385,12 +389,14 @@ namespace VoxelOptimizer
         voxelStrm >> voxels;
         for (size_t i = 0; i < voxels; i++)
         {
-            CVector pos;
+            CVectori pos;
             uint32_t matIdx, colorIdx;
+            uint8_t mask;
 
             voxelStrm >> pos;
             voxelStrm >> matIdx;
             voxelStrm >> colorIdx;
+            voxelStrm >> mask;
             voxelStrm.skip(sizeof(uint32_t) * 2); // Type + Properties
 
             auto mat = m_Materials[matIdx];
@@ -406,7 +412,7 @@ namespace VoxelOptimizer
                 matIdx = modelMaterialMapping[matIdx];
             }
 
-            Mesh->SetVoxel(pos, matIdx, colorIdx, mat->Transparency != 0.0);
+            Mesh->SetVoxel(pos, matIdx, colorIdx, mat->Transparency != 0.0, (CVoxel::Visibility)mask);
         }
         
         //Skips extra data, if there is any.
@@ -428,7 +434,6 @@ namespace VoxelOptimizer
     void CSceneTreeSection::SerializeTree(SceneNode tree, CBinaryStream &strm)
     {
         strm << tree->GetName();
-        strm << tree->GetLocalOffset();
         strm << tree->GetPosition();
         strm << tree->GetRotation();
         strm << tree->GetScale();
@@ -454,16 +459,14 @@ namespace VoxelOptimizer
         SceneNode ret = SceneNode(new CSceneNode());
 
         std::string name;
-        CVector pos, rot, scale, localOffset;
+        CVector pos, rot, scale;
 
         strm >> name;
-        strm >> localOffset;
         strm >> pos;
         strm >> rot;
         strm >> scale;
 
         ret->SetName(name);
-        ret->SetLocalOffset(localOffset);
         ret->SetPosition(pos);
         ret->SetRotation(rot);
         ret->SetScale(scale);

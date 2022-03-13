@@ -19,6 +19,7 @@ The data types used in this document are defined as follows:
 | int32    | 4     | A 32-bit wide integer that is stored as little endian      |
 | string | | A non-null terminated string. The size is stored before the string as int32. |
 | uint32    | 4     | A 32-bit wide unsigned integer that is stored as little endian     |
+| vec3i | 3 * int | A vector with 3 components. Stored in the order x, y, z. |
 | vec3 | 3 * float | A vector with 3 components. Stored in the order x, y, z. |
 
 ### Any type
@@ -114,7 +115,8 @@ Array of following type:
 | name | string | Name of the voxel mesh. Only used for gui. |
 | thumbnail | array of byte | Embedded PNG file. Only used for gui. |
 | reserved | uint32 | Reserved for the future. |
-| size | vec3 | Size of the voxel space. This size can be larger than the voxel mesh itself. |
+| pivot | vec3 | Pivot of the mesh. |
+| size | vec3i | Size of the voxel space. This size can be larger than the voxel mesh itself. |
 | data | array of byte | Zlib compressed voxel data. |
 
 ### Voxel data
@@ -123,18 +125,29 @@ The voxel data itself is an array of the following type:
 
 | Name  | Type   | Description   |
 |-------------- | -------------- | -------------- |
-| position | vec3 | Position of the voxel. |
+| position | vec3i | Position of the voxel. |
 | material | uint32 | Index of the used material. |
 | color | uint32 | Index of the used color. |
+| visibility | byte | Visibility mask of the faces |
 | reserved1 | uint32 | Reserved for the future |
 | reserved2 | dict<any> | Reserved for the future |
 
+### Visibility mask
+
+| Name  | Value   |
+|-------------- | -------------- |
+| INVISIBLE | 0 |
+| UP | 1 |
+| DOWN | 2 |
+| LEFT | 4 |
+| RIGHT | 8 |
+| FORWARD | 16 |
+| BACKWARD | 32 |
 ## Scenetree section
 
 | Name  | Type   | Description   |
 |-------------- | -------------- | -------------- |
 | name | string | Name of the node. |
-| pivot | vec3 | Pivot of the mesh. |
 | position | vec3 | Position of the mesh relative to its parent. |
 | rotation | vec3 | Rotation of the mesh relative to its parent. The angles are stored as radians YXZ Euler angles. |
 | scale | vec3 | Scale of the mesh relative to its parent. |
