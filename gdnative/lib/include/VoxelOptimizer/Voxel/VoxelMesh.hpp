@@ -116,6 +116,8 @@ namespace VoxelOptimizer
             std::list<CBBox> queryBBoxes();
             void generateVisibilityMask();
 
+            ~CVoxelOctree() = default;
+
         private:
             void CheckVisibility(Voxel _v, const CVectori &_dir, CVoxel::Visibility lhs, CVoxel::Visibility rhs);
 
@@ -147,6 +149,8 @@ namespace VoxelOptimizer
             {
                 m_Size = Size;
                 m_Voxels = VoxelData(m_Size, 10);
+                m_BlockCount = 0;
+                m_Pool.clear();
             }
 
             /**

@@ -48,6 +48,10 @@ namespace VoxelOptimizer
             CColor() : R(255), G(255), B(255), A(255) {}
 
             CColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : R(r), G(g), B(b), A(a) {}
+            CColor(uint32_t _color)
+            {
+                FromRGBA(_color);
+            }
 
             inline void FromRGBA(uint32_t color)
             {

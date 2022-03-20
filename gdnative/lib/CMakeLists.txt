@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelMesh.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Voxel/PlanesVoxelizer.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/MagicaVoxelFormat.cpp"
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/GoxelFormat.cpp"

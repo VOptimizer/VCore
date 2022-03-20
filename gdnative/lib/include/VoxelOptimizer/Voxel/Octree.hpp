@@ -166,7 +166,7 @@ namespace VoxelOptimizer
 
             COctree<T> &operator=(const COctree<T> &_tree);
 
-            virtual ~COctree() {}
+            virtual ~COctree() = default;
         private:
             bool CanSubdivide() override;
 
@@ -217,6 +217,8 @@ namespace VoxelOptimizer
             SetBBox(_other->m_BBox);
             m_MaxDepth = _other->m_MaxDepth;
             m_Content = _other->m_Content;
+            m_HasContent = _other->m_HasContent;
+            m_InnerBBox = _other->m_InnerBBox;
 
             if(_other->m_Nodes)
             {
@@ -495,6 +497,7 @@ namespace VoxelOptimizer
     template<class T>
     inline COctree<T> &COctree<T>::operator=(const COctree<T> &_tree)
     {
+        m_LastInsertedChunk = nullptr;
         m_Size = _tree.m_Size;
         this->CopyNode(&_tree);
 
