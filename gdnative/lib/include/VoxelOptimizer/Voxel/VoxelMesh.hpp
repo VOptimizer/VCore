@@ -444,6 +444,9 @@ namespace VoxelOptimizer
 
     inline void CVoxelOctree::generateVisibilityMask()
     {
+        if(!this->m_Nodes)
+            return;
+
         internal::COctreeNode<Voxel> *node = this->m_Nodes[0];
         while(node->CanSubdivide() && node->m_Nodes)
             node = node->m_Nodes[0];

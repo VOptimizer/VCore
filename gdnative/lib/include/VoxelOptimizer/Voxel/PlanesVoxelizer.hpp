@@ -67,12 +67,13 @@ namespace VoxelOptimizer
             enum ProjectionMode
             {
                 ADD,            // Adds and textures voxels
-                SUBSTRACT,      // Subtracts and textures voxels
-                TEXTURE         // Only textures voxels
+                SUBSTRACT       // Subtracts and textures voxels
             };
 
             void ProjectPlane(Texture _planes, const CBBox &_bbox, char _axis, ProjectionMode _pmode = ProjectionMode::ADD);
-            CVoxel::Visibility GetMask(char _axis, CVoxel::Visibility _side);
+            void ProjectTexture(Texture _planes, const CBBox &_bbox, char _axis);
+
+            int AddOrGetColor(uint32_t _color);
 
             VoxelMesh m_Mesh;
             std::map<uint32_t, int, std::less<uint32_t>, CAllocator<std::pair<uint32_t, int>>> m_ColorMapping;
