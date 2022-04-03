@@ -45,6 +45,11 @@ namespace VoxelOptimizer
             CPlanesVoxelizer();
 
             /**
+             * @brief Sets the size for the voxel space.
+             */
+            void SetVoxelSpaceSize(const CVectori &_size);
+
+            /**
              * @return Returns the mesh which is managed by this instance.
              */
             VoxelMesh GetMesh();

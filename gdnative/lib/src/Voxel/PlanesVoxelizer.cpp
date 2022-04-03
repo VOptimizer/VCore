@@ -32,6 +32,12 @@ namespace VoxelOptimizer
         m_Mesh->Materials().push_back(std::make_shared<CMaterial>());
     }
 
+    void CPlanesVoxelizer::SetVoxelSpaceSize(const CVectori &_size)
+    {
+        m_Mesh->SetSize(_size);
+        m_Mesh->SetBBox(CBBox(CVectori(), m_Mesh->GetSize()));
+    }
+
     VoxelMesh CPlanesVoxelizer::GetMesh()
     {
         return m_Mesh;
@@ -45,29 +51,32 @@ namespace VoxelOptimizer
         if(topsize.IsZero())
             return;
 
-        m_Mesh->SetSize(CVectori(topsize.x, topsize.y, std::max(frontsize.y, 1.0f)));
+        m_Mesh->Clear();
         m_Mesh->Colorpalettes()[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
-        m_Mesh->SetBBox(CBBox(CVector(), m_Mesh->GetSize()));
-        
+
         ProjectPlane(_planes, _info.Top, 2);
-        // if(!frontsize.IsZero())
-        //     ProjectPlane(_planes, _info.Front, 1, ProjectionMode::SUBSTRACT);
+        if(!frontsize.IsZero())
+            ProjectPlane(_planes, _info.Front, 1, ProjectionMode::SUBSTRACT);
+
+        m_Mesh->GetVoxels().generateVisibilityMask();
     }
 
     void CPlanesVoxelizer::ProjectPlane(Texture _planes, const CBBox &_bbox, char _axis, ProjectionMode _pmode)
     {
-        CVectori size = _bbox.GetSize();
+        CVectori size = _bbox.GetSize() - CVectori(1, 1, 1);
         std::vector<CVoxel::Visibility> mask(size.x * size.y, CVoxel::Visibility::VISIBLE);
         char axis1 = (_axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
         char axis2 = (_axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
 
         for (int h = 0; h < m_Mesh->GetSize().v[_axis]; h++)
         {
-            for (int y = _bbox.Beg.y; y < _bbox.End.y - 1; y++)
+            for (int y = 0; y < size.y; y++)
             {
-                for (int x = _bbox.Beg.x; x < _bbox.End.x - 1; x++)
+                for (int x = 0; x < size.x; x++)
                 {
-                    auto p = _planes->Pixel(CVectori(x, y, 0));
+                    CVectori pixelPos = CVectori(_bbox.Beg.x + x, _bbox.Beg.x + y, 0);
+
+                    auto p = _planes->Pixel(pixelPos);
                     CColor c(p);
                     if(c.A == 0)
                     {
@@ -77,7 +86,7 @@ namespace VoxelOptimizer
                     }
                     else if(h == 0) // Only the first time
                     {
-                        CVectori nextPX(x + 1, y, 0);
+                        CVectori nextPX = pixelPos + CVectori(1, 0, 0);
                         if(nextPX.x < size.x)
                         {
                             auto px = _planes->Pixel(nextPX);
@@ -85,13 +94,13 @@ namespace VoxelOptimizer
 
                             if(cx.A != 0)
                             {
-                                mask[x + size.x * y] &= ~GetMask(_axis, CVoxel::Visibility::LEFT);
-                                mask[nextPX.x + size.x * nextPX.y] &= ~GetMask(_axis, CVoxel::Visibility::RIGHT);
+                                mask[x + size.x * y] &= ~GetMask(_axis, CVoxel::Visibility::RIGHT);
+                                mask[(x + 1) + size.x * y] &= ~GetMask(_axis, CVoxel::Visibility::LEFT);
                             }
                         }
 
-                        CVectori nextPY(x, y + 1, 0);
-                        if(nextPX.y < size.y)
+                        CVectori nextPY = pixelPos + CVectori(0, 1, 0);
+                        if(nextPY.y < size.y)
                         {
                             auto py = _planes->Pixel(nextPY);
                             CColor cy(py);
@@ -99,7 +108,7 @@ namespace VoxelOptimizer
                             if(cy.A != 0)
                             {
                                 mask[x + size.x * y] &= ~GetMask(_axis, CVoxel::Visibility::DOWN);
-                                mask[nextPY.x + size.x * nextPY.y] &= ~GetMask(_axis, CVoxel::Visibility::UP);
+                                mask[x + size.x * (y + 1)] &= ~GetMask(_axis, CVoxel::Visibility::UP);
                             }
                         }
                     }
@@ -127,22 +136,37 @@ namespace VoxelOptimizer
                         case ProjectionMode::ADD:
                         {
                             auto m = mask[x + size.x * y];
-                            if(h == 0)
-                                m &= ~GetMask(_axis, CVoxel::Visibility::FORWARD);
-                            else if((h + 1) == m_Mesh->GetSize().v[_axis])
-                                m &= ~GetMask(_axis, CVoxel::Visibility::BACKWARD);
-                            else
+                            if(m_Mesh->GetSize().v[_axis] > 1)
                             {
-                                m &= ~GetMask(_axis, CVoxel::Visibility::FORWARD);
-                                m &= ~GetMask(_axis, CVoxel::Visibility::BACKWARD);
+                                if(h == 0)
+                                    m &= ~GetMask(_axis, CVoxel::Visibility::FORWARD);
+                                else if((h + 1) == m_Mesh->GetSize().v[_axis])
+                                    m &= ~GetMask(_axis, CVoxel::Visibility::BACKWARD);
+                                else
+                                {
+                                    m &= ~GetMask(_axis, CVoxel::Visibility::FORWARD);
+                                    m &= ~GetMask(_axis, CVoxel::Visibility::BACKWARD);
+                                }
                             }
 
-                            m_Mesh->SetVoxel(pos, 0, colorIdx, false, m);
+                            m_Mesh->SetVoxel(pos, 0, colorIdx, false);
+                        } break;
+
+                        case ProjectionMode::SUBSTRACT:
+                        {
+                            auto m = mask[x + size.x * y];
+                            if(m == CVoxel::Visibility::INVISIBLE)
+                                m_Mesh->RemoveVoxel(pos);
+                        }   // Intentional "forgotten" break
+
+                        case ProjectionMode::TEXTURE:
+                        {
+                            
                         } break;
                     }
                 }
             }
-        }        
+        }
     }
 
     CVoxel::Visibility CPlanesVoxelizer::GetMask(char _axis, CVoxel::Visibility _side)
@@ -152,7 +176,7 @@ namespace VoxelOptimizer
         {
             case CVoxel::Visibility::LEFT:
             {
-                if(_axis == 3 || _axis == 2)    // Top and Front
+                if(_axis == 2 || _axis == 1)    // Top and Front
                     return _side;
                 else
                     return CVoxel::Visibility::FORWARD;
@@ -160,7 +184,7 @@ namespace VoxelOptimizer
 
             case CVoxel::Visibility::RIGHT:
             {
-                if(_axis == 3 || _axis == 2)    // Top and Front
+                if(_axis == 2 || _axis == 1)    // Top and Front
                     return _side;
                 else
                     return CVoxel::Visibility::BACKWARD;
@@ -168,7 +192,7 @@ namespace VoxelOptimizer
 
             case CVoxel::Visibility::UP:
             {
-                if(_axis == 1 || _axis == 2)    // Side and Front
+                if(_axis == 0 || _axis == 1)    // Side and Front
                     return _side;
                 else
                     return CVoxel::Visibility::BACKWARD;
@@ -176,7 +200,7 @@ namespace VoxelOptimizer
 
             case CVoxel::Visibility::DOWN:
             {
-                if(_axis == 3 || _axis == 2)    // Side and Front
+                if(_axis == 2 || _axis == 1)    // Side and Front
                     return _side;
                 else
                     return CVoxel::Visibility::FORWARD;
@@ -184,21 +208,21 @@ namespace VoxelOptimizer
 
             case CVoxel::Visibility::FORWARD:
             {
-                if(_axis == 1)
+                if(_axis == 0)
                     return _side;
-                else if(_axis == 2)
+                else if(_axis == 1)
                     return CVoxel::Visibility::LEFT;
-                else if(_axis == 3)
+                else if(_axis == 2)
                     return CVoxel::Visibility::UP;
             } break;
 
             case CVoxel::Visibility::BACKWARD:
             {
-                if(_axis == 1)
+                if(_axis == 0)
                     return _side;
-                else if(_axis == 2)
+                else if(_axis == 1)
                     return CVoxel::Visibility::RIGHT;
-                else if(_axis == 3)
+                else if(_axis == 2)
                     return CVoxel::Visibility::DOWN;
             } break;
         }

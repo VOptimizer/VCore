@@ -71,14 +71,14 @@ namespace VoxelOptimizer
         auto IT = m_Voxels.find(Pos);
         if(IT != m_Voxels.end())
         {
-            SetNormal(Pos, CVoxel::FACE_UP, false);
-            SetNormal(Pos, CVoxel::FACE_DOWN, false);
+            // SetNormal(Pos, CVoxel::FACE_UP, false);
+            // SetNormal(Pos, CVoxel::FACE_DOWN, false);
 
-            SetNormal(Pos, CVoxel::FACE_LEFT, false);
-            SetNormal(Pos, CVoxel::FACE_RIGHT, false);
+            // SetNormal(Pos, CVoxel::FACE_LEFT, false);
+            // SetNormal(Pos, CVoxel::FACE_RIGHT, false);
 
-            SetNormal(Pos, CVoxel::FACE_FORWARD, false);
-            SetNormal(Pos, CVoxel::FACE_BACKWARD, false);
+            // SetNormal(Pos, CVoxel::FACE_FORWARD, false);
+            // SetNormal(Pos, CVoxel::FACE_BACKWARD, false);
 
             m_Voxels.erase(IT);
             // MarkChunk(Pos);
@@ -88,6 +88,7 @@ namespace VoxelOptimizer
     void CVoxelMesh::Clear()
     {
         std::lock_guard<std::recursive_mutex> lock(m_Lock);
+        m_Voxels.clear();
         //TODO: Fix for V-Edit
         // m_Voxels.clear();
 

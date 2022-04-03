@@ -109,6 +109,8 @@ namespace VoxelOptimizer
     template<class T>
     class COctreeIterator
     {
+        friend COctree<T>;
+
         using node_type = internal::COctreeNode<T>;
         using map_iterator = typename internal::COctreeNode<T>::VoxelMap::iterator;
         using reference = typename internal::COctreeNode<T>::VoxelMap::reference;
@@ -156,7 +158,7 @@ namespace VoxelOptimizer
             COctree(const CVectori &_size, int _depth = 10);
 
             void insert(const pair &_pair);
-            iterator erase(const iterator &_it) { return end(); }
+            iterator erase(const iterator &_it); // { return end(); }
 
             iterator find(const CVectori &_v);
             size_t size();
@@ -449,6 +451,13 @@ namespace VoxelOptimizer
         m_LastInsertedChunk->m_Content.insert(_pair);
         m_LastInsertedChunk->m_InnerBBox.Beg = m_LastInsertedChunk->m_InnerBBox.Beg.Min(_pair.first);
         m_LastInsertedChunk->m_InnerBBox.End = m_LastInsertedChunk->m_InnerBBox.End.Max(_pair.first + CVectori(1, 1, 1));
+    }
+
+    template<class T>
+    inline typename COctree<T>::iterator COctree<T>::erase(const iterator &_it)
+    {
+        typename iterator::map_iterator it = _it.m_Node->m_Content.erase(_it.m_Current);
+        return iterator(_it.m_Node, it);
     }
 
     template<class T>
