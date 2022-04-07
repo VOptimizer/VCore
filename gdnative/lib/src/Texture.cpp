@@ -71,6 +71,9 @@ namespace VoxelOptimizer
 
     uint32_t CTexture::Pixel(const CVectori &pos)
     {
+        if(pos.x >= m_Size.x || pos.y >= m_Size.y || pos.x < 0 || pos.y < 0)
+            throw std::runtime_error("Position out of bounds!");
+
         return m_Pixels[pos.x + m_Size.x * pos.y];
     }
 

@@ -48,69 +48,61 @@ namespace VoxelOptimizer
         m_ColorMapping.clear();
         auto topsize = _info.Top.GetSize() - CVector(1, 1, 1);
         auto frontsize = _info.Front.GetSize() - CVector(1, 1, 1);
+        auto leftsize = _info.Left.GetSize() - CVector(1, 1, 1);
+        auto rightsize = _info.Right.GetSize() - CVector(1, 1, 1);
+        auto bottomsize = _info.Bottom.GetSize() - CVector(1, 1, 1);
+        auto backsize = _info.Back.GetSize() - CVector(1, 1, 1);
         if(topsize.IsZero())
             return;
 
         m_Mesh->Clear();
         m_Mesh->Colorpalettes()[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
 
-        ProjectPlane(_planes, _info.Top, 2);
+        ProjectPlanes(_planes, _info);
         if(!frontsize.IsZero())
-        {
-            ProjectPlane(_planes, _info.Front, 1, ProjectionMode::SUBSTRACT);
             ProjectTexture(_planes, _info.Front, 1);
-        }
+
+        if(!leftsize.IsZero())
+            ProjectTexture(_planes, _info.Left, 0);
 
         m_Mesh->GetVoxels().generateVisibilityMask();
     }
 
-    void CPlanesVoxelizer::ProjectPlane(Texture _planes, const CBBox &_bbox, char _axis, ProjectionMode _pmode)
+    void CPlanesVoxelizer::ProjectPlanes(Texture _planes, const SPlanesInfo &_info)
     {
-        CVectori size = _bbox.GetSize() - CVectori(1, 1, 1);
-        char axis1 = (_axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
-        char axis2 = (_axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
+        CVectori sizeTop = _info.Top.GetSize() - CVectori(1, 1, 1);
+        CVectori sizeFront = _info.Front.GetSize() - CVectori(1, 1, 1);
+        CVectori sizeLeft = _info.Left.GetSize() - CVectori(1, 1, 1);
 
-        for (int h = 0; h < m_Mesh->GetSize().v[_axis]; h++)
+        for (int z = 0; z < m_Mesh->GetSize().z; z++)
         {
-            for (int y = 0; y < size.y; y++)
+            for (int y = 0; y < sizeTop.y; y++)
             {
-                for (int x = 0; x < size.x; x++)
+                for (int x = 0; x < sizeTop.x; x++)
                 {
-                    CVectori pixelPos = CVectori(_bbox.Beg.x + x, _bbox.Beg.x + y, 0);
-                    auto p = _planes->Pixel(pixelPos);
-
-                    CColor c(p);
-                    if(c.A == 0 && _pmode == ProjectionMode::ADD) // Can't add an invisible pixel  
+                    // Checks if the current voxel needs to be added.
+                    CColor c = GetColor(_planes, CVectori(_info.Top.Beg.x + x, _info.Top.Beg.y + y, 0));
+                    if(c.A == 0) // Can't add an invisible pixel  
                         continue;
 
-                    int colorIdx = AddOrGetColor(p);
-
-                    CVector pos;
-                    if(_axis == 1)
+                    if(!sizeFront.IsZero())
                     {
-                        pos.v[axis2] = x;
-                        pos.v[axis1] = y;
+                        CColor cf = GetColor(_planes, CVectori(_info.Front.Beg.x + x, _info.Front.Beg.y + (m_Mesh->GetSize().z - z - 1), 0));
+                        if(cf.A == 0) // Can't add an invisible pixel  
+                            continue;
                     }
-                    else
-                    {
-                        pos.v[axis1] = x;
-                        pos.v[axis2] = size.y - y - 1;
-                    }
-                    pos.v[_axis] = h;
 
-                    switch (_pmode)
+                    if(!sizeLeft.IsZero())
                     {
-                        case ProjectionMode::ADD:
-                        {
-                            m_Mesh->SetVoxel(pos, 0, colorIdx, false);
-                        } break;
-
-                        case ProjectionMode::SUBSTRACT:
-                        {
-                            if(c.A == 0)
-                                m_Mesh->RemoveVoxel(pos);
-                        } break;
+                        CColor cl = GetColor(_planes, CVectori(_info.Left.Beg.x + y, _info.Left.Beg.y + (m_Mesh->GetSize().z - z - 1), 0));
+                        if(cl.A == 0) // Can't add an invisible pixel  
+                            continue;
                     }
+
+                    int colorIdx = AddOrGetColor(c.AsRGBA());
+                    CVectori pos(x, y, z);
+
+                    m_Mesh->SetVoxel(pos, 0, colorIdx, false);
                 }
             }
         }
@@ -126,7 +118,7 @@ namespace VoxelOptimizer
         {
             for (int x = 0; x < size.x; x++)
             {
-                auto p = _planes->Pixel(CVectori(_bbox.Beg.x + x, _bbox.Beg.x + y, 0));
+                auto p = _planes->Pixel(CVectori(_bbox.Beg.x + x, _bbox.Beg.y + (size.y - y - 1), 0));
                 CColor c(p);
                 if(c.A == 0)
                     continue;
@@ -175,5 +167,11 @@ namespace VoxelOptimizer
         }
 
         return colorIdx;
+    }
+
+    CColor CPlanesVoxelizer::GetColor(Texture _planes, const CVectori &_pos)
+    {
+        auto p = _planes->Pixel(_pos);
+        return CColor(p);
     }
 } // namespace VoxelOptimizer

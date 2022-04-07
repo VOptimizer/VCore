@@ -40,7 +40,13 @@ namespace VoxelOptimizer
             ~CGreedyMesher() = default;
 
         private:
-            Mesh GenerateMesh(VoxelMesh m, const CBBox &BBox, bool Opaque);
+            struct Result
+            {
+                Mesh mesh;
+                CVectori position;
+            };
+
+            Result GenerateMesh(VoxelMesh m, const CBBox &BBox, bool Opaque);
     };
 } // namespace VoxelOptimizer
 

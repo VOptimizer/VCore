@@ -23,6 +23,7 @@
  */
 
 #include <chrono>
+#include <future>
 
 #include "Slicer/Slicer.hpp"
 #include "Slicer/BetterSlicer.hpp"
@@ -34,6 +35,10 @@
 
 namespace VoxelOptimizer
 {
+    template<typename R>
+    bool is_ready(std::future<R> const& f)
+    { return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }
+
     std::map<CVector, Mesh> CGreedyMesher::GenerateMeshes(VoxelMesh m)
     {
         std::map<CVector, Mesh> ret;
@@ -46,13 +51,36 @@ namespace VoxelOptimizer
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         auto count1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
 
-        size_t idx = 0;
-
         begin = std::chrono::steady_clock::now();
+
+        std::list<std::future<Result>> futures;
         for (auto &&c : chunks)
         {
-            ret[c.Beg] = GenerateMesh(m, c, true);
-            idx++;
+            futures.push_back(std::async(&CGreedyMesher::GenerateMesh, this, m, c, true));
+            while(futures.size() >= std::thread::hardware_concurrency())
+            {
+                auto it = futures.begin();
+                while (it != futures.end())
+                {
+                    if(is_ready(*it))
+                    {
+                        auto result = it->get();
+                        ret[result.position] = result.mesh;
+                        it = futures.erase(it);
+                    }
+                    else
+                        it++;
+                }
+            }
+        }
+
+        auto it = futures.begin();
+        while (it != futures.end())
+        {
+            it->wait();
+            auto result = it->get();
+            ret[result.position] = result.mesh;
+            it = futures.erase(it);
         }
 
         m_Voxels = voxels.queryVisible(false);
@@ -67,10 +95,10 @@ namespace VoxelOptimizer
                 if(it != ret.end())
                 {
                     CMeshBuilder builder;
-                    builder.Merge(it->second, std::vector<Mesh>() = { mesh });
+                    builder.Merge(it->second, std::vector<Mesh>() = { mesh.mesh });
                 }
                 else
-                    ret[c.Beg] = mesh;
+                    ret[c.Beg] = mesh.mesh;
             }
         }
         end = std::chrono::steady_clock::now();
@@ -80,7 +108,7 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    Mesh CGreedyMesher::GenerateMesh(VoxelMesh m, const CBBox &BBox, bool Opaque)
+    CGreedyMesher::Result CGreedyMesher::GenerateMesh(VoxelMesh m, const CBBox &BBox, bool Opaque)
     {
         CMeshBuilder builder;
         builder.AddTextures(m->Colorpalettes());
@@ -212,6 +240,6 @@ namespace VoxelOptimizer
             // break;
         }
 
-        return builder.Build();
+        return {builder.Build(), BBox.Beg};
     }
 } // namespace VoxelOptimizer

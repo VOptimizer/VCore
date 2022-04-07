@@ -89,16 +89,6 @@ namespace VoxelOptimizer
     {
         std::lock_guard<std::recursive_mutex> lock(m_Lock);
         m_Voxels.clear();
-        //TODO: Fix for V-Edit
-        // m_Voxels.clear();
-
-        // if(m_RemeshAll)
-        //     InsertMarkedChunk(m_BBox);
-        // else
-        // {
-        //     for (auto &&c : m_Chunks)
-        //         InsertMarkedChunk(c.second);
-        // }
     }
 
     Voxel CVoxelMesh::GetVoxel(const CVector &Pos)

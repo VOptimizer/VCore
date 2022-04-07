@@ -74,6 +74,16 @@ namespace VoxelOptimizer
                 return (uint32_t)R | (uint32_t)(G << 8) | (uint32_t)(B << 16) | (uint32_t)(A << 24);
             }
 
+            inline uint32_t AsBGRA() const
+            {
+                return ((uint32_t)R << 16) | (uint32_t)(G << 8) | (uint32_t)B | (uint32_t)(A << 24);
+            }
+
+            inline uint32_t AsABGR() const
+            {
+                return ((uint32_t)R << 24) | (uint32_t)(G << 16) | ((uint32_t)B << 8) | (uint32_t)A;
+            }
+
             inline bool operator!=(const CColor &c)
             {
                 return R != c.R || G != c.G || B != c.B || A != c.A;
