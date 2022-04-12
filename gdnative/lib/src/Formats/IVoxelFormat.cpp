@@ -29,7 +29,7 @@
 
 #include "../FileUtils.hpp"
 
-#include "Implementations/VEditFormat.hpp"
+#include <VoxelOptimizer/Formats/VEditFormat.hpp>
 #include "Implementations/MagicaVoxelFormat.hpp"
 #include "Implementations/KenshapeFormat.hpp"
 #include "Implementations/GoxelFormat.hpp"

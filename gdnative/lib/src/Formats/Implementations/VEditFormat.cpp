@@ -23,19 +23,164 @@
  */
 
 #include "../../FileUtils.hpp"
-#include "VEditFormat.hpp"
+#include <VoxelOptimizer/Formats/VEditFormat.hpp>
 #include <stb_image.h>
 #include <stb_image_write.h>
 #include <VoxelOptimizer/Misc/Exceptions.hpp>
 
 namespace VoxelOptimizer
 {
+    enum SectionType
+    {
+        META,
+        MATERIAL,
+        COLORPALETTE,
+        VOXELS,
+        SCENE_TREE,
+        TEXTURE_PLANES
+    };
+
+    enum AnyType : uint8_t
+    {
+        STRING,
+        FLOAT,
+        INT32,
+        UINT32,
+        VECTOR3I
+    };
+
+    class CFileHeader
+    {
+        public:
+            CFileHeader() 
+            {
+                strncpy(m_Signature, "VEDIT", 5);
+                m_Version = 0x1;
+                memset(ProgrammVersion, 0, sizeof(ProgrammVersion));
+            }
+
+            void Serialize(CBinaryStream &strm);
+
+        private:
+            char m_Signature[5];
+            int32_t m_Version;
+            char ProgrammVersion[23];
+    };
+
+    class ISection
+    {
+        public:
+            ISection(int32_t type) : m_Type(type) {}
+
+            virtual void Serialize(CBinaryStream &strm);
+            virtual void Deserialize(CBinaryStream &strm);
+
+        protected:
+            void SkipAnyType(CBinaryStream &strm, AnyType type);
+            char *CompressStream(CBinaryStream &strm, int &dataSize);
+            CBinaryStream DecompressStream(CBinaryStream &strm, int dataSize);
+
+            int32_t m_Type;
+    };
+
+    class CMetaSection : public ISection
+    {
+        public:
+            CMetaSection() : ISection(SectionType::META) {}
+
+            virtual void Serialize(CBinaryStream &strm) override;
+            virtual void Deserialize(CBinaryStream &strm) override;
+
+            std::string Author;
+            std::string Company;
+            std::string Copyright;
+            std::string Name;
+    };
+
+    class CMaterialSection : public ISection
+    {
+        public:
+            CMaterialSection() : ISection(SectionType::MATERIAL) {}
+
+            virtual void Serialize(CBinaryStream &strm) override;
+            virtual void Deserialize(CBinaryStream &strm) override;
+
+            std::string Name;
+            Material Mat;
+    };
+
+    class CColorpaletteSection : public ISection
+    {
+        public:
+            CColorpaletteSection() : ISection(SectionType::COLORPALETTE) {}
+
+            virtual void Serialize(CBinaryStream &strm) override;
+            virtual void Deserialize(CBinaryStream &strm) override;
+
+            Texture Colors;
+    };
+
+    class CVoxelSection : public ISection
+    {
+        public:
+            CVoxelSection(const std::vector<Material> &materials) : ISection(SectionType::VOXELS), m_MaterialMapping(std::map<Material, int>()), m_Materials(materials) {}
+            CVoxelSection(const std::map<Material, int> &materialMapping) : ISection(SectionType::VOXELS), m_MaterialMapping(materialMapping), m_Materials(std::vector<Material>()) {}
+
+            virtual void Serialize(CBinaryStream &strm) override;
+            virtual void Deserialize(CBinaryStream &strm) override;
+
+            VoxelMesh Mesh;
+
+        private:
+            const std::map<Material, int> &m_MaterialMapping;
+            const std::vector<Material> &m_Materials;
+    };
+
+    class CSceneTreeSection : public ISection
+    {
+        public:
+            CSceneTreeSection(const std::vector<VoxelMesh> &meshes) : ISection(SectionType::SCENE_TREE), m_Meshes(meshes) {}
+
+            virtual void Serialize(CBinaryStream &strm) override;
+            virtual void Deserialize(CBinaryStream &strm) override;
+
+            SceneNode Tree;
+
+        private:
+            void SerializeTree(SceneNode tree, CBinaryStream &strm);
+            SceneNode DeserializeTree(CBinaryStream &strm);
+
+            const std::vector<VoxelMesh> &m_Meshes;
+    };
+
+    class CTexturePlanes : public ISection
+    {
+        public:
+            CTexturePlanes() : ISection(SectionType::TEXTURE_PLANES) {}
+
+            std::string Name;
+            Texture Planes;
+            CVectori VoxelSpaceSize;
+            SPlanesInfo PlanesInfo;
+
+            virtual void Serialize(CBinaryStream &strm) override;
+            virtual void Deserialize(CBinaryStream &strm) override;
+    };
+
+    //////////////////////////////////////////////////
+    // CFileHeader functions
+    //////////////////////////////////////////////////
+
     void CFileHeader::Serialize(CBinaryStream &strm)
     {
         strm.write(m_Signature, 5);
         strm << m_Version;
         strm.write(ProgrammVersion, 23);
     }
+
+    //////////////////////////////////////////////////
+    // ISection functions
+    //////////////////////////////////////////////////
 
     void ISection::Serialize(CBinaryStream &strm)
     {
@@ -91,6 +236,10 @@ namespace VoxelOptimizer
         return ret;
     }
 
+    //////////////////////////////////////////////////
+    // CMetaSection functions
+    //////////////////////////////////////////////////
+
     void CMetaSection::Serialize(CBinaryStream &strm)
     {
         ISection::Serialize(strm);
@@ -118,6 +267,10 @@ namespace VoxelOptimizer
         if(strm.offset() - startOff < size)
             strm.skip(size - (strm.offset() - startOff));
     }
+
+    //////////////////////////////////////////////////
+    // CMaterialSection functions
+    //////////////////////////////////////////////////
 
     void CMaterialSection::Serialize(CBinaryStream &strm)
     {
@@ -243,6 +396,10 @@ namespace VoxelOptimizer
             strm.skip(size - (strm.offset() - startOff));
     }
 
+    //////////////////////////////////////////////////
+    // CColorpaletteSection functions
+    //////////////////////////////////////////////////
+
     void CColorpaletteSection::Serialize(CBinaryStream &strm)
     {
         ISection::Serialize(strm);
@@ -297,6 +454,10 @@ namespace VoxelOptimizer
         }
     }
 
+    //////////////////////////////////////////////////
+    // CVoxelSection functions
+    //////////////////////////////////////////////////
+
     void CVoxelSection::Serialize(CBinaryStream &strm)
     {
         ISection::Serialize(strm);
@@ -312,7 +473,8 @@ namespace VoxelOptimizer
         voxels << (uint32_t)Mesh->GetVoxels().size();
         for (auto &&v : Mesh->GetVoxels())
         {
-            voxels << v.first;  // Position
+            CVectori pos(v.first.x, v.first.z, v.first.y);
+            voxels << pos;  // Position
 
             auto mat = Mesh->Materials()[v.second->Material];
 
@@ -334,7 +496,10 @@ namespace VoxelOptimizer
         strm.write(thumbnail.data(), thumbnail.size());
         strm << (uint32_t)0;                                        // Colorpalette id. Reserved for the future.
         strm << Mesh->GetPivot();                                   // Pivot
-        strm << Mesh->GetSize();                                    // Voxel space size.
+
+        CVectori spaceSize(Mesh->GetSize().x, Mesh->GetSize().z, Mesh->GetSize().y);
+
+        strm << spaceSize;                                               // Voxel space size.
 
         strm << dataSize;                                           // Compressed voxel data size
         strm.write(data, dataSize);                                 // Compressed voxel data
@@ -377,6 +542,7 @@ namespace VoxelOptimizer
 
         CVectori voxlespaceSize;
         strm >> voxlespaceSize;
+        std::swap(voxlespaceSize.y, voxlespaceSize.z);
         Mesh->SetSize(voxlespaceSize);
 
         std::map<int, int> modelMaterialMapping;
@@ -412,6 +578,7 @@ namespace VoxelOptimizer
                 matIdx = modelMaterialMapping[matIdx];
             }
 
+            std::swap(pos.y, pos.z);
             Mesh->SetVoxel(pos, matIdx, colorIdx, mat->Transparency != 0.0, (CVoxel::Visibility)mask);
         }
         
@@ -419,6 +586,10 @@ namespace VoxelOptimizer
         if(strm.offset() - startOff < size)
             strm.skip(size - (strm.offset() - startOff));
     }
+
+    //////////////////////////////////////////////////
+    // CSceneTreeSection functions
+    //////////////////////////////////////////////////
 
     void CSceneTreeSection::Serialize(CBinaryStream &strm)
     {
@@ -498,6 +669,283 @@ namespace VoxelOptimizer
             strm.skip(size - (strm.offset() - startOff));
     }
 
+    //////////////////////////////////////////////////
+    // CTexturePlanes functions
+    //////////////////////////////////////////////////
+
+    void CTexturePlanes::Serialize(CBinaryStream &strm)
+    {
+        ISection::Serialize(strm);
+
+        CBinaryStream data;
+        data << Name;
+        data << VoxelSpaceSize;
+
+        auto texture = Planes->AsPNG();
+        data << (uint32_t)texture.size();
+        data.write(texture.data(), texture.size());
+
+        CVectori topsize = PlanesInfo.Top.GetSize() - CVector(1, 1, 1);
+        CVectori frontsize = PlanesInfo.Front.GetSize() - CVector(1, 1, 1);
+        CVectori leftsize = PlanesInfo.Left.GetSize() - CVector(1, 1, 1);
+        CVectori rightsize = PlanesInfo.Right.GetSize() - CVector(1, 1, 1);
+        CVectori bottomsize = PlanesInfo.Bottom.GetSize() - CVector(1, 1, 1);
+        CVectori backsize = PlanesInfo.Back.GetSize() - CVector(1, 1, 1);
+
+        uint32_t pairs = 0;
+
+        CBinaryStream dict;
+        if(!topsize.IsZero())
+        {
+            dict << std::string("POS_T");
+            dict << AnyType::VECTOR3I;
+            dict << PlanesInfo.Top.Beg;
+            pairs++;
+
+            dict << std::string("SIZE_T");
+            dict << AnyType::VECTOR3I;
+            dict << topsize;
+            pairs++;
+        }
+
+        if(!frontsize.IsZero())
+        {
+            dict << std::string("POS_F");
+            dict << AnyType::VECTOR3I;
+            dict << PlanesInfo.Front.Beg;
+            pairs++;
+
+            dict << std::string("SIZE_F");
+            dict << AnyType::VECTOR3I;
+            dict << frontsize;
+            pairs++;
+        }
+
+        if(!leftsize.IsZero())
+        {
+            dict << std::string("POS_L");
+            dict << AnyType::VECTOR3I;
+            dict << PlanesInfo.Left.Beg;
+            pairs++;
+
+            dict << std::string("SIZE_L");
+            dict << AnyType::VECTOR3I;
+            dict << leftsize;
+            pairs++;
+        }
+
+        if(!bottomsize.IsZero())
+        {
+            dict << std::string("POS_B");
+            dict << AnyType::VECTOR3I;
+            dict << PlanesInfo.Bottom.Beg;
+            pairs++;
+
+            dict << std::string("SIZE_B");
+            dict << AnyType::VECTOR3I;
+            dict << bottomsize;
+            pairs++;
+        }
+
+        if(!rightsize.IsZero())
+        {
+            dict << std::string("POS_R");
+            dict << AnyType::VECTOR3I;
+            dict << PlanesInfo.Right.Beg;
+            pairs++;
+
+            dict << std::string("SIZE_R");
+            dict << AnyType::VECTOR3I;
+            dict << rightsize;
+            pairs++;
+        }
+
+        if(!backsize.IsZero())
+        {
+            dict << std::string("POS_BA");
+            dict << AnyType::VECTOR3I;
+            dict << PlanesInfo.Back.Beg;
+            pairs++;
+
+            dict << std::string("SIZE_BA");
+            dict << AnyType::VECTOR3I;
+            dict << backsize;
+            pairs++;
+        }
+
+        data << pairs;
+        auto dictData = dict.data();
+        data.write(dictData.data(), dictData.size());
+
+        strm << (uint32_t)data.size();
+        auto dataData = data.data();
+        strm.write(dataData.data(), dataData.size());
+    }
+
+    void CTexturePlanes::Deserialize(CBinaryStream &strm)
+    {
+        uint32_t size;
+        strm >> size;
+        auto startOff = strm.offset();
+
+        strm >> Name;
+        strm >> VoxelSpaceSize;
+
+        uint32_t planesSize;
+        strm >> planesSize;
+        
+        if(planesSize > 0)
+        {
+            std::vector<char> img(planesSize, 0);
+            strm.read(&img[0], planesSize);
+
+            int w, h, c;
+            uint32_t *ImgData = (uint32_t*)stbi_load_from_memory((unsigned char*)img.data(), planesSize, &w, &h, &c, 4);
+            if(ImgData)
+            {
+                Planes = std::make_shared<CTexture>(CVector(w, h, 0), ImgData);
+                free(ImgData);
+            }
+
+            uint32_t dictSize;
+            strm >> dictSize;
+
+            for (size_t i = 0; i < dictSize; i++)
+            {
+                std::string key;
+                strm >> key;
+
+                AnyType type;
+                strm >> type;
+
+                switch (Adler32(key.c_str()))
+                {
+                    case Adler32("POS_T"):
+                    {
+                        if(type != AnyType::VECTOR3I)
+                            SkipAnyType(strm, type);
+                        else
+                            strm >> PlanesInfo.Top.Beg;
+                    }break;
+
+                    case Adler32("SIZE_T"):
+                    {
+                        if(type != AnyType::VECTOR3I)
+                            SkipAnyType(strm, type);
+                        else
+                        {
+                            strm >> PlanesInfo.Top.End;
+                            PlanesInfo.Top.End += PlanesInfo.Top.Beg + CVectori(1, 1, 1);
+                        }
+                    }break;
+
+                    case Adler32("POS_F"):
+                    {
+                        if(type != AnyType::VECTOR3I)
+                            SkipAnyType(strm, type);
+                        else
+                            strm >> PlanesInfo.Front.Beg;
+                    }break;
+
+                    case Adler32("SIZE_F"):
+                    {
+                        if(type != AnyType::VECTOR3I)
+                            SkipAnyType(strm, type);
+                        else
+                        {
+                            strm >> PlanesInfo.Front.End;
+                            PlanesInfo.Front.End += PlanesInfo.Front.Beg + CVectori(1, 1, 1);
+                        }
+                    }break;
+
+                    case Adler32("POS_L"):
+                    {
+                        if(type != AnyType::VECTOR3I)
+                            SkipAnyType(strm, type);
+                        else
+                            strm >> PlanesInfo.Left.Beg;
+                    }break;
+
+                    case Adler32("SIZE_L"):
+                    {
+                        if(type != AnyType::VECTOR3I)
+                            SkipAnyType(strm, type);
+                        else
+                        {
+                            strm >> PlanesInfo.Left.End;
+                            PlanesInfo.Left.End += PlanesInfo.Left.Beg + CVectori(1, 1, 1);
+                        }
+                    }break;
+
+                    case Adler32("POS_B"):
+                    {
+                        if(type != AnyType::VECTOR3I)
+                            SkipAnyType(strm, type);
+                        else
+                            strm >> PlanesInfo.Bottom.Beg;
+                    }break;
+
+                    case Adler32("SIZE_B"):
+                    {
+                        if(type != AnyType::VECTOR3I)
+                            SkipAnyType(strm, type);
+                        else
+                        {
+                            strm >> PlanesInfo.Bottom.End;
+                            PlanesInfo.Bottom.End += PlanesInfo.Bottom.Beg + CVectori(1, 1, 1);
+                        }
+                    }break;
+
+                    case Adler32("POS_R"):
+                    {
+                        if(type != AnyType::VECTOR3I)
+                            SkipAnyType(strm, type);
+                        else
+                            strm >> PlanesInfo.Right.Beg;
+                    }break;
+
+                    case Adler32("SIZE_R"):
+                    {
+                        if(type != AnyType::VECTOR3I)
+                            SkipAnyType(strm, type);
+                        else
+                        {
+                            strm >> PlanesInfo.Right.End;
+                            PlanesInfo.Right.End += PlanesInfo.Right.Beg + CVectori(1, 1, 1);
+                        }
+                    }break;
+
+                    case Adler32("POS_BA"):
+                    {
+                        if(type != AnyType::VECTOR3I)
+                            SkipAnyType(strm, type);
+                        else
+                            strm >> PlanesInfo.Back.Beg;
+                    }break;
+
+                    case Adler32("SIZE_BA"):
+                    {
+                        if(type != AnyType::VECTOR3I)
+                            SkipAnyType(strm, type);
+                        else
+                        {
+                            strm >> PlanesInfo.Back.End;
+                            PlanesInfo.Back.End += PlanesInfo.Back.Beg + CVectori(1, 1, 1);
+                        }
+                    }break;
+                }
+            }
+        }
+
+        //Skips extra data, if there is any.
+        if(strm.offset() - startOff < size)
+            strm.skip(size - (strm.offset() - startOff));
+    }
+
+    //////////////////////////////////////////////////
+    // CVEditFormat functions
+    //////////////////////////////////////////////////
+
     std::vector<char> CVEditFormat::Save(const std::vector<VoxelMesh> &meshes)
     {
         m_Materials.clear();
@@ -533,24 +981,41 @@ namespace VoxelOptimizer
         }
         m_Materials.clear();
 
-        // Writes the color palette to the file.
-        CColorpaletteSection colors;
-        colors.Colors = meshes.front()->Colorpalettes()[TextureType::DIFFIUSE];
-        colors.Serialize(stream);
-
-        // Writes all models to the file.
-        for (auto &&m : meshes)
+        if(!meshes.empty())
         {
-            CVoxelSection voxel(materials);
-            voxel.Mesh = m;
+            // Writes the color palette to the file.
+            CColorpaletteSection colors;
+            colors.Colors = meshes.front()->Colorpalettes()[TextureType::DIFFIUSE];
+            colors.Serialize(stream);
 
-            voxel.Serialize(stream);
+            // Writes all models to the file.
+            for (auto &&m : meshes)
+            {
+                CVoxelSection voxel(materials);
+                voxel.Mesh = m;
+
+                voxel.Serialize(stream);
+            }
         }
 
-        // Writes the scene tree.
-        CSceneTreeSection sceneTree(meshes);
-        sceneTree.Tree = m_SceneTree;
-        sceneTree.Serialize(stream);
+        for (auto &&p : m_TexturePlanes)
+        {
+            CTexturePlanes planes;
+            planes.Name = p.first;
+            planes.Planes = std::get<0>(p.second);
+            planes.PlanesInfo = std::get<1>(p.second);
+            planes.VoxelSpaceSize = std::get<2>(p.second);
+
+            planes.Serialize(stream);
+        }
+        
+        if(m_SceneTree)
+        {
+            // Writes the scene tree.
+            CSceneTreeSection sceneTree(meshes);
+            sceneTree.Tree = m_SceneTree;
+            sceneTree.Serialize(stream);
+        }
 
         return stream.data();
     }
@@ -608,6 +1073,14 @@ namespace VoxelOptimizer
                     sceneTree.Deserialize(m_DataStream);
 
                     m_SceneTree = sceneTree.Tree;
+                }break;
+
+                case SectionType::TEXTURE_PLANES:
+                {
+                    CTexturePlanes planes;
+                    planes.Deserialize(m_DataStream);
+
+                    m_TexturePlanes[planes.Name] = std::make_tuple(planes.Planes, planes.PlanesInfo, planes.VoxelSpaceSize);
                 }break;
 
                 default:

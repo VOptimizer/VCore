@@ -32,11 +32,11 @@ The any type can only be used as `val_type` of a dictionary. The any has always 
 | FLOAT  |  1 |
 | INT32  | 2  |
 | UINT32  | 3  |
-| VECTOR3  | 4  |
+| VECTOR3I  | 4  |
 
 ### Dictionary type
 
-A dictionary is a set of key-value pairs. The count of key-value pairs is stored in front of the dictionary as `uint32`. The `val_type` can be any data type that is described by this section. The keys are alwys unique `string` values.
+A dictionary is a set of key-value pairs. The count of key-value pairs is stored in front of the dictionary as `uint32`. The `val_type` can be any data type that is described by this section. The keys are always unique `string` values.
 
 ## File header
 
@@ -153,3 +153,28 @@ The voxel data itself is an array of the following type:
 | scale | vec3 | Scale of the mesh relative to its parent. |
 | mesh | uint32 | Index of the used mesh. |
 | childrens | array of this type | Childrens of this node. | 
+
+## Textureplanes section
+
+| Name  | Type   | Description   |
+|-------------- | -------------- | -------------- |
+| name | string | Name of the texture planes. |
+| textures | array of byte | Embedded PNG file. |
+| planesinfo | dict<VECTOR3I> | Infos about the sub-textures inside the texture. |
+
+### planesinfo possible values
+
+| Name   | Description   |
+|-------------- | -------------- |
+| POS_T | Position of the top texture |
+| SIZE_T | Size of the top texture |
+| POS_B | Position of the bottom texture |
+| SIZE_B | Size of the bottom texture |
+| POS_F | Position of the front texture |
+| SIZE_F | Size of the front texture |
+| POS_BA | Position of the back texture |
+| SIZE_BA | Size of the back texture |
+| POS_L | Position of the left texture |
+| SIZE_L | Size of the left texture |
+| POS_R | Position of the right texture |
+| SIZE_R | Size of the right texture |

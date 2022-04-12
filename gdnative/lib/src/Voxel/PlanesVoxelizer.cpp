@@ -65,6 +65,15 @@ namespace VoxelOptimizer
         if(!leftsize.IsZero())
             ProjectTexture(_planes, _info.Left, 0);
 
+        if(!bottomsize.IsZero())
+            ProjectTexture(_planes, _info.Bottom, 2);   // Bottom and top is reversed.
+
+        if(!backsize.IsZero())
+            ProjectTexture(_planes, _info.Back, 1, true);
+
+        if(!rightsize.IsZero())
+            ProjectTexture(_planes, _info.Right, 0, true);
+
         m_Mesh->GetVoxels().generateVisibilityMask();
     }
 
@@ -100,7 +109,7 @@ namespace VoxelOptimizer
                     }
 
                     int colorIdx = AddOrGetColor(c.AsRGBA());
-                    CVectori pos(x, y, z);
+                    CVectori pos(x, sizeTop.y - y - 1, z);
 
                     m_Mesh->SetVoxel(pos, 0, colorIdx, false);
                 }
@@ -108,7 +117,7 @@ namespace VoxelOptimizer
         }
     }
 
-    void CPlanesVoxelizer::ProjectTexture(Texture _planes, const CBBox &_bbox, char _axis)
+    void CPlanesVoxelizer::ProjectTexture(Texture _planes, const CBBox &_bbox, char _axis, bool _otherSide)
     {
         CVectori size = _bbox.GetSize() - CVectori(1, 1, 1);
         char axis1 = (_axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
@@ -118,26 +127,45 @@ namespace VoxelOptimizer
         {
             for (int x = 0; x < size.x; x++)
             {
+                // Gets the color of the current pixel.
                 auto p = _planes->Pixel(CVectori(_bbox.Beg.x + x, _bbox.Beg.y + (size.y - y - 1), 0));
                 CColor c(p);
-                if(c.A == 0)
+                if(c.A == 0)    // Ignore invisible pixels.
                     continue;
 
                 int colorIdx = AddOrGetColor(p);
+
+                // Projects the color onto the mesh.
                 for (size_t z = 0; z < m_Mesh->GetSize().v[_axis]; z++)
                 {
+                    // TODO: UGLY, but functional :(
                     CVector pos;
                     if(_axis == 1)
                     {
-                        pos.v[axis2] = x;
+                        if(_otherSide)
+                            pos.v[axis2] = size.x - x - 1;
+                        else
+                            pos.v[axis2] = x;
+
                         pos.v[axis1] = y;
                     }
                     else
                     {
-                        pos.v[axis1] = x;
-                        pos.v[axis2] = y;
+                        if(_otherSide && _axis != 0 || (!_otherSide && _axis == 0))
+                            pos.v[axis1] = size.x - x - 1;
+                        else
+                            pos.v[axis1] = x;
+
+                        if(_axis == 2)
+                            pos.v[axis2] = size.y - y - 1;
+                        else
+                            pos.v[axis2] = y;
                     }
-                    pos.v[_axis] = z;
+
+                    if(!_otherSide)
+                        pos.v[_axis] = z;
+                    else
+                        pos.v[_axis] = m_Mesh->GetSize().v[_axis] - z - 1;
 
                     auto voxel = m_Mesh->GetVoxel(pos);
                     if(voxel)

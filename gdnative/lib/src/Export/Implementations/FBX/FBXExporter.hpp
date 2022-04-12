@@ -22,41 +22,30 @@
  * SOFTWARE.
  */
 
-#ifndef VOXELOPTIMIZER_HPP
-#define VOXELOPTIMIZER_HPP
+#ifndef FBXEXPORTED_HPP
+#define FBXEXPORTED_HPP
 
-/**
- * Public interface of the V-SDK 
- */
-
-// Export 
-#include <VoxelOptimizer/Export/ExportSettings.hpp>
 #include <VoxelOptimizer/Export/IExporter.hpp>
 
-// Formats
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
-#include <VoxelOptimizer/Formats/SceneNode.hpp>
-#include <VoxelOptimizer/Formats/VEditFormat.hpp>
+namespace VoxelOptimizer
+{
+    class CFBXExporter : public IExporter
+    {
+        public:
+            CFBXExporter() = default;
 
-// Math
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Math/Vector.hpp>
+            std::map<std::string, std::vector<char>> Generate(std::vector<Mesh> Meshes) override;
 
-// Meshing
-#include <VoxelOptimizer/Meshing/Color.hpp>
-#include <VoxelOptimizer/Meshing/IMesher.hpp>
-#include <VoxelOptimizer/Meshing/Material.hpp>
-#include <VoxelOptimizer/Meshing/Mesh.hpp>
-#include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
-#include <VoxelOptimizer/Meshing/Texture.hpp>
-#include <VoxelOptimizer/Meshing/VerticesReducer.hpp>
+            ~CFBXExporter() = default;
 
-// Miscellaneous
-#include <VoxelOptimizer/Misc/Exceptions.hpp>
+        private:
+            void WriteHeader();
+            void WriteHeaderExtension();
+            void WriteDefinitions();
 
-// Voxel
-#include <VoxelOptimizer/Voxel/BBox.hpp>
-#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
-#include <VoxelOptimizer/Voxel/PlanesVoxelizer.hpp>
+            CBinaryStream m_Stream;
+    };
+} // namespace VoxelOptimizer
 
-#endif //VOXELOPTIMIZER_HPP
+
+#endif //FBXEXPORTED_HPP
