@@ -38,8 +38,13 @@ namespace VoxelOptimizer
         Skip(7);
 
         int OutSize = 0;
+        int pos = m_DataStream.tellg();
 
-        std::vector<char> data = ReadDataChunk(m_DataStream.size() - m_DataStream.offset());
+        m_DataStream.seekg(0, std::ios::end);
+        size_t datasize = m_DataStream.tellg();
+        m_DataStream.seekg(pos, std::ios::beg);
+
+        std::vector<char> data = ReadDataChunk(datasize);
         char *Data = stbi_zlib_decode_noheader_malloc(data.data(), data.size(), &OutSize);
 
         CJSON json;

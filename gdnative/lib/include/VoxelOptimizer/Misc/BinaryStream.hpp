@@ -28,7 +28,12 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <istream>
 #include <iterator>
+#include <iostream>
+#include <fstream>
+#include <ostream>
+#include <streambuf>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -36,29 +41,88 @@
 
 namespace VoxelOptimizer
 {
-    template<size_t BlockSize = 4096>
-    class CBufferedStream
+    // template<class _CharT, class _Traits = char_traits<_CharT>> 
+    // class CFileBuffer : public basic_streambuf<_CharT, _Traits>
+    // {
+    //     public:
+    //         typedef _CharT                         char_type;
+    //         typedef _Traits                        traits_type;
+    //         typedef typename traits_type::int_type int_type;
+    //         typedef typename traits_type::pos_type pos_type;
+    //         typedef typename traits_type::off_type off_type;
+
+    //         CFileBuffer() : m_File(nullptr) {}
+
+    //         /**
+    //          * @brief Opens a file.
+    //          */
+    //         void Open(const std::string &_filename, std::ios_base::openmode _mode = std::ios_base::in | std::ios_base::out);
+
+    //         /**
+    //          * @brief Closes a file.
+    //          */
+    //         void Close();
+
+    //         virtual ~CFileBuffer() 
+    //         {
+    //             Close();
+    //         }
+
+    //     protected:
+    //         virtual basic_streambuf* setbuf (char_type* s, std::streamsize n) override;
+    //         virtual pos_type seekoff (off_type off, std::ios_base::seekdir way, std::ios_base::openmode which) override;
+    //         virtual pos_type seekpos (pos_type pos, std::ios_base::openmode which) override;
+    //         virtual int sync() override;
+    //         virtual std::streamsize xsgetn (char_type* s, std::streamsize n) override;
+    //         virtual int_type underflow() override;
+    //         virtual int_type uflow() override;
+    //         virtual int_type pbackfail (int_type c) override;
+    //         virtual std::streamsize xsputn (const char_type* s, std::streamsize n) override;
+    //         virtual int_type overflow (int_type c) override;
+
+    //     private:
+    //         FILE *m_File;
+    // }
+
+    template<class _CharT, class _Traits = std::char_traits<_CharT>> 
+    class CMemoryBuffer : public std::basic_streambuf<_CharT, _Traits>
     {
         public:
-            CBufferedStream();
-            CBufferedStream(const char *_data, size_t _size);
-            CBufferedStream(const CBufferedStream &_strm);
-            CBufferedStream(const std::string &_filename);
+            typedef _CharT                         char_type;
+            typedef _Traits                        traits_type;
+            typedef typename traits_type::int_type int_type;
+            typedef typename traits_type::pos_type pos_type;
+            typedef typename traits_type::off_type off_type;
 
-            CBufferedStream &write(const char *_data, size_t _size);
-            size_t read(char *_data, size_t _size);
+            CMemoryBuffer();
+            CMemoryBuffer(const char *_data, size_t _size);
+            CMemoryBuffer(const CMemoryBuffer<_CharT, _Traits> &_buffer);
 
-            std::vector<char> data();
-            size_t offset();
-            size_t size();
-            void skip(size_t _bytes);
-            void reset();
-            void load(const std::string &_filename);
+            virtual ~CMemoryBuffer();
 
-            CBufferedStream &operator=(const CBufferedStream &strm);
+        protected:
+            // Not neccessary
+            // virtual basic_streambuf* setbuf (char_type* s, std::streamsize n) override;
+            
+            virtual pos_type seekoff(off_type off, std::ios_base::seekdir way, std::ios_base::openmode which) override;
+            virtual pos_type seekpos(pos_type pos, std::ios_base::openmode which) override;
 
-            virtual ~CBufferedStream();
+            // Not neccessary
+            // virtual int sync() override;
+
+            virtual std::streamsize xsgetn(char_type* s, std::streamsize n) override;
+            virtual int_type underflow() override;
+
+            // Not neccessary
+            // virtual int_type uflow() override;
+
+            virtual int_type pbackfail(int_type c) override;
+            virtual std::streamsize xsputn(const char_type* s, std::streamsize n) override;
+            virtual int_type overflow(int_type c) override;
+
         private:
+            const static int BLOCKSIZE = 4096;
+
             struct SBlock
             {
                 public:
@@ -69,240 +133,237 @@ namespace VoxelOptimizer
                     size_t read(char *_data, size_t _size, size_t _offset);
 
                     size_t Size;
-                    char Data[BlockSize];
+                    char Data[BLOCKSIZE];
             };
 
-            void clearData();
-            void copyStream(const CBufferedStream &_strm);
-            void allocateBlocks(size_t _blocks);
+            void ClearData();
+            void AllocateBlocks(size_t _blocks);
+            void CopyStream(const CMemoryBuffer<_CharT, _Traits> &_buffer);
 
             std::vector<SBlock*> m_Blocks;
             size_t m_Size;
-            size_t m_Offset;
+            off_type m_Offset;
     };
 
-    class CBinaryStream : public CBufferedStream<4096>
+    class CBinaryStream : public std::iostream
     {
         public:
-            CBinaryStream() = default;
-            CBinaryStream(const char *_data, size_t _size) : CBufferedStream<4096>(_data, _size) {}
-            CBinaryStream(const CBufferedStream &_strm) : CBufferedStream<4096>(_strm) {}
-            CBinaryStream(const std::string &_filename) : CBufferedStream<4096>(_filename) {}
+            CBinaryStream();
+            CBinaryStream(const CBinaryStream &_strm);
+            CBinaryStream(const char *_data, size_t _size);
+            CBinaryStream(std::istream &_strm);
+            CBinaryStream(std::ostream &_strm);
 
-            template<class T, typename std::enable_if<!std::is_same<T, std::string>::value && !std::is_same<T, CVector>::value>::type* = nullptr>
+            CBinaryStream &operator=(CBinaryStream &&_strm);
+
+            template<class T>
             inline CBinaryStream &operator<<(T val)
             {
                 write((char*)&val, sizeof(T));
                 return *this;
             }
 
-            template<class T, typename std::enable_if<std::is_same<T, std::string>::value>::type* = nullptr>
-            inline CBinaryStream &operator<<(const T &val)
-            {
-                uint32_t len = val.size();
-                write((char*)&len, sizeof(len));
-                write(val.data(), len);
-
-                return *this;
-            }
-
-            template<class T, typename std::enable_if<std::is_same<T, CVector>::value>::type* = nullptr>
-            inline CBinaryStream &operator<<(const T &val)
-            {
-                write((char*)val.v, sizeof(val.v));
-                return *this;
-            }
-
-            // template<class T, typename std::enable_if<std::is_same<T, CVectori>::value>::type* = nullptr>
-            // inline CBinaryStream &operator<<(const T &val)
-            // {
-            //     write((char*)val.v, sizeof(val.v));
-            //     return *this;
-            // }
-
-            template<class T, typename std::enable_if<!std::is_same<T, std::string>::value && !std::is_same<T, CVector>::value>::type* = nullptr>
-            inline CBinaryStream &operator>>(T &val)
+            template<class T>
+            inline CBinaryStream &operator>>(T val)
             {
                 read((char*)&val, sizeof(T));
                 return *this;
             }
 
-            template<class T, typename std::enable_if<std::is_same<T, std::string>::value>::type* = nullptr>
-            inline CBinaryStream &operator>>(T &val)
-            {
-                uint32_t len = 0;
-                read((char*)&len, sizeof(len));
+            size_t offset();
+            size_t size();
+            void reset();
+            void skip(size_t _bytes);
 
-                val.resize(len);
-                read(&val[0], len);
+            std::vector<char> data() {
+                size_t offset = this->offset();
+                reset();
 
-                return *this;
+                size_t size = this->size();
+                std::vector<char> ret(size, 0);
+
+                read(&ret[0], size);
+
+                return ret;
             }
 
-            template<class T, typename std::enable_if<std::is_same<T, CVector>::value>::type* = nullptr>
-            inline CBinaryStream &operator>>(T &val)
+            inline std::basic_streambuf<char> *rdbuf() const
             {
-                read((char*)val.v, sizeof(val.v));
-                return *this;
+                return std::iostream::rdbuf();
             }
 
-            // template<class T, typename std::enable_if<std::is_same<T, CVectori>::value>::type* = nullptr>
-            // inline CBinaryStream &operator>>(T &val)
-            // {
-            //     read((char*)val.v, sizeof(val.v));
-            //     return *this;
-            // }
+            virtual ~CBinaryStream();
 
-            ~CBinaryStream() = default;
+        private:
+            std::basic_streambuf<char> *m_StreamBuffer; //!< Just a handy shortcut.
     };
 
     //////////////////////////////////////////////////
-    // CBufferedStream functions
+    // CBinaryStream functions
     //////////////////////////////////////////////////
 
-    template<size_t BlockSize>
-    inline CBufferedStream<BlockSize>::CBufferedStream() : m_Size(0), m_Offset(0)
+    inline CBinaryStream::CBinaryStream() : std::iostream(new CMemoryBuffer<char>())
     {
-        allocateBlocks(1);
+        m_StreamBuffer = std::iostream::rdbuf();
     }
 
-    template<size_t BlockSize>
-    inline CBufferedStream<BlockSize>::CBufferedStream(const char *_data, size_t _size) : CBufferedStream() 
+    inline CBinaryStream::CBinaryStream(const char *_data, size_t _size) : CBinaryStream()
     {
         write(_data, _size);
         reset();
     }
 
-    template<size_t BlockSize>
-    inline CBufferedStream<BlockSize>::CBufferedStream(const CBufferedStream<BlockSize> &_strm) : CBufferedStream() 
+    inline CBinaryStream::CBinaryStream(std::istream &_strm) : std::iostream(_strm.rdbuf()) { }
+    inline CBinaryStream::CBinaryStream(std::ostream &_strm) : std::iostream(_strm.rdbuf()) { }
+    inline CBinaryStream::CBinaryStream(const CBinaryStream &_strm)
     {
-        copyStream(_strm);
-        reset();
+        this->operator=(std::move(const_cast<CBinaryStream&>(_strm)));
+        this->init(m_StreamBuffer);
     }
 
-    template<size_t BlockSize>
-    inline CBufferedStream<BlockSize>::CBufferedStream(const std::string &_filename) : CBufferedStream() 
+    inline CBinaryStream::~CBinaryStream()
     {
-        load(_filename);
-        reset();
+        if(m_StreamBuffer)
+            delete m_StreamBuffer;
     }
 
-    template<size_t BlockSize>
-    inline CBufferedStream<BlockSize> &CBufferedStream<BlockSize>::write(const char *_data, size_t _size)
+    template<>
+    inline CBinaryStream &CBinaryStream::operator<<(const CVectori &val)
     {
-        size_t totalWritten = 0;
-        size_t lastWritten = _size;
-
-        // Allocates enough space to store the data.
-        size_t idx = (m_Offset + _size) / BlockSize + 1;
-        if(idx >= m_Blocks.size())
-            allocateBlocks(idx - m_Blocks.size());
-
-        while (_size > 0)
-        {
-            idx = m_Offset / BlockSize;            
-            SBlock *block = m_Blocks[idx];
-
-            lastWritten = block->write(_data + totalWritten, _size, m_Offset - (idx * BlockSize));
-            m_Offset += lastWritten;
-            totalWritten += lastWritten;
-            _size -= lastWritten;
-
-            m_Size = std::max(m_Offset, m_Size);
-        }
-        
+        write((char*)val.v, sizeof(val.v));
         return *this;
     }
 
-    template<size_t BlockSize>
-    inline size_t CBufferedStream<BlockSize>::read(char *_data, size_t _size)
+    template<>
+    inline CBinaryStream &CBinaryStream::operator>>(CVectori &val)
     {
-        size_t readtotal = 0;
-        while (_size > 0)
-        {
-            size_t idx = m_Offset / BlockSize;
-            if(idx >= m_Blocks.size())
-                break;
+        read((char*)val.v, sizeof(val.v));
+        return *this;
+    }
 
-            SBlock *block = m_Blocks[idx];
-            size_t read = block->read(_data + readtotal, _size, m_Offset - (idx * BlockSize));
-            readtotal += read;
-            m_Offset += read;
-            _size -= read;
+    template<>
+    inline CBinaryStream &CBinaryStream::operator<<(const CVector &val)
+    {
+        write((char*)val.v, sizeof(val.v));
+        return *this;
+    }
+
+    template<>
+    inline CBinaryStream &CBinaryStream::operator>>(CVector &val)
+    {
+        read((char*)val.v, sizeof(val.v));
+        return *this;
+    }
+
+    /**
+     * @brief Special overload for std::string.
+     */
+    template<>
+    inline CBinaryStream &CBinaryStream::operator<<(const std::string &_val)
+    {
+        uint32_t len = _val.size();
+        write((char*)&len, sizeof(len));
+        write(_val.data(), len);
+
+        return *this;
+    }
+
+    /**
+     * @brief Special overload for std::string.
+     */
+    template<>
+    inline CBinaryStream &CBinaryStream::operator>>(std::string &_val)
+    {
+        uint32_t len = 0;
+        read((char*)&len, sizeof(len));
+
+        _val.resize(len);
+        read(&_val[0], len);
+
+        return *this;
+    }
+
+    inline size_t CBinaryStream::offset()
+    {
+        return tellg();
+    }
+
+    inline size_t CBinaryStream::size()
+    {
+        size_t offset = this->offset();
+        seekg(0, std::ios::end);
+        size_t size = tellg();
+        seekg(offset, std::ios::beg);
+
+        return size;
+    }
+
+    inline void CBinaryStream::reset()
+    {
+        seekg(0, std::ios::beg);
+    }
+
+    inline void CBinaryStream::skip(size_t _bytes)
+    {
+        seekg(_bytes, std::ios::cur);
+    }
+
+    inline CBinaryStream &CBinaryStream::operator=(CBinaryStream &&_strm)
+    {
+        if(m_StreamBuffer)
+        {
+            delete m_StreamBuffer;
+            m_StreamBuffer = nullptr;
         }
 
-        return readtotal;
-    }
-
-    template<size_t BlockSize>
-    inline std::vector<char> CBufferedStream<BlockSize>::data()
-    {
-        std::vector<char> ret(m_Size, 0);
-
-        size_t oldOffset = m_Offset;
-        m_Offset = 0;
-        read(&ret[0], m_Size);
-        m_Offset = oldOffset;
-
-        return ret;
-    }
-
-    template<size_t BlockSize>
-    inline size_t CBufferedStream<BlockSize>::offset()
-    {
-        return m_Offset;
-    }
-
-    template<size_t BlockSize>
-    inline size_t CBufferedStream<BlockSize>::size()
-    {
-        return m_Size;
-    }
-
-    template<size_t BlockSize>
-    inline void CBufferedStream<BlockSize>::skip(size_t _bytes)
-    {
-        m_Offset += _bytes;
-    }
-
-    template<size_t BlockSize>
-    inline void CBufferedStream<BlockSize>::reset()
-    {
-        m_Offset = 0;
-    }
-
-    template<size_t BlockSize>
-    inline void CBufferedStream<BlockSize>::load(const std::string &_filename)
-    {
-        clearData();
-        FILE *file = fopen(_filename.c_str(), "rb");
-        if(file)
+        std::iostream::operator=(std::move(_strm));
+        if(_strm.m_StreamBuffer)
         {
-            // Obtain file size;
-            fseek(file, 0, SEEK_END);
-            m_Size = ftell(file);
-            m_Offset = m_Size;
-            rewind(file);
-
-            size_t blocks = (m_Size / BlockSize) + (((m_Size % BlockSize) > 0) ? 1 : 0);
-
-            // One block is already created
-            allocateBlocks(blocks);
-
-            size_t read = BlockSize;
-            size_t idx = 0;
-            while (read == BlockSize)
+            auto *buf = dynamic_cast<CMemoryBuffer<char>*>(_strm.m_StreamBuffer);
+            if(buf)
             {
-                read = fread(m_Blocks[idx]->Data, 1, BlockSize, file);
-                idx++;
+                m_StreamBuffer = new CMemoryBuffer<char>(*buf);
+                std::iostream::rdbuf(m_StreamBuffer);
             }
-
-            fclose(file);
+            else
+                std::iostream::rdbuf(_strm.m_StreamBuffer);
         }
+        else
+            std::iostream::rdbuf(_strm.rdbuf());
+
+        return *this;
     }
 
-    template<size_t BlockSize>
-    inline void CBufferedStream<BlockSize>::clearData()
+    //////////////////////////////////////////////////
+    // CMemoryBuffer functions
+    //////////////////////////////////////////////////
+
+    template<class _CharT, class _Traits> 
+    inline CMemoryBuffer<_CharT, _Traits>::CMemoryBuffer() : m_Size(0), m_Offset(0)
+    {
+        AllocateBlocks(1);
+    }
+
+    template<class _CharT, class _Traits> 
+    inline CMemoryBuffer<_CharT, _Traits>::CMemoryBuffer(const char *_data, size_t _size) : CMemoryBuffer<_CharT, _Traits>()
+    {
+        xsputn(_data, _size);
+    }
+
+    template<class _CharT, class _Traits> 
+    inline CMemoryBuffer<_CharT, _Traits>::CMemoryBuffer(const CMemoryBuffer<_CharT, _Traits> &_buffer) : CMemoryBuffer()
+    {
+        CopyStream(_buffer);
+    }
+
+    template<class _CharT, class _Traits> 
+    inline CMemoryBuffer<_CharT, _Traits>::~CMemoryBuffer()
+    {
+        ClearData();
+    }
+
+    template<class _CharT, class _Traits> 
+    inline void CMemoryBuffer<_CharT, _Traits>::ClearData()
     {
         for (auto &&b : m_Blocks)
             delete b;
@@ -310,50 +371,178 @@ namespace VoxelOptimizer
         m_Blocks.clear();
     }
 
-    template<size_t BlockSize>
-    inline void CBufferedStream<BlockSize>::copyStream(const CBufferedStream<BlockSize> &_strm)
-    {
-        clearData();
-        m_Blocks.resize(_strm.m_Blocks.size());
-        for (size_t i = 0; i < m_Blocks.size(); i++)
-            m_Blocks[i] = new SBlock(*_strm.m_Blocks[i]);
-        
-        m_Offset = _strm.m_Offset;
-        m_Size = _strm.m_Size;
-    }
-
-    template<size_t BlockSize>
-    inline void CBufferedStream<BlockSize>::allocateBlocks(size_t _blocks)
+    template<class _CharT, class _Traits> 
+    inline void CMemoryBuffer<_CharT, _Traits>::AllocateBlocks(size_t _blocks)
     {
         for (size_t i = 0; i < _blocks; i++)
             m_Blocks.push_back(new SBlock());
     }
 
-    template<size_t BlockSize>
-    inline CBufferedStream<BlockSize> &CBufferedStream<BlockSize>::operator=(const CBufferedStream<BlockSize> &strm)
+    template<class _CharT, class _Traits> 
+    inline void CMemoryBuffer<_CharT, _Traits>::CopyStream(const CMemoryBuffer<_CharT, _Traits> &_buffer)
     {
-        copyStream(strm);
-        reset();
-        return *this;
+        ClearData();
+        m_Blocks.resize(_buffer.m_Blocks.size());
+        for (size_t i = 0; i < m_Blocks.size(); i++)
+            m_Blocks[i] = new SBlock(*_buffer.m_Blocks[i]);
+        
+        m_Offset = _buffer.m_Offset;
+        m_Size = _buffer.m_Size;
     }
 
-    template<size_t BlockSize>
-    inline CBufferedStream<BlockSize>::~CBufferedStream()
+    template<class _CharT, class _Traits> 
+    typename CMemoryBuffer<_CharT, _Traits>::pos_type CMemoryBuffer<_CharT, _Traits>::seekoff(off_type off, std::ios_base::seekdir way, std::ios_base::openmode which)
     {
-        clearData();
+        off_type pos;
+        switch (way)
+        {
+            case std::ios_base::beg:
+            {
+                pos = off;
+            } break;
+        
+            case std::ios_base::cur:
+            {
+                pos = m_Offset + off;
+            } break;
+
+            case std::ios_base::end:
+            {
+                pos = m_Size - off;
+            } break;
+
+            default:
+                return pos_type(off_type(-1));
+        }
+
+        if(pos < 0)
+            pos = 0;
+
+        // Allocates enough space to store the data.
+        size_t idx = pos / BLOCKSIZE + 1;
+        if(idx >= m_Blocks.size())
+            AllocateBlocks(idx - m_Blocks.size());
+
+        m_Offset = pos;
+        return m_Offset;
     }
 
-    template<size_t BlockSize>
-    inline CBufferedStream<BlockSize>::SBlock::SBlock() : Size(BlockSize) { }
+    template<class _CharT, class _Traits> 
+    typename CMemoryBuffer<_CharT, _Traits>::pos_type CMemoryBuffer<_CharT, _Traits>::seekpos(pos_type pos, std::ios_base::openmode which)
+    {
+        if(pos < 0)
+            return pos_type(off_type(-1));
 
-    template<size_t BlockSize>
-    inline CBufferedStream<BlockSize>::SBlock::SBlock(const CBufferedStream<BlockSize>::SBlock &_block) : SBlock()
+        // Allocates enough space to store the data.
+        size_t idx = pos / BLOCKSIZE + 1;
+        if(idx >= m_Blocks.size())
+            AllocateBlocks(idx - m_Blocks.size());
+
+        m_Offset = pos;
+        return m_Offset;
+    }
+
+    template<class _CharT, class _Traits> 
+    std::streamsize CMemoryBuffer<_CharT, _Traits>::xsgetn(char_type* s, std::streamsize n)
+    {
+        std::streamsize readtotal = 0;
+        while (n > 0)
+        {
+            size_t idx = m_Offset / BLOCKSIZE;
+            if(idx >= m_Blocks.size())
+                break;
+
+            SBlock *block = m_Blocks[idx];
+            size_t read = block->read(s + readtotal, n, m_Offset - (idx * BLOCKSIZE));
+            readtotal += read;
+            m_Offset += read;
+            n -= read;
+        }
+
+        return readtotal;
+    }
+
+    template<class _CharT, class _Traits> 
+    typename CMemoryBuffer<_CharT, _Traits>::int_type CMemoryBuffer<_CharT, _Traits>::underflow()
+    {
+        size_t idx = m_Offset / BLOCKSIZE;
+        size_t offset = m_Offset - (idx * BLOCKSIZE);
+        if(idx >= m_Blocks.size())
+            return EOF;
+
+        SBlock *block = m_Blocks[idx];        
+        std::basic_streambuf<_CharT, _Traits>::setg(block->Data, &block->Data[offset], &block->Data[block->Size]);
+
+        return *std::basic_streambuf<_CharT, _Traits>::gptr();
+    }
+
+    template<class _CharT, class _Traits> 
+    typename CMemoryBuffer<_CharT, _Traits>::int_type CMemoryBuffer<_CharT, _Traits>::pbackfail(int_type c)
+    {
+        m_Offset--;
+        if(m_Offset < 0)
+        {
+            m_Offset = 0;
+            return EOF;
+        }
+
+        return c;
+    }
+
+    template<class _CharT, class _Traits> 
+    std::streamsize CMemoryBuffer<_CharT, _Traits>::xsputn(const char_type* s, std::streamsize n)
+    {
+        size_t totalWritten = 0;
+        size_t lastWritten = 0;
+
+        // Allocates enough space to store the data.
+        size_t idx = (m_Offset + n) / BLOCKSIZE + 1;
+        if(idx >= m_Blocks.size())
+            AllocateBlocks(idx - m_Blocks.size());
+
+        while (n > 0)
+        {
+            idx = m_Offset / BLOCKSIZE;            
+            SBlock *block = m_Blocks[idx];
+
+            lastWritten = block->write(s + totalWritten, n, m_Offset - (idx * BLOCKSIZE));
+            m_Offset += lastWritten;
+            totalWritten += lastWritten;
+            n -= lastWritten;
+
+            m_Size = std::max((size_t)m_Offset, m_Size);
+        }
+        
+        return totalWritten;
+    }
+
+    template<class _CharT, class _Traits> 
+    typename CMemoryBuffer<_CharT, _Traits>::int_type CMemoryBuffer<_CharT, _Traits>::overflow(int_type c)
+    {
+        size_t idx = m_Offset / BLOCKSIZE + 1;
+        if(idx >= m_Blocks.size())
+            return EOF;
+
+        char data = c;
+        m_Blocks[idx]->write(&data, 1, m_Offset - (idx * BLOCKSIZE));
+        return c;
+    }
+
+    //////////////////////////////////////////////////
+    // CBufferedStream::SBlock functions
+    //////////////////////////////////////////////////
+
+    template<class _CharT, class _Traits> 
+    inline CMemoryBuffer<_CharT, _Traits>::SBlock::SBlock() : Size(CMemoryBuffer<_CharT, _Traits>::BLOCKSIZE) { }
+
+    template<class _CharT, class _Traits> 
+    inline CMemoryBuffer<_CharT, _Traits>::SBlock::SBlock(const CMemoryBuffer<_CharT, _Traits>::SBlock &_block) : SBlock()
     {
         memcpy(Data, _block.Data, Size);
     }
 
-    template<size_t BlockSize>
-    inline size_t CBufferedStream<BlockSize>::SBlock::write(const char *_data, size_t _size, size_t _offset)
+    template<class _CharT, class _Traits> 
+    inline size_t CMemoryBuffer<_CharT, _Traits>::SBlock::write(const char *_data, size_t _size, size_t _offset)
     {
         size_t available = (Size - _offset);
         if(_size > available)
@@ -365,8 +554,8 @@ namespace VoxelOptimizer
         return _size;
     }
 
-    template<size_t BlockSize>
-    inline size_t CBufferedStream<BlockSize>::SBlock::read(char *_data, size_t _size, size_t _offset)
+    template<class _CharT, class _Traits> 
+    inline size_t CMemoryBuffer<_CharT, _Traits>::SBlock::read(char *_data, size_t _size, size_t _offset)
     {
         size_t readable = (Size - _offset);
         if(_size > readable)
@@ -377,6 +566,163 @@ namespace VoxelOptimizer
 
         return _size;
     }
+
+    //////////////////////////////////////////////////
+    // CBufferedStream functions
+    //////////////////////////////////////////////////
+
+    // template<size_t BLOCKSIZE>
+    // inline CBufferedStream<BLOCKSIZE>::CBufferedStream() : m_Size(0), m_Offset(0)
+    // {
+    //     allocateBlocks(1);
+    // }
+
+    // template<size_t BLOCKSIZE>
+    // inline CBufferedStream<BLOCKSIZE>::CBufferedStream(const char *_data, size_t _size) : CBufferedStream() 
+    // {
+    //     write(_data, _size);
+    //     reset();
+    // }
+
+    // template<size_t BLOCKSIZE>
+    // inline CBufferedStream<BLOCKSIZE>::CBufferedStream(const CBufferedStream<BLOCKSIZE> &_strm) : CBufferedStream() 
+    // {
+    //     copyStream(_strm);
+    //     reset();
+    // }
+
+    // template<size_t BLOCKSIZE>
+    // inline CBufferedStream<BLOCKSIZE>::CBufferedStream(const std::string &_filename) : CBufferedStream() 
+    // {
+    //     load(_filename);
+    //     reset();
+    // }
+
+    // template<size_t BLOCKSIZE>
+    // inline CBufferedStream<BLOCKSIZE> &CBufferedStream<BLOCKSIZE>::write(const char *_data, size_t _size)
+    // {
+    //     size_t totalWritten = 0;
+    //     size_t lastWritten = _size;
+
+    //     // Allocates enough space to store the data.
+    //     size_t idx = (m_Offset + _size) / BLOCKSIZE + 1;
+    //     if(idx >= m_Blocks.size())
+    //         allocateBlocks(idx - m_Blocks.size());
+
+    //     while (_size > 0)
+    //     {
+    //         idx = m_Offset / BLOCKSIZE;            
+    //         SBlock *block = m_Blocks[idx];
+
+    //         lastWritten = block->write(_data + totalWritten, _size, m_Offset - (idx * BLOCKSIZE));
+    //         m_Offset += lastWritten;
+    //         totalWritten += lastWritten;
+    //         _size -= lastWritten;
+
+    //         m_Size = std::max(m_Offset, m_Size);
+    //     }
+        
+    //     return *this;
+    // }
+
+    // template<size_t BLOCKSIZE>
+    // inline size_t CBufferedStream<BLOCKSIZE>::read(char *_data, size_t _size)
+    // {
+    //     size_t readtotal = 0;
+    //     while (_size > 0)
+    //     {
+    //         size_t idx = m_Offset / BLOCKSIZE;
+    //         if(idx >= m_Blocks.size())
+    //             break;
+
+    //         SBlock *block = m_Blocks[idx];
+    //         size_t read = block->read(_data + readtotal, _size, m_Offset - (idx * BLOCKSIZE));
+    //         readtotal += read;
+    //         m_Offset += read;
+    //         _size -= read;
+    //     }
+
+    //     return readtotal;
+    // }
+
+    // template<size_t BLOCKSIZE>
+    // inline std::vector<char> CBufferedStream<BLOCKSIZE>::data()
+    // {
+    //     std::vector<char> ret(m_Size, 0);
+
+    //     size_t oldOffset = m_Offset;
+    //     m_Offset = 0;
+    //     read(&ret[0], m_Size);
+    //     m_Offset = oldOffset;
+
+    //     return ret;
+    // }
+
+    // template<size_t BLOCKSIZE>
+    // inline size_t CBufferedStream<BLOCKSIZE>::offset()
+    // {
+    //     return m_Offset;
+    // }
+
+    // template<size_t BLOCKSIZE>
+    // inline size_t CBufferedStream<BLOCKSIZE>::size()
+    // {
+    //     return m_Size;
+    // }
+
+    // template<size_t BLOCKSIZE>
+    // inline void CBufferedStream<BLOCKSIZE>::skip(size_t _bytes)
+    // {
+    //     m_Offset += _bytes;
+    // }
+
+    // template<size_t BLOCKSIZE>
+    // inline void CBufferedStream<BLOCKSIZE>::reset()
+    // {
+    //     m_Offset = 0;
+    // }
+
+    // template<size_t BLOCKSIZE>
+    // inline void CBufferedStream<BLOCKSIZE>::load(const std::string &_filename)
+    // {
+    //     clearData();
+    //     FILE *file = fopen(_filename.c_str(), "rb");
+    //     if(file)
+    //     {
+    //         // Obtain file size;
+    //         fseek(file, 0, SEEK_END);
+    //         m_Size = ftell(file);
+    //         m_Offset = m_Size;
+    //         rewind(file);
+
+    //         size_t blocks = (m_Size / BLOCKSIZE) + (((m_Size % BLOCKSIZE) > 0) ? 1 : 0);
+
+    //         // One block is already created
+    //         allocateBlocks(blocks);
+
+    //         size_t read = BLOCKSIZE;
+    //         size_t idx = 0;
+    //         while (read == BLOCKSIZE)
+    //         {
+    //             read = fread(m_Blocks[idx]->Data, 1, BLOCKSIZE, file);
+    //             idx++;
+    //         }
+
+    //         fclose(file);
+    //     }
+    // }
+
+    // template<size_t BLOCKSIZE>
+    // inline void CBufferedStream<BLOCKSIZE>::copyStream(const CBufferedStream<BLOCKSIZE> &_strm)
+    // {
+    //     clearData();
+    //     m_Blocks.resize(_strm.m_Blocks.size());
+    //     for (size_t i = 0; i < m_Blocks.size(); i++)
+    //         m_Blocks[i] = new SBlock(*_strm.m_Blocks[i]);
+        
+    //     m_Offset = _strm.m_Offset;
+    //     m_Size = _strm.m_Size;
+    // }
 } // namespace VoxelOptimizer
 
 #endif //BINARYSTREAM_HPP

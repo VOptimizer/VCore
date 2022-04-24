@@ -49,6 +49,20 @@ namespace VoxelOptimizer
         VECTOR3I
     };
 
+    inline std::ostream &operator<<(std::ostream &_strm, const AnyType &_val)
+    {
+        _strm << (uint8_t)_val;
+        return _strm;
+    }
+
+    inline std::istream &operator>>(std::istream &_strm, AnyType &_val)
+    {
+        uint8_t val;
+        _strm >> val;
+        _val = (AnyType)val;
+        return _strm;
+    }
+
     class CFileHeader
     {
         public:
@@ -440,7 +454,7 @@ namespace VoxelOptimizer
         uint32_t datasize;
         strm >> datasize;
 
-        auto data = DecompressStream(strm, datasize);
+        auto data = CBinaryStream();//DecompressStream(strm, datasize);
 
         Colors = Texture(new CTexture());
         uint32_t arraySize;
@@ -549,7 +563,7 @@ namespace VoxelOptimizer
 
         uint32_t compressedDataSize = 0;
         strm >> compressedDataSize;
-        CBinaryStream voxelStrm = DecompressStream(strm, compressedDataSize);
+        CBinaryStream voxelStrm = CBinaryStream();//DecompressStream(strm, compressedDataSize);
 
         uint32_t voxels;
         voxelStrm >> voxels;

@@ -129,17 +129,18 @@ namespace VoxelOptimizer
         std::ifstream in(File, std::ios::binary);
         if(in.is_open())
         {
-            in.seekg(0, in.end);
-            size_t Len = in.tellg();
-            in.seekg(0, in.beg);
+            // in.seekg(0, in.end);
+            // size_t Len = in.tellg();
+            // in.seekg(0, in.beg);
 
-            std::vector<char> data;
-            data.resize(Len);
-            in.read(&data[0], Len);
-            in.close();
+            // std::vector<char> data;
+            // data.resize(Len);
+            // in.read(&data[0], Len);
+            // in.close();
 
-            m_DataStream = CBinaryStream(data.data(), data.size());
-            data.clear();
+            // m_DataStream = CBinaryStream(data.data(), data.size());
+            // data.clear();
+            m_DataStream = in;
             ParseFormat();
         }
         else
@@ -148,6 +149,7 @@ namespace VoxelOptimizer
 
     void IVoxelFormat::Load(const char *Data, size_t Length)
     {
+        // m_DataStream.Load(Data, Length);
         m_DataStream = CBinaryStream(Data, Length);
 
         ClearCache();
@@ -280,7 +282,10 @@ namespace VoxelOptimizer
 
     void IVoxelFormat::ReadData(char *Buf, size_t Size)
     {
-        if((size_t)m_DataStream.offset() + Size > m_DataStream.size())
+        size_t off = m_DataStream.offset();
+        size_t size = m_DataStream.size();
+
+        if(off + Size > size)
             throw CVoxelLoaderException("Unexpected file ending.");
 
         m_DataStream.read(Buf, Size);
