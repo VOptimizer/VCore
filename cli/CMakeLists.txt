@@ -7,9 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(SRCS "${PROJECT_SOURCE_DIR}/main.cpp")
 #set(LIBS "")
 
-include_directories("${PROJECT_SOURCE_DIR}/../gdnative/lib/include")
+include_directories("${PROJECT_SOURCE_DIR}/../lib/include")
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/../gdnative/lib" voxeloptimizer/)
+add_subdirectory("${PROJECT_SOURCE_DIR}/../lib" voxeloptimizer/)
 
 add_executable(${PROJECT_NAME} ${SRCS})
 target_link_libraries(${PROJECT_NAME} voxeloptimizer)
