@@ -55,6 +55,11 @@ namespace VoxelOptimizer
             template<class O>
             TVector(const TVector<O> &v) : x(v.x), y(v.y), z(v.z) {}
             
+            inline T Sum() 
+            {
+                return x + y + z;
+            }
+
             inline TVector Floor()
             {
                 return TVector(floorf(x), floorf(y), floorf(z));

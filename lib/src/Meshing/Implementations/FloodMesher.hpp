@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021 Christian Tost
+ * Copyright (c) 2023 Christian Tost
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,42 +22,39 @@
  * SOFTWARE.
  */
 
-#ifndef VOXELOPTIMIZER_HPP
-#define VOXELOPTIMIZER_HPP
+#ifndef FLOODMESHER_HPP
+#define FLOODMESHER_HPP
 
-/**
- * Public interface of the V-SDK 
- */
-
-// Export 
-#include <VoxelOptimizer/Export/ExportSettings.hpp>
-#include <VoxelOptimizer/Export/IExporter.hpp>
-#include <VoxelOptimizer/Export/SpriteStackingExporter.hpp>
-
-// Formats
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
-#include <VoxelOptimizer/Formats/SceneNode.hpp>
-#include <VoxelOptimizer/Formats/VEditFormat.hpp>
-
-// Math
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Math/Vector.hpp>
-
-// Meshing
-#include <VoxelOptimizer/Meshing/Color.hpp>
+#include <queue>
 #include <VoxelOptimizer/Meshing/IMesher.hpp>
-#include <VoxelOptimizer/Meshing/Material.hpp>
-#include <VoxelOptimizer/Meshing/Mesh.hpp>
-#include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
-#include <VoxelOptimizer/Meshing/Texture.hpp>
-#include <VoxelOptimizer/Meshing/VerticesReducer.hpp>
+#include <VoxelOptimizer/Memory/ObjectPool.hpp>
 
-// Miscellaneous
-#include <VoxelOptimizer/Misc/Exceptions.hpp>
+namespace VoxelOptimizer
+{
+    struct SFloodShape
+    {
+        CVector Normal;
+        std::map<CVector, Voxel> m_Voxels; 
+    };
 
-// Voxel
-#include <VoxelOptimizer/Voxel/BBox.hpp>
-#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
-#include <VoxelOptimizer/Voxel/PlanesVoxelizer.hpp>
+    class CFloodMesher : public IMesher
+    {
+        public:
+            CFloodMesher() = default;
 
-#endif //VOXELOPTIMIZER_HPP
+            std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m) override;
+
+            virtual ~CFloodMesher() = default;
+
+        private:
+            CObjectPool<SFloodShape> m_ShapesPool;
+
+            std::queue<CVectori> m_Colors;
+            std::list<SFloodShape*> m_Shapes;
+
+            void GroupShapes(const CVectori &_Position);
+            std::vector<std::vector<CVector>> GeneratePolygons(SFloodShape *_Shape);
+    };
+}
+
+#endif

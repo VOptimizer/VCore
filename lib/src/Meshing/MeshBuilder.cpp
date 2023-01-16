@@ -212,7 +212,8 @@ namespace VoxelOptimizer
 
     void CMeshBuilder::Merge(Mesh mergeInto, const std::vector<Mesh> &meshes)
     {
-        m_CurrentMesh = mergeInto;
+        if(mergeInto)
+            m_CurrentMesh = mergeInto;
         GenerateCache();
 
         for (auto &&m : meshes)       

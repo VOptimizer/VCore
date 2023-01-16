@@ -42,7 +42,8 @@ namespace VoxelOptimizer
     {
         SIMPLE,
         GREEDY,
-        MARCHING_CUBES
+        MARCHING_CUBES,
+        FLOOD
     };
 
     class IMesher

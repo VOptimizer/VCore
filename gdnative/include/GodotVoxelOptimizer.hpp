@@ -22,42 +22,39 @@
  * SOFTWARE.
  */
 
-#ifndef VOXELOPTIMIZER_HPP
-#define VOXELOPTIMIZER_HPP
+#ifndef GODOTVOXELOPTIMIZER_HPP
+#define GODOTVOXELOPTIMIZER_HPP
 
-/**
- * Public interface of the V-SDK 
- */
+#include <ArrayMesh.hpp>
+#include <Godot.hpp>
+#include <Reference.hpp>
+#include <VoxelOptimizer/VoxelOptimizer.hpp>
+#include <vector>
 
-// Export 
-#include <VoxelOptimizer/Export/ExportSettings.hpp>
-#include <VoxelOptimizer/Export/IExporter.hpp>
-#include <VoxelOptimizer/Export/SpriteStackingExporter.hpp>
+using namespace godot;
 
-// Formats
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
-#include <VoxelOptimizer/Formats/SceneNode.hpp>
-#include <VoxelOptimizer/Formats/VEditFormat.hpp>
+class CGodotVoxelOptimizer : public Reference
+{
+    GODOT_CLASS(CGodotVoxelOptimizer, Reference);
+    public:
+        CGodotVoxelOptimizer() : m_BlockCount(0) {}
 
-// Math
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Math/Vector.hpp>
+        void _init() { }
 
-// Meshing
-#include <VoxelOptimizer/Meshing/Color.hpp>
-#include <VoxelOptimizer/Meshing/IMesher.hpp>
-#include <VoxelOptimizer/Meshing/Material.hpp>
-#include <VoxelOptimizer/Meshing/Mesh.hpp>
-#include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
-#include <VoxelOptimizer/Meshing/Texture.hpp>
-#include <VoxelOptimizer/Meshing/VerticesReducer.hpp>
+        static void _register_methods();
+        godot_error Load(String Path);
+        godot_error Save(String Path, bool exportWorldspace);
+        godot_error SaveSlices(String Path);
+        Array GetMeshes(int mesherType);
+        Dictionary GetStatistics();
 
-// Miscellaneous
-#include <VoxelOptimizer/Misc/Exceptions.hpp>
+        virtual ~CGodotVoxelOptimizer() = default;
+    private:
+        VoxelOptimizer::VoxelFormat m_Loader;
+        std::vector<VoxelOptimizer::Mesh> m_Meshes;
+        int m_BlockCount;
+        int m_VerticesCount;
+        int m_FacesCount;
+};
 
-// Voxel
-#include <VoxelOptimizer/Voxel/BBox.hpp>
-#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
-#include <VoxelOptimizer/Voxel/PlanesVoxelizer.hpp>
-
-#endif //VOXELOPTIMIZER_HPP
+#endif //GODOTVOXELOPTIMIZER_HPP

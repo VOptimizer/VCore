@@ -79,7 +79,7 @@ namespace VoxelOptimizer
 
     std::vector<char> IVoxelFormat::Save(const std::vector<VoxelMesh> &meshes)
     {
-        throw std::runtime_error("IVoxelFormat::Save not implemented!");
+        throw std::runtime_error("IVoxelFormat::Save is not implemented!");
     }
 
     void IVoxelFormat::ClearCache()

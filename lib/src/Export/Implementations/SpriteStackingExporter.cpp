@@ -23,7 +23,7 @@
  */
 
 #include <fstream>
-#include "SpriteStackingExporter.hpp"
+#include <VoxelOptimizer\Export\SpriteStackingExporter.hpp>
 #include <stb_image_write.h>
 
 namespace VoxelOptimizer

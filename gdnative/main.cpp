@@ -22,42 +22,26 @@
  * SOFTWARE.
  */
 
-#ifndef VOXELOPTIMIZER_HPP
-#define VOXELOPTIMIZER_HPP
+#include <GodotVoxelOptimizer.hpp>
 
-/**
- * Public interface of the V-SDK 
- */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-// Export 
-#include <VoxelOptimizer/Export/ExportSettings.hpp>
-#include <VoxelOptimizer/Export/IExporter.hpp>
-#include <VoxelOptimizer/Export/SpriteStackingExporter.hpp>
+void GDN_EXPORT godot_gdnative_init(godot_gdnative_init_options *o) {
+    godot::Godot::gdnative_init(o);
+}
 
-// Formats
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
-#include <VoxelOptimizer/Formats/SceneNode.hpp>
-#include <VoxelOptimizer/Formats/VEditFormat.hpp>
+void GDN_EXPORT godot_gdnative_terminate(godot_gdnative_terminate_options *o) {
+    godot::Godot::gdnative_terminate(o);
+}
 
-// Math
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Math/Vector.hpp>
+void GDN_EXPORT godot_nativescript_init(void *handle) {
+    godot::Godot::nativescript_init(handle);
 
-// Meshing
-#include <VoxelOptimizer/Meshing/Color.hpp>
-#include <VoxelOptimizer/Meshing/IMesher.hpp>
-#include <VoxelOptimizer/Meshing/Material.hpp>
-#include <VoxelOptimizer/Meshing/Mesh.hpp>
-#include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
-#include <VoxelOptimizer/Meshing/Texture.hpp>
-#include <VoxelOptimizer/Meshing/VerticesReducer.hpp>
+    godot::register_class<CGodotVoxelOptimizer>();
+}
 
-// Miscellaneous
-#include <VoxelOptimizer/Misc/Exceptions.hpp>
-
-// Voxel
-#include <VoxelOptimizer/Voxel/BBox.hpp>
-#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
-#include <VoxelOptimizer/Voxel/PlanesVoxelizer.hpp>
-
-#endif //VOXELOPTIMIZER_HPP
+#ifdef __cplusplus
+}
+#endif
