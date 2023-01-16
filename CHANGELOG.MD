@@ -1,3 +1,6 @@
+# Version 0.0.6-Alpha (16.01.2023)
+- Bugfix: GLB format alignment was wrong. Thanks to 2indy for report.
+
 # Version 0.0.5-Alpha (20.12.2021)
 - Added QBCL importer
 - Added QB importer
