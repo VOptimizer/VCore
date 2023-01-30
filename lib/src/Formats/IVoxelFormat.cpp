@@ -141,6 +141,7 @@ namespace VoxelOptimizer
             // m_DataStream = CBinaryStream(data.data(), data.size());
             // data.clear();
             m_DataStream = in;
+            ClearCache();
             ParseFormat();
         }
         else

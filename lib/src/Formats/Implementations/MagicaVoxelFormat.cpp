@@ -375,63 +375,68 @@ namespace VoxelOptimizer
             }
         }
 
-        std::stack<int> nodeIDs;
-        std::stack<SceneNode> sceneNodes;
-
-        SceneNode currentNode = m_SceneTree;
-
-        nodeIDs.push(0);
-        while (!nodeIDs.empty())
+        if(!nodes.empty()) 
         {
-            Node tmp = nodes[nodeIDs.top()];
+            std::stack<int> nodeIDs;
+            std::stack<SceneNode> sceneNodes;
 
-            switch (tmp->Type)
+            SceneNode currentNode = m_SceneTree;
+
+            nodeIDs.push(0);
+            while (!nodeIDs.empty())
             {
-                case NodeType::TRANSFORM:
+                Node tmp = nodes[nodeIDs.top()];
+
+                switch (tmp->Type)
                 {
-                    auto transform = std::static_pointer_cast<STransformNode>(tmp);
-                    nodeIDs.pop();
-
-                    currentNode->SetPosition(transform->Translation);
-                    currentNode->SetRotation(transform->Rotation);
-                    currentNode->SetName(transform->Name);
-
-                    nodeIDs.push(transform->ChildID);
-                } break;
-
-                case NodeType::GROUP:
-                {
-                    auto group = std::static_pointer_cast<SGroupNode>(tmp);
-                    if(group->ChildIdx > 0)
+                    case NodeType::TRANSFORM:
                     {
-                        currentNode = sceneNodes.top();
-                        sceneNodes.pop();
-                    }
-
-                    if(group->ChildIdx < group->ChildrensID.size())
-                    {
-                        sceneNodes.push(currentNode);
-                        auto oldCurrent = currentNode;
-                        currentNode = SceneNode(new CSceneNode());
-                        oldCurrent->AddChild(currentNode);
-
-                        nodeIDs.push(group->ChildrensID[group->ChildIdx]);
-                        group->ChildIdx++;
-                    }
-                    else                     
+                        auto transform = std::static_pointer_cast<STransformNode>(tmp);
                         nodeIDs.pop();
-                } break;
 
-                case NodeType::SHAPE:
-                {
-                    nodeIDs.pop();
-                    auto shapes = std::static_pointer_cast<SShapeNode>(tmp);
+                        currentNode->SetPosition(transform->Translation);
+                        currentNode->SetRotation(transform->Rotation);
+                        currentNode->SetName(transform->Name);
 
-                    for (auto &&m : shapes->Models)
-                        m_ModelSceneTreeMapping.insert({m, currentNode});                
-                } break;
+                        nodeIDs.push(transform->ChildID);
+                    } break;
+
+                    case NodeType::GROUP:
+                    {
+                        auto group = std::static_pointer_cast<SGroupNode>(tmp);
+                        if(group->ChildIdx > 0)
+                        {
+                            currentNode = sceneNodes.top();
+                            sceneNodes.pop();
+                        }
+
+                        if(group->ChildIdx < group->ChildrensID.size())
+                        {
+                            sceneNodes.push(currentNode);
+                            auto oldCurrent = currentNode;
+                            currentNode = SceneNode(new CSceneNode());
+                            oldCurrent->AddChild(currentNode);
+
+                            nodeIDs.push(group->ChildrensID[group->ChildIdx]);
+                            group->ChildIdx++;
+                        }
+                        else                     
+                            nodeIDs.pop();
+                    } break;
+
+                    case NodeType::SHAPE:
+                    {
+                        nodeIDs.pop();
+                        auto shapes = std::static_pointer_cast<SShapeNode>(tmp);
+
+                        for (auto &&m : shapes->Models)
+                            m_ModelSceneTreeMapping.insert({m, currentNode});                
+                    } break;
+                }
             }
         }
+        else
+            m_ModelSceneTreeMapping.insert({0, m_SceneTree});
 
         Reset();
     }

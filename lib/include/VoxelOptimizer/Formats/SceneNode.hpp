@@ -37,7 +37,9 @@ namespace VoxelOptimizer
         public:
             using SceneNodes = std::list<SceneNode>;
 
-            CSceneNode() : m_Scale(1, 1, 1), m_Parent(nullptr) {}
+            CSceneNode() : m_Scale(1, 1, 1), m_Parent(nullptr), Visible(true) {}
+
+            bool Visible;
 
             inline CVector GetPosition() const
             {

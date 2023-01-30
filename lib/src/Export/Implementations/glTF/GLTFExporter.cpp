@@ -191,7 +191,7 @@ namespace VoxelOptimizer
                 emission = textures[TextureType::EMISSION]->AsPNG();
 
             size_t Size = Binary.size();
-            int Padding = (Binary.size() + diffuse.size() + emission.size()) % 4;
+            int Padding = 4 - ((Binary.size() + diffuse.size() + emission.size()) % 4);
 
             Binary.resize(Binary.size() + diffuse.size() + emission.size() + Padding, '\0');
             memcpy(Binary.data() + Size, diffuse.data(), diffuse.size());
@@ -262,7 +262,7 @@ namespace VoxelOptimizer
         // Padding for the binary format
         if(m_Settings->Binary)
         {
-            int Padding = JS.size() % 4;
+            int Padding = 4 - (JS.size() % 4);
             for (int i = 0; i < Padding; i++)
                 JS += ' ';
         }

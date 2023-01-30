@@ -26,8 +26,33 @@
 #include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
 #include "Triangulation/Triangulate.hpp"
 
+#include <fstream>
+
 namespace VoxelOptimizer
 {
+    class PolygonDebugger
+    {
+        public:
+            PolygonDebugger() 
+            {
+                out.open("points.txt");
+            }
+
+            void WritePoints(const std::vector<CVector> &polygon)
+            {
+                for (auto &&p : polygon)
+                    out << p.x << "," << p.y << "\n";                
+            }
+
+            ~PolygonDebugger()
+            {
+                out.close();
+            }
+
+        private:
+            std::ofstream out;
+    };
+
     static const std::pair<CVoxel::Visibility, CVector> FACES[] = {
         {CVoxel::Visibility::UP, CVoxel::FACE_UP},
         {CVoxel::Visibility::DOWN, CVoxel::FACE_DOWN},
@@ -37,11 +62,26 @@ namespace VoxelOptimizer
         {CVoxel::Visibility::RIGHT, CVoxel::FACE_RIGHT}
     };
 
+    static const int FACES_SIZE = sizeof(FACES) / sizeof(FACES[0]);
+
+    std::vector<CVector>::iterator FindPosition(std::vector<CVector> &_Polygon, const CVector &_Vec)
+    {
+        auto it = _Polygon.begin();
+        while (it != _Polygon.end())
+        {
+            if(*it == _Vec)
+                break;
+
+            it++;
+        }
+        return it;
+    }
+
     CVector ConvertTo2d(const CVector &_Vec, const CVector &_Normal)
     {
         CVector ret;
         int retI = 0;
-        for (size_t n = 0; n < sizeof(_Normal.v); n++)
+        for (size_t n = 0; n < 3; n++)
         {
             if(_Normal.v[n] == 0)
                 ret.v[retI++] = _Vec.v[n];
@@ -53,7 +93,7 @@ namespace VoxelOptimizer
     {
         CVector ret;
         int retI = 0;
-        for (size_t n = 0; n < sizeof(_Normal.v); n++)
+        for (size_t n = 0; n < 3; n++)
         {
             if(_Normal.v[n] == 0)
                 ret.v[n] = _Vec.v[retI++];
@@ -85,7 +125,7 @@ namespace VoxelOptimizer
         std::vector<Mesh> meshes;
 
         auto &materials = m->Materials();
-        for(auto shape : m_Shapes)
+        for(auto &&shape : m_Shapes)
         {
             CMeshBuilder builder;
             builder.AddTextures(m->Colorpalettes());
@@ -109,7 +149,6 @@ namespace VoxelOptimizer
             }
 
             meshes.push_back( builder.Build());
-
         }
 
         CMeshBuilder builder;
@@ -135,15 +174,17 @@ namespace VoxelOptimizer
             if(!voxels.empty())
             {
                 pos = voxels.back();
+                m_Visited[pos] = true;
+
                 voxels.pop();
                 current = m_Voxels[pos];
             }
 
-            for (size_t i = 0; i < sizeof(FACES); i++)
+            for (size_t i = 0; i < FACES_SIZE; i++)
             {
                 if((current->VisibilityMask & FACES[i].first) == FACES[i].first)
                 {
-                    int layer = (pos * FACES[i].second).Sum();
+                    int layer = (pos * FACES[i].second.Abs()).Sum();
 
                     SFloodShape *shape;
                     auto it = faces.find(FACES[i].second);
@@ -173,35 +214,39 @@ namespace VoxelOptimizer
                 else
                 {
                     CVector newPos = pos + FACES[i].second;
-                    Voxel other = m_Voxels[newPos];
-                    if(other->Material == first->Material && other->Color == first->Color && other->Transparent == first->Transparent)
-                        voxels.push(newPos);
-                    else
-                        m_Colors.push(newPos);
+                    if(m_Visited.find(newPos) == m_Visited.end())
+                    {
+                        Voxel other = m_Voxels[newPos];
+                        if(other->Material == first->Material && other->Color == first->Color && other->Transparent == first->Transparent)
+                            voxels.push(newPos);
+                        else
+                            m_Colors.push(newPos);
+                    }
                 }
             }
         } while (!voxels.empty());
+
+        for(auto &&face : faces)
+        {
+            for(auto &&layer : face.second)
+            {
+                m_Shapes.push_back(layer.second);
+            }
+        }
     }
 
     std::vector<std::vector<CVector>> CFloodMesher::GeneratePolygons(SFloodShape *_Shape)
     {
-        const static std::map<CVector, CVector> SHIFT_MAP = {
-            {CVoxel::FACE_UP, CVoxel::FACE_LEFT},
-            {CVoxel::FACE_DOWN, CVoxel::FACE_LEFT},
-            {CVoxel::FACE_FORWARD, CVoxel::FACE_LEFT},
-            {CVoxel::FACE_BACKWARD, CVoxel::FACE_LEFT},
-            {CVoxel::FACE_LEFT, CVoxel::FACE_UP},
-            {CVoxel::FACE_RIGHT, CVoxel::FACE_UP}
-        };
-
         std::vector<std::vector<CVector>> ret;
         std::map<CVector, bool> visited;
 
         std::queue<CVectori> voxels;
 
-        Voxel first = m_Voxels.begin()->second;
+        Voxel first = _Shape->m_Voxels.begin()->second;
         Voxel current = first;
-        CVectori pos = first->Pos;
+        CVector pos = first->Pos;
+
+        std::ofstream out("voxels.txt", std::ios::out);
 
         std::vector<CVector> polygon;
         do
@@ -210,10 +255,12 @@ namespace VoxelOptimizer
             {
                 pos = voxels.back();
                 voxels.pop();
-                current = m_Voxels[pos];
+                current = _Shape->m_Voxels[pos];
             }
 
-            for (size_t i = 0; i < sizeof(FACES); i++)
+            out << pos.x << ","<<pos.y<<","<<pos.z<<"\n";
+
+            for (size_t i = 0; i < FACES_SIZE; i++)
             {
                 if(FACES[i].second.Abs() == _Shape->Normal.Abs())
                     continue;
@@ -221,10 +268,69 @@ namespace VoxelOptimizer
                 if(((current->VisibilityMask & FACES[i].first) == FACES[i].first) || (_Shape->m_Voxels.find(pos + FACES[i].second) == _Shape->m_Voxels.end()))
                 {
                     visited[pos] = true;
-                    CVector shift = SHIFT_MAP.at(FACES[i].second);
+                    CVector v1, v2;
+                    CVector pos2d = ConvertTo2d(pos, _Shape->Normal);
 
-                    polygon.push_back(ConvertTo2d(pos + FACES[i].second * 0.5 + shift * 0.5, _Shape->Normal));
-                    polygon.push_back(ConvertTo2d(pos - FACES[i].second * 0.5 - shift * 0.5, _Shape->Normal));
+                    switch (FACES[i].first)
+                    {
+                        case CVoxel::Visibility::UP:
+                        {
+                            v1 = pos + CVector(-0.5, 0, 0.5);
+                            v2 = pos + CVector(0.5, 0, 0.5);
+                        }break;
+                    
+                        case CVoxel::Visibility::DOWN:
+                        {
+                            v1 = pos + CVector(-0.5, 0, -0.5);
+                            v2 = pos + CVector(0.5, 0, -0.5);
+                        }break;
+
+                        case CVoxel::Visibility::LEFT:
+                        {
+                            v1 = pos + CVector(-0.5, 0, 0.5);
+                            v2 = pos + CVector(-0.5, 0, -0.5);
+                        }break;
+
+                        case CVoxel::Visibility::RIGHT:
+                        {
+                            v1 = pos + CVector(0.5, 0, 0.5);
+                            v2 = pos + CVector(0.5, 0, -0.5);
+                        }break;
+
+                        case CVoxel::Visibility::FORWARD:
+                        {
+                            v1 = pos + CVector(-0.5, 0.5, 0);
+                            v2 = pos + CVector(0.5, 0.5, 0);
+                        }break;
+
+                        case CVoxel::Visibility::BACKWARD:
+                        {
+                            v1 = pos + CVector(-0.5, -0.5, 0);
+                            v2 = pos + CVector(0.5, -0.5, 0);
+                        }break;
+                    }
+                    // CVector shift = SHIFT_MAP.at(FACES[i].second);
+
+                    v1 = ConvertTo2d(v1, _Shape->Normal);
+                    v2 = ConvertTo2d(v2, _Shape->Normal);
+
+                    auto it1 = FindPosition(polygon, v1);
+                    auto it2 = FindPosition(polygon, v2);
+
+                    if(it2 != polygon.end() && it1 == polygon.end())
+                        polygon.insert(it2, v1);
+                    else if(it2 == polygon.end() && it1 != polygon.end())
+                        polygon.insert(it1, v2);
+                    else if(it2 == polygon.end() && it1 == polygon.end())
+                    {
+                        polygon.push_back(v1);
+
+                        if(v1 != v2)
+                            polygon.push_back(v2);
+                    }
+
+                    // polygon.push_back(ConvertTo2d(pos + FACES[i].second * 0.5 + shift * 0.5, _Shape->Normal));
+                    // polygon.push_back(ConvertTo2d(pos - FACES[i].second * 0.5 - shift * 0.5, _Shape->Normal));
                 }
                 else if(visited.find(pos + FACES[i].second) == visited.end())
                 {
@@ -232,6 +338,13 @@ namespace VoxelOptimizer
                 }
             }
         } while (!voxels.empty());
+
+        out.close();
+        {
+            PolygonDebugger dbg;
+            dbg.WritePoints(polygon);
+        }
+
         ret.push_back(polygon);
 
         return ret;

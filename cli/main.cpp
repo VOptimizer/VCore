@@ -43,8 +43,8 @@ struct SFile
     string InputFile;
     string OutputFile;
 
-    VoxelOptimizer::LoaderTypes Type;
-    VoxelOptimizer::ExporterTypes OutType;
+    VoxelOptimizer::LoaderType Type;
+    VoxelOptimizer::ExporterType OutType;
     bool IsPNG;
 };
 using File = shared_ptr<SFile>;
@@ -80,23 +80,23 @@ string ToLower(const string &str)
 File CreateFile(const fs::path &Input, const fs::path &OutputPattern)
 {
     static size_t ID = 0;
-    static map<string, VoxelOptimizer::LoaderTypes> TYPE_MATCHER = {
-        {"gox", VoxelOptimizer::LoaderTypes::GOXEL},
-        {"vox", VoxelOptimizer::LoaderTypes::MAGICAVOXEL},
-        {"kenshape", VoxelOptimizer::LoaderTypes::KENSHAPE},
-        {"qbcl", VoxelOptimizer::LoaderTypes::QUBICLE},
-        {"qb", VoxelOptimizer::LoaderTypes::QUBICLE_BIN},
-        {"qbt", VoxelOptimizer::LoaderTypes::QUBICLE_BIN_TREE},
-        {"qef", VoxelOptimizer::LoaderTypes::QUBICLE_EXCHANGE},
+    static map<string, VoxelOptimizer::LoaderType> TYPE_MATCHER = {
+        {"gox", VoxelOptimizer::LoaderType::GOXEL},
+        {"vox", VoxelOptimizer::LoaderType::MAGICAVOXEL},
+        {"kenshape", VoxelOptimizer::LoaderType::KENSHAPE},
+        {"qbcl", VoxelOptimizer::LoaderType::QUBICLE},
+        {"qb", VoxelOptimizer::LoaderType::QUBICLE_BIN},
+        {"qbt", VoxelOptimizer::LoaderType::QUBICLE_BIN_TREE},
+        {"qef", VoxelOptimizer::LoaderType::QUBICLE_EXCHANGE},
     };
 
-    static map<string, VoxelOptimizer::ExporterTypes> OUT_TYPE_MATCHER = {
-        {"gltf", VoxelOptimizer::ExporterTypes::GLTF},
-        {"glb", VoxelOptimizer::ExporterTypes::GLB},
-        {"obj", VoxelOptimizer::ExporterTypes::OBJ},
-        {"escn", VoxelOptimizer::ExporterTypes::ESCN},
-        {"ply", VoxelOptimizer::ExporterTypes::PLY}
-        // {"png", VoxelOptimizer::ExporterTypes::PNG},
+    static map<string, VoxelOptimizer::ExporterType> OUT_TYPE_MATCHER = {
+        {"gltf", VoxelOptimizer::ExporterType::GLTF},
+        {"glb", VoxelOptimizer::ExporterType::GLB},
+        {"obj", VoxelOptimizer::ExporterType::OBJ},
+        {"escn", VoxelOptimizer::ExporterType::ESCN},
+        {"ply", VoxelOptimizer::ExporterType::PLY}
+        // {"png", VoxelOptimizer::ExporterType::PNG},
     };
 
     File Ret = File(new SFile());
@@ -247,16 +247,16 @@ int main(int argc, char const *argv[])
     {
         VoxelOptimizer::Mesher Mesher;
         if(MesherType == "greedy")
-            Mesher = VoxelOptimizer::Mesher(new VoxelOptimizer::CGreedyMesher());
+            Mesher = VoxelOptimizer::IMesher::Create(VoxelOptimizer::MesherTypes::GREEDY);
         else if(MesherType == "marching_cubes")
-            Mesher = VoxelOptimizer::Mesher(new VoxelOptimizer::CMarchingCubesMesher());
+            Mesher = VoxelOptimizer::IMesher::Create(VoxelOptimizer::MesherTypes::MARCHING_CUBES);
         else
-            Mesher = VoxelOptimizer::Mesher(new VoxelOptimizer::CSimpleMesher());
+            Mesher = VoxelOptimizer::IMesher::Create(VoxelOptimizer::MesherTypes::SIMPLE);
 
         auto Files = ResolveFilenames(cmdl, OutputPattern);
         for (auto &&f : Files)
         {
-            VoxelOptimizer::Loader Loader = VoxelOptimizer::ILoader::Create(f->Type);
+            VoxelOptimizer::VoxelFormat Loader = VoxelOptimizer::IVoxelFormat::Create(f->Type);
             VoxelOptimizer::Exporter Exporter;
 
             if(!f->IsPNG)
@@ -265,18 +265,17 @@ int main(int argc, char const *argv[])
                 Exporter->Settings()->WorldSpace = cmdl[{"-w", "--worldspace"}];
             }
 
-            if(!fs::is_directory(f->OutputFile))
-                fs::create_directories(fs::path(f->OutputFile).parent_path());
+            std::filesystem::path parent = fs::path(f->OutputFile).parent_path();
+            if(!fs::is_directory(f->OutputFile) && !parent.empty())
+                fs::create_directories(parent);
 
             Loader->Load(f->InputFile);
-
-            auto meshes = Loader->GetModels();
-            std::vector<VoxelOptimizer::Mesh> outputMeshes;
             int counter = 0;
 
-            for (auto &&VoxelMesh : meshes)
+            if(f->IsPNG)
             {
-                if(f->IsPNG)
+                auto meshes = Loader->GetModels();
+                for (auto &&VoxelMesh : meshes)
                 {
                     VoxelOptimizer::CSpriteStackingExporter Stacker;
                     std::string outputFilename = f->OutputFile;
@@ -290,18 +289,17 @@ int main(int argc, char const *argv[])
                         outputFilename = outputFile.replace_filename(Filename + std::to_string(counter) + "." + Ext).string();
                     }                    
 
-                    Stacker.Save(outputFilename, VoxelMesh, Loader);
+                    Stacker.Save(outputFilename, VoxelMesh);
                     counter++;
-
-                    continue;
                 }
-
-                auto Mesh = Mesher->GenerateMeshes(VoxelMesh, Loader).begin()->second;
-                outputMeshes.push_back(Mesh);
             }
-
-            if(!f->IsPNG)
+            else
+            {
+                std::vector<VoxelOptimizer::Mesh> outputMeshes;
+                auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
+                outputMeshes.insert(outputMeshes.end(), meshes.begin(), meshes.end());
                 Exporter->Save(f->OutputFile, outputMeshes);
+            }
         }
     }
     catch(const std::exception& e)

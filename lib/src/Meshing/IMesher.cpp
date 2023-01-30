@@ -73,7 +73,7 @@ namespace VoxelOptimizer
         else
             modelMatrix = sceneTree->ModelMatrix();
 
-        if(sceneTree->GetMesh())
+        if(sceneTree->GetMesh() && sceneTree->GetMesh()->GetBlockCount() != 0)
         {
             auto mesh = GenerateMesh(sceneTree->GetMesh());
             mesh->ModelMatrix = modelMatrix;

@@ -197,26 +197,32 @@ godot_error CGodotVoxelOptimizer::SaveSlices(String Path)
 Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
 {
     Array ret;
-
     if(m_Loader->GetModels().empty())
     {
         ERR_PRINT("No file loaded please call load before!");
         return ret;
     }
 
-    VoxelOptimizer::Mesher Mesher = VoxelOptimizer::IMesher::Create((VoxelOptimizer::MesherTypes)mesherType);
-    auto meshes = m_Loader->GetModels();
-
     m_BlockCount = 0;
     m_VerticesCount = 0;
     m_FacesCount = 0;
     m_Meshes.clear();
-    for (auto &&m : meshes)
+
+    VoxelOptimizer::Mesher Mesher = VoxelOptimizer::IMesher::Create((VoxelOptimizer::MesherTypes)mesherType);
+    auto voxelmeshes = m_Loader->GetModels();
+    for (auto &&m : voxelmeshes)
+        m_BlockCount += m->GetBlockCount();
+    
+    auto meshes = Mesher->GenerateScene(m_Loader->GetSceneTree());
+    for (auto &&mesh : meshes)
     {
-        auto mesh = Mesher->GenerateMesh(m);
+        // if(m->GetBlockCount() == 0)
+        //     continue;
+
+        // auto mesh = Mesher->GenerateMesh(m);
         m_Meshes.push_back(mesh);
 
-        m_BlockCount += m->GetBlockCount();
+        // m_BlockCount += m->GetBlockCount();
         m_VerticesCount += mesh->Vertices.size();
         
         for (auto &&f : mesh->Faces)

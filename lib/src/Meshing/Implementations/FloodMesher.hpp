@@ -51,6 +51,7 @@ namespace VoxelOptimizer
 
             std::queue<CVectori> m_Colors;
             std::list<SFloodShape*> m_Shapes;
+            std::map<CVector, bool> m_Visited;
 
             void GroupShapes(const CVectori &_Position);
             std::vector<std::vector<CVector>> GeneratePolygons(SFloodShape *_Shape);

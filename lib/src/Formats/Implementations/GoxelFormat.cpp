@@ -43,6 +43,10 @@ namespace VoxelOptimizer
         
         for (auto &&l : m_Layers)
         {
+            // Ignore invisible layers.
+            if(!l.Visible)
+                continue;
+
             CVector Beg(INFINITY, INFINITY, INFINITY), End, TranslationBeg(INFINITY, INFINITY, INFINITY);
             VoxelMesh m = VoxelMesh(new CVoxelMesh());
             m->SetName(l.Name);
@@ -154,6 +158,7 @@ namespace VoxelOptimizer
             sceneNode->SetMesh(m);
             sceneNode->SetPosition(translation);
             m_SceneTree->AddChild(sceneNode);
+            m_SceneTree->Visible = l.Visible;
 
             m_Models.push_back(m);
         }
@@ -243,6 +248,7 @@ namespace VoxelOptimizer
         auto Dict = ReadDict(Chunk, StartPos);
         l.MatIdx = *((int*)(Dict["material"].data()));
         l.Name = Dict["name"];
+        l.Visible = *((int*)(Dict["visible"].data()));
         
         m_Layers.push_back(l);
         Skip(sizeof(int));

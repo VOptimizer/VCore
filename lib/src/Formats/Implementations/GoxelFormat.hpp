@@ -76,6 +76,7 @@ namespace VoxelOptimizer
                 std::vector<Block> Blocks;
                 int MatIdx;
                 std::string Name;
+                bool Visible;
             };
 
             std::vector<BL16> m_BL16s;
