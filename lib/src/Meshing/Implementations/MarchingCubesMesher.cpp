@@ -385,13 +385,18 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    std::map<CVector, Mesh> CMarchingCubesMesher::GenerateMeshes(VoxelMesh m)
+    std::map<CVector, Mesh> CMarchingCubesMesher::GenerateMeshes(VoxelMesh m, bool onlyDirty)
     {
         std::map<CVector, Mesh> ret;
         auto &voxels = m->GetVoxels();
         m_Mesh = m;
 
-        auto chunks = voxels.queryBBoxes();
+        std::list<CBBox> chunks;
+        if(!onlyDirty)
+            chunks = voxels.queryBBoxes();
+        else
+            chunks = voxels.queryDirtyChunks();
+
         auto bbox = m->GetBBox();
         CVector beg = bbox.Beg;
         std::swap(beg.y, beg.z);

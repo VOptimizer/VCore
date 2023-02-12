@@ -98,6 +98,12 @@ namespace VoxelOptimizer
         return lhs;
     }
 
+    inline CVoxel::Visibility operator|=(CVoxel::Visibility &lhs, const CVoxel::Visibility rhs)
+    {
+        lhs = static_cast<CVoxel::Visibility>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
+        return lhs;
+    }
+
     inline CVoxel::Visibility operator~(CVoxel::Visibility lhs)
     {
         return static_cast<CVoxel::Visibility>(~static_cast<uint8_t>(lhs));
@@ -113,8 +119,12 @@ namespace VoxelOptimizer
             CVoxelOctree(const CVectori &_size, int _depth = 10);
 
             std::map<CVectori, Voxel> queryVisible(bool opaque);
+            std::list<CBBox> queryDirtyChunks();
+
             std::list<CBBox> queryBBoxes();
             void generateVisibilityMask();
+
+            void updateVisibility(const CVectori &_Position);
 
             ~CVoxelOctree() = default;
 
@@ -136,11 +146,7 @@ namespace VoxelOptimizer
 
         public:
             CVoxelMesh(VoxelMode mode = VoxelMode::KEEP_ALL) : m_BlockCount(0), m_Mode(mode) 
-            {
-                InsertTimeTotal = 0;
-                SearchTimeTotal = 0;
-                AllocTimeTotal = 0;
-            }
+            { }
 
             /**
              * @brief Sets the size of the voxel space.
@@ -294,11 +300,6 @@ namespace VoxelOptimizer
             {
                 m_Pivot = pivot;
             }
-
-            //TODO: REMOVE
-            size_t InsertTimeTotal;
-            size_t SearchTimeTotal;
-            size_t AllocTimeTotal;
             
             ~CVoxelMesh() = default;
         private:   
@@ -341,24 +342,28 @@ namespace VoxelOptimizer
 
         if(this->m_Nodes)
         {
+            // Goes the Octree down to the leftmost leave
             internal::COctreeNode<Voxel> *node = this->m_Nodes[0];
             while(node->CanSubdivide() && node->m_Nodes)
                 node = node->m_Nodes[0];
 
             while (node != this)
             {
+                // Searches the next cube with content.
                 while(node->m_Content.empty())
                 {
                     internal::COctreeNode<Voxel> *parent = node->m_Parent;
                     if(!parent)
                         break;
 
+                    // Calculates the current index inside the parent cube.
                     size_t idx = parent->CalcIndex(node->m_BBox.Beg);
                     if(idx < (NODES_COUNT - 1))
                     {
                         idx++;
                         node = parent->m_Nodes[idx];   
 
+                        // Searches for the next leave.
                         while(node->CanSubdivide() && node->m_Nodes)
                             node = node->m_Nodes[0];                
                     }
@@ -373,10 +378,8 @@ namespace VoxelOptimizer
                         if(v.second->IsVisible() && v.second->Transparent == !opaque)
                             ret.insert(v);
                     }
-                    
-
-                    // node->queryVisible(this, ret);
-
+                
+                    // Next cube.
                     size_t idx = node->m_Parent->CalcIndex(node->m_BBox.Beg);
                     if(idx < (NODES_COUNT - 1))
                     {
@@ -385,6 +388,97 @@ namespace VoxelOptimizer
                     }
                     else
                         node = node->m_Parent;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    inline std::list<CBBox> CVoxelOctree::queryDirtyChunks()
+    {
+        std::list<CBBox> ret;
+        if(this->m_Nodes)
+        {
+            for (size_t i = 0; i < NODES_COUNT; i++)
+            {
+                internal::COctreeNode<Voxel> *node = this->m_Nodes[i];
+                if(!node->m_IsDirty)
+                    continue;
+
+                node->m_IsDirty = false;
+
+                // Searches the next subdirty chunk.
+                size_t dirtyIdx = 0;
+                while(node->CanSubdivide() && node->m_Nodes)
+                {
+                    auto tmpNode = node->m_Nodes[dirtyIdx];
+                    if(!tmpNode->m_IsDirty)
+                    {
+                        dirtyIdx++;
+                        continue;
+                    }
+
+                    node = tmpNode;
+                    node->m_IsDirty = false;
+                    dirtyIdx = 0;
+                }
+
+                while (node != this)
+                {
+                    while(!node->m_IsDirty)
+                    {
+                        internal::COctreeNode<Voxel> *parent = node->m_Parent;
+                        if(!parent)
+                            break;
+
+                        size_t idx = parent->CalcIndex(node->m_BBox.Beg);
+                        if(idx < (NODES_COUNT - 1))
+                        {
+                            while (idx < (NODES_COUNT - 1))
+                            {
+                                idx++;
+                                node = parent->m_Nodes[idx];
+                                if(!node->m_IsDirty)
+                                {
+                                    node = parent;
+                                    continue;
+                                }
+
+                                node->m_IsDirty = false;
+                                dirtyIdx = 0;
+                                while(node->CanSubdivide() && node->m_Nodes)
+                                {
+                                    auto tmpNode = node->m_Nodes[dirtyIdx];
+                                    if(!tmpNode->m_IsDirty)
+                                    {
+                                        dirtyIdx++;
+                                        continue;
+                                    }
+
+                                    node = tmpNode;
+                                    node->m_IsDirty = false;
+                                    dirtyIdx = 0;
+                                }    
+                            }         
+                        }
+                        else
+                            node = parent;
+                    }
+
+                    if(node != this)
+                    {
+                        ret.push_back(node->m_InnerBBox);
+
+                        size_t idx = node->m_Parent->CalcIndex(node->m_BBox.Beg);
+                        if(idx < (NODES_COUNT - 1))
+                        {
+                            idx++;
+                            node = node->m_Parent->m_Nodes[idx];   
+                        }
+                        else
+                            node = node->m_Parent;
+                    }
                 }
             }
         }
@@ -440,6 +534,52 @@ namespace VoxelOptimizer
         }
 
         return ret;
+    }
+
+    inline void CVoxelOctree::updateVisibility(const CVectori &_Position)
+    {
+        auto IT = this->find(_Position);
+        if(IT == this->end())
+        {
+            const static std::vector<std::pair<CVector, CVoxel::Visibility>> DIRECTIONS = {
+                {CVector(1, 0, 0), CVoxel::Visibility::LEFT},
+                {CVector(-1, 0, 0), CVoxel::Visibility::RIGHT},
+                {CVector(0, 1, 0), CVoxel::Visibility::BACKWARD},
+                {CVector(0, -1, 0), CVoxel::Visibility::FORWARD},
+                {CVector(0, 0, -1), CVoxel::Visibility::UP},
+                {CVector(0, 0, 1), CVoxel::Visibility::DOWN}
+            };
+
+            for (auto &&dir : DIRECTIONS)
+            {
+                IT = this->find(_Position + dir.first);
+                if(IT != this->end())
+                    IT->second->VisibilityMask |= dir.second;
+            }
+        }
+        else
+        {
+            const static std::vector<std::pair<CVector, int>> AXIS_DIRECTIONS = {
+                {CVector(1, 0, 0), 0},
+                {CVector(0, 1, 0), 1},
+                {CVector(0, 0, 1), 2}
+            };
+
+            for (auto &&axis : AXIS_DIRECTIONS)
+            {
+                CVector start = _Position - axis.first;
+                for (char i = 0; i < 2; i++)
+                {
+                    IT = this->find(start);
+                    auto IT2 = this->find(start + axis.first);
+
+                    if(IT != this->end() && IT2 != this->end())
+                        CheckVisibility(IT->second, IT2->second, axis.second);
+
+                    start += axis.first;
+                }
+            }
+        }
     }
 
     inline void CVoxelOctree::generateVisibilityMask()

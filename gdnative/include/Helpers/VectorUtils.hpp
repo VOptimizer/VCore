@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021 Christian Tost
+ * Copyright (c) 2023 Christian Tost
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,32 +22,32 @@
  * SOFTWARE.
  */
 
-#ifndef OPTIMIZEMESHER_HPP
-#define OPTIMIZEMESHER_HPP
+#ifndef VECTORUTILS_HPP
+#define VECTORUTILS_HPP
 
-#include <list>
-#include <VoxelOptimizer/Meshing/IMesher.hpp>
+#include <Godot.hpp>
+#include <VoxelOptimizer/VoxelOptimizer.hpp>
 
-namespace VoxelOptimizer
+using namespace godot;
+
+inline VoxelOptimizer::CVector GVector3ToVVector(const Vector3 &_Vec)
 {
-    class CGreedyMesher : public IMesher
-    {
-        public:
-            CGreedyMesher() = default;
+    return VoxelOptimizer::CVector(_Vec.x, _Vec.z, _Vec.y);
+}
 
-            std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m, bool onlyDirty = false) override;
+inline VoxelOptimizer::CVector GVector2ToVVector(const Vector2 &_Vec)
+{
+    return VoxelOptimizer::CVector(_Vec.x, _Vec.y, 0);
+}
 
-            ~CGreedyMesher() = default;
+inline Vector3 VVectorToGVector3(const VoxelOptimizer::CVector &_Vec)
+{
+    return Vector3(_Vec.x, _Vec.z, _Vec.y);
+}
 
-        private:
-            struct Result
-            {
-                Mesh mesh;
-                CVectori position;
-            };
+inline Vector2 GVector2ToVVector(const VoxelOptimizer::CVector &_Vec)
+{
+    return Vector2(_Vec.x, _Vec.y);
+}
 
-            Result GenerateMesh(VoxelMesh m, const CBBox &BBox, bool Opaque);
-    };
-} // namespace VoxelOptimizer
-
-#endif //OPTIMIZEMESHER_HPP
+#endif

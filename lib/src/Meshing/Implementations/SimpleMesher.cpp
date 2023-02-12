@@ -28,14 +28,19 @@
 
 namespace VoxelOptimizer
 {
-    std::map<CVector, Mesh> CSimpleMesher::GenerateMeshes(VoxelMesh m)
+    std::map<CVector, Mesh> CSimpleMesher::GenerateMeshes(VoxelMesh m, bool onlyDirty)
     {
         std::map<CVector, Mesh> ret;
         auto &voxels = m->GetVoxels();
 
         // Mesh all opaque voxels
         m_Voxels = voxels.queryVisible(true);
-        auto chunks = voxels.queryBBoxes();
+    	std::list<VoxelOptimizer::CBBox> chunks;
+    	if(!onlyDirty)
+            chunks = voxels.queryBBoxes();
+        else
+            chunks = voxels.queryDirtyChunks();
+
         for (auto &&c : chunks)        
             ret[c.Beg] = GenerateMesh(m, c);
 

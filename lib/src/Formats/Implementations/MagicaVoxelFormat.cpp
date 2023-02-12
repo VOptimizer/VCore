@@ -77,15 +77,9 @@ namespace VoxelOptimizer
             throw CVoxelLoaderException("Version: " + std::to_string(Version) + " is not supported");
 
         // First processes the materials that are at the end of the file. 
-        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         ProcessMaterialAndSceneGraph();
-        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        auto count = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
-        count = 0;
-
         Skip(8);
 
-        begin = std::chrono::steady_clock::now();
         if(!IsEof())
         {
             SChunkHeader Tmp = ReadData<SChunkHeader>();
@@ -102,20 +96,10 @@ namespace VoxelOptimizer
                         if(strncmp(Tmp.ID, "XYZI", sizeof(Tmp.ID)) != 0)
                             throw CVoxelLoaderException("Can't understand the format.");
 
-                        std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
                         ProcessXYZI(m);
-                        std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
-                        auto count1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
-
-                        begin1 = std::chrono::steady_clock::now();
                         auto &voxels = m->GetVoxels();
                         voxels.generateVisibilityMask();
                         // auto visible = voxels.queryVisible();
-                        end1 = std::chrono::steady_clock::now();
-                        auto count2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
-
-                        int k = sizeof(Voxel);
-
                         m_Models.push_back(m);
                         auto halfSize = (m->GetSize() / 2.0);
 
@@ -147,10 +131,6 @@ namespace VoxelOptimizer
                 }
             }
         }
-        end = std::chrono::steady_clock::now();
-        count = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
-        count = 0;
-
         auto texIT = m_Textures.find(TextureType::DIFFIUSE);
         if(texIT == m_Textures.end())
             m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture(CVectori(m_ColorMapping.size(), 1, 0)));
@@ -219,23 +199,14 @@ namespace VoxelOptimizer
         std::map<int, int> modelMaterialMapping;
         auto count1 = 0, count2 = 0;
 
-        std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
         m->ReserveVoxels(VoxelCount);
-        std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
-        size_t count3 = std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
-
         for (size_t i = 0; i < VoxelCount; i++)
         {
             CVectori vec;
 
             uint8_t data[4];
 
-            begin1 = std::chrono::steady_clock::now();
-            ReadData((char*)data, sizeof(data));
-            end1 = std::chrono::steady_clock::now();
-            count1 += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
-
-            
+            ReadData((char*)data, sizeof(data));            
 
             vec.x = data[0];
             vec.y = data[1];
@@ -283,10 +254,7 @@ namespace VoxelOptimizer
                 MatIdx = m->Materials().size() - 1;
             }
 
-            begin1 = std::chrono::steady_clock::now();
             m->SetVoxel(vec, MatIdx, Color, Transparent);
-            end1 = std::chrono::steady_clock::now();
-            count2 += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
         } 
 
         m->SetBBox(CBBox(Beg, End));

@@ -39,19 +39,18 @@ namespace VoxelOptimizer
     bool is_ready(std::future<R> const& f)
     { return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }
 
-    std::map<CVector, Mesh> CGreedyMesher::GenerateMeshes(VoxelMesh m)
+    std::map<CVector, Mesh> CGreedyMesher::GenerateMeshes(VoxelMesh m, bool onlyDirty)
     {
         std::map<CVector, Mesh> ret;
 
         auto &voxels = m->GetVoxels();
         m_Voxels = voxels.queryVisible(true);
 
-        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        auto chunks = voxels.queryBBoxes();
-        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        auto count1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-
-        begin = std::chrono::steady_clock::now();
+        std::list<CBBox> chunks;
+        if(!onlyDirty)
+            chunks = voxels.queryBBoxes();
+        else
+            chunks = voxels.queryDirtyChunks();
 
         std::list<std::future<Result>> futures;
         for (auto &&c : chunks)
@@ -101,8 +100,6 @@ namespace VoxelOptimizer
                     ret[c.Beg] = mesh.mesh;
             }
         }
-        end = std::chrono::steady_clock::now();
-        auto count = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
         m_Voxels.clear();
         
         return ret;

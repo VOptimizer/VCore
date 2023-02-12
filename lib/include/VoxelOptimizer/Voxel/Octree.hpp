@@ -87,6 +87,7 @@ namespace VoxelOptimizer
                 bool HasNeighbor(const CVectori &_pos);
 
                 bool m_HasContent;
+                bool m_IsDirty;
 
                 CVectori m_SubSize;
                 CVector m_ReciprocalSubSize;
@@ -190,7 +191,7 @@ namespace VoxelOptimizer
         CObjectPool<COctreeNode<T>> COctreeNode<T>::m_Pool(NODES_COUNT * 10);
 
         template<class T>
-        inline COctreeNode<T>::COctreeNode() : m_MaxDepth(0), m_Parent(nullptr), m_Nodes(nullptr), m_HasContent(false), m_InnerBBox(CVectori(INT32_MAX, INT32_MAX, INT32_MAX), CVectori())
+        inline COctreeNode<T>::COctreeNode() : m_MaxDepth(0), m_Parent(nullptr), m_Nodes(nullptr), m_HasContent(false), m_IsDirty(false), m_InnerBBox(CVectori(INT32_MAX, INT32_MAX, INT32_MAX), CVectori())
         {
             CalcIdxTime = 0;
             FindNodeTime = 0;
@@ -434,6 +435,7 @@ namespace VoxelOptimizer
         {
             internal::COctreeNode<T> *node = this->FindNode(_pair.first);
             node->m_HasContent = true;
+            node->m_IsDirty = true;
 
             /**
              * Subdivides each cube
@@ -443,6 +445,7 @@ namespace VoxelOptimizer
                 node->Subdivide();
                 node = node->FindNode(_pair.first);
                 node->m_HasContent = true;
+                node->m_IsDirty = true;
             }
 
             m_LastInsertedChunk = node;
@@ -457,6 +460,15 @@ namespace VoxelOptimizer
     inline typename COctree<T>::iterator COctree<T>::erase(const iterator &_it)
     {
         typename iterator::map_iterator it = _it.m_Node->m_Content.erase(_it.m_Current);
+        auto node = _it.m_Node;
+        while (node)
+        {
+            node->m_IsDirty = true;
+            node = node->m_Parent;
+            if(node == this)
+                break;
+        }
+
         return iterator(_it.m_Node, it);
     }
 

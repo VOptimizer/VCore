@@ -45,23 +45,15 @@ namespace VoxelOptimizer
     void CVoxelMesh::SetVoxel(const CVector &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask)
     {
         //std::lock_guard<std::recursive_mutex> lock(m_Lock);
-
-        std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
         Voxel Tmp = m_Pool.alloc();
-        std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
 
-        AllocTimeTotal += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
         Tmp->Pos = Pos;
         Tmp->Material = Material;
         Tmp->Color = Color;
         Tmp->Transparent = Transparent;
         Tmp->VisibilityMask = mask;
 
-        begin1 = std::chrono::steady_clock::now();
         m_Voxels.insert({Pos, Tmp});
-        end1 = std::chrono::steady_clock::now();
-        InsertTimeTotal += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
-
         m_BlockCount++;
     }
 
@@ -95,11 +87,7 @@ namespace VoxelOptimizer
     {
         std::lock_guard<std::recursive_mutex> lock(m_Lock);
 
-        std::chrono::steady_clock::time_point begin1 = std::chrono::steady_clock::now();
         auto IT = m_Voxels.find(Pos);
-        std::chrono::steady_clock::time_point end1 = std::chrono::steady_clock::now();
-        SearchTimeTotal += std::chrono::duration_cast<std::chrono::nanoseconds>(end1 - begin1).count();
-
         if(IT == m_Voxels.end())
             return nullptr;
 

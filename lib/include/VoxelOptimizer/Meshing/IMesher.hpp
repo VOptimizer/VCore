@@ -70,8 +70,9 @@ namespace VoxelOptimizer
              * @brief Generates list of meshed chunks.
              * 
              * @param m: Voxel mesh to meshify.
+             * @param onlyDirty: Meshes only dirty chunks.
              */
-            virtual std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m) = 0;
+            virtual std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m, bool onlyDirty = false) = 0;
 
             virtual ~IMesher() = default;
         protected:

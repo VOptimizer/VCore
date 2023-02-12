@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021 Christian Tost
+ * Copyright (c) 2023 Christian Tost
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,32 +22,22 @@
  * SOFTWARE.
  */
 
-#ifndef OPTIMIZEMESHER_HPP
-#define OPTIMIZEMESHER_HPP
+#ifndef ARRAYMESHFACTORY_HPP
+#define ARRAYMESHFACTORY_HPP
 
-#include <list>
-#include <VoxelOptimizer/Meshing/IMesher.hpp>
+#include <ArrayMesh.hpp>
+#include <VoxelOptimizer/VoxelOptimizer.hpp>
 
-namespace VoxelOptimizer
+using namespace godot;
+
+class CArrayMeshFactory
 {
-    class CGreedyMesher : public IMesher
-    {
-        public:
-            CGreedyMesher() = default;
+    public:
+        /**
+         * @brief Transforms a Mesh to an ArrayMesh.
+         * @return Returns a godot array mesh.
+         */
+        static Ref<ArrayMesh> GenerateGodotMesh(const Mesh &_Mesh);
+};
 
-            std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m, bool onlyDirty = false) override;
-
-            ~CGreedyMesher() = default;
-
-        private:
-            struct Result
-            {
-                Mesh mesh;
-                CVectori position;
-            };
-
-            Result GenerateMesh(VoxelMesh m, const CBBox &BBox, bool Opaque);
-    };
-} // namespace VoxelOptimizer
-
-#endif //OPTIMIZEMESHER_HPP
+#endif

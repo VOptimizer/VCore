@@ -34,7 +34,7 @@ namespace VoxelOptimizer
         public:
             CSimpleMesher() = default;
 
-            std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m) override;
+            std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m, bool onlyDirty = false) override;
 
             ~CSimpleMesher() = default;
 

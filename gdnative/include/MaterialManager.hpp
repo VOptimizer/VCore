@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021 Christian Tost
+ * Copyright (c) 2023 Christian Tost
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,32 +22,39 @@
  * SOFTWARE.
  */
 
-#ifndef OPTIMIZEMESHER_HPP
-#define OPTIMIZEMESHER_HPP
+#ifndef MATERIALMANAGER_HPP
+#define MATERIALMANAGER_HPP
 
-#include <list>
-#include <VoxelOptimizer/Meshing/IMesher.hpp>
+#include <Godot.hpp>
+#include <SpatialMaterial.hpp>
+#include <memory>
+#include <map>
+#include <VoxelOptimizer/VoxelOptimizer.hpp>
 
-namespace VoxelOptimizer
+using namespace godot;
+
+class CMaterialManager
 {
-    class CGreedyMesher : public IMesher
-    {
-        public:
-            CGreedyMesher() = default;
+    public:
+        CMaterialManager() = default;
 
-            std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m, bool onlyDirty = false) override;
+        static std::shared_ptr<CMaterialManager> GetInstance();
 
-            ~CGreedyMesher() = default;
+        /**
+         * @brief Creates unknown materials and returns a list of godot materials.
+         */
+        const std::map<int, Ref<SpatialMaterial>> &CreateAndGetMaterials(const VoxelOptimizer::Mesh &_Mesh);
 
-        private:
-            struct Result
-            {
-                Mesh mesh;
-                CVectori position;
-            };
+        /**
+         * @brief Clears all materials.
+         */
+        void Clear();
 
-            Result GenerateMesh(VoxelMesh m, const CBBox &BBox, bool Opaque);
-    };
-} // namespace VoxelOptimizer
+        ~CMaterialManager() = default;
+    private:
+        static std::shared_ptr<CMaterialManager> m_Instance;
 
-#endif //OPTIMIZEMESHER_HPP
+        std::map<int, Ref<SpatialMaterial>> m_Materials;
+};
+
+#endif

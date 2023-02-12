@@ -101,7 +101,7 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    std::map<CVector, Mesh> CFloodMesher::GenerateMeshes(VoxelMesh m)
+    std::map<CVector, Mesh> CFloodMesher::GenerateMeshes(VoxelMesh m, bool onlyDirty)
     {
         std::map<CVector, Mesh> ret;
 
