@@ -46,6 +46,11 @@ namespace VoxelOptimizer
         FLOOD
     };
 
+    struct SMeshChunk : public SChunk
+    {
+        Mesh Mesh;          //!< Mesh of the voxel model.
+    };
+
     class IMesher
     {
         public:
@@ -72,7 +77,7 @@ namespace VoxelOptimizer
              * @param m: Voxel mesh to meshify.
              * @param onlyDirty: Meshes only dirty chunks.
              */
-            virtual std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m, bool onlyDirty = false) = 0;
+            virtual std::list<SMeshChunk> GenerateChunks(VoxelMesh m, bool onlyDirty = false) = 0;
 
             virtual ~IMesher() = default;
         protected:

@@ -39,7 +39,7 @@ namespace VoxelOptimizer
 
     Mesh IMesher::GenerateMesh(VoxelMesh m)
     {
-        auto chunks = GenerateMeshes(m);
+        auto chunks = GenerateChunks(m);
         if(chunks.empty())
             return nullptr;
 
@@ -50,10 +50,10 @@ namespace VoxelOptimizer
         for (auto &&c : chunks)
         {
             if(!ret)
-                ret = c.second;
+                ret = c.Mesh;
             else
             {
-                meshes[idx] = c.second;
+                meshes[idx] = c.Mesh;
                 idx++;
             }
         }
@@ -106,10 +106,10 @@ namespace VoxelOptimizer
     {
         switch (type)
         {
-            case MesherTypes::SIMPLE: return Mesher(new CSimpleMesher());
-            case MesherTypes::GREEDY: return Mesher(new CGreedyMesher());
-            case MesherTypes::MARCHING_CUBES: return Mesher(new CMarchingCubesMesher());
-            case MesherTypes::FLOOD: return Mesher(new CFloodMesher());
+            case MesherTypes::SIMPLE: return std::make_shared<CSimpleMesher>();
+            case MesherTypes::GREEDY: return std::make_shared<CGreedyMesher>();
+            case MesherTypes::MARCHING_CUBES: return std::make_shared<CMarchingCubesMesher>();
+            case MesherTypes::FLOOD: return std::make_shared<CFloodMesher>();
             default:
                 throw std::runtime_error("Invalid mesher type!");
         }

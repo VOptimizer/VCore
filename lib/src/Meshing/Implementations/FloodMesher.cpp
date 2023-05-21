@@ -101,9 +101,9 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    std::map<CVector, Mesh> CFloodMesher::GenerateMeshes(VoxelMesh m, bool onlyDirty)
+    std::list<SMeshChunk> CFloodMesher::GenerateChunks(VoxelMesh m, bool onlyDirty)
     {
-        std::map<CVector, Mesh> ret;
+        std::list<SMeshChunk> ret;
 
         auto &voxels = m->GetVoxels();
         m_Voxels = voxels.queryVisible(true);
@@ -124,14 +124,14 @@ namespace VoxelOptimizer
 
         std::vector<Mesh> meshes;
 
-        auto &materials = m->Materials();
+        auto &materials = m->Materials;
         for(auto &&shape : m_Shapes)
         {
             CMeshBuilder builder;
-            builder.AddTextures(m->Colorpalettes());
+            builder.AddTextures(m->Colorpalettes);
 
             auto polygons = GeneratePolygons(shape);
-            CVector uv = CVector(((float)(shape->m_Voxels.begin()->second->Color + 0.5f)) / m->Colorpalettes()[TextureType::DIFFIUSE]->Size().x, 0.5f, 0);
+            CVector uv = CVector(((float)(shape->m_Voxels.begin()->second->Color + 0.5f)) / m->Colorpalettes[TextureType::DIFFIUSE]->Size().x, 0.5f, 0);
 
             std::vector<int> indices;
             CTriangulate::Triangulate(polygons.front(), indices);
@@ -152,10 +152,10 @@ namespace VoxelOptimizer
         }
 
         CMeshBuilder builder;
-        builder.AddTextures(m->Colorpalettes());
+        builder.AddTextures(m->Colorpalettes);
         builder.Merge(nullptr, meshes);
 
-        ret[CVector(0, 0, 0)] = builder.Build();
+        // ret[CVector(0, 0, 0)] = builder.Build();
 
         return ret;
     }

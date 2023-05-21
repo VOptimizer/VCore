@@ -64,7 +64,7 @@ namespace VoxelOptimizer
         VoxelMesh m = VoxelMesh(new CVoxelMesh());
         auto mat = Material(new CMaterial());
         m_Materials.push_back(mat);
-        m->Materials().push_back(mat);
+        m->Materials.push_back(mat);
         m->SetSize(Content->Size);
 
         std::map<int, int> ColorIdx;
@@ -118,10 +118,10 @@ namespace VoxelOptimizer
         auto sceneNode = SceneNode(new CSceneNode());
         m_SceneTree->AddChild(sceneNode);
         sceneNode->SetMesh(m);
-        m->SetPivot(m->GetSize() / 2);
+        m->Pivot = m->GetSize() / 2;
 
-        m->Colorpalettes() = m_Textures;
-        m->SetBBox(CBBox(Beg, End));
+        m->Colorpalettes = m_Textures;
+        m->BBox = CBBox(Beg, End);
         m->GetVoxels().generateVisibilityMask();
 
         m_Models.push_back(m);

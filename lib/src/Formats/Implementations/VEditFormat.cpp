@@ -477,8 +477,8 @@ namespace VoxelOptimizer
         ISection::Serialize(strm);
         std::vector<char> thumbnail;
         
-        if(Mesh->GetThumbnail())
-            thumbnail = Mesh->GetThumbnail()->AsPNG();
+        if(Mesh->Thumbnail)
+            thumbnail = Mesh->Thumbnail->AsPNG();
 
         CBinaryStream voxels;
 
@@ -490,7 +490,7 @@ namespace VoxelOptimizer
             CVectori pos(v.first.x, v.first.z, v.first.y);
             voxels << pos;  // Position
 
-            auto mat = Mesh->Materials()[v.second->Material];
+            auto mat = Mesh->Materials[v.second->Material];
 
             voxels << m_MaterialMapping.at(mat);        // Gets the material index
             voxels << v.second->Color;                  // Color index
@@ -505,11 +505,11 @@ namespace VoxelOptimizer
         uint32_t size = sizeof(uint32_t) + sizeof(uint32_t) + sizeof(CVectori) + sizeof(bool) + sizeof(uint32_t) + thumbnail.size() + sizeof(uint32_t) + dataSize;
         strm << size;
         strm << (uint32_t)0;                                        // Properties
-        strm << Mesh->GetName();                                    // Name
+        strm << Mesh->Name;                                    // Name
         strm << (uint32_t)thumbnail.size();
         strm.write(thumbnail.data(), thumbnail.size());
         strm << (uint32_t)0;                                        // Colorpalette id. Reserved for the future.
-        strm << Mesh->GetPivot();                                   // Pivot
+        strm << Mesh->Pivot;                                   // Pivot
 
         CVectori spaceSize(Mesh->GetSize().x, Mesh->GetSize().z, Mesh->GetSize().y);
 
@@ -534,7 +534,7 @@ namespace VoxelOptimizer
         strm >> thumbSize;
 
         Mesh = VoxelMesh(new CVoxelMesh());
-        Mesh->SetName(name);
+        Mesh->Name = name;
         if(thumbSize > 0)
         {
             std::vector<char> img(thumbSize, 0);
@@ -544,7 +544,7 @@ namespace VoxelOptimizer
             uint32_t *ImgData = (uint32_t*)stbi_load_from_memory((unsigned char*)img.data(), thumbSize, &w, &h, &c, 4);
             if(ImgData)
             {
-                Mesh->SetThumbnail(Texture(new CTexture(CVector(w, h, 0), ImgData)));
+                Mesh->Thumbnail = Texture(new CTexture(CVector(w, h, 0), ImgData));
                 free(ImgData);
             }
         }
@@ -552,7 +552,7 @@ namespace VoxelOptimizer
 
         CVector pivot;
         strm >> pivot;
-        Mesh->SetPivot(pivot);
+        Mesh->Pivot = pivot;
 
         CVectori voxlespaceSize;
         strm >> voxlespaceSize;
@@ -586,9 +586,9 @@ namespace VoxelOptimizer
                 matIdx = it->second;
             else
             {
-                Mesh->Materials().push_back(mat);
+                Mesh->Materials.push_back(mat);
 
-                modelMaterialMapping[matIdx] = Mesh->Materials().size() - 1;
+                modelMaterialMapping[matIdx] = Mesh->Materials.size() - 1;
                 matIdx = modelMaterialMapping[matIdx];
             }
 
@@ -974,7 +974,7 @@ namespace VoxelOptimizer
         // Creates an index map where each material is given its own unique index.
         for (auto &&m : meshes)
         {
-            for (auto &&mat : m->Materials())
+            for (auto &&mat : m->Materials)
             {
                 auto it = materials.find(mat);
                 if(it == materials.end())
@@ -999,7 +999,7 @@ namespace VoxelOptimizer
         {
             // Writes the color palette to the file.
             CColorpaletteSection colors;
-            colors.Colors = meshes.front()->Colorpalettes()[TextureType::DIFFIUSE];
+            colors.Colors = meshes.front()->Colorpalettes[TextureType::DIFFIUSE];
             colors.Serialize(stream);
 
             // Writes all models to the file.
@@ -1077,7 +1077,7 @@ namespace VoxelOptimizer
                     voxel.Deserialize(m_DataStream);
 
                     m_Models.push_back(voxel.Mesh);
-                    voxel.Mesh->Colorpalettes() = m_Textures;
+                    voxel.Mesh->Colorpalettes = m_Textures;
                     voxel.Mesh->RecalcBBox();
                 }break;
 

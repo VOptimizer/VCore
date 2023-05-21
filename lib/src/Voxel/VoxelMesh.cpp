@@ -42,7 +42,7 @@ namespace VoxelOptimizer
         VisibilityMask = Visibility::VISIBLE;
     }
 
-    void CVoxelMesh::SetVoxel(const CVector &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask)
+    void CVoxelMesh::SetVoxel(const CVectori &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask)
     {
         //std::lock_guard<std::recursive_mutex> lock(m_Lock);
         Voxel Tmp = m_Pool.alloc();
@@ -54,10 +54,9 @@ namespace VoxelOptimizer
         Tmp->VisibilityMask = mask;
 
         m_Voxels.insert({Pos, Tmp});
-        m_BlockCount++;
     }
 
-    void CVoxelMesh::RemoveVoxel(const CVector &Pos)
+    void CVoxelMesh::RemoveVoxel(const CVectori &Pos)
     {
         std::lock_guard<std::recursive_mutex> lock(m_Lock);
         auto IT = m_Voxels.find(Pos);
@@ -83,7 +82,7 @@ namespace VoxelOptimizer
         m_Voxels.clear();
     }
 
-    Voxel CVoxelMesh::GetVoxel(const CVector &Pos)
+    Voxel CVoxelMesh::GetVoxel(const CVectori &Pos)
     {
         std::lock_guard<std::recursive_mutex> lock(m_Lock);
 
@@ -94,7 +93,7 @@ namespace VoxelOptimizer
         return IT->second;
     }
 
-    Voxel CVoxelMesh::GetVoxel(const CVector &Pos, bool OpaqueOnly)
+    Voxel CVoxelMesh::GetVoxel(const CVectori &Pos, bool OpaqueOnly)
     {
         auto voxel = GetVoxel(Pos);
         if(voxel)

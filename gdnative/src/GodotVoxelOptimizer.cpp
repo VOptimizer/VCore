@@ -243,12 +243,12 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
         int TmpIndices[3];
         int VertexCounter = 0;
 
+        // Converts the colorpalette to a texture for godot.
         Ref<Image> Img = Image::_new();
         auto albedo = mesh->Textures[VoxelOptimizer::TextureType::DIFFIUSE];
 
         Img->create(albedo->Size().x, albedo->Size().y, false, Image::Format::FORMAT_RGBA8);
         Img->lock();
-
         for (size_t x = 0; x < albedo->Size().x; x++)
         {
             for (size_t y = 0; y < albedo->Size().y; y++)
@@ -259,7 +259,6 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
                 Img->set_pixel(x, 0, Color(c.R / 255.f, c.G / 255.f, c.B / 255.f, c.A / 255.f));
             }
         }
-
         Img->unlock();
 
         Ref<ImageTexture> Tex = ImageTexture::_new();
@@ -267,6 +266,8 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
 
         for (auto &&f : mesh->Faces)
         {
+            // Since libVoxelOptimizer generates highly packed meshes,
+            // it's neccessary to unpack them for godot and OpenGL.
             for (auto &&v : f->Indices)
             {
                 auto IT = Index.find(v);

@@ -1,0 +1,2 @@
+- All meshes are centered using the bbox of the whole model. This should maybe a setting for the mesher. So that the developer, like me, doesn't wonder why everything is behaving so strange, when voxels are added or removed. (Jumping meshes)
+- VoxelMesh::SetVoxel extend either with a parameter, for generating visibility or a seperate methode like VoxelMesh::SetVoxelAndUpdateVisibility.

@@ -385,19 +385,19 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    std::map<CVector, Mesh> CMarchingCubesMesher::GenerateMeshes(VoxelMesh m, bool onlyDirty)
+    std::list<SMeshChunk> CMarchingCubesMesher::GenerateChunks(VoxelMesh m, bool onlyDirty)
     {
-        std::map<CVector, Mesh> ret;
+        std::list<SMeshChunk> ret;
         auto &voxels = m->GetVoxels();
         m_Mesh = m;
 
-        std::list<CBBox> chunks;
+        std::list<SChunk> chunks;
         if(!onlyDirty)
             chunks = voxels.queryBBoxes();
         else
             chunks = voxels.queryDirtyChunks();
 
-        auto bbox = m->GetBBox();
+        auto bbox = m->BBox;
         CVector beg = bbox.Beg;
         std::swap(beg.y, beg.z);
         beg.z *= -1;
@@ -409,13 +409,13 @@ namespace VoxelOptimizer
         for (auto &&c : chunks)
         {
             CMeshBuilder builder;
-            builder.AddTextures(m->Colorpalettes());
+            builder.AddTextures(m->Colorpalettes);
 
-            for(float x = c.Beg.x - 1; x < c.End.x + 1; x++)
+            for(float x = c.InnerBBox.Beg.x - 1; x < c.InnerBBox.End.x + 1; x++)
             {
-                for(float y = c.Beg.y - 1; y < c.End.y + 1; y++)
+                for(float y = c.InnerBBox.Beg.y - 1; y < c.InnerBBox.End.y + 1; y++)
                 {
-                    for(float z = c.Beg.z - 1; z < c.End.z + 1; z++)
+                    for(float z = c.InnerBBox.Beg.z - 1; z < c.InnerBBox.End.z + 1; z++)
                     {
                         uint8_t idx = GetTableIndex(m, CVector(x, y, z));
                         auto edges = triangleConnectionTable[idx];
@@ -424,13 +424,18 @@ namespace VoxelOptimizer
                     }
                 }
             }
-            
-            ret.insert({c.Beg, builder.Build()});
+
+            SMeshChunk chunk;
+            chunk.UniqueId = c.UniqueId;
+            chunk.InnerBBox = c.InnerBBox;
+            chunk.TotalBBox = c.TotalBBox;
+            chunk.Mesh = builder.Build();
+            ret.push_back(chunk);
         }
 
         for (auto &&pair : ret)
         {
-            auto mesh = pair.second;
+            auto mesh = pair.Mesh;
             for (auto &&uv : mesh->UVs)
                 uv = CVector(((float)(uv.x + 0.5f)) / mesh->Textures[TextureType::DIFFIUSE]->Size().x, 0.5f, 0);
         }
@@ -507,9 +512,9 @@ namespace VoxelOptimizer
             std::swap(v2.Pos.y, v2.Pos.z);
             std::swap(v3.Pos.y, v3.Pos.z);
 
-            v1.Pos = v1.Pos * CVector(1, 1, -1) - beg - center;
-            v2.Pos = v2.Pos * CVector(1, 1, -1) - beg - center;
-            v3.Pos = v3.Pos * CVector(1, 1, -1) - beg - center;
+            v1.Pos = v1.Pos * CVector(1, 1, -1) - center;
+            v2.Pos = v2.Pos * CVector(1, 1, -1) - center;
+            v3.Pos = v3.Pos * CVector(1, 1, -1) - center;
 
             auto voxel1 = GetVoxel(pos, e1);
             auto voxel2 = GetVoxel(pos, e2);
@@ -525,11 +530,11 @@ namespace VoxelOptimizer
             v3.UV.x = color.z;
 
             if(voxel1->Material == voxel2->Material || voxel1->Material == voxel3->Material)
-                v1.Mat = v2.Mat = v3.Mat = m_Mesh->Materials()[voxel1->Material];
+                v1.Mat = v2.Mat = v3.Mat = m_Mesh->Materials[voxel1->Material];
             else if(voxel2->Material == voxel3->Material)
-                v1.Mat = v2.Mat = v3.Mat = m_Mesh->Materials()[voxel2->Material];
+                v1.Mat = v2.Mat = v3.Mat = m_Mesh->Materials[voxel2->Material];
             else
-                v1.Mat = v2.Mat = v3.Mat = m_Mesh->Materials()[voxel1->Material];
+                v1.Mat = v2.Mat = v3.Mat = m_Mesh->Materials[voxel1->Material];
 
             CVector FaceNormal = (v2.Pos - v1.Pos).Cross(v3.Pos - v1.Pos).Normalize(); 
             v1.Normal = v2.Normal = v3.Normal = FaceNormal;

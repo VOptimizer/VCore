@@ -213,8 +213,8 @@ namespace VoxelOptimizer
         reset();
     }
 
-    inline CBinaryStream::CBinaryStream(std::istream &_strm) : std::iostream(_strm.rdbuf()) { }
-    inline CBinaryStream::CBinaryStream(std::ostream &_strm) : std::iostream(_strm.rdbuf()) { }
+    inline CBinaryStream::CBinaryStream(std::istream &_strm) : std::iostream(_strm.rdbuf()), m_StreamBuffer(nullptr) { }
+    inline CBinaryStream::CBinaryStream(std::ostream &_strm) : std::iostream(_strm.rdbuf()), m_StreamBuffer(nullptr) { }
     inline CBinaryStream::CBinaryStream(const CBinaryStream &_strm)
     {
         this->operator=(std::move(const_cast<CBinaryStream&>(_strm)));

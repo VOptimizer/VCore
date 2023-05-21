@@ -162,7 +162,7 @@ namespace VoxelOptimizer
             iterator erase(const iterator &_it); // { return end(); }
 
             iterator find(const CVectori &_v);
-            size_t size();
+            size_t size() const;
 
             iterator begin();
             iterator end();
@@ -170,6 +170,12 @@ namespace VoxelOptimizer
             COctree<T> &operator=(const COctree<T> &_tree);
 
             virtual ~COctree() = default;
+
+        protected:
+            void GenerateContentIndex(const COctree<T> &_tree);
+
+            std::list<internal::COctreeNode<T>*> m_ContentNodes;
+
         private:
             bool CanSubdivide() override;
 
@@ -417,6 +423,7 @@ namespace VoxelOptimizer
     inline COctree<T>::COctree(const COctree<T> &_tree) : internal::COctreeNode<T>(nullptr, &_tree), m_End(this), m_LastInsertedChunk(nullptr)
     {
         m_Size = _tree.m_Size;
+        this->GenerateContentIndex(_tree);
     }
 
     template<class T>
@@ -435,23 +442,34 @@ namespace VoxelOptimizer
         {
             internal::COctreeNode<T> *node = this->FindNode(_pair.first);
             node->m_HasContent = true;
-            node->m_IsDirty = true;
+            // node->m_IsDirty = true;
 
             /**
              * Subdivides each cube
              */
+            bool newNode = false;
+            internal::COctreeNode<T> *parent = node;
             while (node->CanSubdivide())
             {
                 node->Subdivide();
+                parent = node;
                 node = node->FindNode(_pair.first);
                 node->m_HasContent = true;
-                node->m_IsDirty = true;
+                // node->m_IsDirty = true;
+                newNode = true;
+            }
+
+            if(newNode)
+            {
+                for (size_t i = 0; i < NODES_COUNT; i++)
+                    m_ContentNodes.push_back(parent->m_Nodes[i]);
             }
 
             m_LastInsertedChunk = node;
         }
         
         m_LastInsertedChunk->m_Content.insert(_pair);
+        m_LastInsertedChunk->m_IsDirty = true;
         m_LastInsertedChunk->m_InnerBBox.Beg = m_LastInsertedChunk->m_InnerBBox.Beg.Min(_pair.first);
         m_LastInsertedChunk->m_InnerBBox.End = m_LastInsertedChunk->m_InnerBBox.End.Max(_pair.first + CVectori(1, 1, 1));
     }
@@ -473,7 +491,7 @@ namespace VoxelOptimizer
     }
 
     template<class T>
-    inline size_t COctree<T>::size()
+    inline size_t COctree<T>::size() const
     {
         return m_Size;
     }
@@ -482,7 +500,7 @@ namespace VoxelOptimizer
     inline typename COctree<T>::iterator COctree<T>::find(const CVectori &_v)
     {
         size_t idx = this->CalcIndex(_v);
-        if(idx < NODES_COUNT && this->m_Nodes[idx]->m_HasContent)
+        if(idx < NODES_COUNT && this->m_Nodes && this->m_Nodes[idx]->m_HasContent)
         {
             internal::COctreeNode<T> *node  = this->FindNode(_v);  
             typename internal::COctreeNode<T>::VoxelMap::iterator current = node->m_Content.find(_v);
@@ -520,9 +538,22 @@ namespace VoxelOptimizer
     {
         m_LastInsertedChunk = nullptr;
         m_Size = _tree.m_Size;
+        m_ContentNodes.clear();
         this->CopyNode(&_tree);
+        this->GenerateContentIndex(_tree);
 
         return *this;
+    }
+
+    template<class T>
+    void COctree<T>::GenerateContentIndex(const COctree<T> &_tree)
+    {
+        for (auto &&node : _tree.m_ContentNodes)
+        {
+            auto contentNode = this->FindNode(node->m_BBox.Beg);
+            if(contentNode)
+                m_ContentNodes.push_back(contentNode);
+        }
     }
 
     /**

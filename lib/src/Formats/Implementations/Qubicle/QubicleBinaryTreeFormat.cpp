@@ -52,7 +52,7 @@ namespace VoxelOptimizer
         m_ColorIdx.clear();
 
         for (auto &&m : m_Models)
-            m->Colorpalettes() = m_Textures;        
+            m->Colorpalettes = m_Textures;        
     }
 
     void CQubicleBinaryTreeFormat::ReadColors()
@@ -115,8 +115,8 @@ namespace VoxelOptimizer
         ReadData(&name[0], nameLen);
 
         VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
-        mesh->Materials() = m_Materials;
-        mesh->SetName(name);
+        mesh->Materials = m_Materials;
+        mesh->Name = name;
         auto pos = ReadVector();
 
         Skip(6 * sizeof(int));
@@ -172,7 +172,7 @@ namespace VoxelOptimizer
         }
         free(Data);
 
-        mesh->SetBBox(CBBox(Beg, End));
+        mesh->BBox = CBBox(Beg, End);
         mesh->GetVoxels().generateVisibilityMask();
         m_Models.push_back(mesh);
     }
@@ -184,8 +184,8 @@ namespace VoxelOptimizer
         ReadData(&name[0], nameLen);
 
         VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
-        mesh->Materials() = m_Materials;
-        mesh->SetName(name);
+        mesh->Materials = m_Materials;
+        mesh->Name = name;
         auto pos = ReadVector();
 
         Skip(6 * sizeof(int));
@@ -240,7 +240,7 @@ namespace VoxelOptimizer
         }
         free(Data);
 
-        mesh->SetBBox(CBBox(Beg, End));
+        mesh->BBox = CBBox(Beg, End);
         mesh->GetVoxels().generateVisibilityMask();
         m_Models.push_back(mesh);
 

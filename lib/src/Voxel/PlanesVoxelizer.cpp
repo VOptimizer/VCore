@@ -29,13 +29,13 @@ namespace VoxelOptimizer
     CPlanesVoxelizer::CPlanesVoxelizer()
     {
         m_Mesh = std::make_shared<CVoxelMesh>();
-        m_Mesh->Materials().push_back(std::make_shared<CMaterial>());
+        m_Mesh->Materials.push_back(std::make_shared<CMaterial>());
     }
 
     void CPlanesVoxelizer::SetVoxelSpaceSize(const CVectori &_size)
     {
         m_Mesh->SetSize(_size);
-        m_Mesh->SetBBox(CBBox(CVectori(), m_Mesh->GetSize()));
+        m_Mesh->BBox = CBBox(CVectori(), m_Mesh->GetSize());
     }
 
     VoxelMesh CPlanesVoxelizer::GetMesh()
@@ -56,7 +56,7 @@ namespace VoxelOptimizer
             return;
 
         m_Mesh->Clear();
-        m_Mesh->Colorpalettes()[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
+        m_Mesh->Colorpalettes[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
 
         ProjectPlanes(_planes, _info);
         if(!frontsize.IsZero())
@@ -189,8 +189,8 @@ namespace VoxelOptimizer
         else
         {
             // Creates a new index for this color.
-            colorIdx = m_Mesh->Colorpalettes()[TextureType::DIFFIUSE]->Size().x;
-            m_Mesh->Colorpalettes()[TextureType::DIFFIUSE]->AddPixel(CColor(_color));
+            colorIdx = m_Mesh->Colorpalettes[TextureType::DIFFIUSE]->Size().x;
+            m_Mesh->Colorpalettes[TextureType::DIFFIUSE]->AddPixel(CColor(_color));
             m_ColorMapping.insert({_color, colorIdx});
         }
 

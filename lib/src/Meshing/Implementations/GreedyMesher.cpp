@@ -39,20 +39,20 @@ namespace VoxelOptimizer
     bool is_ready(std::future<R> const& f)
     { return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }
 
-    std::map<CVector, Mesh> CGreedyMesher::GenerateMeshes(VoxelMesh m, bool onlyDirty)
+    std::list<SMeshChunk> CGreedyMesher::GenerateChunks(VoxelMesh m, bool onlyDirty)
     {
-        std::map<CVector, Mesh> ret;
+        std::list<SMeshChunk> ret;
 
         auto &voxels = m->GetVoxels();
         m_Voxels = voxels.queryVisible(true);
 
-        std::list<CBBox> chunks;
+        std::list<SChunk> chunks;
         if(!onlyDirty)
             chunks = voxels.queryBBoxes();
         else
             chunks = voxels.queryDirtyChunks();
 
-        std::list<std::future<Result>> futures;
+        std::list<std::future<SMeshChunk>> futures;
         for (auto &&c : chunks)
         {
             futures.push_back(std::async(&CGreedyMesher::GenerateMesh, this, m, c, true));
@@ -64,7 +64,7 @@ namespace VoxelOptimizer
                     if(is_ready(*it))
                     {
                         auto result = it->get();
-                        ret[result.position] = result.mesh;
+                        ret.push_back(result);
                         it = futures.erase(it);
                     }
                     else
@@ -78,7 +78,7 @@ namespace VoxelOptimizer
         {
             it->wait();
             auto result = it->get();
-            ret[result.position] = result.mesh;
+            ret.push_back(result);
             it = futures.erase(it);
         }
 
@@ -88,16 +88,18 @@ namespace VoxelOptimizer
             for (auto &&c : chunks)        
             {
                 auto mesh = GenerateMesh(m, c, false);
-                auto it = ret.find(c.Beg);
+                auto it = std::find_if(ret.begin(), ret.end(), [&c](const SMeshChunk &_Chunk) {
+                    return _Chunk.UniqueId == c.UniqueId;
+                });
 
                 // Merge the transparent chunk with the opaque one.
                 if(it != ret.end())
                 {
                     CMeshBuilder builder;
-                    builder.Merge(it->second, std::vector<Mesh>() = { mesh.mesh });
+                    builder.Merge(it->Mesh, std::vector<Mesh>() = { mesh.Mesh });
                 }
                 else
-                    ret[c.Beg] = mesh.mesh;
+                    ret.push_back(mesh);
             }
         }
         m_Voxels.clear();
@@ -105,14 +107,16 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    CGreedyMesher::Result CGreedyMesher::GenerateMesh(VoxelMesh m, const CBBox &BBox, bool Opaque)
+    SMeshChunk CGreedyMesher::GenerateMesh(VoxelMesh m, const SChunk &_Chunk, bool Opaque)
     {
         CMeshBuilder builder;
-        builder.AddTextures(m->Colorpalettes());
+        builder.AddTextures(m->Colorpalettes);
 
-        auto &materials = m->Materials();
+        CBBox BBox = _Chunk.InnerBBox;
 
-        auto TotalBBox = m->GetBBox();
+        auto &materials = m->Materials;
+
+        auto TotalBBox = m->BBox;
         CVector Beg = TotalBBox.Beg;
         std::swap(Beg.y, Beg.z);
         Beg.z *= -1;
@@ -211,10 +215,10 @@ namespace VoxelOptimizer
 
                             int I1, I2, I3, I4;                            
 
-                            CVector v1 = CVector(x[0], x[2], -x[1]) - Beg - BoxCenter;
-                            CVector v2 = CVector(x[0] + du[0], x[2] + du[2], -x[1] - du[1]) - Beg - BoxCenter;
-                            CVector v3 = CVector(x[0] + du[0] + dv[0], x[2] + du[2] + dv[2], -x[1] - du[1] - dv[1]) - Beg - BoxCenter;
-                            CVector v4 = CVector(x[0] + dv[0], x[2] + dv[2], -x[1] - dv[1]) - Beg - BoxCenter;
+                            CVector v1 = CVector(x[0], x[2], -x[1]) - BoxCenter;
+                            CVector v2 = CVector(x[0] + du[0], x[2] + du[2], -x[1] - du[1]) - BoxCenter;
+                            CVector v3 = CVector(x[0] + du[0] + dv[0], x[2] + du[2] + dv[2], -x[1] - du[1] - dv[1]) - BoxCenter;
+                            CVector v4 = CVector(x[0] + dv[0], x[2] + dv[2], -x[1] - dv[1]) - BoxCenter;
 
                             std::swap(Normal.y, Normal.z);
                             if(Normal.z != 0)
@@ -237,6 +241,12 @@ namespace VoxelOptimizer
             // break;
         }
 
-        return {builder.Build(), BBox.Beg};
+        SMeshChunk chunk;
+        chunk.UniqueId = _Chunk.UniqueId;
+        chunk.InnerBBox = _Chunk.InnerBBox;
+        chunk.TotalBBox = _Chunk.TotalBBox;
+        chunk.Mesh = builder.Build();
+
+        return chunk;
     }
 } // namespace VoxelOptimizer

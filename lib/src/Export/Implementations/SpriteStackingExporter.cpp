@@ -44,7 +44,7 @@ namespace VoxelOptimizer
         CVector Size = m->GetSize();
         std::vector<uint32_t> Pixels(Size.x * Size.y * Size.z, 0);
 
-        auto diffuse = m->Colorpalettes().at(TextureType::DIFFIUSE);
+        auto diffuse = m->Colorpalettes.at(TextureType::DIFFIUSE);
 
         for (size_t z = 0; z < Size.z; z++)
         {

@@ -35,18 +35,12 @@ namespace VoxelOptimizer
         public:
             CGreedyMesher() = default;
 
-            std::map<CVector, Mesh> GenerateMeshes(VoxelMesh m, bool onlyDirty = false) override;
+            std::list<SMeshChunk> GenerateChunks(VoxelMesh m, bool onlyDirty = false) override;
 
             ~CGreedyMesher() = default;
 
         private:
-            struct Result
-            {
-                Mesh mesh;
-                CVectori position;
-            };
-
-            Result GenerateMesh(VoxelMesh m, const CBBox &BBox, bool Opaque);
+            SMeshChunk GenerateMesh(VoxelMesh m, const SChunk &_Chunk, bool Opaque);
     };
 } // namespace VoxelOptimizer
 

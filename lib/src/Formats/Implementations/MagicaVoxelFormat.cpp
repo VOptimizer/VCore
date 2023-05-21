@@ -109,8 +109,8 @@ namespace VoxelOptimizer
                         // 2. All meshers centers the mehs in object space so we need to add the fractal part to the translation
                         // 3. Add the distance from object center to space center and add the start position of the voxel mesh
 
-                        CVector spaceCenter = halfSize.Fract() + m->GetBBox().Beg + (m->GetBBox().GetSize() / 2 - halfSize);
-                        m->SetPivot(spaceCenter);
+                        CVector spaceCenter = halfSize.Fract() + m->BBox.Beg + (m->BBox.GetSize() / 2 - halfSize);
+                        m->Pivot = spaceCenter;
                         std::swap(spaceCenter.y, spaceCenter.z);
                         spaceCenter.z *= -1;
 
@@ -119,7 +119,7 @@ namespace VoxelOptimizer
 
                         // TODO: Animation support.
                         treeNode->SetMesh(m); 
-                        m->SetName(treeNode->GetName());                     
+                        m->Name = treeNode->GetName();                     
                     }
                     else if(strncmp(Tmp.ID, "RGBA", sizeof(Tmp.ID)) == 0)
                     {
@@ -161,7 +161,7 @@ namespace VoxelOptimizer
 
         for (auto &&m : m_Models)
         {
-            m->Colorpalettes() = m_Textures;
+            m->Colorpalettes = m_Textures;
         }
     }
 
@@ -249,15 +249,15 @@ namespace VoxelOptimizer
                 MatIdx = IT->second;
             else
             {
-                m->Materials().push_back(m_Materials[newMatIdx]);
-                modelMaterialMapping[MatIdx] = m->Materials().size() - 1;
-                MatIdx = m->Materials().size() - 1;
+                m->Materials.push_back(m_Materials[newMatIdx]);
+                modelMaterialMapping[MatIdx] = m->Materials.size() - 1;
+                MatIdx = m->Materials.size() - 1;
             }
 
             m->SetVoxel(vec, MatIdx, Color, Transparent);
         } 
 
-        m->SetBBox(CBBox(Beg, End));
+        m->BBox = CBBox(Beg, End);
     }
 
     void CMagicaVoxelFormat::ProcessMaterialAndSceneGraph()

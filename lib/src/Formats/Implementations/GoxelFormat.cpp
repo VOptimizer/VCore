@@ -49,7 +49,7 @@ namespace VoxelOptimizer
 
             CVector Beg(INFINITY, INFINITY, INFINITY), End, TranslationBeg(INFINITY, INFINITY, INFINITY);
             VoxelMesh m = VoxelMesh(new CVoxelMesh());
-            m->SetName(l.Name);
+            m->Name = l.Name;
             m->SetSize(m_BBox.End + m_BBox.Beg.Abs());
             std::map<int, int> meshMaterialMapping;
 
@@ -81,8 +81,8 @@ namespace VoxelOptimizer
                                 else
                                 {
                                     auto material = m_Materials[l.MatIdx];
-                                    m->Materials().push_back(material);
-                                    matIdx = m->Materials().size() - 1;
+                                    m->Materials.push_back(material);
+                                    matIdx = m->Materials.size() - 1;
                                     meshMaterialMapping[l.MatIdx] = matIdx;
                                 }
 
@@ -145,13 +145,13 @@ namespace VoxelOptimizer
                 }
             }
             
-            m->SetBBox(CBBox(Beg, End));
+            m->BBox = CBBox(Beg, End);
             m->GetVoxels().generateVisibilityMask();
 
             // TODO: This is dumb! The model matrix should be created on a central point!
             auto sceneNode = SceneNode(new CSceneNode());
-            m->SetPivot(m->GetBBox().GetSize() / 2);
-            CVector translation = TranslationBeg + m->GetPivot();
+            m->Pivot = m->BBox.GetSize() / 2;
+            CVector translation = TranslationBeg + m->Pivot;
             std::swap(translation.y, translation.z);
             translation.z *= -1;
 
@@ -164,7 +164,7 @@ namespace VoxelOptimizer
         }
 
         for (auto &&m : m_Models)
-            m->Colorpalettes() = m_Textures;
+            m->Colorpalettes = m_Textures;
         
         m_BBox = CBBox();
         m_BL16s.clear();

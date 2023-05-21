@@ -42,13 +42,13 @@ namespace VoxelOptimizer
         for (int i = 0; i < m_Header.MatrixCount; i++)
         {
             VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
-            mesh->Materials() = m_Materials;
+            mesh->Materials = m_Materials;
 
             uint8_t nameLen = ReadData<uint8_t>();
             std::string name(nameLen + 1, '\0');
             ReadData(&name[0], nameLen);
 
-            mesh->SetName(name);
+            mesh->Name = name;
             mesh->SetSize(ReadVector());
             auto pos = ReadVector();
 
@@ -76,7 +76,7 @@ namespace VoxelOptimizer
 
         m_ColorIdx.clear();
         for (auto &&m : m_Models)
-            m->Colorpalettes() = m_Textures;
+            m->Colorpalettes = m_Textures;
     }
 
     CVector CQubicleBinaryFormat::ReadVector()
@@ -117,7 +117,7 @@ namespace VoxelOptimizer
             }
         }
 
-        mesh->SetBBox(CBBox(Beg, End));
+        mesh->BBox = CBBox(Beg, End);
     }
 
     void CQubicleBinaryFormat::ReadRLECompressed(VoxelMesh mesh)
@@ -185,7 +185,7 @@ namespace VoxelOptimizer
                 }
             }
         }
-        mesh->SetBBox(CBBox(Beg, End));
+        mesh->BBox = CBBox(Beg, End);
     }
 
     int CQubicleBinaryFormat::GetColorIdx(int color)

@@ -81,7 +81,7 @@ namespace VoxelOptimizer
         LoadNode();
 
         for (auto &&m : m_Models)
-            m->Colorpalettes() = m_Textures;     
+            m->Colorpalettes = m_Textures;     
     }
 
     void CQubicleFormat::LoadNode()
@@ -129,8 +129,8 @@ namespace VoxelOptimizer
         Skip(3); //Mysterious 3 bytes always 0x01 0x01 0x00
 
         VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
-        mesh->Materials() = m_Materials;
-        mesh->SetName(name);
+        mesh->Materials = m_Materials;
+        mesh->Name = name;
         mesh->SetSize(ReadVector());
 
         auto pos = ReadVector();
@@ -206,7 +206,7 @@ namespace VoxelOptimizer
         }
         free(Data);
 
-        mesh->SetBBox(CBBox(Beg, End));
+        mesh->BBox = CBBox(Beg, End);
         mesh->GetVoxels().generateVisibilityMask();
         m_Models.push_back(mesh);
     }

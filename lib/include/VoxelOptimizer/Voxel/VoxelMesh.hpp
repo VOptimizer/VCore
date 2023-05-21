@@ -110,7 +110,14 @@ namespace VoxelOptimizer
     }
 
     using Voxel = CVoxel*; //std::shared_ptr<CVoxel>;
-
+    
+    struct SChunk
+    {
+        size_t UniqueId;    //!< Unique identifier of the chunks. Only changes, if the voxel mesh is resized.
+        CBBox TotalBBox;    //!< The total bounding box of the chunk.
+        CBBox InnerBBox;    //!< The bounding box of the model inside the chunk.
+    };
+    
     class CVoxelOctree : public COctree<Voxel>
     {
         public:
@@ -119,9 +126,9 @@ namespace VoxelOptimizer
             CVoxelOctree(const CVectori &_size, int _depth = 10);
 
             std::map<CVectori, Voxel> queryVisible(bool opaque);
-            std::list<CBBox> queryDirtyChunks();
+            std::list<SChunk> queryDirtyChunks();
 
-            std::list<CBBox> queryBBoxes();
+            std::list<SChunk> queryBBoxes();
             void generateVisibilityMask();
 
             void updateVisibility(const CVectori &_Position);
@@ -145,7 +152,17 @@ namespace VoxelOptimizer
         using VoxelData = CVoxelOctree;//COctree<Voxel>;
 
         public:
-            CVoxelMesh(VoxelMode mode = VoxelMode::KEEP_ALL) : m_BlockCount(0), m_Mode(mode) 
+            // For the gui
+            std::string Name;
+            Texture Thumbnail;
+
+            CVector Pivot;
+            CBBox BBox;
+
+            std::vector<Material> Materials;                //!< Used materials
+            std::map<TextureType, Texture> Colorpalettes;   //!< Used colors / textures
+
+            CVoxelMesh(VoxelMode mode = VoxelMode::KEEP_ALL) : m_Mode(mode) 
             { }
 
             /**
@@ -155,7 +172,6 @@ namespace VoxelOptimizer
             {
                 m_Size = Size;
                 m_Voxels = VoxelData(m_Size, 10);
-                m_BlockCount = 0;
                 m_Pool.clear();
             }
 
@@ -175,7 +191,7 @@ namespace VoxelOptimizer
              */
             inline CBBox GetBBox() const
             {
-                return m_BBox;
+                return BBox;
             }
             
             /**
@@ -183,18 +199,18 @@ namespace VoxelOptimizer
              */
             inline void SetBBox(CBBox BBox)
             {
-                m_BBox = BBox;
+                BBox = BBox;
             }
 
             inline void RecalcBBox()
             {
                 std::lock_guard<std::recursive_mutex> lock(m_Lock);
-                m_BBox = CBBox(CVectori(INT32_MAX, INT32_MAX, INT32_MAX), CVectori(0, 0, 0));
+                BBox = CBBox(CVectori(INT32_MAX, INT32_MAX, INT32_MAX), CVectori(0, 0, 0));
 
                 for (auto &&v : m_Voxels)
                 {
-                    m_BBox.Beg = m_BBox.Beg.Min(v.first);
-                    m_BBox.End = m_BBox.End.Max(v.first + CVector(1, 1, 1));
+                    BBox.Beg = BBox.Beg.Min(v.first);
+                    BBox.End = BBox.End.Max(v.first + CVector(1, 1, 1));
                 }
             }
             
@@ -218,14 +234,14 @@ namespace VoxelOptimizer
              * @param Color: Color index.
              * @param Transparent: Is the block transparent?
              */
-            void SetVoxel(const CVector &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask = CVoxel::Visibility::VISIBLE);
+            void SetVoxel(const CVectori &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask = CVoxel::Visibility::VISIBLE);
 
             /**
              * @brief Removes a voxel on a given position
              * 
              * @param Pos: Position of the voxel to remove.
              */
-            void RemoveVoxel(const CVector &Pos);
+            void RemoveVoxel(const CVectori &Pos);
 
             /**
              * @brief Clears the mesh
@@ -240,7 +256,7 @@ namespace VoxelOptimizer
             /**
              * @return Gets a voxel on a given position.
              */
-            Voxel GetVoxel(const CVector &Pos);
+            Voxel GetVoxel(const CVectori &Pos);
 
             /**
              * @brief Gets a voxel on a given position.
@@ -248,57 +264,14 @@ namespace VoxelOptimizer
              * @param pos: Position of the voxel
              * @param OpaqueOnly: If true than only opaque voxels are returned, otherwise all transparent one.
              */
-            Voxel GetVoxel(const CVector &Pos, bool OpaqueOnly);
+            Voxel GetVoxel(const CVectori &Pos, bool OpaqueOnly);
 
             /**
              * @brief Gets the count of all setted blocks.
              */
             inline size_t GetBlockCount() const
             {
-                return m_BlockCount;
-            }
-
-            /**
-             * @brief Materials used by this mesh. 
-             */
-            inline std::vector<Material> &Materials()
-            {
-                return m_Materials;
-            }
-
-            inline std::map<TextureType, Texture> &Colorpalettes()
-            {
-                return m_Colorpalettes;
-            }
-            
-            inline std::string GetName() const
-            {
-                return m_Name;
-            }
-            
-            inline void SetName(std::string name)
-            {
-                m_Name = name;
-            }
-
-            inline Texture GetThumbnail() const
-            {
-                return m_Thumbnail;
-            }
-            
-            inline void SetThumbnail(Texture thumbnail)
-            {
-                m_Thumbnail = thumbnail;
-            }
-
-            inline CVector GetPivot() const
-            {
-                return m_Pivot;
-            }
-            
-            inline void SetPivot(CVector pivot)
-            {
-                m_Pivot = pivot;
+                return m_Voxels.size();
             }
             
             ~CVoxelMesh() = default;
@@ -307,21 +280,11 @@ namespace VoxelOptimizer
 
             void SetNormal(const CVector &Pos, const CVector &Neighbor, bool IsInvisible = true);
 
-            // For the gui
-            std::string m_Name;
-            Texture m_Thumbnail;
-
             CVectori m_Size;
-            CVector m_Pivot;
-            CBBox m_BBox;
-
             CObjectPool<CVoxel> m_Pool;
             
             VoxelData m_Voxels;
-            std::vector<Material> m_Materials;
-            std::map<TextureType, Texture> m_Colorpalettes;
 
-            size_t m_BlockCount;
             VoxelMode m_Mode;
             mutable std::recursive_mutex m_Lock;
     };
@@ -395,100 +358,71 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    inline std::list<CBBox> CVoxelOctree::queryDirtyChunks()
+    inline std::list<SChunk> CVoxelOctree::queryDirtyChunks()
     {
-        std::list<CBBox> ret;
-        if(this->m_Nodes)
+        std::list<SChunk> ret;
+        for (auto &&node : m_ContentNodes)
         {
-            for (size_t i = 0; i < NODES_COUNT; i++)
+            if(node->m_IsDirty)
             {
-                internal::COctreeNode<Voxel> *node = this->m_Nodes[i];
-                if(!node->m_IsDirty)
-                    continue;
-
                 node->m_IsDirty = false;
-
-                // Searches the next subdirty chunk.
-                size_t dirtyIdx = 0;
-                while(node->CanSubdivide() && node->m_Nodes)
-                {
-                    auto tmpNode = node->m_Nodes[dirtyIdx];
-                    if(!tmpNode->m_IsDirty)
-                    {
-                        dirtyIdx++;
-                        continue;
-                    }
-
-                    node = tmpNode;
-                    node->m_IsDirty = false;
-                    dirtyIdx = 0;
-                }
-
-                while (node != this)
-                {
-                    while(!node->m_IsDirty)
-                    {
-                        internal::COctreeNode<Voxel> *parent = node->m_Parent;
-                        if(!parent)
-                            break;
-
-                        size_t idx = parent->CalcIndex(node->m_BBox.Beg);
-                        if(idx < (NODES_COUNT - 1))
-                        {
-                            while (idx < (NODES_COUNT - 1))
-                            {
-                                idx++;
-                                node = parent->m_Nodes[idx];
-                                if(!node->m_IsDirty)
-                                {
-                                    node = parent;
-                                    continue;
-                                }
-
-                                node->m_IsDirty = false;
-                                dirtyIdx = 0;
-                                while(node->CanSubdivide() && node->m_Nodes)
-                                {
-                                    auto tmpNode = node->m_Nodes[dirtyIdx];
-                                    if(!tmpNode->m_IsDirty)
-                                    {
-                                        dirtyIdx++;
-                                        continue;
-                                    }
-
-                                    node = tmpNode;
-                                    node->m_IsDirty = false;
-                                    dirtyIdx = 0;
-                                }    
-                            }         
-                        }
-                        else
-                            node = parent;
-                    }
-
-                    if(node != this)
-                    {
-                        ret.push_back(node->m_InnerBBox);
-
-                        size_t idx = node->m_Parent->CalcIndex(node->m_BBox.Beg);
-                        if(idx < (NODES_COUNT - 1))
-                        {
-                            idx++;
-                            node = node->m_Parent->m_Nodes[idx];   
-                        }
-                        else
-                            node = node->m_Parent;
-                    }
-                }
+                ret.push_back({(size_t)node, node->m_BBox, node->m_InnerBBox});
             }
         }
+        
+
+        // if(this->m_Nodes)
+        // {
+        //     std::list<internal::COctreeNode<Voxel>*> dirtyNodes;
+
+        //     for (size_t i = 0; i < NODES_COUNT; i++)
+        //     {
+        //         internal::COctreeNode<Voxel> *node = this->m_Nodes[i];
+        //         while (node != this)
+        //         {
+        //             if(!node->m_IsDirty)
+        //                 break;
+
+        //             // Searches the next subdirty chunk.
+        //             // Goes the current path down to the bottom.
+        //             size_t dirtyIdx = 0;
+        //             while(node->CanSubdivide() && node->m_Nodes)
+        //             {
+        //                 auto tmpNode = node->m_Nodes[dirtyIdx];
+        //                 if(!tmpNode->m_IsDirty)
+        //                 {
+        //                     dirtyIdx++;
+        //                     if(dirtyIdx > (NODES_COUNT - 1))
+        //                         break;
+
+        //                     continue;
+        //                 }
+
+        //                 node = tmpNode;
+        //                 dirtyIdx = 0;
+        //             }
+
+        //             // Add all nodes with content to the list.
+        //             if(!node->m_Content.empty())
+        //                 dirtyNodes.push_back(node);
+
+        //             // Mark the current node as processed.
+        //             node->m_IsDirty = false;
+        //             node = node->m_Parent;
+        //         }
+        //     }
+
+        //     // Add the chunk data to the return value.
+        //     for (auto &&node : dirtyNodes)
+        //         ret.push_back({(size_t)node, node->m_BBox, node->m_InnerBBox});
+        // }
 
         return ret;
     }
 
-    inline std::list<CBBox> CVoxelOctree::queryBBoxes()
+    inline std::list<SChunk> CVoxelOctree::queryBBoxes()
     {
-        std::list<CBBox> ret;
+        std::list<SChunk> ret;
 
         if(this->m_Nodes)
         {
@@ -519,7 +453,7 @@ namespace VoxelOptimizer
 
                 if(node != this)
                 {
-                    ret.push_back(node->m_InnerBBox);
+                    ret.push_back({(size_t)node, node->m_BBox, node->m_InnerBBox});
 
                     size_t idx = node->m_Parent->CalcIndex(node->m_BBox.Beg);
                     if(idx < (NODES_COUNT - 1))
