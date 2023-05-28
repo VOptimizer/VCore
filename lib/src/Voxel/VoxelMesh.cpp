@@ -23,7 +23,6 @@
  */
 
 #include <map>
-#include <VoxelOptimizer/Voxel/Octree.hpp>
 #include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
 
 namespace VoxelOptimizer
@@ -39,19 +38,18 @@ namespace VoxelOptimizer
 
     CVoxel::CVoxel()
     {
-        VisibilityMask = Visibility::VISIBLE;
+        VisibilityMask = Visibility::INVISIBLE;
     }
 
     void CVoxelMesh::SetVoxel(const CVectori &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask)
     {
         //std::lock_guard<std::recursive_mutex> lock(m_Lock);
-        Voxel Tmp = m_Pool.alloc();
-
-        Tmp->Pos = Pos;
-        Tmp->Material = Material;
-        Tmp->Color = Color;
-        Tmp->Transparent = Transparent;
-        Tmp->VisibilityMask = mask;
+        CVoxel Tmp;// = m_Pool.alloc();
+        
+        Tmp.Material = Material;
+        Tmp.Color = Color;
+        Tmp.Transparent = Transparent;
+        Tmp.VisibilityMask = mask;
 
         m_Voxels.insert({Pos, Tmp});
     }

@@ -28,7 +28,6 @@
 #include "Slicer/Slicer.hpp"
 #include "Slicer/BetterSlicer.hpp"
 #include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
-#include <VoxelOptimizer/Meshing/VerticesReducer.hpp>
 #include <vector>
 
 #include "GreedyMesher.hpp"

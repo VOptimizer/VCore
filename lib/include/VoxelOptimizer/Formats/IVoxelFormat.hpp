@@ -42,8 +42,7 @@ namespace VoxelOptimizer
         QUBICLE_BIN,
         QUBICLE_BIN_TREE,
         QUBICLE_EXCHANGE,
-        QUBICLE,
-        VEDIT
+        QUBICLE
     };
 
     class IVoxelFormat;

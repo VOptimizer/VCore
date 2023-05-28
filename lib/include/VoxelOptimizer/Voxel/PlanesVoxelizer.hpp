@@ -26,6 +26,7 @@
 #define PLANESVOXELIZER_HPP
 
 #include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
+#include <VoxelOptimizer/Memory/Allocator.hpp>
 
 namespace VoxelOptimizer
 {

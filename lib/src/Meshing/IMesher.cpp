@@ -28,7 +28,6 @@
 #include "Implementations/MarchingCubesMesher.hpp"
 #include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
 #include "Implementations/SimpleMesher.hpp"
-#include "Implementations/FloodMesher.hpp"
 
 namespace VoxelOptimizer
 {
@@ -109,7 +108,6 @@ namespace VoxelOptimizer
             case MesherTypes::SIMPLE: return std::make_shared<CSimpleMesher>();
             case MesherTypes::GREEDY: return std::make_shared<CGreedyMesher>();
             case MesherTypes::MARCHING_CUBES: return std::make_shared<CMarchingCubesMesher>();
-            case MesherTypes::FLOOD: return std::make_shared<CFloodMesher>();
             default:
                 throw std::runtime_error("Invalid mesher type!");
         }

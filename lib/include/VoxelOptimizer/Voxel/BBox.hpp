@@ -35,7 +35,11 @@ namespace VoxelOptimizer
             CVectori Beg;
             CVectori End;
 
-            CBBox() {}
+            CBBox() = default;
+            CBBox(const CBBox &_Other)
+            {
+                *this = _Other;
+            } 
             CBBox(CVectori beg, CVectori end) : Beg(beg), End(end + CVectori(1, 1, 1)) {}
 
             inline CVector GetSize() const
@@ -46,6 +50,13 @@ namespace VoxelOptimizer
             inline bool ContainsPoint(const CVectori &v) const
             {
                 return (Beg.x <= v.x && Beg.y <= v.y && Beg.z <= v.z) && (End.x > v.x && End.y > v.y && End.z > v.z);
+            }
+
+            inline CBBox& operator=(const CBBox &_Other)
+            {
+                Beg = _Other.Beg;
+                End = _Other.End;
+                return *this;
             }
 
             ~CBBox() = default;

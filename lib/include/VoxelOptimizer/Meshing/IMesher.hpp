@@ -42,8 +42,7 @@ namespace VoxelOptimizer
     {
         SIMPLE,
         GREEDY,
-        MARCHING_CUBES,
-        FLOOD
+        MARCHING_CUBES
     };
 
     struct SMeshChunk : public SChunk

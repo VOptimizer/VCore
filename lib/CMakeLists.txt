@@ -7,6 +7,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelMesh.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/PlanesVoxelizer.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelSpace.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/MagicaVoxelFormat.cpp"
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/GoxelFormat.cpp"
@@ -16,20 +17,15 @@ set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelMesh.cpp"
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/Qubicle/QubicleBinaryTreeFormat.cpp"
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/Qubicle/QubicleExchangeFormat.cpp"
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/Qubicle/QubicleFormat.cpp"
-
          "${PROJECT_SOURCE_DIR}/src/Formats/IVoxelFormat.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/VEditFormat.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/SimpleMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/GreedyMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/IMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/MarchingCubesMesher.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/FloodMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/Slicer/Slicer.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/Slicer/BetterSlicer.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/Triangulation/Triangulate.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/MeshBuilder.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Meshing/VerticesReducer.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/IExporter.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Export/Implementations/WavefrontObjExporter.cpp"

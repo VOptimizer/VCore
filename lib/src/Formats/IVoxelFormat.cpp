@@ -29,7 +29,6 @@
 
 #include "../FileUtils.hpp"
 
-#include <VoxelOptimizer/Formats/VEditFormat.hpp>
 #include "Implementations/MagicaVoxelFormat.hpp"
 #include "Implementations/KenshapeFormat.hpp"
 #include "Implementations/GoxelFormat.hpp"
@@ -44,7 +43,6 @@ namespace VoxelOptimizer
     {
         switch (type)
         {
-            case LoaderType::VEDIT: return VoxelFormat(new CVEditFormat());
             case LoaderType::MAGICAVOXEL: return VoxelFormat(new CMagicaVoxelFormat());
             case LoaderType::GOXEL: return VoxelFormat(new CGoxelFormat());
             case LoaderType::KENSHAPE: return VoxelFormat(new CKenshapeFormat());
@@ -118,8 +116,6 @@ namespace VoxelOptimizer
             type = LoaderType::QUBICLE_EXCHANGE;
         else if(ext == "qbcl")
             type = LoaderType::QUBICLE;
-        else if(ext == "vedit")
-            type = LoaderType::VEDIT;
 
         return type;
     }

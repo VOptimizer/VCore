@@ -37,7 +37,6 @@
 // Formats
 #include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 #include <VoxelOptimizer/Formats/SceneNode.hpp>
-#include <VoxelOptimizer/Formats/VEditFormat.hpp>
 
 // Math
 #include <VoxelOptimizer/Math/Mat4x4.hpp>
@@ -50,7 +49,6 @@
 #include <VoxelOptimizer/Meshing/Mesh.hpp>
 #include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
 #include <VoxelOptimizer/Meshing/Texture.hpp>
-#include <VoxelOptimizer/Meshing/VerticesReducer.hpp>
 
 // Miscellaneous
 #include <VoxelOptimizer/Misc/Exceptions.hpp>

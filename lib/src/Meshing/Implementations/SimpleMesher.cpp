@@ -107,6 +107,7 @@ namespace VoxelOptimizer
                     auto it = m_Voxels.find(CVectori(x, y, z));
                     if(it != m_Voxels.end())
                     {
+                        CVectori vpos = it->first;
                         Voxel v = it->second;
                         for (uint8_t i = 0; i < 6; i++)
                         {
@@ -132,10 +133,10 @@ namespace VoxelOptimizer
                                         Normal = CVector(0, -1, 0);
 
 
-                                    v1 = CVector(v->Pos.x, v->Pos.z + PosZ, -v->Pos.y - 1.f) - boxCenter;
-                                    v2 = CVector(v->Pos.x, v->Pos.z + PosZ, -v->Pos.y) - boxCenter;
-                                    v3 = CVector(v->Pos.x + 1.f, v->Pos.z + PosZ, -v->Pos.y) - boxCenter;
-                                    v4 = CVector(v->Pos.x + 1.f, v->Pos.z + PosZ, -v->Pos.y - 1.f) - boxCenter;
+                                    v1 = CVector(vpos.x, vpos.z + PosZ, -vpos.y - 1.f) - boxCenter;
+                                    v2 = CVector(vpos.x, vpos.z + PosZ, -vpos.y) - boxCenter;
+                                    v3 = CVector(vpos.x + 1.f, vpos.z + PosZ, -vpos.y) - boxCenter;
+                                    v4 = CVector(vpos.x + 1.f, vpos.z + PosZ, -vpos.y - 1.f) - boxCenter;
                                 }break;
 
                                 case CVoxel::Visibility::LEFT:
@@ -150,10 +151,10 @@ namespace VoxelOptimizer
                                     else
                                         Normal = CVector(-1, 0, 0);
 
-                                    v1 = CVector(v->Pos.x + Posx, v->Pos.z, -v->Pos.y) - boxCenter;
-                                    v2 = CVector(v->Pos.x + Posx, v->Pos.z, -v->Pos.y - 1.f) - boxCenter;
-                                    v3 = CVector(v->Pos.x + Posx, v->Pos.z + 1.f, -v->Pos.y - 1.f) - boxCenter;
-                                    v4 = CVector(v->Pos.x + Posx, v->Pos.z + 1.f, -v->Pos.y) - boxCenter;
+                                    v1 = CVector(vpos.x + Posx, vpos.z, -vpos.y) - boxCenter;
+                                    v2 = CVector(vpos.x + Posx, vpos.z, -vpos.y - 1.f) - boxCenter;
+                                    v3 = CVector(vpos.x + Posx, vpos.z + 1.f, -vpos.y - 1.f) - boxCenter;
+                                    v4 = CVector(vpos.x + Posx, vpos.z + 1.f, -vpos.y) - boxCenter;
                                 }break;
 
                                 case CVoxel::Visibility::FORWARD:
@@ -168,10 +169,10 @@ namespace VoxelOptimizer
                                     else
                                         Normal = CVector(0, 0, 1);
 
-                                    v4 = CVector(v->Pos.x, v->Pos.z + 1.f, -v->Pos.y + PosY) - boxCenter;
-                                    v3 = CVector(v->Pos.x, v->Pos.z, -v->Pos.y + PosY) - boxCenter;
-                                    v2 = CVector(v->Pos.x + 1.f, v->Pos.z, -v->Pos.y + PosY) - boxCenter;
-                                    v1 = CVector(v->Pos.x + 1.f, v->Pos.z + 1.f, -v->Pos.y + PosY) - boxCenter;
+                                    v4 = CVector(vpos.x, vpos.z + 1.f, -vpos.y + PosY) - boxCenter;
+                                    v3 = CVector(vpos.x, vpos.z, -vpos.y + PosY) - boxCenter;
+                                    v2 = CVector(vpos.x + 1.f, vpos.z, -vpos.y + PosY) - boxCenter;
+                                    v1 = CVector(vpos.x + 1.f, vpos.z + 1.f, -vpos.y + PosY) - boxCenter;
                                 }break;
                             }
 
