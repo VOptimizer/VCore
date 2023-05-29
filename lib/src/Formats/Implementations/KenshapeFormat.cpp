@@ -122,7 +122,7 @@ namespace VoxelOptimizer
 
         m->Colorpalettes = m_Textures;
         m->BBox = CBBox(Beg, End);
-        m->GetVoxels().generateVisibilityMask();
+        m->GenerateVisibilityMask();
 
         m_Models.push_back(m);
     }

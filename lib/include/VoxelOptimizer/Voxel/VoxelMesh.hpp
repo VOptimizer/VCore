@@ -167,6 +167,29 @@ namespace VoxelOptimizer
             {
                 return m_Voxels.size();
             }
+
+            /**
+             * @brief Generates the visibility mask for each voxel.
+             * @note Only dirty chunks are queried.
+             */
+            void GenerateVisibilityMask();
+
+            /**
+             * @brief Queries all visible voxels.
+             * @param opaque: If true only opaque voxels are returned, otherwise only none opaque voxels are returned.
+             */
+            std::map<CVectori, Voxel> QueryVisible(bool opaque) const;
+
+            /**
+             * @return Gets a list of all chunks which has been modified.
+             * @note Marks all chunks as processed.
+             */
+            std::list<SChunk> QueryDirtyChunks();
+
+            /**
+             * @return Returns all chunks.
+             */
+            std::list<SChunk> QueryChunks() const;
             
             ~CVoxelMesh() = default;
         private:   

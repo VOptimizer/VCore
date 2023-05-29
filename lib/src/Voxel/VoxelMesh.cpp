@@ -43,7 +43,7 @@ namespace VoxelOptimizer
 
     void CVoxelMesh::SetVoxel(const CVectori &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask)
     {
-        //std::lock_guard<std::recursive_mutex> lock(m_Lock);
+        std::lock_guard<std::recursive_mutex> lock(m_Lock);
         CVoxel Tmp;// = m_Pool.alloc();
         
         Tmp.Material = Material;
@@ -105,6 +105,30 @@ namespace VoxelOptimizer
         return voxel;
     }
 
+    void CVoxelMesh::GenerateVisibilityMask()
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_Lock);
+        m_Voxels.generateVisibilityMask();
+    }
+
+    std::map<CVectori, Voxel> CVoxelMesh::QueryVisible(bool opaque) const
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_Lock);
+        return m_Voxels.queryVisible(opaque);
+    }
+
+    std::list<SChunk> CVoxelMesh::QueryDirtyChunks()
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_Lock);
+        return m_Voxels.queryDirtyChunks();
+    }
+
+    std::list<SChunk> CVoxelMesh::QueryChunks() const
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_Lock);
+        return m_Voxels.queryChunks();
+    }
+    
     void CVoxelMesh::SetNormal(const CVector &Pos, const CVector &Neighbor, bool IsInvisible)
     {
         static const std::map<CVector, std::pair<CVoxel::Visibility, CVoxel::Visibility>> NEIGHBOR_INDEX = {

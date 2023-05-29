@@ -385,73 +385,59 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    std::list<SMeshChunk> CMarchingCubesMesher::GenerateChunks(VoxelMesh m, bool onlyDirty)
+    SMeshChunk CMarchingCubesMesher::GenerateMeshChunk(VoxelMesh m, const SChunk &_Chunk, bool Opaque)
     {
-        std::list<SMeshChunk> ret;
-        auto &voxels = m->GetVoxels();
-        m_Mesh = m;
+        CMeshBuilder builder;
+        builder.AddTextures(m->Colorpalettes);
 
-        std::list<SChunk> chunks;
-        if(!onlyDirty)
-            chunks = voxels.queryBBoxes();
-        else
-            chunks = voxels.queryDirtyChunks();
-
-        auto bbox = m->BBox;
-        CVector beg = bbox.Beg;
-        std::swap(beg.y, beg.z);
-        beg.z *= -1;
-
-        CVector boxCenter = bbox.GetSize() / 2;
+        auto totalBBox = m->BBox;
+        CVector boxCenter = totalBBox.GetSize() / 2;
         std::swap(boxCenter.y, boxCenter.z);
         boxCenter.z *= -1;
 
-        for (auto &&c : chunks)
+        for(float x = _Chunk.InnerBBox.Beg.x - 1; x < _Chunk.InnerBBox.End.x + 1; x++)
         {
-            CMeshBuilder builder;
-            builder.AddTextures(m->Colorpalettes);
-
-            for(float x = c.InnerBBox.Beg.x - 1; x < c.InnerBBox.End.x + 1; x++)
+            for(float y = _Chunk.InnerBBox.Beg.y - 1; y < _Chunk.InnerBBox.End.y + 1; y++)
             {
-                for(float y = c.InnerBBox.Beg.y - 1; y < c.InnerBBox.End.y + 1; y++)
+                for(float z = _Chunk.InnerBBox.Beg.z - 1; z < _Chunk.InnerBBox.End.z + 1; z++)
                 {
-                    for(float z = c.InnerBBox.Beg.z - 1; z < c.InnerBBox.End.z + 1; z++)
-                    {
-                        uint8_t idx = GetTableIndex(m, CVector(x, y, z));
-                        auto edges = triangleConnectionTable[idx];
+                    uint8_t idx = GetTableIndex(m, CVector(x, y, z));
+                    auto edges = triangleConnectionTable[idx];
 
-                        CreateFaces(builder, CVector(x, y, z), beg, boxCenter, edges);
-                    }
+                    CreateFaces(builder, CVector(x, y, z), boxCenter, edges);
                 }
             }
-
-            SMeshChunk chunk;
-            chunk.UniqueId = c.UniqueId;
-            chunk.InnerBBox = c.InnerBBox;
-            chunk.TotalBBox = c.TotalBBox;
-            chunk.Mesh = builder.Build();
-            ret.push_back(chunk);
         }
 
+        SMeshChunk chunk;
+        chunk.UniqueId = _Chunk.UniqueId;
+        chunk.InnerBBox = _Chunk.InnerBBox;
+        chunk.TotalBBox = _Chunk.TotalBBox;
+        chunk.Mesh = builder.Build();
+        return chunk;
+    }
+
+    std::list<SMeshChunk> CMarchingCubesMesher::GenerateChunks(VoxelMesh m, bool onlyDirty)
+    {
+        m_Mesh = m;
+        std::list<SMeshChunk> ret = IMesher::GenerateChunks(m, onlyDirty);
         for (auto &&pair : ret)
         {
             auto mesh = pair.Mesh;
             for (auto &&uv : mesh->UVs)
                 uv = CVector(((float)(uv.x + 0.5f)) / mesh->Textures[TextureType::DIFFIUSE]->Size().x, 0.5f, 0);
         }
-
-        m_Voxels.clear();
         return ret;
     }
 
     Voxel CMarchingCubesMesher::GetVoxel(CVector pos, int edge)
     {
         auto corners = Corners[edge];
-        auto voxel = m_Mesh->GetVoxel(pos + corners.first);
-        if(!voxel)
-            voxel = m_Mesh->GetVoxel(pos + corners.second);
+        auto it = m_Voxels.find(pos + corners.first);
+        if(it == m_Voxels.end())
+            it = m_Voxels.find(pos + corners.second);
 
-        return voxel;
+        return it->second;
     }
 
     CVector GetSolidIndex(int &oldidx, CVector idxs)
@@ -489,7 +475,7 @@ namespace VoxelOptimizer
         return idxs;     
     }
 
-    void CMarchingCubesMesher::CreateFaces(CMeshBuilder &builder, CVector pos, CVector beg, CVector center, short *edges)
+    void CMarchingCubesMesher::CreateFaces(CMeshBuilder &builder, CVector pos, CVector center, short *edges)
     {
         int cidxtmp = -1;
 

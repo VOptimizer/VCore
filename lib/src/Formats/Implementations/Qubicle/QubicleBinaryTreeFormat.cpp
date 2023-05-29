@@ -173,7 +173,7 @@ namespace VoxelOptimizer
         free(Data);
 
         mesh->BBox = CBBox(Beg, End);
-        mesh->GetVoxels().generateVisibilityMask();
+        mesh->GenerateVisibilityMask();
         m_Models.push_back(mesh);
     }
 
@@ -241,7 +241,7 @@ namespace VoxelOptimizer
         free(Data);
 
         mesh->BBox = CBBox(Beg, End);
-        mesh->GetVoxels().generateVisibilityMask();
+        mesh->GenerateVisibilityMask();
         m_Models.push_back(mesh);
 
         uint32_t childCount = ReadData<uint32_t>();

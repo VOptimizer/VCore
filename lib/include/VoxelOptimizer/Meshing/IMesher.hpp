@@ -76,10 +76,12 @@ namespace VoxelOptimizer
              * @param m: Voxel mesh to meshify.
              * @param onlyDirty: Meshes only dirty chunks.
              */
-            virtual std::list<SMeshChunk> GenerateChunks(VoxelMesh m, bool onlyDirty = false) = 0;
+            virtual std::list<SMeshChunk> GenerateChunks(VoxelMesh m, bool onlyDirty = false);
 
             virtual ~IMesher() = default;
         protected:
+            virtual SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunk &_Chunk, bool Opaque) { return {}; }
+
             std::list<Mesh> GenerateScene(SceneNode sceneTree, CMat4x4 modelMatrix, bool mergeChilds = false);
             std::vector<Material> m_CurrentUsedMaterials;
             std::map<CVectori, Voxel> m_Voxels;

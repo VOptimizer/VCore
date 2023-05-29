@@ -122,15 +122,17 @@ namespace VoxelOptimizer
     {
         std::list<SChunk> ret;
         for (auto &&c : m_Chunks)
+        {
             if(c.second.IsDirty)
             {
                 c.second.IsDirty = false;
                 ret.push_back({(size_t)&c, CBBox(c.first, c.first + m_ChunkSize - CVectori(1, 1, 1)), c.second.inner_bbox(c.first)});
             }
+        }
         return ret;
     }
 
-    std::list<SChunk> CVoxelSpace::queryBBoxes() const
+    std::list<SChunk> CVoxelSpace::queryChunks() const
     {
         std::list<SChunk> ret;
         for (auto &&c : m_Chunks)
@@ -140,13 +142,56 @@ namespace VoxelOptimizer
 
     void CVoxelSpace::generateVisibilityMask()
     {
+        const static std::vector<std::pair<CVector, int>> AXIS_DIRECTIONS = {
+            {CVector(1, 0, 0), 0},
+            {CVector(0, 1, 0), 1},
+            {CVector(0, 0, 1), 2}
+        };
+
         for (auto &&c : m_Chunks)
         {
+            if(!c.second.IsDirty)
+                continue;
+
             auto bbox = CBBox(c.first, m_ChunkSize - CVectori(1, 1, 1));
             auto inner = c.second.inner_bbox(bbox.Beg);
             
             CVectori beg = inner.Beg;
             CVectori end = inner.End;
+
+            // for (int z = beg.z; z < end.z - 1; z++)
+            // {
+            //     for (int y = beg.y; y < end.y - 1; y++)
+            //     {
+            //         for (int x = beg.x; x < end.x - 1; x++)
+            //         {
+            //             Voxel current = c.second.find(CVectori(x, y, z), bbox);
+
+            //             for (auto &&axis : AXIS_DIRECTIONS)
+            //             {
+            //                 CVectori pos(x, y, z);
+
+            //                 // Checks boundary.
+            //                 if(current && pos.v[axis.second] == ((bbox.Beg.v[axis.second] + bbox.End.v[axis.second]) - 1))
+            //                 {
+            //                     pos.v[axis.second] += 1;
+
+            //                     auto ocit = find(pos);
+            //                     if(ocit != this->end())
+            //                         CheckVisibility(current, ocit->second, axis.second);
+            //                 }
+            //                 else
+            //                 {
+            //                     pos += axis.first;
+            //                     Voxel other = c.second.find(pos, bbox);
+            //                     if(other)
+            //                         CheckVisibility(current, other, axis.second);
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
+            
 
             for (char axis = 0; axis < 3; axis++)
             {
@@ -182,7 +227,7 @@ namespace VoxelOptimizer
                         }
 
                         // Checks boundary.
-                        if(current) //&& current->Pos.v[axis2] == (bbox.End.v[axis2] /*- 1*/))
+                        if(current && pos.v[axis2] == ((bbox.Beg.v[axis2] + bbox.End.v[axis2])- 1))
                         {
                             pos.v[axis2] += 1;
 
@@ -397,6 +442,13 @@ namespace VoxelOptimizer
     Voxel CVoxelSpace::CChunk::find(const CVectori &_v, const CBBox &_ChunkDim) const
     {
         CVectori relPos = (_v - _ChunkDim.Beg).Abs();
+
+        if(relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z > 4096)
+        {
+            int i = 0;
+            i++;
+        }
+
         CVoxel &vox = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
         if(vox.IsVisible())
             return &vox;

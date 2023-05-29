@@ -97,8 +97,7 @@ namespace VoxelOptimizer
                             throw CVoxelLoaderException("Can't understand the format.");
 
                         ProcessXYZI(m);
-                        auto &voxels = m->GetVoxels();
-                        voxels.generateVisibilityMask();
+                        m->GenerateVisibilityMask();
                         // auto visible = voxels.queryVisible();
                         m_Models.push_back(m);
                         auto halfSize = (m->GetSize() / 2.0);

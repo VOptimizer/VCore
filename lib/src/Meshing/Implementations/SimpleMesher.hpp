@@ -33,13 +33,10 @@ namespace VoxelOptimizer
     {
         public:
             CSimpleMesher() = default;
-
-            std::list<SMeshChunk> GenerateChunks(VoxelMesh m, bool onlyDirty = false) override;
-
             ~CSimpleMesher() = default;
 
-        private:
-            Mesh GenerateMesh(VoxelMesh m, const CBBox &chunk);
+        protected:
+            SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunk &_Chunk, bool Opaque) override;
     };
 } // namespace VoxelOptimizer
 

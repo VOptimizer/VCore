@@ -28,12 +28,84 @@
 #include "Implementations/MarchingCubesMesher.hpp"
 #include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
 #include "Implementations/SimpleMesher.hpp"
+#include <future>
 
 namespace VoxelOptimizer
 {
+    template<typename R>
+    bool is_ready(std::future<R> const& f)
+    { return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }
+
     std::list<Mesh> IMesher::GenerateScene(SceneNode sceneTree, bool mergeChilds)
     {
         return GenerateScene(sceneTree, CMat4x4(), mergeChilds);
+    }
+
+    std::list<SMeshChunk> IMesher::GenerateChunks(VoxelMesh m, bool onlyDirty)
+    {
+        std::list<SMeshChunk> ret;
+
+        m_Voxels = m->QueryVisible(true);
+
+        std::list<SChunk> chunks;
+        if(!onlyDirty)
+            chunks = m->QueryChunks();
+        else
+            chunks = m->QueryDirtyChunks();
+
+        std::list<std::future<SMeshChunk>> futures;
+        for (auto &&c : chunks)
+        {
+            futures.push_back(std::async(&IMesher::GenerateMeshChunk, this, m, c, true));
+            while(futures.size() >= std::thread::hardware_concurrency())
+            {
+                auto it = futures.begin();
+                while (it != futures.end())
+                {
+                    if(is_ready(*it))
+                    {
+                        auto result = it->get();
+                        ret.push_back(result);
+                        it = futures.erase(it);
+                    }
+                    else
+                        it++;
+                }
+            }
+        }
+
+        auto it = futures.begin();
+        while (it != futures.end())
+        {
+            it->wait();
+            auto result = it->get();
+            ret.push_back(result);
+            it = futures.erase(it);
+        }
+
+        m_Voxels = m->QueryVisible(false);
+        if(!m_Voxels.empty())
+        {
+            for (auto &&c : chunks)        
+            {
+                auto mesh = GenerateMeshChunk(m, c, false);
+                auto it = std::find_if(ret.begin(), ret.end(), [&c](const SMeshChunk &_Chunk) {
+                    return _Chunk.UniqueId == c.UniqueId;
+                });
+
+                // Merge the transparent chunk with the opaque one.
+                if(it != ret.end())
+                {
+                    CMeshBuilder builder;
+                    builder.Merge(it->Mesh, std::vector<Mesh>() = { mesh.Mesh });
+                }
+                else
+                    ret.push_back(mesh);
+            }
+        }
+        m_Voxels.clear();
+        
+        return ret;
     }
 
     Mesh IMesher::GenerateMesh(VoxelMesh m)

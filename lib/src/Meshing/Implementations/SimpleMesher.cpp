@@ -28,63 +28,7 @@
 
 namespace VoxelOptimizer
 {
-    std::list<SMeshChunk> CSimpleMesher::GenerateChunks(VoxelMesh m, bool onlyDirty)
-    {
-        std::list<SMeshChunk> ret;
-        auto &voxels = m->GetVoxels();
-
-        // Mesh all opaque voxels
-        m_Voxels = voxels.queryVisible(true);
-    	std::list<SChunk> chunks;
-    	if(!onlyDirty)
-            chunks = voxels.queryBBoxes();
-        else
-            chunks = voxels.queryDirtyChunks();
-
-        for (auto &&c : chunks)        
-        {
-            SMeshChunk chunk;
-            chunk.UniqueId = c.UniqueId;
-            chunk.InnerBBox = c.InnerBBox;
-            chunk.TotalBBox = c.TotalBBox;
-            chunk.Mesh = GenerateMesh(m, c.InnerBBox);
-            ret.push_back(chunk);
-        }
-
-        // Mesh all transparent voxels
-        m_Voxels = voxels.queryVisible(false);
-        if(!m_Voxels.empty())
-        {
-            for (auto &&c : chunks)        
-            {
-                auto mesh = GenerateMesh(m, c.InnerBBox);
-                auto it = std::find_if(ret.begin(), ret.end(), [&c](const SMeshChunk &_Chunk) {
-                    return _Chunk.UniqueId == c.UniqueId;
-                });
-
-                // Merge the transparent chunk with the opaque one.
-                if(it != ret.end())
-                {
-                    CMeshBuilder builder;
-                    builder.Merge(it->Mesh, std::vector<Mesh>() = { mesh });
-                }
-                else
-                {
-                    SMeshChunk chunk;
-                    chunk.UniqueId = c.UniqueId;
-                    chunk.InnerBBox = c.InnerBBox;
-                    chunk.TotalBBox = c.TotalBBox;
-                    chunk.Mesh = mesh;
-                    ret.push_back(chunk);
-                }
-            }
-        }
-
-        m_Voxels.clear();
-        return ret;
-    }
-
-    Mesh CSimpleMesher::GenerateMesh(VoxelMesh m, const CBBox &chunk)
+    SMeshChunk CSimpleMesher::GenerateMeshChunk(VoxelMesh m, const SChunk &_Chunk, bool Opaque)
     {
         CMeshBuilder builder;
         builder.AddTextures(m->Colorpalettes);
@@ -98,11 +42,11 @@ namespace VoxelOptimizer
         std::swap(boxCenter.y, boxCenter.z);
         boxCenter.z *= -1;
 
-        for(int x = chunk.Beg.x; x < chunk.End.x; x++)
+        for(int x = _Chunk.InnerBBox.Beg.x; x < _Chunk.InnerBBox.End.x; x++)
         {
-            for(int y = chunk.Beg.y; y < chunk.End.y; y++)
+            for(int y = _Chunk.InnerBBox.Beg.y; y < _Chunk.InnerBBox.End.y; y++)
             {
-                for(int z = chunk.Beg.z; z < chunk.End.z; z++)
+                for(int z = _Chunk.InnerBBox.Beg.z; z < _Chunk.InnerBBox.End.z; z++)
                 {
                     auto it = m_Voxels.find(CVectori(x, y, z));
                     if(it != m_Voxels.end())
@@ -183,6 +127,12 @@ namespace VoxelOptimizer
             }
         }
 
-        return builder.Build();
+        SMeshChunk chunk;
+        chunk.UniqueId = _Chunk.UniqueId;
+        chunk.InnerBBox = _Chunk.InnerBBox;
+        chunk.TotalBBox = _Chunk.TotalBBox;
+        chunk.Mesh = builder.Build();
+
+        return chunk;
     }
 } // namespace VoxelOptimizer

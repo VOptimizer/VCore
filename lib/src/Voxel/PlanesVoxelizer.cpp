@@ -74,7 +74,7 @@ namespace VoxelOptimizer
         if(!rightsize.IsZero())
             ProjectTexture(_planes, _info.Right, 0, true);
 
-        m_Mesh->GetVoxels().generateVisibilityMask();
+        m_Mesh->GenerateVisibilityMask();
     }
 
     void CPlanesVoxelizer::ProjectPlanes(Texture _planes, const SPlanesInfo &_info)

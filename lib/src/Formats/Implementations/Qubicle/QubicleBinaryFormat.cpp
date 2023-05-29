@@ -70,7 +70,7 @@ namespace VoxelOptimizer
             else
                 ReadRLECompressed(mesh);
 
-            mesh->GetVoxels().generateVisibilityMask();
+            mesh->GenerateVisibilityMask();
             m_Models.push_back(mesh);
         }
 

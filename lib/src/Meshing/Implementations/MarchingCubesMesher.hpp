@@ -39,10 +39,13 @@ namespace VoxelOptimizer
 
             ~CMarchingCubesMesher() = default;
 
+        protected:
+            SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunk &_Chunk, bool Opaque) override;
+
         private:
             VoxelMesh m_Mesh;
 
-            void CreateFaces(CMeshBuilder &builder, CVector pos, CVector beg, CVector center, short *edges);
+            void CreateFaces(CMeshBuilder &builder, CVector pos, CVector center, short *edges);
             Voxel GetVoxel(CVector pos, int edge);
     };
 } // namespace VoxelOptimizer

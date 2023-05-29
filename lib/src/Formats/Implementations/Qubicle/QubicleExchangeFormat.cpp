@@ -50,7 +50,7 @@ namespace VoxelOptimizer
         m_SceneTree->AddChild(sceneNode);
 
         mesh->Colorpalettes = m_Textures;
-        mesh->GetVoxels().generateVisibilityMask();
+        mesh->GenerateVisibilityMask();
         m_Models.push_back(mesh);
     }
 

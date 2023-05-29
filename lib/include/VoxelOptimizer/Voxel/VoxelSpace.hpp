@@ -118,7 +118,7 @@ namespace VoxelOptimizer
             /**
              * @return Returns all chunks.
              */
-            std::list<SChunk> queryBBoxes() const;
+            std::list<SChunk> queryChunks() const;
 
             /**
              * @brief Generates and updates all the visibility masks of the voxels.
