@@ -301,21 +301,6 @@ namespace VoxelOptimizer
         Math::Vec3f(0.5, -0.5, 0),
         Math::Vec3f(0.5, 0.5, 0),
         Math::Vec3f(-0.5, 0.5, 0),
-
-        // Math::Vec3f(0, 0, 0),
-        // Math::Vec3f(1, 0, 0),
-        // Math::Vec3f(0, 0, 1),
-        // Math::Vec3f(0, 0, 0),
-
-        // Math::Vec3f(0, 1, 0),
-        // Math::Vec3f(1, 1, 0),
-        // Math::Vec3f(0, 1, 1),
-        // Math::Vec3f(0, 1, 0),
-
-        // Math::Vec3f(0, 0, 0),
-        // Math::Vec3f(1, 0, 0),
-        // Math::Vec3f(1, 0, 1),
-        // Math::Vec3f(0, 0, 1),
     };
 
     std::vector<std::pair<Math::Vec3f, Math::Vec3f>> Corners = {
@@ -341,16 +326,6 @@ namespace VoxelOptimizer
         int bitPos = 0;
 
         std::vector<Math::Vec3f> cube = {
-            // Math::Vec3f(-0.5, -0.5, -0.5),
-            // Math::Vec3f(0.5, -0.5, -0.5),
-            // Math::Vec3f(0.5, 0.5, -0.5),
-            // Math::Vec3f(-0.5, 0.5, -0.5),
-
-            // Math::Vec3f(-0.5, -0.5, 0.5),
-            // Math::Vec3f(0.5, -0.5, 0.5),
-            // Math::Vec3f(0.5, 0.5, 0.5),
-            // Math::Vec3f(-0.5, 0.5, 0.5)
-
             Math::Vec3f(0, 0, 0),
             Math::Vec3f(1, 0, 0),
             Math::Vec3f(1, 1, 0),
@@ -360,16 +335,6 @@ namespace VoxelOptimizer
             Math::Vec3f(1, 0, 1),
             Math::Vec3f(1, 1, 1),
             Math::Vec3f(0, 1, 1)
-
-            // Math::Vec3f(-1, -1, -1),
-            // Math::Vec3f(0, -1, -1),
-            // Math::Vec3f(0, 0, -1),
-            // Math::Vec3f(-1, 0, -1),
-
-            // Math::Vec3f(-1, -1, 0),
-            // Math::Vec3f(0, -1, 0),
-            // Math::Vec3f(0, 0, 0),
-            // Math::Vec3f(-1, 0, 0)
         };
 
         for (auto &&c : cube)
@@ -392,18 +357,16 @@ namespace VoxelOptimizer
 
         auto totalBBox = m->BBox;
         Math::Vec3f boxCenter = totalBBox.GetSize() / 2;
-        std::swap(boxCenter.y, boxCenter.z);
-        boxCenter.z *= -1;
 
         m_ChunkDimensions = CBBox(_Chunk.TotalBBox.Beg, _Chunk.TotalBBox.GetSize());
         m_Chunk = _Chunk.Chunk;
         m_InnerBBox = _Chunk.InnerBBox;
 
-        for(float x = _Chunk.InnerBBox.Beg.x - 1; x <= _Chunk.InnerBBox.End.x + 1; x++)
+        for(int x = _Chunk.InnerBBox.Beg.x - 1; x <= _Chunk.InnerBBox.End.x + 1; x++)
         {
-            for(float y = _Chunk.InnerBBox.Beg.y - 1; y <= _Chunk.InnerBBox.End.y + 1; y++)
+            for(int y = _Chunk.InnerBBox.Beg.y - 1; y <= _Chunk.InnerBBox.End.y + 1; y++)
             {
-                for(float z = _Chunk.InnerBBox.Beg.z - 1; z <= _Chunk.InnerBBox.End.z + 1; z++)
+                for(int z = _Chunk.InnerBBox.Beg.z - 1; z <= _Chunk.InnerBBox.End.z + 1; z++)
                 {
                     uint8_t idx = GetTableIndex(m, Math::Vec3f(x, y, z));
                     auto edges = triangleConnectionTable[idx];
@@ -510,13 +473,9 @@ namespace VoxelOptimizer
             v2.Pos = pos + positionTable[e2] + Math::Vec3f(1, 1, 1);
             v3.Pos = pos + positionTable[e3] + Math::Vec3f(1, 1, 1);
 
-            std::swap(v1.Pos.y, v1.Pos.z);
-            std::swap(v2.Pos.y, v2.Pos.z);
-            std::swap(v3.Pos.y, v3.Pos.z);
-
-            v1.Pos = v1.Pos * Math::Vec3f(1, 1, -1) - center;
-            v2.Pos = v2.Pos * Math::Vec3f(1, 1, -1) - center;
-            v3.Pos = v3.Pos * Math::Vec3f(1, 1, -1) - center;
+            v1.Pos = v1.Pos * Math::Vec3f(1, 1, 1) - center;
+            v2.Pos = v2.Pos * Math::Vec3f(1, 1, 1) - center;
+            v3.Pos = v3.Pos * Math::Vec3f(1, 1, 1) - center;
 
             auto voxel1 = GetVoxel(pos, e1);
             auto voxel2 = GetVoxel(pos, e2);

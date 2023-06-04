@@ -30,7 +30,6 @@
 #include <vector>
 #include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 #include <VoxelOptimizer/Meshing/Mesh.hpp>
-#include <VoxelOptimizer/Memory/Allocator.hpp>
 
 namespace VoxelOptimizer
 {
@@ -89,8 +88,8 @@ namespace VoxelOptimizer
 
             ~CMeshBuilder() = default;
         private:
-            using VectorIndexMap = VectorMap<int>; //std::map<Math::Vec3f, int, std::less<Math::Vec3f>, CAllocator<Math::Vec3f>>;
-            using MaterialFacesMap = std::map<Material, GroupedFaces, std::less<Material>, CAllocator<Material>>;
+            using VectorIndexMap = VectorMap<int>;
+            using MaterialFacesMap = std::map<Material, GroupedFaces, std::less<Material>>;
 
             int AddPosition(Math::Vec3f _pos);
             int AddNormal(Math::Vec3f _normal);

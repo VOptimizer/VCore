@@ -132,13 +132,13 @@ namespace VoxelOptimizer
         }
         auto texIT = m_Textures.find(TextureType::DIFFIUSE);
         if(texIT == m_Textures.end())
-            m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture(Math::Vec2ui(m_ColorMapping.size(), 1)));
+            m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>(Math::Vec2ui(m_ColorMapping.size(), 1));
 
         if(m_HasEmission)
         {
             auto texIT = m_Textures.find(TextureType::EMISSION);
             if(texIT == m_Textures.end())
-                m_Textures[TextureType::EMISSION] = Texture(new CTexture(Math::Vec2ui(m_ColorMapping.size(), 1)));
+                m_Textures[TextureType::EMISSION] = std::make_shared<CTexture>(Math::Vec2ui(m_ColorMapping.size(), 1));
         }
 
         // Creates the used color palette.
@@ -179,9 +179,11 @@ namespace VoxelOptimizer
 
         Math::Vec3i Size;
 
+        // Since in MagicaVoxel the z axis is the gravity axis (Up axis), we need to read the vector in the following order xzy.
+        // So the gravity axis will be the y axis.
         Size.x = ReadData<int>();
-        Size.y = ReadData<int>();
         Size.z = ReadData<int>();
+        Size.y = ReadData<int>();
 
         Ret->SetSize(Size);
 
@@ -207,9 +209,11 @@ namespace VoxelOptimizer
 
             ReadData((char*)data, sizeof(data));            
 
+            // Since in MagicaVoxel the z axis is the gravity axis (Up axis), we need to read the vector in the following order xzy.
+            // So the gravity axis will be the y axis.
             vec.x = data[0];
-            vec.y = data[1];
-            vec.z = data[2];
+            vec.y = data[2];
+            vec.z = data[1];
             int MatIdx = data[3];
 
             Beg = Beg.min(vec);
@@ -262,7 +266,7 @@ namespace VoxelOptimizer
     void CMagicaVoxelFormat::ProcessMaterialAndSceneGraph()
     {
         std::map<int, Node> nodes;
-        m_Materials.push_back(Material(new CMaterial()));
+        m_Materials.push_back(std::make_shared<CMaterial>());
 
         if(!IsEof())
         {
@@ -275,7 +279,7 @@ namespace VoxelOptimizer
 
                     if(strncmp(Tmp.ID, "MATL", sizeof(Tmp.ID)) == 0)
                     {
-                        Material Mat = Material(new CMaterial());
+                        Material Mat = std::make_shared<CMaterial>();
                         int ID = ReadData<int>();
                         int KeyValueCount = ReadData<int>();
 

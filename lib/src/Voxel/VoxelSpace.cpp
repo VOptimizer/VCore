@@ -199,10 +199,10 @@ namespace VoxelOptimizer
 
     void CVoxelSpace::generateVisibilityMask()
     {
-        const static std::vector<std::pair<Math::Vec3f, int>> AXIS_DIRECTIONS = {
-            {Math::Vec3f(1, 0, 0), 0},
-            {Math::Vec3f(0, 1, 0), 1},
-            {Math::Vec3f(0, 0, 1), 2}
+        const static std::vector<std::pair<Math::Vec3i, int>> AXIS_DIRECTIONS = {
+            {Math::Vec3i(1, 0, 0), 0},
+            {Math::Vec3i(0, 1, 0), 1},
+            {Math::Vec3i(0, 0, 1), 2}
         };
 
         for (auto &&c : m_Chunks)
@@ -222,9 +222,9 @@ namespace VoxelOptimizer
                 int axis2 = (axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
                 Voxel current;
 
-                for (int x = beg.v[axis]; x < end.v[axis]; x++)
+                for (int x = beg.v[axis]; x <= end.v[axis]; x++)
                 {
-                    for (int y = beg.v[axis1]; y < end.v[axis1]; y++)
+                    for (int y = beg.v[axis1]; y <= end.v[axis1]; y++)
                     {
                         // Reset current
                         Math::Vec3i pos;
@@ -233,7 +233,7 @@ namespace VoxelOptimizer
                         pos.v[axis2] = beg.v[axis2];
 
                         current = c.second.find(pos, bbox);
-                        for (int z = beg.v[axis2] + 1; z < end.v[axis2]; z++)
+                        for (int z = beg.v[axis2] + 1; z <= end.v[axis2]; z++)
                         {
                             pos.v[axis] = x;
                             pos.v[axis1] = y;
@@ -268,8 +268,8 @@ namespace VoxelOptimizer
     {
         const static std::pair<CVoxel::Visibility, CVoxel::Visibility> ADJACENT_FACES[3] = {
             {~CVoxel::Visibility::RIGHT, ~CVoxel::Visibility::LEFT},
-            {~CVoxel::Visibility::FORWARD, ~CVoxel::Visibility::BACKWARD},
             {~CVoxel::Visibility::UP, ~CVoxel::Visibility::DOWN},
+            {~CVoxel::Visibility::FORWARD, ~CVoxel::Visibility::BACKWARD},
         };
 
         if(_v)
@@ -335,13 +335,13 @@ namespace VoxelOptimizer
         auto it = this->find(_Position);
         if(it == this->end())
         {
-            const static std::vector<std::pair<Math::Vec3f, CVoxel::Visibility>> DIRECTIONS = {
-                {Math::Vec3f(1, 0, 0), CVoxel::Visibility::LEFT},
-                {Math::Vec3f(-1, 0, 0), CVoxel::Visibility::RIGHT},
-                {Math::Vec3f(0, 1, 0), CVoxel::Visibility::BACKWARD},
-                {Math::Vec3f(0, -1, 0), CVoxel::Visibility::FORWARD},
-                {Math::Vec3f(0, 0, -1), CVoxel::Visibility::UP},
-                {Math::Vec3f(0, 0, 1), CVoxel::Visibility::DOWN}
+            const static std::vector<std::pair<Math::Vec3i, CVoxel::Visibility>> DIRECTIONS = {
+                {Math::Vec3i::RIGHT, CVoxel::Visibility::LEFT},
+                {Math::Vec3i::LEFT, CVoxel::Visibility::RIGHT},
+                {Math::Vec3i::FRONT, CVoxel::Visibility::BACKWARD},
+                {Math::Vec3i::BACK, CVoxel::Visibility::FORWARD},
+                {Math::Vec3i::DOWN, CVoxel::Visibility::UP},
+                {Math::Vec3i::UP, CVoxel::Visibility::DOWN}
             };
 
             for (auto &&dir : DIRECTIONS)
@@ -353,15 +353,15 @@ namespace VoxelOptimizer
         }
         else
         {
-            const static std::vector<std::pair<Math::Vec3f, int>> AXIS_DIRECTIONS = {
-                {Math::Vec3f(1, 0, 0), 0},
-                {Math::Vec3f(0, 1, 0), 1},
-                {Math::Vec3f(0, 0, 1), 2}
+            const static std::vector<std::pair<Math::Vec3i, int>> AXIS_DIRECTIONS = {
+                {Math::Vec3i(1, 0, 0), 0},
+                {Math::Vec3i(0, 1, 0), 1},
+                {Math::Vec3i(0, 0, 1), 2}
             };
 
             for (auto &&axis : AXIS_DIRECTIONS)
             {
-                Math::Vec3f start = _Position - axis.first;
+                Math::Vec3i start = _Position - axis.first;
                 for (char i = 0; i < 2; i++)
                 {
                     it = this->find(start);

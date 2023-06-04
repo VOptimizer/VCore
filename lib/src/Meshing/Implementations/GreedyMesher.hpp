@@ -28,9 +28,6 @@
 #include <list>
 #include <VoxelOptimizer/Meshing/IMesher.hpp>
 
-#include <fstream>
-#include <mutex>
-
 namespace VoxelOptimizer
 {
     class CGreedyMesher : public IMesher

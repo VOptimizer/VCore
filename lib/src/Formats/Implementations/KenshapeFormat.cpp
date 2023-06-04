@@ -62,7 +62,7 @@ namespace VoxelOptimizer
         }
 
         VoxelMesh m = VoxelMesh(new CVoxelMesh());
-        auto mat = Material(new CMaterial());
+        auto mat = std::make_shared<CMaterial>();
         m_Materials.push_back(mat);
         m->Materials.push_back(mat);
         m->SetSize(Content->Size);
@@ -83,7 +83,7 @@ namespace VoxelOptimizer
                 {
                     auto texIT = m_Textures.find(TextureType::DIFFIUSE);
                     if(texIT == m_Textures.end())
-                        m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture());
+                        m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
 
                     m_Textures[TextureType::DIFFIUSE]->AddPixel(Content->Colors[tile->ColorIdx]);
                     IdxC = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;

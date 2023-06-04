@@ -46,7 +46,7 @@ namespace VoxelOptimizer
         m_Materials.clear();
         m_Textures.clear();
 
-        m_Materials.push_back(Material(new CMaterial()));
+        m_Materials.push_back(std::make_shared<CMaterial>());
 
         std::string Signature(4, '\0');
         ReadData(&Signature[0], 4);
@@ -244,7 +244,7 @@ namespace VoxelOptimizer
         {
             auto texIT = m_Textures.find(TextureType::DIFFIUSE);
             if(texIT == m_Textures.end())
-                m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture());
+                m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
 
             m_Textures[TextureType::DIFFIUSE]->AddPixel(c);
             ret = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;

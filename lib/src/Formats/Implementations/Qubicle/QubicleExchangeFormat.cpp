@@ -101,7 +101,7 @@ namespace VoxelOptimizer
 
             auto texIT = m_Textures.find(TextureType::DIFFIUSE);
             if(texIT == m_Textures.end())
-                m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture());
+                m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
 
             m_Textures[TextureType::DIFFIUSE]->AddPixel(CColor(r * 255.0, g * 255.0, b * 255.0, 255.0));
         }

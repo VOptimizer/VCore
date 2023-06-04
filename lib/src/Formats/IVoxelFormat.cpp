@@ -125,17 +125,6 @@ namespace VoxelOptimizer
         std::ifstream in(File, std::ios::binary);
         if(in.is_open())
         {
-            // in.seekg(0, in.end);
-            // size_t Len = in.tellg();
-            // in.seekg(0, in.beg);
-
-            // std::vector<char> data;
-            // data.resize(Len);
-            // in.read(&data[0], Len);
-            // in.close();
-
-            // m_DataStream = CBinaryStream(data.data(), data.size());
-            // data.clear();
             m_DataStream = in;
             ClearCache();
             ParseFormat();
@@ -146,7 +135,6 @@ namespace VoxelOptimizer
 
     void IVoxelFormat::Load(const char *Data, size_t Length)
     {
-        // m_DataStream.Load(Data, Length);
         m_DataStream = CBinaryStream(Data, Length);
 
         ClearCache();
@@ -165,7 +153,7 @@ namespace VoxelOptimizer
 
         // Creates a new emission texture
         if(hasEmission && !texturesHasEmission)
-            textures[TextureType::EMISSION] = Texture(new CTexture(textures[TextureType::DIFFIUSE]->GetSize()));
+            textures[TextureType::EMISSION] = std::make_shared<CTexture>(textures[TextureType::DIFFIUSE]->GetSize());
 
         auto diffiuse = textures[TextureType::DIFFIUSE];
         auto otherDiffiuse = otherTextures[TextureType::DIFFIUSE];

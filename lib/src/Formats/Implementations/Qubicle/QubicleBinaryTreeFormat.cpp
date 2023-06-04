@@ -40,7 +40,7 @@ namespace VoxelOptimizer
         if(major != 1 && minor != 0)
             throw CVoxelLoaderException("Unsupported version!");
 
-        m_Materials.push_back(Material(new CMaterial()));
+        m_Materials.push_back(std::make_shared<CMaterial>());
 
         Skip(3 * sizeof(float));
         Skip(8); // COLORMAP
@@ -66,7 +66,7 @@ namespace VoxelOptimizer
 
             auto texIT = m_Textures.find(TextureType::DIFFIUSE);
             if(texIT == m_Textures.end())
-                m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture());
+                m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
 
             m_Textures[TextureType::DIFFIUSE]->AddPixel(c);
         }
@@ -277,7 +277,7 @@ namespace VoxelOptimizer
         {
             auto texIT = m_Textures.find(TextureType::DIFFIUSE);
             if(texIT == m_Textures.end())
-                m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture());
+                m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
 
             m_Textures[TextureType::DIFFIUSE]->AddPixel(c);
             ret = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;

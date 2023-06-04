@@ -44,12 +44,7 @@ namespace VoxelOptimizer
 
         auto TotalBBox = m->BBox;
         Math::Vec3f Beg = TotalBBox.Beg;
-        std::swap(Beg.y, Beg.z);
-        Beg.z *= -1;
-
         Math::Vec3f BoxCenter = TotalBBox.GetSize() / 2;
-        std::swap(BoxCenter.y, BoxCenter.z);
-        BoxCenter.z *= -1;
 
         CSlicer Slicer(m, Opaque, _Chunk.Chunk, _Chunk.TotalBBox);
 
@@ -60,7 +55,7 @@ namespace VoxelOptimizer
 
             int Axis1 = (Axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
             int Axis2 = (Axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
-            int x[3] = {0};
+            int x[3] = {};
 
             // Iterate over each slice of the 3d model.
             for (x[Axis] = BBox.Beg.v[Axis] -1; x[Axis] <= BBox.End.v[Axis];)
@@ -68,14 +63,14 @@ namespace VoxelOptimizer
                 ++x[Axis];
 
                 // Foreach slice go over a 2d plane. 
-                for (int HeightAxis = BBox.Beg.v[Axis2]; HeightAxis <= BBox.End.v[Axis2]; ++HeightAxis)
+                for (int HeightAxis = BBox.Beg.v[Axis1]; HeightAxis <= BBox.End.v[Axis1]; ++HeightAxis)
                 {
-                    for (int WidthAxis = BBox.Beg.v[Axis1]; WidthAxis <= BBox.End.v[Axis1];)
+                    for (int WidthAxis = BBox.Beg.v[Axis2]; WidthAxis <= BBox.End.v[Axis2];)
                     {
                         Math::Vec3f Pos;
                         Pos.v[Axis] = x[Axis] - 1;
-                        Pos.v[Axis1] = WidthAxis;
-                        Pos.v[Axis2] = HeightAxis;
+                        Pos.v[Axis1] = HeightAxis;
+                        Pos.v[Axis2] = WidthAxis;
 
                         if(Slicer.IsFace(Pos))
                         {
@@ -85,10 +80,10 @@ namespace VoxelOptimizer
                             int Color = Slicer.Color();
 
                             //Claculates the width of the rect.
-                            for (w = 1; WidthAxis + w <= BBox.End.v[Axis1]; w++) 
+                            for (w = 1; WidthAxis + w <= BBox.End.v[Axis2]; w++) 
                             {
                                 Math::Vec3f WPos;
-                                WPos.v[Axis1] = w;
+                                WPos.v[Axis2] = w;
 
                                 bool IsFace = Slicer.IsFace(Pos + WPos);
                                 if(IsFace)
@@ -102,14 +97,14 @@ namespace VoxelOptimizer
                             }
 
                             bool done = false;
-                            for (h = 1; HeightAxis + h <= BBox.End.v[Axis2]; h++)
+                            for (h = 1; HeightAxis + h <= BBox.End.v[Axis1]; h++)
                             {
                                 // Check each block next to this quad
                                 for (int k = 0; k < w; ++k)
                                 {
                                     Math::Vec3f QuadPos = Pos;
-                                    QuadPos.v[Axis1] += k;
-                                    QuadPos.v[Axis2] += h;
+                                    QuadPos.v[Axis2] += k;
+                                    QuadPos.v[Axis1] += h;
 
                                     bool IsFace = Slicer.IsFace(QuadPos);
                                     if(IsFace)
@@ -130,25 +125,25 @@ namespace VoxelOptimizer
                                     break;
                             }
 
-                            x[Axis1] = WidthAxis;
-                            x[Axis2] = HeightAxis;
+                            x[Axis1] = HeightAxis;
+                            x[Axis2] = WidthAxis;
 
-                            int du[3] = {0};
-                            du[Axis1] = w;
+                            int du[3] = {};
+                            du[Axis2] = w;
 
-                            int dv[3] = {0};
-                            dv[Axis2] = h;
+                            int dv[3] = {};
+                            dv[Axis1] = h;
 
                             int I1, I2, I3, I4;                            
 
-                            Math::Vec3f v1 = Math::Vec3f(x[0], x[2], -x[1]) - BoxCenter;
-                            Math::Vec3f v2 = Math::Vec3f(x[0] + du[0], x[2] + du[2], -x[1] - du[1]) - BoxCenter;
-                            Math::Vec3f v3 = Math::Vec3f(x[0] + du[0] + dv[0], x[2] + du[2] + dv[2], -x[1] - du[1] - dv[1]) - BoxCenter;
-                            Math::Vec3f v4 = Math::Vec3f(x[0] + dv[0], x[2] + dv[2], -x[1] - dv[1]) - BoxCenter;
+                            Math::Vec3f v1 = Math::Vec3f(x[0], x[1], x[2]) - BoxCenter;
+                            Math::Vec3f v2 = Math::Vec3f(x[0] + du[0], x[1] + du[1], x[2] + du[2]) - BoxCenter;
+                            Math::Vec3f v3 = Math::Vec3f(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2]) - BoxCenter;
+                            Math::Vec3f v4 = Math::Vec3f(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2]) - BoxCenter;
 
-                            std::swap(Normal.y, Normal.z);
-                            if(Normal.z != 0)
-                                Normal.z *= -1;
+                            // std::swap(Normal.y, Normal.z);
+                            // if(Normal.y != 0)
+                            //     Normal.y *= -1;
 
                             builder.AddFace(v1, v2, v3, v4, Normal, Color, materials[Material]);
                             Slicer.AddProcessedQuad(Math::Vec3f(x[0], x[1], x[2]), Math::Vec3f(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2]));

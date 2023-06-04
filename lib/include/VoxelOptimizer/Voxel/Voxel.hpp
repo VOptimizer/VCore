@@ -47,15 +47,6 @@ namespace VoxelOptimizer
                 VISIBLE = (UP | DOWN | LEFT | RIGHT | FORWARD | BACKWARD)
             };
 
-            // Normal face directions inside the voxel space.
-            const static Math::Vec3f FACE_UP; // (0, 0, 1);
-            const static Math::Vec3f FACE_DOWN; // (0, 0, -1);
-            const static Math::Vec3f FACE_LEFT; // (-1, 0, 0);
-            const static Math::Vec3f FACE_RIGHT; // (1, 0, 0);
-            const static Math::Vec3f FACE_FORWARD; // (0, 1, 0);
-            const static Math::Vec3f FACE_BACKWARD; // (0, -1, 0);
-            const static Math::Vec3f FACE_ZERO; // (0, 0, 0);
-
             CVoxel();
 
             int Color;      //!< Index of the color.
@@ -82,6 +73,11 @@ namespace VoxelOptimizer
     //////////////////////////////////////////////////
     // CVoxel functions
     //////////////////////////////////////////////////
+
+    inline CVoxel::CVoxel() : Color(-1), Material(-1), Transparent(false)
+    {
+        VisibilityMask = Visibility::INVISIBLE;
+    }
 
     inline bool CVoxel::IsVisible() const
     {                

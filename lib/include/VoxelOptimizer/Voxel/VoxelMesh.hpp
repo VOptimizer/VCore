@@ -102,7 +102,7 @@ namespace VoxelOptimizer
                 for (auto &&v : m_Voxels)
                 {
                     BBox.Beg = BBox.Beg.min(v.first);
-                    BBox.End = BBox.End.max(v.first + Math::Vec3f(1, 1, 1));
+                    BBox.End = BBox.End.max(v.first + Math::Vec3i(1, 1, 1));
                 }
             }
             
@@ -203,9 +203,7 @@ namespace VoxelOptimizer
             
             ~CVoxelMesh() = default;
         private:   
-            const static Math::Vec3f CHUNK_SIZE;
-
-            void SetNormal(const Math::Vec3f &Pos, const Math::Vec3f &Neighbor, bool IsInvisible = true);
+            void SetNormal(const Math::Vec3i &Pos, const Math::Vec3i &Neighbor, bool IsInvisible = true);
 
             Math::Vec3i m_Size;            
             VoxelData m_Voxels;

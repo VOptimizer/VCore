@@ -26,7 +26,6 @@
 #define PLANESVOXELIZER_HPP
 
 #include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
-#include <VoxelOptimizer/Memory/Allocator.hpp>
 
 namespace VoxelOptimizer
 {
@@ -72,7 +71,7 @@ namespace VoxelOptimizer
             CColor GetColor(Texture _planes, const Math::Vec2ui &_pos);
 
             VoxelMesh m_Mesh;
-            std::map<uint32_t, int, std::less<uint32_t>, CAllocator<std::pair<uint32_t, int>>> m_ColorMapping;
+            std::map<uint32_t, int, std::less<uint32_t>> m_ColorMapping;
     };
 }
 

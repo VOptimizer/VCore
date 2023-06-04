@@ -34,13 +34,8 @@ namespace VoxelOptimizer
         builder.AddTextures(m->Colorpalettes);
 
         auto bbox = m->BBox;
-        Math::Vec3f beg = bbox.Beg;
-        std::swap(beg.y, beg.z);
-        beg.z *= -1;
-
+        Math::Vec3i beg = bbox.Beg;
         Math::Vec3f boxCenter = bbox.GetSize() / 2;
-        std::swap(boxCenter.y, boxCenter.z);
-        boxCenter.z *= -1;
 
         const CBBox chunkBBox(_Chunk.TotalBBox.Beg, _Chunk.TotalBBox.GetSize());
 
@@ -68,20 +63,20 @@ namespace VoxelOptimizer
                                 case CVoxel::Visibility::UP:
                                 case CVoxel::Visibility::DOWN:
                                 {
-                                    float PosZ = 0;
+                                    float PosY = 0;
                                     if(visiblity == CVoxel::Visibility::UP)
                                     {
-                                        Normal = Math::Vec3f(0, 1, 0);
-                                        PosZ = 1;
+                                        Normal = Math::Vec3f::UP;
+                                        PosY = 1;
                                     }
                                     else
-                                        Normal = Math::Vec3f(0, -1, 0);
+                                        Normal = Math::Vec3f::DOWN;
 
 
-                                    v1 = Math::Vec3f(vpos.x, vpos.z + PosZ, -vpos.y - 1.f) - boxCenter;
-                                    v2 = Math::Vec3f(vpos.x, vpos.z + PosZ, -vpos.y) - boxCenter;
-                                    v3 = Math::Vec3f(vpos.x + 1.f, vpos.z + PosZ, -vpos.y) - boxCenter;
-                                    v4 = Math::Vec3f(vpos.x + 1.f, vpos.z + PosZ, -vpos.y - 1.f) - boxCenter;
+                                    v1 = Math::Vec3f(vpos.x, vpos.y + PosY, vpos.z + 1.f) - boxCenter;
+                                    v2 = Math::Vec3f(vpos.x, vpos.y + PosY, vpos.z) - boxCenter;
+                                    v3 = Math::Vec3f(vpos.x + 1.f, vpos.y + PosY, vpos.z) - boxCenter;
+                                    v4 = Math::Vec3f(vpos.x + 1.f, vpos.y + PosY, vpos.z + 1.f) - boxCenter;
                                 }break;
 
                                 case CVoxel::Visibility::LEFT:
@@ -90,34 +85,34 @@ namespace VoxelOptimizer
                                     float Posx = 0;
                                     if(visiblity == CVoxel::Visibility::RIGHT)
                                     {
-                                        Normal = Math::Vec3f(1, 0, 0);
+                                        Normal = Math::Vec3f::RIGHT;
                                         Posx = 1;
                                     }
                                     else
-                                        Normal = Math::Vec3f(-1, 0, 0);
+                                        Normal = Math::Vec3f::LEFT;
 
-                                    v1 = Math::Vec3f(vpos.x + Posx, vpos.z, -vpos.y) - boxCenter;
-                                    v2 = Math::Vec3f(vpos.x + Posx, vpos.z, -vpos.y - 1.f) - boxCenter;
-                                    v3 = Math::Vec3f(vpos.x + Posx, vpos.z + 1.f, -vpos.y - 1.f) - boxCenter;
-                                    v4 = Math::Vec3f(vpos.x + Posx, vpos.z + 1.f, -vpos.y) - boxCenter;
+                                    v1 = Math::Vec3f(vpos.x + Posx, vpos.y, vpos.z) - boxCenter;
+                                    v2 = Math::Vec3f(vpos.x + Posx, vpos.y, vpos.z + 1.f) - boxCenter;
+                                    v3 = Math::Vec3f(vpos.x + Posx, vpos.y + 1.f, vpos.z + 1.f) - boxCenter;
+                                    v4 = Math::Vec3f(vpos.x + Posx, vpos.y + 1.f, vpos.z) - boxCenter;
                                 }break;
 
                                 case CVoxel::Visibility::FORWARD:
                                 case CVoxel::Visibility::BACKWARD:
                                 {
-                                    float PosY = 0;
+                                    float PosZ = 0;
                                     if(visiblity == CVoxel::Visibility::FORWARD)
                                     {
-                                        Normal = Math::Vec3f(0, 0, -1);
-                                        PosY = -1;
+                                        Normal = Math::Vec3f::FRONT;
+                                        PosZ = 1;
                                     }
                                     else
-                                        Normal = Math::Vec3f(0, 0, 1);
+                                        Normal = Math::Vec3f::BACK;
 
-                                    v4 = Math::Vec3f(vpos.x, vpos.z + 1.f, -vpos.y + PosY) - boxCenter;
-                                    v3 = Math::Vec3f(vpos.x, vpos.z, -vpos.y + PosY) - boxCenter;
-                                    v2 = Math::Vec3f(vpos.x + 1.f, vpos.z, -vpos.y + PosY) - boxCenter;
-                                    v1 = Math::Vec3f(vpos.x + 1.f, vpos.z + 1.f, -vpos.y + PosY) - boxCenter;
+                                    v4 = Math::Vec3f(vpos.x, vpos.y + 1.f, vpos.z + PosZ) - boxCenter;
+                                    v3 = Math::Vec3f(vpos.x, vpos.y, vpos.z + PosZ) - boxCenter;
+                                    v2 = Math::Vec3f(vpos.x + 1.f, vpos.y, vpos.z + PosZ) - boxCenter;
+                                    v1 = Math::Vec3f(vpos.x + 1.f, vpos.y + 1.f, vpos.z + PosZ) - boxCenter;
                                 }break;
                             }
 

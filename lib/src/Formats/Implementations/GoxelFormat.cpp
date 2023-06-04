@@ -90,7 +90,7 @@ namespace VoxelOptimizer
                                 {
                                     auto texIT = m_Textures.find(TextureType::EMISSION);
                                     if(texIT == m_Textures.end())
-                                        m_Textures[TextureType::EMISSION] = Texture(new CTexture());
+                                        m_Textures[TextureType::EMISSION] = std::make_shared<CTexture>();
 
                                     auto material = m_Materials[l.MatIdx];
                                     if(material->Power > 0)
@@ -120,7 +120,7 @@ namespace VoxelOptimizer
 
                                         auto texIT = m_Textures.find(TextureType::DIFFIUSE);
                                         if(texIT == m_Textures.end())
-                                            m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture());
+                                            m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
 
                                         m_Textures[TextureType::DIFFIUSE]->AddPixel(c);
 
@@ -203,7 +203,7 @@ namespace VoxelOptimizer
     void CGoxelFormat::ProcessMaterial(const SChunkHeader &Chunk)
     {
         auto Dict = ReadDict(Chunk, Tellg());
-        m_Materials.push_back(Material(new CMaterial()));
+        m_Materials.push_back(std::make_shared<CMaterial>());
 
         float c[4];
         memcpy(c, Dict["color"].data(), 4 * sizeof(float));

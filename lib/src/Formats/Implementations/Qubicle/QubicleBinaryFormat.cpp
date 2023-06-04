@@ -37,7 +37,7 @@ namespace VoxelOptimizer
         if(m_Header.Version[0] != 1 || m_Header.Version[1] != 1 || m_Header.Version[2] != 0 || m_Header.Version[3] != 0)
             throw CVoxelLoaderException("Version: " + std::to_string(m_Header.Version[0]) + "." + std::to_string(m_Header.Version[1]) + "." + std::to_string(m_Header.Version[2]) + "." + std::to_string(m_Header.Version[3]) + " is not supported");
 
-        m_Materials.push_back(Material(new CMaterial()));
+        m_Materials.push_back(std::make_shared<CMaterial>());
 
         for (int i = 0; i < m_Header.MatrixCount; i++)
         {
@@ -207,7 +207,7 @@ namespace VoxelOptimizer
         {
             auto texIT = m_Textures.find(TextureType::DIFFIUSE);
             if(texIT == m_Textures.end())
-                m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture());
+                m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
 
             m_Textures[TextureType::DIFFIUSE]->AddPixel(c);
             ret = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;

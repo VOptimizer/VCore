@@ -27,20 +27,6 @@
 
 namespace VoxelOptimizer
 {
-    const Math::Vec3f CVoxel::FACE_UP = Math::Vec3f(0, 0, 1);
-    const Math::Vec3f CVoxel::FACE_DOWN = Math::Vec3f(0, 0, -1);
-    const Math::Vec3f CVoxel::FACE_LEFT = Math::Vec3f(-1, 0, 0);
-    const Math::Vec3f CVoxel::FACE_RIGHT = Math::Vec3f(1, 0, 0);
-    const Math::Vec3f CVoxel::FACE_FORWARD = Math::Vec3f(0, 1, 0);
-    const Math::Vec3f CVoxel::FACE_BACKWARD = Math::Vec3f(0, -1, 0);
-    const Math::Vec3f CVoxel::FACE_ZERO = Math::Vec3f(0, 0, 0);
-    const Math::Vec3f CVoxelMesh::CHUNK_SIZE = Math::Vec3f(16, 16, 16);
-
-    CVoxel::CVoxel() : Color(-1), Material(-1), Transparent(false)
-    {
-        VisibilityMask = Visibility::INVISIBLE;
-    }
-
     void CVoxelMesh::SetVoxel(const Math::Vec3i &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask)
     {      
         CVoxel Tmp;// = m_Pool.alloc();
@@ -134,63 +120,63 @@ namespace VoxelOptimizer
         return m_Voxels.queryChunks();
     }
     
-    void CVoxelMesh::SetNormal(const Math::Vec3f &Pos, const Math::Vec3f &Neighbor, bool IsInvisible)
+    void CVoxelMesh::SetNormal(const Math::Vec3i &Pos, const Math::Vec3i &Neighbor, bool IsInvisible)
     {
-        static const std::map<Math::Vec3f, std::pair<CVoxel::Visibility, CVoxel::Visibility>> NEIGHBOR_INDEX = {
-            {CVoxel::FACE_UP, {CVoxel::Visibility::UP, CVoxel::Visibility::DOWN}},
-            {CVoxel::FACE_DOWN, {CVoxel::Visibility::DOWN, CVoxel::Visibility::UP}},
+        // static const std::map<Math::Vec3f, std::pair<CVoxel::Visibility, CVoxel::Visibility>> NEIGHBOR_INDEX = {
+        //     {CVoxel::FACE_UP, {CVoxel::Visibility::UP, CVoxel::Visibility::DOWN}},
+        //     {CVoxel::FACE_DOWN, {CVoxel::Visibility::DOWN, CVoxel::Visibility::UP}},
 
-            {CVoxel::FACE_LEFT, {CVoxel::Visibility::LEFT, CVoxel::Visibility::RIGHT}},
-            {CVoxel::FACE_RIGHT, {CVoxel::Visibility::RIGHT, CVoxel::Visibility::LEFT}},
+        //     {CVoxel::FACE_LEFT, {CVoxel::Visibility::LEFT, CVoxel::Visibility::RIGHT}},
+        //     {CVoxel::FACE_RIGHT, {CVoxel::Visibility::RIGHT, CVoxel::Visibility::LEFT}},
 
-            {CVoxel::FACE_FORWARD, {CVoxel::Visibility::FORWARD, CVoxel::Visibility::BACKWARD}},
-            {CVoxel::FACE_BACKWARD, {CVoxel::Visibility::BACKWARD, CVoxel::Visibility::FORWARD}},
-        };
+        //     {CVoxel::FACE_FORWARD, {CVoxel::Visibility::FORWARD, CVoxel::Visibility::BACKWARD}},
+        //     {CVoxel::FACE_BACKWARD, {CVoxel::Visibility::BACKWARD, CVoxel::Visibility::FORWARD}},
+        // };
 
-        Voxel cur = GetVoxel(Pos);
-        if(cur == nullptr)
-            return;
+        // Voxel cur = GetVoxel(Pos);
+        // if(cur == nullptr)
+        //     return;
 
-        Voxel neighbor = GetVoxel(Pos + Neighbor);
-        auto visibility = NEIGHBOR_INDEX.at(Neighbor);
+        // Voxel neighbor = GetVoxel(Pos + Neighbor);
+        // auto visibility = NEIGHBOR_INDEX.at(Neighbor);
 
-        // 1. Both opaque touching faces invisible
-        // 2. One transparent touching faces visible
-        // 3. Both transparent different transparency faces visible
-        // 4. Both transparent same transparency and color faces invisible
-        // 5. Both transparent different transparency and same color faces visible
+        // // 1. Both opaque touching faces invisible
+        // // 2. One transparent touching faces visible
+        // // 3. Both transparent different transparency faces visible
+        // // 4. Both transparent same transparency and color faces invisible
+        // // 5. Both transparent different transparency and same color faces visible
 
-        if(neighbor)
-        {
-            bool hideFaces = false;
-
-            if(!neighbor->Transparent && !cur->Transparent)
-                hideFaces = true;
-            else if(neighbor->Transparent && !cur->Transparent || !neighbor->Transparent && cur->Transparent)
-                hideFaces = false;
-            else if(neighbor->Transparent && cur->Transparent)
-            {
-                if(neighbor->Material != cur->Material)
-                    hideFaces = false;
-                else if(neighbor->Color != cur->Color)
-                    hideFaces = false;
-                else
-                    hideFaces = true;
-            }
-
-            if(hideFaces)
-            {
-                neighbor->VisibilityMask = IsInvisible ? (CVoxel::Visibility)(neighbor->VisibilityMask & ~visibility.second) : (CVoxel::Visibility)(neighbor->VisibilityMask | visibility.second);
-                cur->VisibilityMask = IsInvisible ? (CVoxel::Visibility)(cur->VisibilityMask & ~visibility.first) : (CVoxel::Visibility)(cur->VisibilityMask | visibility.first);
-            }
-            else
-                cur->VisibilityMask = (CVoxel::Visibility)(cur->VisibilityMask | visibility.first);
-        }
-        else
-            cur->VisibilityMask = (CVoxel::Visibility)(cur->VisibilityMask | visibility.first);
-
-        // CheckInvisible(cur);
         // if(neighbor)
+        // {
+        //     bool hideFaces = false;
+
+        //     if(!neighbor->Transparent && !cur->Transparent)
+        //         hideFaces = true;
+        //     else if(neighbor->Transparent && !cur->Transparent || !neighbor->Transparent && cur->Transparent)
+        //         hideFaces = false;
+        //     else if(neighbor->Transparent && cur->Transparent)
+        //     {
+        //         if(neighbor->Material != cur->Material)
+        //             hideFaces = false;
+        //         else if(neighbor->Color != cur->Color)
+        //             hideFaces = false;
+        //         else
+        //             hideFaces = true;
+        //     }
+
+        //     if(hideFaces)
+        //     {
+        //         neighbor->VisibilityMask = IsInvisible ? (CVoxel::Visibility)(neighbor->VisibilityMask & ~visibility.second) : (CVoxel::Visibility)(neighbor->VisibilityMask | visibility.second);
+        //         cur->VisibilityMask = IsInvisible ? (CVoxel::Visibility)(cur->VisibilityMask & ~visibility.first) : (CVoxel::Visibility)(cur->VisibilityMask | visibility.first);
+        //     }
+        //     else
+        //         cur->VisibilityMask = (CVoxel::Visibility)(cur->VisibilityMask | visibility.first);
+        // }
+        // else
+        //     cur->VisibilityMask = (CVoxel::Visibility)(cur->VisibilityMask | visibility.first);
+
+        // // CheckInvisible(cur);
+        // // if(neighbor)
         //     CheckInvisible(neighbor);
     }
 }

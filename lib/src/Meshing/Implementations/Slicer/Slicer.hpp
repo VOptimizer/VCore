@@ -59,7 +59,7 @@ namespace VoxelOptimizer
 
             void ClearQuads();
 
-            inline Math::Vec3f Normal()
+            inline Math::Vec3i Normal()
             {
                 return m_Normal;
             }
@@ -80,9 +80,9 @@ namespace VoxelOptimizer
             Voxel GetVoxel(const Math::Vec3i &v);
 
             VoxelMesh m_Mesh;
-            Math::Vec3f m_Neighbour;
+            Math::Vec3i m_Neighbour;
             int m_Axis;
-            Math::Vec3f m_Normal;
+            Math::Vec3i m_Normal;
             int m_Material;
             int m_Color;
             bool m_Opaque;

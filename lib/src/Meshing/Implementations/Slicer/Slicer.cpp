@@ -34,17 +34,17 @@ namespace VoxelOptimizer
     {
         m_Axis = Axis;
 
-        m_Neighbour = Math::Vec3f();
+        m_Neighbour = Math::Vec3i();
         m_Neighbour.v[Axis] = 1;
     }
 
     bool CSlicer::IsFace(Math::Vec3i Pos)
     {
         if(std::any_of(m_ProcessedQuads.begin(), m_ProcessedQuads.end(), 
-        [this, Pos](std::pair<Math::Vec3f, Math::Vec3f> Rect)
+        [this, Pos](std::pair<Math::Vec3i, Math::Vec3i> Rect)
         {
-            int X = (m_Axis + 1) % 3;
-            int Y = (m_Axis + 2) % 3;
+            int X = (m_Axis + 2) % 3;
+            int Y = (m_Axis + 1) % 3;
 
             // Checks if Pos intersects with a already processed quad.
             if(Pos.v[X] >= Rect.first.v[X] && 
@@ -60,7 +60,6 @@ namespace VoxelOptimizer
         Voxel V1, V2;
         bool current = true;
         m_HasFace = false;
-        Math::Vec3f Size = m_Mesh->GetSize();
 
         V1 = GetVoxel(Pos);
         if(!V1)
@@ -106,12 +105,12 @@ namespace VoxelOptimizer
             {
                 if(IsCurrent)
                 {
-                    m_Normal = Math::Vec3f(1, 0, 0);
+                    m_Normal = Math::Vec3i::RIGHT;
                     m_HasFace = IsFaceVisible(v, CVoxel::Visibility::RIGHT);
                 } //v->Normals[CVoxel::RIGHT];
                 else
                 {
-                    m_Normal = Math::Vec3f(-1, 0, 0);
+                    m_Normal = Math::Vec3i::LEFT;
                     m_HasFace = IsFaceVisible(v, CVoxel::Visibility::LEFT);
                 }
                     //v->Normals[CVoxel::LEFT];
@@ -121,28 +120,28 @@ namespace VoxelOptimizer
             {
                 if(IsCurrent)
                 {
-                    m_Normal = Math::Vec3f(0, 1, 0);
-                    m_HasFace = IsFaceVisible(v, CVoxel::Visibility::FORWARD);
-                }//v->Normals[CVoxel::FORWARD];
+                    m_Normal = Math::Vec3i::UP;
+                    m_HasFace = IsFaceVisible(v, CVoxel::Visibility::UP);
+                }//v->Normals[CVoxel::UP];
                 else
                 {
-                    m_Normal = Math::Vec3f(0, -1, 0);
-                    m_HasFace = IsFaceVisible(v, CVoxel::Visibility::BACKWARD);
-                }//v->Normals[CVoxel::BACKWARD];
+                    m_Normal = Math::Vec3i::DOWN;
+                    m_HasFace = IsFaceVisible(v, CVoxel::Visibility::DOWN);
+                }
             }break;
 
             case 2: // Z-Axis
             {
                 if(IsCurrent)
                 {
-                    m_Normal = Math::Vec3f(0, 0, 1);
-                    m_HasFace = IsFaceVisible(v, CVoxel::Visibility::UP);
-                }//v->Normals[CVoxel::UP];
+                    m_Normal = Math::Vec3i::FRONT;
+                    m_HasFace = IsFaceVisible(v, CVoxel::Visibility::FORWARD);
+                }//v->Normals[CVoxel::FORWARD];
                 else
                 {
-                    m_Normal = Math::Vec3f(0, 0, -1);
-                    m_HasFace = IsFaceVisible(v, CVoxel::Visibility::DOWN);
-                }//v->Normals[CVoxel::DOWN];
+                    m_Normal = Math::Vec3i::BACK;
+                    m_HasFace = IsFaceVisible(v, CVoxel::Visibility::BACKWARD);
+                }//v->Normals[CVoxel::BACKWARD];
             }break;
         }
     }
