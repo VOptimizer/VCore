@@ -62,6 +62,6 @@ namespace VoxelOptimizer
     };
 
     using Material = std::shared_ptr<CMaterial>;
-} // namespace VoxelOptimizer
+}
 
 #endif //MATERIAL_HPP

@@ -32,24 +32,31 @@ namespace VoxelOptimizer
     class CBBox
     {
         public:
-            CVectori Beg;
-            CVectori End;
+            Math::Vec3i Beg;
+            Math::Vec3i End;
 
             CBBox() = default;
             CBBox(const CBBox &_Other)
             {
                 *this = _Other;
             } 
-            CBBox(CVectori beg, CVectori end) : Beg(beg), End(end + CVectori(1, 1, 1)) {}
+            CBBox(Math::Vec3i _Beg, Math::Vec3i _End) : Beg(_Beg), End(_End) {}
 
-            inline CVector GetSize() const
+            /**
+             * @return Gets the size of this bounding box.
+             */
+            inline Math::Vec3f GetSize() const
             {
-                return (End - Beg).Max(CVector(1, 1, 1));
+                // A voxel has at least the size of one.
+                return (End - Beg).max(Math::Vec3f(1, 1, 1));
             }
 
-            inline bool ContainsPoint(const CVectori &v) const
+            /**
+             * @brief Returns true if the bounding box contains the given point.
+             */
+            inline bool ContainsPoint(const Math::Vec3i &_Vec) const
             {
-                return (Beg.x <= v.x && Beg.y <= v.y && Beg.z <= v.z) && (End.x > v.x && End.y > v.y && End.z > v.z);
+                return (_Vec.x >= Beg.x && _Vec.y >= Beg.y && _Vec.z >= Beg.z) && (_Vec.x < End.x && _Vec.y < End.y && _Vec.z < End.z);
             }
 
             inline CBBox& operator=(const CBBox &_Other)
@@ -61,7 +68,7 @@ namespace VoxelOptimizer
 
             ~CBBox() = default;
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //BBOX_HPP

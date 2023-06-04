@@ -36,7 +36,7 @@ namespace VoxelOptimizer
     class CSlicer
     {
         public:
-            CSlicer(VoxelMesh Mesh, const std::map<CVectori, Voxel> &voxels, bool Opaque) : m_Mesh(Mesh), m_Opaque(Opaque), m_Voxels(voxels)
+            CSlicer(VoxelMesh Mesh, bool Opaque, const CChunk *_Chunk, const CBBox &_TotalBBox) : m_Mesh(Mesh), m_Opaque(Opaque), m_Chunk(_Chunk), m_TotalBBox(_TotalBBox), m_Size(_TotalBBox.GetSize())
             {
                 // auto &voxels = m_Mesh->GetVoxels();
                 // m_Voxels = voxels.queryVisible();
@@ -50,16 +50,16 @@ namespace VoxelOptimizer
             /**
              * @return Returns true if there is a face on the given position.
              */
-            bool IsFace(CVector Pos);
+            bool IsFace(Math::Vec3i Pos);
 
             /**
              * @brief Adds a quad to the list of already processed ones.
              */
-            void AddProcessedQuad(CVector Pos, CVector Size);
+            void AddProcessedQuad(Math::Vec3i Pos, Math::Vec3i Size);
 
             void ClearQuads();
 
-            inline CVector Normal()
+            inline Math::Vec3f Normal()
             {
                 return m_Normal;
             }
@@ -77,21 +77,23 @@ namespace VoxelOptimizer
             ~CSlicer() = default;
         private:
             void SetFaceNormal(Voxel v, bool IsCurrent);
-            Voxel GetVoxel(const CVector &v);
+            Voxel GetVoxel(const Math::Vec3i &v);
 
             VoxelMesh m_Mesh;
-            CVector m_Neighbour;
+            Math::Vec3f m_Neighbour;
             int m_Axis;
-            CVector m_Normal;
+            Math::Vec3f m_Normal;
             int m_Material;
             int m_Color;
             bool m_Opaque;
             bool m_HasFace;
 
-            std::vector<std::pair<CVector, CVector>> m_ProcessedQuads;
-            const std::map<CVectori, Voxel> &m_Voxels;
+            std::list<std::pair<Math::Vec3i, Math::Vec3i>> m_ProcessedQuads;
+            const CChunk *m_Chunk;
+            const CBBox &m_TotalBBox;
+            const Math::Vec3i m_Size;
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //SLICER_HPP

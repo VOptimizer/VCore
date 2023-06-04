@@ -54,8 +54,8 @@ namespace VoxelOptimizer
             void ReadRLECompressed(VoxelMesh mesh);
             int GetColorIdx(int color);
 
-            CVector ReadVector();
+            Math::Vec3f ReadVector();
     };
-} // namespace VoxelOptimizer
+}
 
 #endif //QUBICLEBINARYFORMAT_HPP

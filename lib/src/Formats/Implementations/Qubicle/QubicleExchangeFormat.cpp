@@ -70,12 +70,12 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    CVector CQubicleExchangeFormat::ReadVector()
+    Math::Vec3f CQubicleExchangeFormat::ReadVector()
     {
         std::stringstream strm;
         strm << ReadLine();
 
-        CVector ret;
+        Math::Vec3f ret;
 
         strm >> ret.x >> ret.z >> ret.y;
 
@@ -109,7 +109,7 @@ namespace VoxelOptimizer
 
     void CQubicleExchangeFormat::ReadVoxels(VoxelMesh mesh)
     {
-        CVector Beg(1000, 1000, 1000), End;
+        Math::Vec3f Beg(1000, 1000, 1000), End;
         while (!IsEof())
         {
             std::stringstream strm;
@@ -117,7 +117,7 @@ namespace VoxelOptimizer
 
             int mask, cid;
 
-            CVector pos;
+            Math::Vec3f pos;
             strm >> pos.x >> pos.z >> pos.y >> cid >> mask;
 
             pos.y = (mesh->GetSize().y - 1) - pos.y;
@@ -125,10 +125,10 @@ namespace VoxelOptimizer
             if(mask == 0)
                 continue;
 
-            Beg = Beg.Min(pos);
-            End = End.Max(pos);
+            Beg = Beg.min(pos);
+            End = End.max(pos);
             mesh->SetVoxel(pos, 0, cid, false);
         }
         mesh->BBox = CBBox(Beg, End);
     }
-} // namespace VoxelOptimizer
+}

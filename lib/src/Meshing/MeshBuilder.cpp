@@ -34,7 +34,7 @@ namespace VoxelOptimizer
         m_CurrentMesh->Textures = _textures;
     }
 
-    void CMeshBuilder::AddFace(CVector _v1, CVector _v2, CVector _v3, CVector _v4, CVector _normal, int _color, Material _material)
+    void CMeshBuilder::AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, Material _material)
     {
         if(m_CurrentMesh->Textures.empty())
             throw CMeshBuilderException("Please call first CMeshBuilder::AddTextures in order to generate an uv map!");
@@ -59,30 +59,30 @@ namespace VoxelOptimizer
         else
             faces = itFaces->second;
             
-        CVector faceNormal = (_v2 - _v1).Cross(_v3 - _v1).Normalize(); 
+        Math::Vec3f faceNormal = (_v2 - _v1).cross(_v3 - _v1).normalize(); 
         int normalIdx = AddNormal(_normal);
-        int uvIdx = AddUV(CVector(((float)(_color + 0.5f)) / m_CurrentMesh->Textures[TextureType::DIFFIUSE]->Size().x, 0.5f, 0));
+        int uvIdx = AddUV(Math::Vec3f(((float)(_color + 0.5f)) / m_CurrentMesh->Textures[TextureType::DIFFIUSE]->GetSize().x, 0.5f, 0));
 
         // Checks the direction of the face.
         if(faceNormal == _normal)
         {
-            faces->Indices.push_back(CVector(i1, normalIdx, uvIdx));
-            faces->Indices.push_back(CVector(i2, normalIdx, uvIdx));
-            faces->Indices.push_back(CVector(i3, normalIdx, uvIdx));
+            faces->Indices.push_back(Math::Vec3f(i1, normalIdx, uvIdx));
+            faces->Indices.push_back(Math::Vec3f(i2, normalIdx, uvIdx));
+            faces->Indices.push_back(Math::Vec3f(i3, normalIdx, uvIdx));
 
-            faces->Indices.push_back(CVector(i1, normalIdx, uvIdx));
-            faces->Indices.push_back(CVector(i3, normalIdx, uvIdx));
-            faces->Indices.push_back(CVector(i4, normalIdx, uvIdx));
+            faces->Indices.push_back(Math::Vec3f(i1, normalIdx, uvIdx));
+            faces->Indices.push_back(Math::Vec3f(i3, normalIdx, uvIdx));
+            faces->Indices.push_back(Math::Vec3f(i4, normalIdx, uvIdx));
         }
         else
         {
-            faces->Indices.push_back(CVector(i3, normalIdx, uvIdx));
-            faces->Indices.push_back(CVector(i2, normalIdx, uvIdx));
-            faces->Indices.push_back(CVector(i1, normalIdx, uvIdx));
+            faces->Indices.push_back(Math::Vec3f(i3, normalIdx, uvIdx));
+            faces->Indices.push_back(Math::Vec3f(i2, normalIdx, uvIdx));
+            faces->Indices.push_back(Math::Vec3f(i1, normalIdx, uvIdx));
 
-            faces->Indices.push_back(CVector(i4, normalIdx, uvIdx));
-            faces->Indices.push_back(CVector(i3, normalIdx, uvIdx));
-            faces->Indices.push_back(CVector(i1, normalIdx, uvIdx));
+            faces->Indices.push_back(Math::Vec3f(i4, normalIdx, uvIdx));
+            faces->Indices.push_back(Math::Vec3f(i3, normalIdx, uvIdx));
+            faces->Indices.push_back(Math::Vec3f(i1, normalIdx, uvIdx));
         }
     }
    
@@ -107,18 +107,18 @@ namespace VoxelOptimizer
         else
             Faces = ITFaces->second;
             
-        // CVector FaceNormal = (v2 - v1).Cross(v3 - v1).Normalize(); 
+        // Math::Vec3f FaceNormal = (v2 - v1).Cross(v3 - v1).normalize(); 
         int NormalIdx = AddNormal(v1.Normal);
         int UVIdx1 = AddUV(v1.UV);
         int UVIdx2 = AddUV(v2.UV);
         int UVIdx3 = AddUV(v3.UV);
 
-        Faces->Indices.push_back(CVector(I1, NormalIdx, UVIdx1));
-        Faces->Indices.push_back(CVector(I2, NormalIdx, UVIdx2));
-        Faces->Indices.push_back(CVector(I3, NormalIdx, UVIdx3));
+        Faces->Indices.push_back(Math::Vec3f(I1, NormalIdx, UVIdx1));
+        Faces->Indices.push_back(Math::Vec3f(I2, NormalIdx, UVIdx2));
+        Faces->Indices.push_back(Math::Vec3f(I3, NormalIdx, UVIdx3));
     }
 
-    int CMeshBuilder::AddPosition(CVector _pos)
+    int CMeshBuilder::AddPosition(Math::Vec3f _pos)
     {
         int Ret = 0;
         auto IT = m_Index.find(_pos);
@@ -136,7 +136,7 @@ namespace VoxelOptimizer
         return Ret;
     }
 
-    int CMeshBuilder::AddNormal(CVector _normal)
+    int CMeshBuilder::AddNormal(Math::Vec3f _normal)
     {
         int Ret = 0;
         auto IT = m_NormalIndex.find(_normal);
@@ -154,7 +154,7 @@ namespace VoxelOptimizer
         return Ret;
     }
 
-    int CMeshBuilder::AddUV(CVector _uv)
+    int CMeshBuilder::AddUV(Math::Vec3f _uv)
     {
         int Ret = 0;
         auto IT = m_UVIndex.find(_uv);
@@ -238,19 +238,19 @@ namespace VoxelOptimizer
     void CMeshBuilder::MergeIntoThis(Mesh m)
     {
         auto euler = m->ModelMatrix.GetEuler();
-        CMat4x4 rotation;
+        Math::Mat4x4 rotation;
         rotation
-            .Rotate(CVector(0, 0, 1), euler.z)
-            .Rotate(CVector(1, 0, 0), euler.x)
-            .Rotate(CVector(0, 1, 0), euler.y);
+            .Rotate(Math::Vec3f(0, 0, 1), euler.z)
+            .Rotate(Math::Vec3f(1, 0, 0), euler.x)
+            .Rotate(Math::Vec3f(0, 1, 0), euler.y);
             
         for (auto &&f : m->Faces)
         {
             for (int i = 0; i < f->Indices.size(); i += 3)
             {
-                CVector idx1 = f->Indices[i];
-                CVector idx2 = f->Indices[i + 1];
-                CVector idx3 = f->Indices[i + 2];
+                Math::Vec3f idx1 = f->Indices[i];
+                Math::Vec3f idx2 = f->Indices[i + 1];
+                Math::Vec3f idx3 = f->Indices[i + 2];
 
                 SVertex v1 = {
                     m->ModelMatrix * m->Vertices[idx1.x - 1],
@@ -280,4 +280,4 @@ namespace VoxelOptimizer
             }
         }
     }
-} // namespace VoxelOptimizer
+}

@@ -167,7 +167,7 @@ namespace VoxelOptimizer
             void Reset();
             std::vector<char> ReadDataChunk(size_t size);
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //IVOXELFORMAT_HPP

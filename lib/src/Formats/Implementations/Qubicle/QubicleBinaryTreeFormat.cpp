@@ -139,7 +139,7 @@ namespace VoxelOptimizer
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         int strmPos = 0;
 
-        CVector Beg(1000, 1000, 1000), End;
+        Math::Vec3f Beg(1000, 1000, 1000), End;
         for (uint32_t x = 0; x < (uint32_t)mesh->GetSize().x; x++)
         {
             for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().y; z++)
@@ -160,11 +160,11 @@ namespace VoxelOptimizer
                     if(cid == -1 || ((color & 0xFF000000) >> 24) == 0)
                         continue;
 
-                    auto pos = CVector(x, z, y);
+                    auto pos = Math::Vec3f(x, z, y);
                     pos.y = (uint32_t)(mesh->GetSize().y - 1) - pos.y;
 
-                    Beg = Beg.Min(pos);
-                    End = End.Max(pos);
+                    Beg = Beg.min(pos);
+                    End = End.max(pos);
 
                     mesh->SetVoxel(pos, 0, cid, false);
                 }
@@ -207,7 +207,7 @@ namespace VoxelOptimizer
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         int strmPos = 0;
 
-        CVector Beg(1000, 1000, 1000), End;
+        Math::Vec3f Beg(1000, 1000, 1000), End;
         for (uint32_t x = 0; x < (uint32_t)mesh->GetSize().x; x++)
         {
             for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().y; z++)
@@ -228,11 +228,11 @@ namespace VoxelOptimizer
                     if(cid == -1 || ((color & 0xFF000000) >> 24) == 0)
                         continue;
 
-                    auto pos = CVector(x, z, y);
+                    auto pos = Math::Vec3f(x, z, y);
                     pos.y = (uint32_t)(mesh->GetSize().y - 1) - pos.y;
 
-                    Beg = Beg.Min(pos);
-                    End = End.Max(pos);
+                    Beg = Beg.min(pos);
+                    End = End.max(pos);
 
                     mesh->SetVoxel(pos, 0, cid, false);
                 }
@@ -249,9 +249,9 @@ namespace VoxelOptimizer
             LoadNode();
     }
 
-    CVector CQubicleBinaryTreeFormat::ReadVector()
+    Math::Vec3f CQubicleBinaryTreeFormat::ReadVector()
     {
-        CVector ret;
+        Math::Vec3f ret;
 
         ret.x = ReadData<int>();
         ret.z = ReadData<int>();
@@ -280,7 +280,7 @@ namespace VoxelOptimizer
                 m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture());
 
             m_Textures[TextureType::DIFFIUSE]->AddPixel(c);
-            ret = m_Textures[TextureType::DIFFIUSE]->Size().x - 1;
+            ret = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;
 
             m_ColorIdx.insert({color, ret});
         }
@@ -289,4 +289,4 @@ namespace VoxelOptimizer
 
         return ret;
     }
-} // namespace VoxelOptimizer
+}

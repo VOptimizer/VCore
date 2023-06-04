@@ -26,7 +26,6 @@
 #include <future>
 
 #include "Slicer/Slicer.hpp"
-#include "Slicer/BetterSlicer.hpp"
 #include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
 #include <vector>
 
@@ -34,7 +33,7 @@
 
 namespace VoxelOptimizer
 {
-    SMeshChunk CGreedyMesher::GenerateMeshChunk(VoxelMesh m, const SChunk &_Chunk, bool Opaque)
+    SMeshChunk CGreedyMesher::GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque)
     {
         CMeshBuilder builder;
         builder.AddTextures(m->Colorpalettes);
@@ -44,15 +43,15 @@ namespace VoxelOptimizer
         auto &materials = m->Materials;
 
         auto TotalBBox = m->BBox;
-        CVector Beg = TotalBBox.Beg;
+        Math::Vec3f Beg = TotalBBox.Beg;
         std::swap(Beg.y, Beg.z);
         Beg.z *= -1;
 
-        CVector BoxCenter = TotalBBox.GetSize() / 2;
+        Math::Vec3f BoxCenter = TotalBBox.GetSize() / 2;
         std::swap(BoxCenter.y, BoxCenter.z);
         BoxCenter.z *= -1;
 
-        CSlicer Slicer(m, m_Voxels, Opaque);
+        CSlicer Slicer(m, Opaque, _Chunk.Chunk, _Chunk.TotalBBox);
 
         // For all 3 axis (x, y, z)
         for (size_t Axis = 0; Axis < 3; Axis++)
@@ -64,16 +63,16 @@ namespace VoxelOptimizer
             int x[3] = {0};
 
             // Iterate over each slice of the 3d model.
-            for (x[Axis] = BBox.Beg.v[Axis] -1; x[Axis] < BBox.End.v[Axis];)
+            for (x[Axis] = BBox.Beg.v[Axis] -1; x[Axis] <= BBox.End.v[Axis];)
             {
                 ++x[Axis];
 
                 // Foreach slice go over a 2d plane. 
-                for (int HeightAxis = BBox.Beg.v[Axis2]; HeightAxis < BBox.End.v[Axis2]; ++HeightAxis)
+                for (int HeightAxis = BBox.Beg.v[Axis2]; HeightAxis <= BBox.End.v[Axis2]; ++HeightAxis)
                 {
-                    for (int WidthAxis = BBox.Beg.v[Axis1]; WidthAxis < BBox.End.v[Axis1];)
+                    for (int WidthAxis = BBox.Beg.v[Axis1]; WidthAxis <= BBox.End.v[Axis1];)
                     {
-                        CVector Pos;
+                        Math::Vec3f Pos;
                         Pos.v[Axis] = x[Axis] - 1;
                         Pos.v[Axis1] = WidthAxis;
                         Pos.v[Axis2] = HeightAxis;
@@ -81,20 +80,20 @@ namespace VoxelOptimizer
                         if(Slicer.IsFace(Pos))
                         {
                             int w, h;
-                            CVector Normal = Slicer.Normal();
+                            Math::Vec3f Normal = Slicer.Normal();
                             int Material = Slicer.Material();
                             int Color = Slicer.Color();
 
                             //Claculates the width of the rect.
-                            for (w = 1; WidthAxis + w < BBox.End.v[Axis1]; w++) 
+                            for (w = 1; WidthAxis + w <= BBox.End.v[Axis1]; w++) 
                             {
-                                CVector WPos;
+                                Math::Vec3f WPos;
                                 WPos.v[Axis1] = w;
 
                                 bool IsFace = Slicer.IsFace(Pos + WPos);
                                 if(IsFace)
                                 {
-                                    CVector FaceNormal = Slicer.Normal();
+                                    Math::Vec3f FaceNormal = Slicer.Normal();
                                     IsFace = Normal == FaceNormal && Material == Slicer.Material() && Color == Slicer.Color();
                                 }
 
@@ -103,19 +102,19 @@ namespace VoxelOptimizer
                             }
 
                             bool done = false;
-                            for (h = 1; HeightAxis + h < BBox.End.v[Axis2]; h++)
+                            for (h = 1; HeightAxis + h <= BBox.End.v[Axis2]; h++)
                             {
                                 // Check each block next to this quad
                                 for (int k = 0; k < w; ++k)
                                 {
-                                    CVector QuadPos = Pos;
+                                    Math::Vec3f QuadPos = Pos;
                                     QuadPos.v[Axis1] += k;
                                     QuadPos.v[Axis2] += h;
 
                                     bool IsFace = Slicer.IsFace(QuadPos);
                                     if(IsFace)
                                     {
-                                        CVector FaceNormal = Slicer.Normal();
+                                        Math::Vec3f FaceNormal = Slicer.Normal();
                                         IsFace = Normal == FaceNormal && Material == Slicer.Material() && Color == Slicer.Color();
                                     }
 
@@ -142,17 +141,17 @@ namespace VoxelOptimizer
 
                             int I1, I2, I3, I4;                            
 
-                            CVector v1 = CVector(x[0], x[2], -x[1]) - BoxCenter;
-                            CVector v2 = CVector(x[0] + du[0], x[2] + du[2], -x[1] - du[1]) - BoxCenter;
-                            CVector v3 = CVector(x[0] + du[0] + dv[0], x[2] + du[2] + dv[2], -x[1] - du[1] - dv[1]) - BoxCenter;
-                            CVector v4 = CVector(x[0] + dv[0], x[2] + dv[2], -x[1] - dv[1]) - BoxCenter;
+                            Math::Vec3f v1 = Math::Vec3f(x[0], x[2], -x[1]) - BoxCenter;
+                            Math::Vec3f v2 = Math::Vec3f(x[0] + du[0], x[2] + du[2], -x[1] - du[1]) - BoxCenter;
+                            Math::Vec3f v3 = Math::Vec3f(x[0] + du[0] + dv[0], x[2] + du[2] + dv[2], -x[1] - du[1] - dv[1]) - BoxCenter;
+                            Math::Vec3f v4 = Math::Vec3f(x[0] + dv[0], x[2] + dv[2], -x[1] - dv[1]) - BoxCenter;
 
                             std::swap(Normal.y, Normal.z);
                             if(Normal.z != 0)
                                 Normal.z *= -1;
 
                             builder.AddFace(v1, v2, v3, v4, Normal, Color, materials[Material]);
-                            Slicer.AddProcessedQuad(CVector(x[0], x[1], x[2]), CVector(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2]));
+                            Slicer.AddProcessedQuad(Math::Vec3f(x[0], x[1], x[2]), Math::Vec3f(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2]));
 
                             // Increment counters and continue
                             WidthAxis += w;
@@ -176,4 +175,4 @@ namespace VoxelOptimizer
 
         return chunk;
     }
-} // namespace VoxelOptimizer
+}

@@ -86,6 +86,6 @@ namespace VoxelOptimizer
 
         return (S2 << 16) + S1;
     }
-} // namespace VoxelOptimizer
+}
 
 #endif //FILEUTILS_HPP

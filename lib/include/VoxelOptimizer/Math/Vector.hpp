@@ -25,314 +25,402 @@
 #ifndef VECTOR_HPP
 #define VECTOR_HPP
 
-#include <functional>
-#include <string>
 #include <math.h>
-#include <iostream>
+#include <unordered_map>
 
 namespace VoxelOptimizer
 {
-    template<class T>
-    class TVector
+    namespace Math
     {
-        public:
-            union
-            {
-                struct
+        template<class T>
+        class TVector2
+        {
+            public:
+                union
                 {
-                    T x;
-                    T y;
-                    T z;
+                    struct
+                    {
+                        T x;
+                        T y;
+                    };
+                    
+                    T v[2];
                 };
-                
-                T v[3];
-            };
 
-            TVector() : x(0), y(0), z(0) {}
-            TVector(T x, T y, T z) : x(x), y(y), z(z) {}
-            TVector(const TVector &v) : x(v.x), y(v.y), z(v.z) {}
+                TVector2() : x(0), y(0){}
+                TVector2(T x, T y) : x(x), y(y) {}
 
-            template<class O>
-            TVector(const TVector<O> &v) : x(v.x), y(v.y), z(v.z) {}
-            
-            inline T Sum() 
-            {
-                return x + y + z;
-            }
+                template<class O>
+                TVector2(const TVector2<O> &v) : x(v.x), y(v.y) {}
+                TVector2(const TVector2 &_Vec) : x(_Vec.x), y(_Vec.y) {}
 
-            inline TVector Floor()
-            {
-                return TVector(floorf(x), floorf(y), floorf(z));
-            }
+                // Upon here just math. Math is magic :D
 
-            inline TVector Sign()
-            {
-                return TVector(Sign(x), Sign(y), Sign(z));
-            }
+                inline TVector2 operator*(const TVector2 &vr) const
+                {
+                    return TVector2(x * vr.x, y * vr.y);
+                }
 
-            inline TVector Fract()
-            {
-                return TVector(x - (int)x, y - (int)y, z - (int)z);
-            }
+                inline TVector2 operator-(const TVector2 &vr) const
+                {
+                    return TVector2(x - vr.x, y - vr.y);
+                }
 
-            inline bool IsZero() const
-            {
-                return x == 0 && y == 0 && z == 0;
-            }
+                inline TVector2 operator+(const TVector2 &vr) const
+                {
+                    return Vec4f(x + vr.x, y + vr.y);
+                }
 
-            inline bool operator==(const TVector &vr) const
-            {
-                return x == vr.x && y == vr.y && z == vr.z;
-            }
+                inline TVector2 &operator+=(const TVector2 &vr)
+                {
+                    x += vr.x;
+                    y += vr.y;
 
-            inline bool operator!=(const TVector &vr) const
-            {
-                return x != vr.x || y != vr.y || z != vr.z;
-            }
-
-            inline bool operator>(const TVector &vr) const
-            {
-                if(x != vr.x)
-                    return x > vr.x;
-
-                if(y != vr.y)
-                    return y > vr.y;
-
-                return z > vr.z;
-
-                return (x > vr.x) || (y > vr.y) || (z > vr.z);
-            }
-
-            inline bool operator>=(const TVector &vr) const
-            {
-                if(x != vr.x)
-                    return x >= vr.x;
-
-                if(y != vr.y)
-                    return y >= vr.y;
-
-                return z >= vr.z;
-
-                return (x >= vr.x) || (y >= vr.y) || (z >= vr.z);
-            }
-
-            inline bool operator<(const TVector &vr) const
-            {
-                if(x != vr.x)
-                    return x < vr.x;
-
-                if(y != vr.y)
-                    return y < vr.y;
-
-                return z < vr.z;
-
-                return (x < vr.x) || (y < vr.y) || (z < vr.z);
-            }
-
-            inline bool operator<=(const TVector &vr) const
-            {
-                if(x != vr.x)
-                    return x <= vr.x;
-
-                if(y != vr.y)
-                    return y <= vr.y;
-
-                return z <= vr.z;
-
-                return (x <= vr.x) || (y <= vr.y) || (z <= vr.z);
-            }
-
-            // Upon here just math. Math is magic :D
-
-            inline TVector operator*(const TVector &vr) const
-            {
-                return TVector(x * vr.x, y * vr.y, z * vr.z);
-            }
-
-            inline TVector operator-(const TVector &vr) const
-            {
-                return TVector(x - vr.x, y - vr.y, z - vr.z);
-            }
-
-            inline TVector operator+(const TVector &vr) const
-            {
-                return TVector(x + vr.x, y + vr.y, z + vr.z);
-            }
-
-            inline TVector &operator+=(const TVector &vr)
-            {
-                x += vr.x;
-                y += vr.y;
-                z += vr.z;
-
-                return *this;
-            }
-
-            inline TVector operator/(const TVector &vr) const
-            {
-                return TVector(x / vr.x, y / vr.y, z / vr.z);
-            }
-
-            inline TVector operator/(float scalar) const
-            {
-                return TVector(x / scalar, y / scalar, z / scalar);
-            }
-
-            inline TVector operator*(float scalar) const
-            {
-                return TVector(x * scalar, y * scalar, z * scalar);
-            }
-
-            inline TVector operator-() const
-            {
-                return TVector(-x, -y, -z);
-            }
-
-            inline float Dot(const TVector &vr) const
-            {
-                return x * vr.x + y * vr.y + z * vr.z;
-            }
-
-            inline TVector Cross(const TVector &vr) const
-            {
-                return TVector(y * vr.z - z * vr.y, 
-                               z * vr.x - x * vr.z, 
-                               x * vr.y - y * vr.x);
-            }
-
-            inline float Length() const
-            {
-                return sqrt((x * x) + (y * y) + (z * z));
-            }
-
-            inline TVector Normalize() const
-            {
-                float v = Length();
-                if(v == 0)
                     return *this;
+                }
 
-                return TVector(x / v, y / v, z / v);
-            }
-
-            inline size_t hash() const
-            {
-                std::hash<std::string> Hash;
-                return Hash(std::to_string(x) + "_" + std::to_string(y) + "_" + std::to_string(z));
-            }
-
-            inline TVector Min(const TVector &vec) const
-            {
-                return TVector(std::min(x, vec.x), std::min(y, vec.y), std::min(z, vec.z));
-            }
-
-            inline TVector Max(const TVector &vec) const
-            {
-                return TVector(std::max(x, vec.x), std::max(y, vec.y), std::max(z, vec.z));
-            }
-
-            inline TVector Abs() const
-            {
-                return TVector(fabs(x), fabs(y), fabs(z));
-            }
-
-            ~TVector() = default;
-
-        private:
-            inline float Sign(float v)
-            {
-                return v == 0 ? 0 : v < 0 ? -1 : 1;
-            }
-    };
-
-    template<class T>
-    inline TVector<T> operator*(float scalar, const TVector<T> &vr)
-    {
-        return vr * scalar;
-    }
-
-    using CVector = TVector<float>;
-    using CVectori = TVector<int>;
-
-    class CVector4
-    {
-        public:
-            union
-            {
-                struct
+                inline bool operator>=(const TVector2 &vr) const
                 {
-                    float x;
-                    float y;
-                    float z;
-                    float w;
+                    if(x != vr.x)
+                        return x >= vr.x;
+
+                    return y >= vr.y;
+                }
+
+                inline TVector2 operator/(const TVector2 &vr) const
+                {
+                    return TVector2(x / vr.x, y / vr.y);
+                }
+
+                inline TVector2 operator/(float scalar) const
+                {
+                    return TVector2(x / scalar, y / scalar);
+                }
+
+                inline TVector2 operator*(float scalar) const
+                {
+                    return TVector2(x * scalar, y * scalar);
+                }
+
+                ~TVector2() = default;
+        };
+
+        template<class T>
+        class TVector3
+        {
+            public:
+                static const TVector3 ZERO;
+                static const TVector3 ONE;
+                static const TVector3 UP;
+                static const TVector3 DOWN;
+                static const TVector3 FRONT;
+                static const TVector3 BACK;
+                static const TVector3 LEFT;
+                static const TVector3 RIGHT;
+
+                union
+                {
+                    struct
+                    {
+                        T x;
+                        T y;
+                        T z;
+                    };
+                    
+                    T v[3];
                 };
+
+                TVector3() : x(0), y(0), z(0) {}
+                TVector3(T x, T y, T z) : x(x), y(y), z(z) {}
+                TVector3(const TVector3 &v) : x(v.x), y(v.y), z(v.z) {}
+
+                template<class O>
+                TVector3(const TVector3<O> &v) : x(v.x), y(v.y), z(v.z) {}
                 
-                float v[4];
-            };
+                inline bool IsZero() const
+                {
+                    return x == 0 && y == 0 && z == 0;
+                }
 
-            CVector4() : x(0), y(0), z(0), w(0) {}
-            CVector4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
+                inline bool operator==(const TVector3 &vr) const
+                {
+                    return x == vr.x && y == vr.y && z == vr.z;
+                }
 
-            template<class T>
-            CVector4(const TVector<T> &v) : x(v.x), y(v.y), z(v.z), w(1.0) {}
-            CVector4(const CVector4 &v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
+                inline bool operator!=(const TVector3 &vr) const
+                {
+                    return x != vr.x || y != vr.y || z != vr.z;
+                }
 
-            template<class T>
-            inline TVector<T> ToVector3() const
-            {
-                return TVector<T> (x, y, z);
-            }
+                inline bool operator>(const TVector3 &vr) const
+                {
+                    if(x != vr.x)
+                        return x > vr.x;
 
-            // Upon here just math. Math is magic :D
+                    if(y != vr.y)
+                        return y > vr.y;
 
-            inline CVector4 operator*(const CVector4 &vr) const
-            {
-                return CVector4(x * vr.x, y * vr.y, z * vr.z, w * vr.w);
-            }
+                    return z > vr.z;
+                }
 
-            inline CVector4 operator-(const CVector4 &vr) const
-            {
-                return CVector4(x - vr.x, y - vr.y, z - vr.z, w - vr.w);
-            }
+                inline bool operator>=(const TVector3 &vr) const
+                {
+                    if(x != vr.x)
+                        return x >= vr.x;
 
-            inline CVector4 operator+(const CVector4 &vr) const
-            {
-                return CVector4(x + vr.x, y + vr.y, z + vr.z, w + vr.w);
-            }
+                    if(y != vr.y)
+                        return y >= vr.y;
 
-            inline CVector4 &operator+=(const CVector4 &vr)
-            {
-                x += vr.x;
-                y += vr.y;
-                z += vr.z;
-                w += vr.w;
+                    return z >= vr.z;
+                }
 
-                return *this;
-            }
+                inline bool operator<(const TVector3 &vr) const
+                {
+                    if(x != vr.x)
+                        return x < vr.x;
 
-            inline CVector4 operator/(const CVector4 &vr) const
-            {
-                return CVector4(x / vr.x, y / vr.y, z / vr.z, w / vr.w);
-            }
+                    if(y != vr.y)
+                        return y < vr.y;
 
-            inline CVector4 operator/(float scalar) const
-            {
-                return CVector4(x / scalar, y / scalar, z / scalar, w / scalar);
-            }
+                    return z < vr.z;
+                }
 
-            inline CVector4 operator*(float scalar) const
-            {
-                return CVector4(x * scalar, y * scalar, z * scalar, w * scalar);
-            }
+                inline bool operator<=(const TVector3 &vr) const
+                {
+                    if(x != vr.x)
+                        return x <= vr.x;
 
-            ~CVector4() = default;
-    };
+                    if(y != vr.y)
+                        return y <= vr.y;
 
-    template<class T>
-    inline std::ostream &operator<<(std::ostream &of, const TVector<T> &vec)
-    {
-        of << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
-        return of;
+                    return z <= vr.z;
+                }
+
+                // Upon here just math. Math is magic :D
+
+                inline TVector3 operator*(const TVector3 &vr) const
+                {
+                    return TVector3(x * vr.x, y * vr.y, z * vr.z);
+                }
+
+                inline TVector3 operator-(const TVector3 &vr) const
+                {
+                    return TVector3(x - vr.x, y - vr.y, z - vr.z);
+                }
+
+                inline TVector3 operator+(const TVector3 &vr) const
+                {
+                    return TVector3(x + vr.x, y + vr.y, z + vr.z);
+                }
+
+                inline TVector3 &operator+=(const TVector3 &vr)
+                {
+                    x += vr.x;
+                    y += vr.y;
+                    z += vr.z;
+
+                    return *this;
+                }
+
+                inline TVector3 operator/(const TVector3 &vr) const
+                {
+                    return TVector3(x / vr.x, y / vr.y, z / vr.z);
+                }
+
+                inline TVector3 operator/(float scalar) const
+                {
+                    return TVector3(x / scalar, y / scalar, z / scalar);
+                }
+
+                inline TVector3 operator*(float scalar) const
+                {
+                    return TVector3(x * scalar, y * scalar, z * scalar);
+                }
+
+                inline TVector3 operator-() const
+                {
+                    return TVector3(-x, -y, -z);
+                }
+
+                inline float dot(const TVector3 &vr) const
+                {
+                    return x * vr.x + y * vr.y + z * vr.z;
+                }
+
+                inline TVector3 cross(const TVector3 &vr) const
+                {
+                    return TVector3(y * vr.z - z * vr.y, 
+                                z * vr.x - x * vr.z, 
+                                x * vr.y - y * vr.x);
+                }
+
+                inline float length() const
+                {
+                    return sqrt((x * x) + (y * y) + (z * z));
+                }
+
+                inline TVector3 normalize() const
+                {
+                    float v = length();
+                    if(v == 0)
+                        return *this;
+
+                    return TVector3(x / v, y / v, z / v);
+                }
+
+                inline TVector3 min(const TVector3 &vec) const
+                {
+                    return TVector3(std::min(x, vec.x), std::min(y, vec.y), std::min(z, vec.z));
+                }
+
+                inline TVector3 max(const TVector3 &vec) const
+                {
+                    return TVector3(std::max(x, vec.x), std::max(y, vec.y), std::max(z, vec.z));
+                }
+
+                inline TVector3 abs() const
+                {
+                    return TVector3(fabs(x), fabs(y), fabs(z));
+                }
+
+                ~TVector3() = default;
+
+                class Hasher
+                {
+                    public:
+                        std::size_t operator()(TVector3<T> const& _Vec) const noexcept
+                        {
+                            return (((int)_Vec.x * 73856093) ^ ((int)_Vec.y * 19349663) ^ ((int)_Vec.z * 83492791));
+                        }
+                };
+        };
+
+        class Vec4f
+        {
+            public:
+                union
+                {
+                    struct
+                    {
+                        float x;
+                        float y;
+                        float z;
+                        float w;
+                    };
+                    
+                    float v[4];
+                };
+
+                Vec4f() : x(0), y(0), z(0), w(0) {}
+                Vec4f(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
+
+                template<class T>
+                Vec4f(const TVector3<T> &v) : x(v.x), y(v.y), z(v.z), w(1.0) {}
+                Vec4f(const Vec4f &v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
+
+                template<class T>
+                inline TVector3<T> ToVector3() const
+                {
+                    return TVector3<T> (x, y, z);
+                }
+
+                // Upon here just math. Math is magic :D
+
+                inline Vec4f operator*(const Vec4f &vr) const
+                {
+                    return Vec4f(x * vr.x, y * vr.y, z * vr.z, w * vr.w);
+                }
+
+                inline Vec4f operator-(const Vec4f &vr) const
+                {
+                    return Vec4f(x - vr.x, y - vr.y, z - vr.z, w - vr.w);
+                }
+
+                inline Vec4f operator+(const Vec4f &vr) const
+                {
+                    return Vec4f(x + vr.x, y + vr.y, z + vr.z, w + vr.w);
+                }
+
+                inline Vec4f &operator+=(const Vec4f &vr)
+                {
+                    x += vr.x;
+                    y += vr.y;
+                    z += vr.z;
+                    w += vr.w;
+
+                    return *this;
+                }
+
+                inline Vec4f operator/(const Vec4f &vr) const
+                {
+                    return Vec4f(x / vr.x, y / vr.y, z / vr.z, w / vr.w);
+                }
+
+                inline Vec4f operator/(float scalar) const
+                {
+                    return Vec4f(x / scalar, y / scalar, z / scalar, w / scalar);
+                }
+
+                inline Vec4f operator*(float scalar) const
+                {
+                    return Vec4f(x * scalar, y * scalar, z * scalar, w * scalar);
+                }
+
+                ~Vec4f() = default;
+        };
+
+        using Vec2f = TVector2<float>;
+        using Vec2ui = TVector2<unsigned int>;
+
+        using Vec3f = TVector3<float>;
+        using Vec3i = TVector3<int>;
+
+        template<class T>   
+        const TVector3<T> TVector3<T>::ZERO;
+
+        template<class T>   
+        const TVector3<T> TVector3<T>::ONE(1, 1, 1);
+
+        template<class T>   
+        const TVector3<T> TVector3<T>::UP(0, 1, 0);
+
+        template<class T>   
+        const TVector3<T> TVector3<T>::DOWN(0, -1, 0);
+
+        template<class T>   
+        const TVector3<T> TVector3<T>::FRONT(0, 0, 1);
+
+        template<class T>   
+        const TVector3<T> TVector3<T>::BACK(0, 0, -1);
+
+        template<class T>   
+        const TVector3<T> TVector3<T>::LEFT(-1, 0, 0);
+
+        template<class T>   
+        const TVector3<T> TVector3<T>::RIGHT(1, 0, 0);
+
+        template<class T>
+        inline TVector3<T> operator*(float scalar, const TVector3<T> &vr)
+        {
+            return vr * scalar;
+        }
+
+        inline Vec3f floor(const Vec3f &_Vec)
+        {
+            return Vec3f(floorf(_Vec.x), floorf(_Vec.y), floorf(_Vec.z));
+        }
+
+        inline Vec3f fract(const Vec3f &_Vec)
+        {
+            return Vec3f(_Vec.x - (int)_Vec.x, _Vec.y - (int)_Vec.y, _Vec.z - (int)_Vec.z);
+        }
     }
-} // namespace VoxelOptimizer
+
+    template<class T, class KeyEqual = std::equal_to<Math::Vec3f>>
+    using VectorMap = std::unordered_map<Math::Vec3f, T, Math::Vec3f::Hasher, KeyEqual>;
+
+    template<class T, class KeyEqual = std::equal_to<Math::Vec3i>>
+    using VectoriMap = std::unordered_map<Math::Vec3i, T, Math::Vec3i::Hasher, KeyEqual>;
+}
 
 #endif //VECTOR_HPP

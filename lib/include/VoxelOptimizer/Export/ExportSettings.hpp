@@ -44,6 +44,6 @@ namespace VoxelOptimizer
     };
 
     using ExportSettings = std::shared_ptr<CExportSettings>;
-} // namespace VoxelOptimizer
+}
 
 #endif //EXPORTSETTINGS_HPP

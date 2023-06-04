@@ -39,12 +39,12 @@ namespace VoxelOptimizer
         protected:
             void ParseFormat() override;
 
-            CVector ReadVector();
+            Math::Vec3f ReadVector();
             void ReadColors();
             void ReadVoxels(VoxelMesh mesh);
 
             std::string ReadLine();
     };
-} // namespace VoxelOptimizer
+}
 
 #endif //QUBICLEEXCHANGEFORMAT_HPP

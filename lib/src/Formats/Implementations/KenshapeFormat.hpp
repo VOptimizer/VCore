@@ -37,7 +37,7 @@ namespace VoxelOptimizer
         private:
             void ParseFormat() override;   
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //KENSHAPEFORMAT_HPP

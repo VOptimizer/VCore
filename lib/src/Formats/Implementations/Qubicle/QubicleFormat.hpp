@@ -45,11 +45,11 @@ namespace VoxelOptimizer
             void LoadCompound();
 
             int GetColorIdx(int color);
-            void AddVoxel(VoxelMesh mesh, int color, CVector pos, CVector &Beg, CVector &End);
+            void AddVoxel(VoxelMesh mesh, int color, Math::Vec3f pos, Math::Vec3f &Beg, Math::Vec3f &End);
 
-            CVector ReadVector();
+            Math::Vec3f ReadVector();
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //QUBICLEFORMAT_HPP

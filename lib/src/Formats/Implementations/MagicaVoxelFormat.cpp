@@ -108,7 +108,7 @@ namespace VoxelOptimizer
                         // 2. All meshers centers the mehs in object space so we need to add the fractal part to the translation
                         // 3. Add the distance from object center to space center and add the start position of the voxel mesh
 
-                        CVector spaceCenter = halfSize.Fract() + m->BBox.Beg + (m->BBox.GetSize() / 2 - halfSize);
+                        Math::Vec3f spaceCenter = Math::fract(halfSize) + m->BBox.Beg + (m->BBox.GetSize() / 2 - halfSize);
                         m->Pivot = spaceCenter;
                         std::swap(spaceCenter.y, spaceCenter.z);
                         spaceCenter.z *= -1;
@@ -132,19 +132,19 @@ namespace VoxelOptimizer
         }
         auto texIT = m_Textures.find(TextureType::DIFFIUSE);
         if(texIT == m_Textures.end())
-            m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture(CVectori(m_ColorMapping.size(), 1, 0)));
+            m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture(Math::Vec2ui(m_ColorMapping.size(), 1)));
 
         if(m_HasEmission)
         {
             auto texIT = m_Textures.find(TextureType::EMISSION);
             if(texIT == m_Textures.end())
-                m_Textures[TextureType::EMISSION] = Texture(new CTexture(CVectori(m_ColorMapping.size(), 1, 0)));
+                m_Textures[TextureType::EMISSION] = Texture(new CTexture(Math::Vec2ui(m_ColorMapping.size(), 1)));
         }
 
         // Creates the used color palette.
         for (auto &&c : m_ColorMapping)
         {
-            m_Textures[TextureType::DIFFIUSE]->AddPixel(m_ColorPalette[c.first - 1], CVectori(c.second, 0, 0));
+            m_Textures[TextureType::DIFFIUSE]->AddPixel(m_ColorPalette[c.first - 1], Math::Vec2ui(c.second, 0));
             if(m_HasEmission)
             {
                 int MatIdx = 0;
@@ -154,7 +154,7 @@ namespace VoxelOptimizer
 
                 auto material = m_Materials[MatIdx];
                 if(material->Power > 0)
-                    m_Textures[TextureType::EMISSION]->AddPixel(m_ColorPalette[c.first - 1], CVectori(c.second, 0, 0));
+                    m_Textures[TextureType::EMISSION]->AddPixel(m_ColorPalette[c.first - 1], Math::Vec2ui(c.second, 0));
             }
         }
 
@@ -177,7 +177,7 @@ namespace VoxelOptimizer
     {
         VoxelMesh Ret = VoxelMesh(new CVoxelMesh());
 
-        CVectori Size;
+        Math::Vec3i Size;
 
         Size.x = ReadData<int>();
         Size.y = ReadData<int>();
@@ -192,7 +192,7 @@ namespace VoxelOptimizer
     {
         int VoxelCount = ReadData<int>();
 
-        CVectori Beg(INT32_MAX, INT32_MAX, INT32_MAX), End;
+        Math::Vec3i Beg(INT32_MAX, INT32_MAX, INT32_MAX), End;
 
         // Each model has it's used material attached, so we need to map the MagicaVoxel ID to the local one of the mesh.
         std::map<int, int> modelMaterialMapping;
@@ -201,7 +201,7 @@ namespace VoxelOptimizer
         m->ReserveVoxels(VoxelCount);
         for (size_t i = 0; i < VoxelCount; i++)
         {
-            CVectori vec;
+            Math::Vec3i vec;
 
             uint8_t data[4];
 
@@ -212,8 +212,8 @@ namespace VoxelOptimizer
             vec.z = data[2];
             int MatIdx = data[3];
 
-            Beg = Beg.Min(vec);
-            End = End.Max(vec);
+            Beg = Beg.min(vec);
+            End = End.max(vec);
 
             int Color = 0;
             bool Transparent = false;
@@ -473,10 +473,10 @@ namespace VoxelOptimizer
                     char idx2 = (rot >> 2) & 3;
                     char idx3 = 3 - idx1 - idx2;
 
-                    auto rotation = CMat4x4(CVector4(0, 0, 0, 0),
-                                            CVector4(0, 0, 0, 0),
-                                            CVector4(0, 0, 0, 0),
-                                            CVector4(0, 0, 0, 1));
+                    auto rotation = Math::Mat4x4(Math::Vec4f(0, 0, 0, 0),
+                                            Math::Vec4f(0, 0, 0, 0),
+                                            Math::Vec4f(0, 0, 0, 0),
+                                            Math::Vec4f(0, 0, 0, 1));
 
                     rotation.x.v[idx1] = ((rot & 0x10) == 0x10) ? -1 : 1;
                     rotation.y.v[idx2] = ((rot & 0x20) == 0x20) ? -1 : 1;
@@ -543,4 +543,4 @@ namespace VoxelOptimizer
             Skip(size);
         }
     }
-} // namespace VoxelOptimizer
+}

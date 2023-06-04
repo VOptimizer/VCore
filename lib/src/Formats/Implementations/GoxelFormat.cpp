@@ -47,15 +47,15 @@ namespace VoxelOptimizer
             if(!l.Visible)
                 continue;
 
-            CVector Beg(INFINITY, INFINITY, INFINITY), End, TranslationBeg(INFINITY, INFINITY, INFINITY);
+            Math::Vec3f Beg(INFINITY, INFINITY, INFINITY), End, TranslationBeg(INFINITY, INFINITY, INFINITY);
             VoxelMesh m = VoxelMesh(new CVoxelMesh());
             m->Name = l.Name;
-            m->SetSize(m_BBox.End + m_BBox.Beg.Abs());
+            m->SetSize(m_BBox.End + m_BBox.Beg.abs());
             std::map<int, int> meshMaterialMapping;
 
             for (auto &&b : l.Blocks)
             {
-                CVector v = b.Pos;
+                Math::Vec3f v = b.Pos;
                 BL16 &tmp = m_BL16s[b.Index];
 
                 for (int z = v.z; z < v.z + 16; z++)
@@ -64,11 +64,11 @@ namespace VoxelOptimizer
                     {
                         for (int x = v.x; x < v.x + 16; x++)
                         {
-                            CVectori vi(x, y, z);
-                            vi += m_BBox.Beg.Abs();
+                            Math::Vec3i vi(x, y, z);
+                            vi += m_BBox.Beg.abs();
 
                             //TODO: Handle negative pos.
-                            uint32_t p = tmp.GetVoxel(CVectori(x - v.x, y - v.y, z - v.z));
+                            uint32_t p = tmp.GetVoxel(Math::Vec3i(x - v.x, y - v.y, z - v.z));
                             if((p & 0xFF000000) != 0)
                             {
                                 int IdxC = 0;
@@ -101,7 +101,7 @@ namespace VoxelOptimizer
                                             memcpy(c.c, &p, 4);
 
                                             m_Textures[TextureType::EMISSION]->AddPixel(c);
-                                            IdxC = m_Textures[TextureType::EMISSION]->Size().x - 1;
+                                            IdxC = m_Textures[TextureType::EMISSION]->GetSize().x - 1;
                                             EmissionColorIdx[p] = IdxC;
                                         }
                                         else
@@ -127,16 +127,16 @@ namespace VoxelOptimizer
                                         if(m_HasEmission)
                                             m_Textures[TextureType::EMISSION]->AddPixel(CColor(0, 0, 0, 255));
                                         
-                                        IdxC = m_Textures[TextureType::DIFFIUSE]->Size().x - 1;
+                                        IdxC = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;
                                         ColorIdx[p] = IdxC;
                                     }
                                     else
                                         IdxC = ColorIdx[p];
                                 }
                                 
-                                TranslationBeg = TranslationBeg.Min(CVector(x, y, z));
-                                Beg = Beg.Min(vi);
-                                End = End.Max(vi);
+                                TranslationBeg = TranslationBeg.min(Math::Vec3f(x, y, z));
+                                Beg = Beg.min(vi);
+                                End = End.max(vi);
 
                                 m->SetVoxel(vi, matIdx, IdxC, false);
                             }
@@ -151,7 +151,7 @@ namespace VoxelOptimizer
             // TODO: This is dumb! The model matrix should be created on a central point!
             auto sceneNode = SceneNode(new CSceneNode());
             m->Pivot = m->BBox.GetSize() / 2;
-            CVector translation = TranslationBeg + m->Pivot;
+            Math::Vec3f translation = TranslationBeg + m->Pivot;
             std::swap(translation.y, translation.z);
             translation.z *= -1;
 
@@ -235,10 +235,10 @@ namespace VoxelOptimizer
             B.Pos.y = ReadData<int>();
             B.Pos.z = ReadData<int>();
 
-            CVector v = B.Pos + CVector(16, 16, 16);
+            Math::Vec3f v = B.Pos + Math::Vec3f(16, 16, 16);
 
-            m_BBox.Beg = m_BBox.Beg.Min(B.Pos);
-            m_BBox.End = m_BBox.End.Max(v);
+            m_BBox.Beg = m_BBox.Beg.min(B.Pos);
+            m_BBox.End = m_BBox.End.max(v);
 
             Skip(sizeof(int));
 
@@ -289,4 +289,4 @@ namespace VoxelOptimizer
 
         return Ret;
     }
-} // namespace VoxelOptimizer
+}

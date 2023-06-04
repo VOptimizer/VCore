@@ -25,40 +25,41 @@
 #include <VoxelOptimizer/Meshing/Texture.hpp>
 #include <string.h>
 #include <stb_image_write.h>
+#include <stdexcept>
 
 namespace VoxelOptimizer
 {
-    CTexture::CTexture(const CVectori &_size)
+    CTexture::CTexture(const Math::Vec2ui &_Size)
     {
-        m_Size = _size;
+        m_Size = _Size;
         m_Pixels.resize(m_Size.x * m_Size.y, 0xFF000000);
     }
 
-    CTexture::CTexture(const CTexture &_texture)
+    CTexture::CTexture(const CTexture &_Texture)
     {
-        m_Size = _texture.m_Size;
+        m_Size = _Texture.m_Size;
         m_Pixels.resize(m_Size.x * m_Size.y);
 
-        memcpy(&m_Pixels[0], &_texture.m_Pixels[0], m_Pixels.size() * sizeof(uint32_t));
+        memcpy(&m_Pixels[0], &_Texture.m_Pixels[0], m_Pixels.size() * sizeof(uint32_t));
     }
 
-    CTexture::CTexture(const CVectori &_size, uint32_t *_data)
+    CTexture::CTexture(const Math::Vec2ui &_Size, uint32_t *_Data)
     {
-        m_Size = _size;
+        m_Size = _Size;
         m_Pixels.resize(m_Size.x * m_Size.y);
 
-        memcpy(&m_Pixels[0], _data, m_Pixels.size() * sizeof(uint32_t));
+        memcpy(&m_Pixels[0], _Data, m_Pixels.size() * sizeof(uint32_t));
     }
 
-    void CTexture::AddPixel(const CColor &color, const CVectori &pos)
+    void CTexture::AddPixel(const CColor &_Color, const Math::Vec2ui &_Position)
     {
-        if(pos >= m_Size)
+        if(_Position >= m_Size)
             return;
 
-        m_Pixels[pos.x + m_Size.x * pos.y] = color.AsRGBA();
+        m_Pixels[_Position.x + m_Size.x * _Position.y] = _Color.AsRGBA();
     }
 
-    void CTexture::AddPixel(const CColor &color)
+    void CTexture::AddPixel(const CColor &_Color)
     {
         if(m_Size.y != 0 && m_Size.y != 1)
             return;
@@ -66,15 +67,15 @@ namespace VoxelOptimizer
         m_Size.y = 1;
         m_Size.x++;
 
-        m_Pixels.push_back(color.AsRGBA());
+        m_Pixels.push_back(_Color.AsRGBA());
     }
 
-    uint32_t CTexture::Pixel(const CVectori &pos)
+    uint32_t CTexture::GetPixel(const Math::Vec2ui &_Position)
     {
-        if(pos.x >= m_Size.x || pos.y >= m_Size.y || pos.x < 0 || pos.y < 0)
+        if(_Position.x >= m_Size.x || _Position.y >= m_Size.y || _Position.x < 0 || _Position.y < 0)
             throw std::runtime_error("Position out of bounds!");
 
-        return m_Pixels[pos.x + m_Size.x * pos.y];
+        return m_Pixels[_Position.x + m_Size.x * _Position.y];
     }
 
     std::vector<char> CTexture::AsPNG()
@@ -87,4 +88,4 @@ namespace VoxelOptimizer
 
         return Texture;
     }
-} // namespace VoxelOptimizer
+}

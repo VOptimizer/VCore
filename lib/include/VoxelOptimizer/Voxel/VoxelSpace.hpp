@@ -29,16 +29,17 @@
 #include <VoxelOptimizer/Voxel/BBox.hpp>
 #include <VoxelOptimizer/Voxel/Voxel.hpp>
 
-#include <map>
 #include <list>
 
 namespace VoxelOptimizer
 {
     class CVoxelSpace;
+    class CChunk;
 
-    struct SChunk
+    struct SChunkMeta
     {
         size_t UniqueId;    //!< Unique identifier of the chunks. Only changes, if the voxel mesh is resized.
+        const CChunk *Chunk;      //!< Chunk with is associated with this metadata.
         CBBox TotalBBox;    //!< The total bounding box of the chunk.
         CBBox InnerBBox;    //!< The bounding box of the model inside the chunk.
     };
@@ -46,8 +47,8 @@ namespace VoxelOptimizer
     class CVoxelSpaceIterator
     {
         public:
-            using pair = std::pair<CVectori, Voxel>;
-            using reference = std::pair<CVectori, Voxel>&;
+            using pair = std::pair<Math::Vec3i, Voxel>;
+            using reference = std::pair<Math::Vec3i, Voxel>&;
             using pointer = pair*;
 
             CVoxelSpaceIterator();
@@ -73,17 +74,86 @@ namespace VoxelOptimizer
             mutable pair m_Pair;
     };
 
+    class CChunk
+    {
+        public:
+            using ppair = std::pair<Math::Vec3i, Voxel>;
+            using pair = std::pair<Math::Vec3i, CVoxel>;
+            using iterator = CVoxelSpaceIterator;
+
+            bool IsDirty;
+
+            CChunk() = delete;
+            CChunk(const CChunk &_Other) = delete;
+            CChunk(const Math::Vec3i &_ChunkSize);
+            CChunk(CChunk &&_Other);
+
+            /**
+             * @brief Insert a new voxel.
+             */
+            void insert(const pair &_pair, const CBBox &_ChunkDim);
+
+            /**
+             * @brief Removes a voxel.
+             */
+            ppair erase(const iterator &_it, const CBBox &_ChunkDim);
+
+            /**
+             * @brief Returns the next voxel or null.
+             */
+            ppair next(const Math::Vec3i &_Position, const CBBox &_ChunkDim) const;
+
+            /**
+             * @brief Tries to find a voxel.
+             * @brief Returns a reference to the voxel.
+             */
+            Voxel find(const Math::Vec3i &_v, const CBBox &_ChunkDim) const;
+
+            /**
+             * @brief Tries to find a voxel.
+             * @param _Opaque: If true only opaque voxels are returned, otherwise only none opaque voxels are returned.
+             * @brief Returns a reference to the voxel.
+             */
+            Voxel find(const Math::Vec3i &_v, const CBBox &_ChunkDim, bool _Opaque) const;
+
+            /**
+             * @brief Same as find. but only for visible voxels.
+             */
+            Voxel findVisible(const Math::Vec3i &_v, const CBBox &_ChunkDim) const;
+
+            /**
+             * @brief Same as find. but only for visible voxels.
+             */
+            Voxel findVisible(const Math::Vec3i &_v, const CBBox &_ChunkDim, bool _Opaque) const;
+
+            inline CBBox inner_bbox(const Math::Vec3i &_Position) const
+            {
+                return CBBox(m_InnerBBox.Beg + _Position, m_InnerBBox.End + _Position);
+            }
+
+            CChunk &operator=(CChunk &&_Other);
+            CChunk &operator=(const CChunk &_Other) = delete;
+
+            ~CChunk() { clear(); }
+
+        private:
+            void clear();
+
+            CVoxel *m_Data;
+            CBBox m_InnerBBox;
+    };
+
     class CVoxelSpace
     {
         friend CVoxelSpaceIterator;
 
         public:
-            using ppair = std::pair<CVectori, Voxel>;
-            using pair = std::pair<CVectori, CVoxel>;
+            using ppair = std::pair<Math::Vec3i, Voxel>;
+            using pair = std::pair<Math::Vec3i, CVoxel>;
             using iterator = CVoxelSpaceIterator;
 
             CVoxelSpace();
-            CVoxelSpace(const CVectori &_ChunkSize);
+            CVoxelSpace(const Math::Vec3i &_ChunkSize);
             CVoxelSpace(const CVoxelSpace &_Other) = delete;;
             CVoxelSpace(CVoxelSpace &&_Other);
 
@@ -99,26 +169,48 @@ namespace VoxelOptimizer
 
             /**
              * @brief Tries to find a voxel.
-             * @brief Returns an iterator to the voxel or ::end()
+             * @return Returns an iterator to the voxel or ::end()
              */
-            iterator find(const CVectori &_v) const;
+            iterator find(const Math::Vec3i &_v) const;
+
+            /**
+             * @brief Tries to find a voxel.
+             * @param _Opaque: If true only opaque voxels are returned, otherwise only none opaque voxels are returned.
+             * @return Returns an iterator to the voxel or ::end()
+             */
+            iterator find(const Math::Vec3i &_v, bool _Opaque) const;
+
+            /**
+             * @brief Same as find. but only for visible voxels.
+             */
+            iterator findVisible(const Math::Vec3i &_v) const;
+
+            /**
+             * @brief Same as find. but only for visible voxels.
+             */
+            iterator findVisible(const Math::Vec3i &_v, bool _Opaque) const;
 
             /**
              * @brief Queries all visible voxels.
              * @param opaque: If true only opaque voxels are returned, otherwise only none opaque voxels are returned.
              */
-            std::map<CVectori, Voxel> queryVisible(bool opaque) const;
+            VectoriMap<Voxel> queryVisible(bool opaque) const;
 
             /**
              * @return Gets a list of all chunks which has been modified.
              * @note Marks all chunks as processed.
              */
-            std::list<SChunk> queryDirtyChunks();
+            std::list<SChunkMeta> queryDirtyChunks() const;
+
+            /**
+             * @brief Marks a dirty chunks as clean.
+             */
+            void markAsProcessed(const SChunkMeta &_Chunk);
 
             /**
              * @return Returns all chunks.
              */
-            std::list<SChunk> queryChunks() const;
+            std::list<SChunkMeta> queryChunks() const;
 
             /**
              * @brief Generates and updates all the visibility masks of the voxels.
@@ -128,7 +220,7 @@ namespace VoxelOptimizer
             /**
              * @brief Updates the visibility mask of a given voxel and its neighbours.
              */
-            void updateVisibility(const CVectori &_Position);
+            void updateVisibility(const Math::Vec3i &_Position);
 
             /**
              * @return Gets the voxel count.
@@ -149,65 +241,17 @@ namespace VoxelOptimizer
             ~CVoxelSpace() { clear(); }
 
         private:
-            class CChunk
-            {
-                public:
-                    bool IsDirty;
-
-                    CChunk() = delete;
-                    CChunk(const CChunk &_Other) = delete;
-                    CChunk(const CVectori &_ChunkSize);
-                    CChunk(CChunk &&_Other);
-
-                    /**
-                     * @brief Insert a new voxel.
-                     */
-                    void insert(const pair &_pair, const CBBox &_ChunkDim);
-
-                    /**
-                     * @brief Removes a voxel.
-                     */
-                    ppair erase(const iterator &_it, const CBBox &_ChunkDim);
-
-                    /**
-                     * @brief Returns the next voxel or null.
-                     */
-                    ppair next(const CVectori &_Position, const CBBox &_ChunkDim) const;
-
-                    /**
-                     * @brief Tries to find a voxel.
-                     * @brief Returns a reference to the voxel.
-                     */
-                    Voxel find(const CVectori &_v, const CBBox &_ChunkDim) const;
-
-                    inline CBBox inner_bbox(const CVectori &_Position) const
-                    {
-                        return CBBox(m_InnerBBox.Beg + _Position, m_InnerBBox.End + _Position);
-                    }
-
-                    CChunk &operator=(CChunk &&_Other);
-                    CChunk &operator=(const CChunk &_Other) = delete;
-
-                    ~CChunk() { clear(); }
-
-                private:
-                    void clear();
-
-                    CVoxel *m_Data;
-                    CBBox m_InnerBBox;
-            };
-
-            CVectori chunkpos(const CVectori &_Position) const;
+            Math::Vec3i chunkpos(const Math::Vec3i &_Position) const;
             void CheckVisibility(const Voxel &_v, const Voxel &_v2, char _axis);
 
-            iterator next(const CVectori &_FromPosition) const;
+            iterator next(const Math::Vec3i &_FromPosition) const;
 
-            CVectori m_Size;
-            CVectori m_ChunkSize;
+            Math::Vec3i m_Size;
+            Math::Vec3i m_ChunkSize;
             size_t m_VoxelsCount;
-            std::map<CVectori, CChunk> m_Chunks;
+            std::unordered_map<Math::Vec3i, CChunk, Math::Vec3i::Hasher> m_Chunks;
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif

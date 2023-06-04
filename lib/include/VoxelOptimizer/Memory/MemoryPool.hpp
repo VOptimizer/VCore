@@ -26,6 +26,7 @@
 #define MEMORYPOOL_HPP
 
 #include <stddef.h>
+#include <mutex>
 
 namespace VoxelOptimizer
 {
@@ -80,6 +81,8 @@ namespace VoxelOptimizer
 
             Chunk *m_FirstFreeChunk;
             Block *m_Blocks;
+
+            std::recursive_mutex m_Lock;
     };
 
     //////////////////////////////////////////////////
@@ -92,6 +95,7 @@ namespace VoxelOptimizer
     template<class T, size_t GrowSize>
     inline T* CMemoryPool<T, GrowSize>::allocate(size_type _n)
     {
+        std::lock_guard<std::recursive_mutex> lock(m_Lock);
         if(!m_FirstFreeChunk)
             allocateBlock(_n > GrowSize ? _n : GrowSize);
 
@@ -105,7 +109,7 @@ namespace VoxelOptimizer
         size_type continues = 0;
         while (tmp)
         {
-            if((tmp + Block::ChunkSize) == tmp->Next)
+            if((((char*)tmp) + Block::ChunkSize) == (char*)tmp->Next)
                 continues++;
             else
                 continues = 0;
@@ -118,20 +122,26 @@ namespace VoxelOptimizer
         
         if(continues == _n)
         {
+            auto tmp2 = tmp;
             tmp = m_FirstFreeChunk;
-            m_FirstFreeChunk = tmp->Next;
+            m_FirstFreeChunk = tmp2->Next;
             return (T*)tmp;
         }
         
         allocateBlock(_n);
         tmp = m_FirstFreeChunk;
-        m_FirstFreeChunk = tmp->Next;
+        for (size_t i = 0; i < _n - 1; i++)
+            m_FirstFreeChunk = m_FirstFreeChunk->Next;
+        
+
+        // m_FirstFreeChunk = (tmp + (Block::ChunkSize * _n));
         return (T*)tmp;
     }
 
     template<class T, size_t GrowSize>
     inline void CMemoryPool<T, GrowSize>::deallocate(T *_ptr, size_type _n)
     {
+        std::lock_guard<std::recursive_mutex> lock(m_Lock);
         for (size_t i = 0; i < _n; i++)
         {
             Chunk *tmp = (Chunk*)(_ptr + (Block::ChunkSize * i));
@@ -143,6 +153,7 @@ namespace VoxelOptimizer
     template<class T, size_t GrowSize>
     inline void CMemoryPool<T, GrowSize>::clear()
     {
+        std::lock_guard<std::recursive_mutex> lock(m_Lock);
         while(m_Blocks)
         {
             Block *tmp = m_Blocks->Next;
@@ -172,7 +183,7 @@ namespace VoxelOptimizer
     //////////////////////////////////////////////////
 
     template<class T, size_t GrowSize>
-    const typename CMemoryPool<T, GrowSize>::size_type CMemoryPool<T, GrowSize>::Block::ChunkSize = sizeof(T) >= sizeof(Chunk) ? sizeof(T) : sizeof(Chunk);
+    const typename CMemoryPool<T, GrowSize>::size_type CMemoryPool<T, GrowSize>::Block::ChunkSize = sizeof(T) >= sizeof(Chunk) ? sizeof(T) + (sizeof(void*) - (sizeof(T) % sizeof(void*))) : sizeof(Chunk);
 
     template<class T, size_t GrowSize>
     inline CMemoryPool<T, GrowSize>::Block::Block(Block *_next, Chunk *_free, size_type _reserve) : Next(_next), m_Size(_reserve)
@@ -196,6 +207,6 @@ namespace VoxelOptimizer
     {
         delete[] Data;
     }
-} // namespace VoxelOptimizer
+}
 
 #endif

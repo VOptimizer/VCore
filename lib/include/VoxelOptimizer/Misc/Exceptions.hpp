@@ -58,7 +58,7 @@ namespace VoxelOptimizer
         private:
             std::string m_Msg;
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //EXCEPTIONS_HPP

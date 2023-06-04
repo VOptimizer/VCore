@@ -36,9 +36,9 @@ namespace VoxelOptimizer
             ~CSimpleMesher() = default;
 
         protected:
-            SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunk &_Chunk, bool Opaque) override;
+            SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque) override;
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //SIMPLEMESHER_HPP

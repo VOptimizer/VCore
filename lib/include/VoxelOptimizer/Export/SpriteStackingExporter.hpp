@@ -57,7 +57,7 @@ namespace VoxelOptimizer
         private:
         /* data */
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //SPRITESTACKINGEXPORTER_HPP

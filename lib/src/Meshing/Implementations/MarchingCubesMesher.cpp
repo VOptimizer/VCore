@@ -286,90 +286,90 @@ namespace VoxelOptimizer
             {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
     };
 
-    CVector positionTable[] = {
-        CVector(0, -0.5, -0.5),
-        CVector(0.5, 0, -0.5),
-        CVector(0, 0.5, -0.5),
-        CVector(-0.5, 0, -0.5),
+    Math::Vec3f positionTable[] = {
+        Math::Vec3f(0, -0.5, -0.5),
+        Math::Vec3f(0.5, 0, -0.5),
+        Math::Vec3f(0, 0.5, -0.5),
+        Math::Vec3f(-0.5, 0, -0.5),
 
-        CVector(0, -0.5, 0.5),
-        CVector(0.5, 0, 0.5),
-        CVector(0, 0.5, 0.5),
-        CVector(-0.5, 0, 0.5),
+        Math::Vec3f(0, -0.5, 0.5),
+        Math::Vec3f(0.5, 0, 0.5),
+        Math::Vec3f(0, 0.5, 0.5),
+        Math::Vec3f(-0.5, 0, 0.5),
 
-        CVector(-0.5, -0.5, 0),
-        CVector(0.5, -0.5, 0),
-        CVector(0.5, 0.5, 0),
-        CVector(-0.5, 0.5, 0),
+        Math::Vec3f(-0.5, -0.5, 0),
+        Math::Vec3f(0.5, -0.5, 0),
+        Math::Vec3f(0.5, 0.5, 0),
+        Math::Vec3f(-0.5, 0.5, 0),
 
-        // CVector(0, 0, 0),
-        // CVector(1, 0, 0),
-        // CVector(0, 0, 1),
-        // CVector(0, 0, 0),
+        // Math::Vec3f(0, 0, 0),
+        // Math::Vec3f(1, 0, 0),
+        // Math::Vec3f(0, 0, 1),
+        // Math::Vec3f(0, 0, 0),
 
-        // CVector(0, 1, 0),
-        // CVector(1, 1, 0),
-        // CVector(0, 1, 1),
-        // CVector(0, 1, 0),
+        // Math::Vec3f(0, 1, 0),
+        // Math::Vec3f(1, 1, 0),
+        // Math::Vec3f(0, 1, 1),
+        // Math::Vec3f(0, 1, 0),
 
-        // CVector(0, 0, 0),
-        // CVector(1, 0, 0),
-        // CVector(1, 0, 1),
-        // CVector(0, 0, 1),
+        // Math::Vec3f(0, 0, 0),
+        // Math::Vec3f(1, 0, 0),
+        // Math::Vec3f(1, 0, 1),
+        // Math::Vec3f(0, 0, 1),
     };
 
-    std::vector<std::pair<CVector, CVector>> Corners = {
-      {CVector(0, 0, 0), CVector(1, 0, 0)}, 
-      {CVector(1, 0, 0), CVector(1, 1, 0)},  
-      {CVector(1, 1, 0), CVector(0, 1, 0)},  
-      {CVector(0, 1, 0), CVector(0, 0, 0)}, 
+    std::vector<std::pair<Math::Vec3f, Math::Vec3f>> Corners = {
+      {Math::Vec3f(0, 0, 0), Math::Vec3f(1, 0, 0)}, 
+      {Math::Vec3f(1, 0, 0), Math::Vec3f(1, 1, 0)},  
+      {Math::Vec3f(1, 1, 0), Math::Vec3f(0, 1, 0)},  
+      {Math::Vec3f(0, 1, 0), Math::Vec3f(0, 0, 0)}, 
 
-      {CVector(0, 0, 1), CVector(1, 0, 1)},  
-      {CVector(1, 0, 1), CVector(1, 1, 1)},  
-      {CVector(1, 1, 1), CVector(0, 1, 1)},  
-      {CVector(0, 1, 1), CVector(0, 0, 1)}, 
+      {Math::Vec3f(0, 0, 1), Math::Vec3f(1, 0, 1)},  
+      {Math::Vec3f(1, 0, 1), Math::Vec3f(1, 1, 1)},  
+      {Math::Vec3f(1, 1, 1), Math::Vec3f(0, 1, 1)},  
+      {Math::Vec3f(0, 1, 1), Math::Vec3f(0, 0, 1)}, 
 
-      {CVector(0, 0, 1), CVector(0, 0, 0)},  
-      {CVector(1, 0, 1), CVector(1, 0, 0)},  
-      {CVector(1, 1, 1), CVector(1, 1, 0)},  
-      {CVector(0, 1, 1), CVector(0, 1, 0)}
+      {Math::Vec3f(0, 0, 1), Math::Vec3f(0, 0, 0)},  
+      {Math::Vec3f(1, 0, 1), Math::Vec3f(1, 0, 0)},  
+      {Math::Vec3f(1, 1, 1), Math::Vec3f(1, 1, 0)},  
+      {Math::Vec3f(0, 1, 1), Math::Vec3f(0, 1, 0)}
     };
 
-    uint8_t GetTableIndex(VoxelMesh m, CVector pos)
+    uint8_t GetTableIndex(VoxelMesh m, Math::Vec3f pos)
     {
         uint8_t ret = 0;
         int bitPos = 0;
 
-        std::vector<CVector> cube = {
-            // CVector(-0.5, -0.5, -0.5),
-            // CVector(0.5, -0.5, -0.5),
-            // CVector(0.5, 0.5, -0.5),
-            // CVector(-0.5, 0.5, -0.5),
+        std::vector<Math::Vec3f> cube = {
+            // Math::Vec3f(-0.5, -0.5, -0.5),
+            // Math::Vec3f(0.5, -0.5, -0.5),
+            // Math::Vec3f(0.5, 0.5, -0.5),
+            // Math::Vec3f(-0.5, 0.5, -0.5),
 
-            // CVector(-0.5, -0.5, 0.5),
-            // CVector(0.5, -0.5, 0.5),
-            // CVector(0.5, 0.5, 0.5),
-            // CVector(-0.5, 0.5, 0.5)
+            // Math::Vec3f(-0.5, -0.5, 0.5),
+            // Math::Vec3f(0.5, -0.5, 0.5),
+            // Math::Vec3f(0.5, 0.5, 0.5),
+            // Math::Vec3f(-0.5, 0.5, 0.5)
 
-            CVector(0, 0, 0),
-            CVector(1, 0, 0),
-            CVector(1, 1, 0),
-            CVector(0, 1, 0),
+            Math::Vec3f(0, 0, 0),
+            Math::Vec3f(1, 0, 0),
+            Math::Vec3f(1, 1, 0),
+            Math::Vec3f(0, 1, 0),
 
-            CVector(0, 0, 1),
-            CVector(1, 0, 1),
-            CVector(1, 1, 1),
-            CVector(0, 1, 1)
+            Math::Vec3f(0, 0, 1),
+            Math::Vec3f(1, 0, 1),
+            Math::Vec3f(1, 1, 1),
+            Math::Vec3f(0, 1, 1)
 
-            // CVector(-1, -1, -1),
-            // CVector(0, -1, -1),
-            // CVector(0, 0, -1),
-            // CVector(-1, 0, -1),
+            // Math::Vec3f(-1, -1, -1),
+            // Math::Vec3f(0, -1, -1),
+            // Math::Vec3f(0, 0, -1),
+            // Math::Vec3f(-1, 0, -1),
 
-            // CVector(-1, -1, 0),
-            // CVector(0, -1, 0),
-            // CVector(0, 0, 0),
-            // CVector(-1, 0, 0)
+            // Math::Vec3f(-1, -1, 0),
+            // Math::Vec3f(0, -1, 0),
+            // Math::Vec3f(0, 0, 0),
+            // Math::Vec3f(-1, 0, 0)
         };
 
         for (auto &&c : cube)
@@ -385,26 +385,30 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    SMeshChunk CMarchingCubesMesher::GenerateMeshChunk(VoxelMesh m, const SChunk &_Chunk, bool Opaque)
+    SMeshChunk CMarchingCubesMesher::GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque)
     {
         CMeshBuilder builder;
         builder.AddTextures(m->Colorpalettes);
 
         auto totalBBox = m->BBox;
-        CVector boxCenter = totalBBox.GetSize() / 2;
+        Math::Vec3f boxCenter = totalBBox.GetSize() / 2;
         std::swap(boxCenter.y, boxCenter.z);
         boxCenter.z *= -1;
 
-        for(float x = _Chunk.InnerBBox.Beg.x - 1; x < _Chunk.InnerBBox.End.x + 1; x++)
+        m_ChunkDimensions = CBBox(_Chunk.TotalBBox.Beg, _Chunk.TotalBBox.GetSize());
+        m_Chunk = _Chunk.Chunk;
+        m_InnerBBox = _Chunk.InnerBBox;
+
+        for(float x = _Chunk.InnerBBox.Beg.x - 1; x <= _Chunk.InnerBBox.End.x + 1; x++)
         {
-            for(float y = _Chunk.InnerBBox.Beg.y - 1; y < _Chunk.InnerBBox.End.y + 1; y++)
+            for(float y = _Chunk.InnerBBox.Beg.y - 1; y <= _Chunk.InnerBBox.End.y + 1; y++)
             {
-                for(float z = _Chunk.InnerBBox.Beg.z - 1; z < _Chunk.InnerBBox.End.z + 1; z++)
+                for(float z = _Chunk.InnerBBox.Beg.z - 1; z <= _Chunk.InnerBBox.End.z + 1; z++)
                 {
-                    uint8_t idx = GetTableIndex(m, CVector(x, y, z));
+                    uint8_t idx = GetTableIndex(m, Math::Vec3f(x, y, z));
                     auto edges = triangleConnectionTable[idx];
 
-                    CreateFaces(builder, CVector(x, y, z), boxCenter, edges);
+                    CreateFaces(builder, Math::Vec3f(x, y, z), boxCenter, edges);
                 }
             }
         }
@@ -417,32 +421,44 @@ namespace VoxelOptimizer
         return chunk;
     }
 
-    std::list<SMeshChunk> CMarchingCubesMesher::GenerateChunks(VoxelMesh m, bool onlyDirty)
+    std::list<SMeshChunk> CMarchingCubesMesher::GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty, int _ChunkCount)
     {
-        m_Mesh = m;
-        std::list<SMeshChunk> ret = IMesher::GenerateChunks(m, onlyDirty);
+        m_Mesh = _Mesh;
+        std::list<SMeshChunk> ret = IMesher::GenerateChunks(_Mesh, _OnlyDirty, _ChunkCount);
         for (auto &&pair : ret)
         {
             auto mesh = pair.Mesh;
             for (auto &&uv : mesh->UVs)
-                uv = CVector(((float)(uv.x + 0.5f)) / mesh->Textures[TextureType::DIFFIUSE]->Size().x, 0.5f, 0);
+                uv = Math::Vec3f(((float)(uv.x + 0.5f)) / mesh->Textures[TextureType::DIFFIUSE]->GetSize().x, 0.5f, 0);
         }
         return ret;
     }
 
-    Voxel CMarchingCubesMesher::GetVoxel(CVector pos, int edge)
+    Voxel CMarchingCubesMesher::GetVoxel(Math::Vec3f pos, int edge)
     {
         auto corners = Corners[edge];
-        auto it = m_Voxels.find(pos + corners.first);
-        if(it == m_Voxels.end())
-            it = m_Voxels.find(pos + corners.second);
+        Math::Vec3i v = pos + corners.first;
+        Voxel vox = nullptr;
+        if(m_InnerBBox.ContainsPoint(v))
+            vox = m_Chunk->findVisible(v, m_ChunkDimensions);
+        else
+            vox = m_Mesh->GetVisibleVoxel(v);
+        
+        if(!vox)
+        {
+            v = pos + corners.second;
+            if(m_InnerBBox.ContainsPoint(v))
+                vox = m_Chunk->findVisible(v, m_ChunkDimensions);
+            else
+                vox = m_Mesh->GetVisibleVoxel(v);
+        }
 
-        return it->second;
+        return vox;
     }
 
-    CVector GetSolidIndex(int &oldidx, CVector idxs)
+    Math::Vec3f GetSolidIndex(int &oldidx, Math::Vec3f idxs)
     {
-        CVector4 tmpIdxs(oldidx, idxs.x, idxs.y, idxs.z);
+        Math::Vec4f tmpIdxs(oldidx, idxs.x, idxs.y, idxs.z);
         std::map<int, int> counter;
 
         for (char i = 0; i < 4; i++)
@@ -468,14 +484,14 @@ namespace VoxelOptimizer
 
         if(maxCount > 1)
         {
-            idxs = CVector(idx, idx, idx);
+            idxs = Math::Vec3f(idx, idx, idx);
             oldidx = idx;
         }   
 
         return idxs;     
     }
 
-    void CMarchingCubesMesher::CreateFaces(CMeshBuilder &builder, CVector pos, CVector center, short *edges)
+    void CMarchingCubesMesher::CreateFaces(CMeshBuilder &builder, Math::Vec3f pos, Math::Vec3f center, short *edges)
     {
         int cidxtmp = -1;
 
@@ -490,17 +506,17 @@ namespace VoxelOptimizer
 
             SVertex v1, v2, v3;
 
-            v1.Pos = pos + positionTable[e1] + CVector(1, 1, 1);
-            v2.Pos = pos + positionTable[e2] + CVector(1, 1, 1);
-            v3.Pos = pos + positionTable[e3] + CVector(1, 1, 1);
+            v1.Pos = pos + positionTable[e1] + Math::Vec3f(1, 1, 1);
+            v2.Pos = pos + positionTable[e2] + Math::Vec3f(1, 1, 1);
+            v3.Pos = pos + positionTable[e3] + Math::Vec3f(1, 1, 1);
 
             std::swap(v1.Pos.y, v1.Pos.z);
             std::swap(v2.Pos.y, v2.Pos.z);
             std::swap(v3.Pos.y, v3.Pos.z);
 
-            v1.Pos = v1.Pos * CVector(1, 1, -1) - center;
-            v2.Pos = v2.Pos * CVector(1, 1, -1) - center;
-            v3.Pos = v3.Pos * CVector(1, 1, -1) - center;
+            v1.Pos = v1.Pos * Math::Vec3f(1, 1, -1) - center;
+            v2.Pos = v2.Pos * Math::Vec3f(1, 1, -1) - center;
+            v3.Pos = v3.Pos * Math::Vec3f(1, 1, -1) - center;
 
             auto voxel1 = GetVoxel(pos, e1);
             auto voxel2 = GetVoxel(pos, e2);
@@ -508,7 +524,7 @@ namespace VoxelOptimizer
             if(!voxel1 || !voxel2 || !voxel3)
                 continue;
 
-            CVector color(voxel1->Color, voxel2->Color, voxel3->Color);
+            Math::Vec3f color(voxel1->Color, voxel2->Color, voxel3->Color);
             color = GetSolidIndex(cidxtmp, color);
 
             v1.UV.x = color.x;
@@ -522,10 +538,10 @@ namespace VoxelOptimizer
             else
                 v1.Mat = v2.Mat = v3.Mat = m_Mesh->Materials[voxel1->Material];
 
-            CVector FaceNormal = (v2.Pos - v1.Pos).Cross(v3.Pos - v1.Pos).Normalize(); 
+            Math::Vec3f FaceNormal = (v2.Pos - v1.Pos).cross(v3.Pos - v1.Pos).normalize(); 
             v1.Normal = v2.Normal = v3.Normal = FaceNormal;
 
             builder.AddFace(v1, v2, v3);
         }
     }
-} // namespace VoxelOptimizer
+}

@@ -50,8 +50,8 @@ namespace VoxelOptimizer
 
             int GetColorIdx(int color);
 
-            CVector ReadVector();
+            Math::Vec3f ReadVector();
     };
-} // namespace VoxelOptimizer
+}
 
 #endif //QUBICLEBINARYTREEFORMAT_HPP

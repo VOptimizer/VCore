@@ -183,6 +183,6 @@ namespace VoxelOptimizer
         clear();
     }
 
-} // namespace VoxelOptimizer
+}
 
 #endif

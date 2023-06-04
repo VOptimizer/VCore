@@ -41,7 +41,7 @@ namespace VoxelOptimizer
 
     std::vector<char> CSpriteStackingExporter::Generate(VoxelMesh m)
     {
-        CVector Size = m->GetSize();
+        Math::Vec3f Size = m->GetSize();
         std::vector<uint32_t> Pixels(Size.x * Size.y * Size.z, 0);
 
         auto diffuse = m->Colorpalettes.at(TextureType::DIFFIUSE);
@@ -52,10 +52,10 @@ namespace VoxelOptimizer
             {
                 for (size_t y = 0; y < Size.y; y++)
                 {
-                    auto Vox = m->GetVoxel(CVector(x, y, z));
+                    auto Vox = m->GetVoxel(Math::Vec3f(x, y, z));
 
                     if(Vox)
-                        Pixels[x + (size_t)Size.x * y + (size_t)Size.x * (size_t)Size.y * z] = diffuse->Pixel(CVector(Vox->Color, 0, 0));
+                        Pixels[x + (size_t)Size.x * y + (size_t)Size.x * (size_t)Size.y * z] = diffuse->GetPixel(Math::Vec2ui(Vox->Color, 0));
                 }
             }
         }
@@ -68,4 +68,4 @@ namespace VoxelOptimizer
 
         return Texture;
     }
-} // namespace VoxelOptimizer
+}

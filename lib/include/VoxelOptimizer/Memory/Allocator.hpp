@@ -26,11 +26,12 @@
 #define ALLOCATOR_HPP
 
 #include <VoxelOptimizer/Memory/MemoryPool.hpp>
+#include <memory>
 
 namespace VoxelOptimizer
 {
     template<class T>
-    class CAllocator : public CMemoryPool<T>
+    class CAllocator //: public CMemoryPool<T>
     {
         public:
             using value_type = typename CMemoryPool<T>::value_type;
@@ -46,12 +47,22 @@ namespace VoxelOptimizer
                 typedef CAllocator<U> other;
             };
 
-            CAllocator();
+            CAllocator() {}
+            CAllocator(const CAllocator&) {}
+
+            template<typename _Tp1>
+            CAllocator(const CAllocator<_Tp1>&) {}
 
             pointer allocate( size_type n, const void * hint = 0 );
+            void deallocate(T *_ptr, size_type _n);
 
             ~CAllocator();
+        private:
+            static CMemoryPool<T> s_MemoryPool;
     };
+
+    template<class T>
+    CMemoryPool<T> CAllocator<T>::s_MemoryPool;
 
     //////////////////////////////////////////////////
     // CMemoryPool functions
@@ -70,17 +81,20 @@ namespace VoxelOptimizer
     }
 
     template<class T>
-    inline CAllocator<T>::CAllocator() : CMemoryPool<T>() { }
-
-    template<class T>
     inline CAllocator<T>::~CAllocator() { }
 
     template<class T>
     inline typename CAllocator<T>::pointer CAllocator<T>::allocate(size_type n, const void * hint)
     {
-        return CMemoryPool<T>::allocate(n);
+        return s_MemoryPool.allocate(n);
     }
-} // namespace VoxelOptimizer
+
+    template<class T>
+    inline void CAllocator<T>::deallocate(T *_ptr, size_type _n)
+    {
+        s_MemoryPool.deallocate(_ptr, _n);
+    }
+}
 
 
 #endif

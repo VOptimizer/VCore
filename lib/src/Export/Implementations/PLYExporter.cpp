@@ -34,12 +34,12 @@ namespace VoxelOptimizer
 
         for (auto &&mesh : Meshes)
         {
-            std::map<CVector, int> Index;
+            VectorMap<int> Index;
             std::vector<int> Indices;
-            std::vector<CVector> Vertices, Normals, UVs;
+            std::vector<Math::Vec3f> Vertices, Normals, UVs;
 
             //"Extracts" the rotation matrix. Quick'n Dirty
-            CMat4x4 rotMat = mesh->ModelMatrix;
+            Math::Mat4x4 rotMat = mesh->ModelMatrix;
             rotMat.x.w = 0;
             rotMat.y.w = 0;
             rotMat.z.w = 0;
@@ -56,7 +56,7 @@ namespace VoxelOptimizer
                         TmpIndices[VertexCounter] = IT->second;
                     else
                     {
-                        VoxelOptimizer::CVector Vertex, Normal, UV;
+                        VoxelOptimizer::Math::Vec3f Vertex, Normal, UV;
                         Vertex = mesh->Vertices[(size_t)v.x - 1];
                         Normal = mesh->Normals[(size_t)v.y - 1];
                         UV = mesh->UVs[(size_t)v.z - 1];
@@ -106,9 +106,9 @@ namespace VoxelOptimizer
 
             for (size_t i = 0; i < Vertices.size(); i++)
             {
-                CVector v = Vertices[i];
-                CVector n = Normals[i];
-                CVector uv = UVs[i];
+                Math::Vec3f v = Vertices[i];
+                Math::Vec3f n = Normals[i];
+                Math::Vec3f uv = UVs[i];
 
                 file << v.x << " " << -v.z << " " << v.y << " " << n.x << " " << -n.z << " " << n.y << " " << uv.x << " " << uv.y << std::endl;
             }
@@ -128,4 +128,4 @@ namespace VoxelOptimizer
 
         return ret;
     }
-} // namespace VoxelOptimizer
+}

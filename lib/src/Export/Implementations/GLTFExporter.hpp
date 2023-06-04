@@ -38,6 +38,6 @@ namespace VoxelOptimizer
 
             virtual ~CGLTFExporter() = default;
     };
-} // namespace VoxelOptimizer
+}
 
 #endif //GLTFEXPORTER_HPP

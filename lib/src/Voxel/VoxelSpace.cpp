@@ -32,7 +32,7 @@ namespace VoxelOptimizer
     //////////////////////////////////////////////////
 
     CVoxelSpace::CVoxelSpace() : m_VoxelsCount(0), m_ChunkSize(16, 16, 16) {}
-    CVoxelSpace::CVoxelSpace(const CVectori &_ChunkSize) : CVoxelSpace()
+    CVoxelSpace::CVoxelSpace(const Math::Vec3i &_ChunkSize) : CVoxelSpace()
     {
         m_ChunkSize = _ChunkSize;
     }
@@ -44,25 +44,25 @@ namespace VoxelOptimizer
 
     void CVoxelSpace::insert(const pair &_pair)
     {
-        CVectori position = chunkpos(_pair.first);
+        Math::Vec3i position = chunkpos(_pair.first);
         auto it = m_Chunks.find(position);
 
         // Creates a new chunk, if neccessary
         if(it == m_Chunks.end())
             it = m_Chunks.insert({position, CChunk(m_ChunkSize)}).first;
 
-        it->second.insert(_pair, CBBox(position, m_ChunkSize - CVectori(1, 1, 1)));
+        it->second.insert(_pair, CBBox(position, m_ChunkSize));
         m_VoxelsCount++;
     }
 
     CVoxelSpace::iterator CVoxelSpace::erase(const iterator &_it)
     {
-        CVectori position = chunkpos(_it->first);
+        Math::Vec3i position = chunkpos(_it->first);
         auto it = m_Chunks.find(position);
         if(it == m_Chunks.end())
             return end();
 
-        auto res = it->second.erase(_it, CBBox(position, m_ChunkSize - CVectori(1, 1, 1)));
+        auto res = it->second.erase(_it, CBBox(position, m_ChunkSize));
         m_VoxelsCount--;
 
         // Searches for the next voxel inside of any chunk.
@@ -72,7 +72,7 @@ namespace VoxelOptimizer
             if(it == m_Chunks.end())
                 return end();
 
-            res = it->second.next(it->second.inner_bbox(it->first).Beg, CBBox(it->first, m_ChunkSize - CVectori(1, 1, 1)));
+            res = it->second.next(it->second.inner_bbox(it->first).Beg, CBBox(it->first, m_ChunkSize));
         }
         
         if(res.second)
@@ -81,26 +81,78 @@ namespace VoxelOptimizer
         return end();
     }
 
-    CVoxelSpace::iterator CVoxelSpace::find(const CVectori &_v) const
+    CVoxelSpace::iterator CVoxelSpace::find(const Math::Vec3i &_v) const
     {
-        CVectori position = chunkpos(_v);
+        Math::Vec3i position = chunkpos(_v);
         auto it = m_Chunks.find(position);
         if(it == m_Chunks.end())
             return end();
 
-        CVoxel *vox = it->second.find(_v, CBBox(position, m_ChunkSize - CVectori(1, 1, 1)));
+        CVoxel *vox = it->second.find(_v, CBBox(position, m_ChunkSize));
         if(!vox)
             return end();
 
         return CVoxelSpaceIterator(this, it->second.inner_bbox(it->first), {_v, vox});
     }
 
-    std::map<CVectori, Voxel> CVoxelSpace::queryVisible(bool opaque) const
+    CVoxelSpace::iterator CVoxelSpace::find(const Math::Vec3i &_v, bool _Opaque) const
     {
-        std::map<CVectori, Voxel> ret;
+        Math::Vec3i position = chunkpos(_v);
+        auto it = m_Chunks.find(position);
+        if(it == m_Chunks.end())
+            return end();
+
+        CVoxel *vox = it->second.find(_v, CBBox(position, m_ChunkSize), _Opaque);
+        if(!vox)
+            return end();
+
+        return CVoxelSpaceIterator(this, it->second.inner_bbox(it->first), {_v, vox});
+    }
+
+    CVoxelSpace::iterator CVoxelSpace::findVisible(const Math::Vec3i &_v) const
+    {
+        Math::Vec3i position = chunkpos(_v);
+        auto it = m_Chunks.find(position);
+        if(it == m_Chunks.end())
+            return end();
+
+        CVoxel *vox = it->second.findVisible(_v, CBBox(position, m_ChunkSize));
+        if(!vox)
+            return end();
+
+        return CVoxelSpaceIterator(this, it->second.inner_bbox(it->first), {_v, vox});
+    }
+
+    CVoxelSpace::iterator CVoxelSpace::findVisible(const Math::Vec3i &_v, bool _Opaque) const
+    {
+        static std::pair<Math::Vec3i, const CChunk *> last(Math::Vec3i(), nullptr);
+
+        Math::Vec3i position = chunkpos(_v);
+
+        if(!(last.first == position && last.second))
+        {
+            auto it = m_Chunks.find(position);
+            if(it == m_Chunks.end())
+                return end();
+
+            last.first = position;
+            last.second = &it->second;
+        }
+
+        CVoxel *vox = last.second->findVisible(_v, CBBox(position, m_ChunkSize), _Opaque);
+        if(!vox)
+            return end();
+
+        return CVoxelSpaceIterator(this, last.second->inner_bbox(last.first), {_v, vox});
+    }
+
+
+    VectoriMap<Voxel> CVoxelSpace::queryVisible(bool opaque) const
+    {
+        VectoriMap<Voxel> ret;
         for (auto &&c : m_Chunks)
         {
-            auto bbox = CBBox(c.first, m_ChunkSize - CVectori(1, 1, 1));
+            auto bbox = CBBox(c.first, m_ChunkSize);
             auto inner = c.second.inner_bbox(bbox.Beg);
             for (int z = inner.Beg.z; z < inner.End.z; z++)
             {
@@ -108,9 +160,9 @@ namespace VoxelOptimizer
                 {
                     for (int x = inner.Beg.x; x < inner.End.x; x++)
                     {
-                        auto res = c.second.find(CVectori(x, y, z), bbox);
+                        auto res = c.second.find(Math::Vec3i(x, y, z), bbox);
                         if(res && res->IsVisible() && res->Transparent == !opaque)
-                            ret.insert({CVectori(x, y, z), res});
+                            ret.insert({Math::Vec3i(x, y, z), res});
                     }
                 }
             }     
@@ -118,34 +170,39 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    std::list<SChunk> CVoxelSpace::queryDirtyChunks()
+    std::list<SChunkMeta> CVoxelSpace::queryDirtyChunks() const
     {
-        std::list<SChunk> ret;
+        std::list<SChunkMeta> ret;
+        int counter = 0;
         for (auto &&c : m_Chunks)
         {
             if(c.second.IsDirty)
-            {
-                c.second.IsDirty = false;
-                ret.push_back({(size_t)&c, CBBox(c.first, c.first + m_ChunkSize - CVectori(1, 1, 1)), c.second.inner_bbox(c.first)});
-            }
+                ret.push_back({(size_t)&c.second, &c.second, CBBox(c.first, c.first + m_ChunkSize), c.second.inner_bbox(c.first)});
         }
         return ret;
     }
 
-    std::list<SChunk> CVoxelSpace::queryChunks() const
+    void CVoxelSpace::markAsProcessed(const SChunkMeta &_Chunk)
     {
-        std::list<SChunk> ret;
+        auto it = m_Chunks.find(_Chunk.TotalBBox.Beg);
+        if(it != m_Chunks.end())
+            it->second.IsDirty = false;
+    }
+
+    std::list<SChunkMeta> CVoxelSpace::queryChunks() const
+    {
+        std::list<SChunkMeta> ret;
         for (auto &&c : m_Chunks)
-            ret.push_back({(size_t)&c, CBBox(c.first, c.first + m_ChunkSize - CVectori(1, 1, 1)), c.second.inner_bbox(c.first)});
+            ret.push_back({(size_t)&c.second, &c.second, CBBox(c.first, c.first + m_ChunkSize), c.second.inner_bbox(c.first)});
         return ret;
     }
 
     void CVoxelSpace::generateVisibilityMask()
     {
-        const static std::vector<std::pair<CVector, int>> AXIS_DIRECTIONS = {
-            {CVector(1, 0, 0), 0},
-            {CVector(0, 1, 0), 1},
-            {CVector(0, 0, 1), 2}
+        const static std::vector<std::pair<Math::Vec3f, int>> AXIS_DIRECTIONS = {
+            {Math::Vec3f(1, 0, 0), 0},
+            {Math::Vec3f(0, 1, 0), 1},
+            {Math::Vec3f(0, 0, 1), 2}
         };
 
         for (auto &&c : m_Chunks)
@@ -153,45 +210,11 @@ namespace VoxelOptimizer
             if(!c.second.IsDirty)
                 continue;
 
-            auto bbox = CBBox(c.first, m_ChunkSize - CVectori(1, 1, 1));
+            auto bbox = CBBox(c.first, m_ChunkSize);
             auto inner = c.second.inner_bbox(bbox.Beg);
             
-            CVectori beg = inner.Beg;
-            CVectori end = inner.End;
-
-            // for (int z = beg.z; z < end.z - 1; z++)
-            // {
-            //     for (int y = beg.y; y < end.y - 1; y++)
-            //     {
-            //         for (int x = beg.x; x < end.x - 1; x++)
-            //         {
-            //             Voxel current = c.second.find(CVectori(x, y, z), bbox);
-
-            //             for (auto &&axis : AXIS_DIRECTIONS)
-            //             {
-            //                 CVectori pos(x, y, z);
-
-            //                 // Checks boundary.
-            //                 if(current && pos.v[axis.second] == ((bbox.Beg.v[axis.second] + bbox.End.v[axis.second]) - 1))
-            //                 {
-            //                     pos.v[axis.second] += 1;
-
-            //                     auto ocit = find(pos);
-            //                     if(ocit != this->end())
-            //                         CheckVisibility(current, ocit->second, axis.second);
-            //                 }
-            //                 else
-            //                 {
-            //                     pos += axis.first;
-            //                     Voxel other = c.second.find(pos, bbox);
-            //                     if(other)
-            //                         CheckVisibility(current, other, axis.second);
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
-            
+            Math::Vec3i beg = inner.Beg;
+            Math::Vec3i end = inner.End;            
 
             for (char axis = 0; axis < 3; axis++)
             {
@@ -204,7 +227,7 @@ namespace VoxelOptimizer
                     for (int y = beg.v[axis1]; y < end.v[axis1]; y++)
                     {
                         // Reset current
-                        CVectori pos;
+                        Math::Vec3i pos;
                         pos.v[axis] = x;
                         pos.v[axis1] = y;
                         pos.v[axis2] = beg.v[axis2];
@@ -282,14 +305,14 @@ namespace VoxelOptimizer
         }
     }
 
-    CVoxelSpace::iterator CVoxelSpace::next(const CVectori &_FromPosition) const
+    CVoxelSpace::iterator CVoxelSpace::next(const Math::Vec3i &_FromPosition) const
     {
-        CVectori position = chunkpos(_FromPosition);
+        Math::Vec3i position = chunkpos(_FromPosition);
         auto it = m_Chunks.find(position);
         if(it == m_Chunks.end())
             return end();
 
-        auto res = it->second.next(_FromPosition, CBBox(position, m_ChunkSize - CVectori(1, 1, 1)));
+        auto res = it->second.next(_FromPosition, CBBox(position, m_ChunkSize));
         
         // Searches for the next voxel inside of any chunk.
         while (!res.second)
@@ -298,7 +321,7 @@ namespace VoxelOptimizer
             if(it == m_Chunks.end())
                 return end();
 
-            res = it->second.next(it->second.inner_bbox(it->first).Beg, CBBox(it->first, m_ChunkSize - CVectori(1, 1, 1)));
+            res = it->second.next(it->second.inner_bbox(it->first).Beg, CBBox(it->first, m_ChunkSize));
         }
 
         if(res.second)
@@ -307,18 +330,18 @@ namespace VoxelOptimizer
         return end();
     }
 
-    void CVoxelSpace::updateVisibility(const CVectori &_Position)
+    void CVoxelSpace::updateVisibility(const Math::Vec3i &_Position)
     {
         auto it = this->find(_Position);
         if(it == this->end())
         {
-            const static std::vector<std::pair<CVector, CVoxel::Visibility>> DIRECTIONS = {
-                {CVector(1, 0, 0), CVoxel::Visibility::LEFT},
-                {CVector(-1, 0, 0), CVoxel::Visibility::RIGHT},
-                {CVector(0, 1, 0), CVoxel::Visibility::BACKWARD},
-                {CVector(0, -1, 0), CVoxel::Visibility::FORWARD},
-                {CVector(0, 0, -1), CVoxel::Visibility::UP},
-                {CVector(0, 0, 1), CVoxel::Visibility::DOWN}
+            const static std::vector<std::pair<Math::Vec3f, CVoxel::Visibility>> DIRECTIONS = {
+                {Math::Vec3f(1, 0, 0), CVoxel::Visibility::LEFT},
+                {Math::Vec3f(-1, 0, 0), CVoxel::Visibility::RIGHT},
+                {Math::Vec3f(0, 1, 0), CVoxel::Visibility::BACKWARD},
+                {Math::Vec3f(0, -1, 0), CVoxel::Visibility::FORWARD},
+                {Math::Vec3f(0, 0, -1), CVoxel::Visibility::UP},
+                {Math::Vec3f(0, 0, 1), CVoxel::Visibility::DOWN}
             };
 
             for (auto &&dir : DIRECTIONS)
@@ -330,15 +353,15 @@ namespace VoxelOptimizer
         }
         else
         {
-            const static std::vector<std::pair<CVector, int>> AXIS_DIRECTIONS = {
-                {CVector(1, 0, 0), 0},
-                {CVector(0, 1, 0), 1},
-                {CVector(0, 0, 1), 2}
+            const static std::vector<std::pair<Math::Vec3f, int>> AXIS_DIRECTIONS = {
+                {Math::Vec3f(1, 0, 0), 0},
+                {Math::Vec3f(0, 1, 0), 1},
+                {Math::Vec3f(0, 0, 1), 2}
             };
 
             for (auto &&axis : AXIS_DIRECTIONS)
             {
-                CVector start = _Position - axis.first;
+                Math::Vec3f start = _Position - axis.first;
                 for (char i = 0; i < 2; i++)
                 {
                     it = this->find(start);
@@ -360,12 +383,12 @@ namespace VoxelOptimizer
 
         auto it = m_Chunks.begin();
         auto bbox = it->second.inner_bbox(it->first);
-        return CVoxelSpaceIterator(this, bbox, it->second.next(bbox.Beg, CBBox(it->first, m_ChunkSize - CVectori(1, 1, 1))));
+        return CVoxelSpaceIterator(this, bbox, it->second.next(bbox.Beg, CBBox(it->first, m_ChunkSize)));
     }
 
     CVoxelSpace::iterator CVoxelSpace::end() const
     {
-        return CVoxelSpaceIterator(this, CBBox(), {CVectori(), nullptr});
+        return CVoxelSpaceIterator(this, CBBox(), {Math::Vec3i(), nullptr});
     }
 
     void CVoxelSpace::clear()
@@ -383,46 +406,49 @@ namespace VoxelOptimizer
         return *this;
     }
 
-    CVectori CVoxelSpace::chunkpos(const CVectori &_Position) const
+    Math::Vec3i CVoxelSpace::chunkpos(const Math::Vec3i &_Position) const
     {
-        return (CVector(_Position) / m_ChunkSize).Floor() * m_ChunkSize;
+        // const static uint32_t mask = 0xFFFFFFF0;
+        // Math::Vec3i(_Position.x & mask, _Position.y & mask, _Position.z & mask);
+
+        return Math::floor(Math::Vec3f(_Position) / m_ChunkSize) * m_ChunkSize;
     }
 
     //////////////////////////////////////////////////
     // CVoxelSpace::CChunk functions
     //////////////////////////////////////////////////
 
-    CVoxelSpace::CChunk::CChunk(const CVectori &_ChunkSize) : m_InnerBBox(CVectori(INT32_MAX, INT32_MAX, INT32_MAX), CVectori()), IsDirty(false)
+    CChunk::CChunk(const Math::Vec3i &_ChunkSize) : m_InnerBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i()), IsDirty(false)
     {
         m_Data = new CVoxel[_ChunkSize.x * _ChunkSize.y * _ChunkSize.z];   
     }
 
-    CVoxelSpace::CChunk::CChunk(CChunk &&_Other) : m_Data(nullptr)
+    CChunk::CChunk(CChunk &&_Other) : m_Data(nullptr)
     {
         *this = std::move(_Other);
     }
 
-    void CVoxelSpace::CChunk::insert(const pair &_pair, const CBBox &_ChunkDim)
+    void CChunk::insert(const pair &_pair, const CBBox &_ChunkDim)
     {
-        CVectori relPos = (_pair.first - _ChunkDim.Beg).Abs();
+        Math::Vec3i relPos = (_pair.first - _ChunkDim.Beg).abs();
         m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z] = _pair.second;
     
-        m_InnerBBox.Beg = m_InnerBBox.Beg.Min(relPos);
-        m_InnerBBox.End = m_InnerBBox.End.Max(relPos);
+        m_InnerBBox.Beg = m_InnerBBox.Beg.min(relPos);
+        m_InnerBBox.End = m_InnerBBox.End.max(relPos);
         IsDirty = true;
     }
 
-    CVoxelSpace::ppair CVoxelSpace::CChunk::erase(const iterator &_it, const CBBox &_ChunkDim)
+    CVoxelSpace::ppair CChunk::erase(const iterator &_it, const CBBox &_ChunkDim)
     {
-        CVectori relPos = (_it->first - _ChunkDim.Beg).Abs();
+        Math::Vec3i relPos = (_it->first - _ChunkDim.Beg).abs();
         m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z] = CVoxel();
         
         return next(_it->first, _ChunkDim);
     }
 
-    CVoxelSpace::ppair CVoxelSpace::CChunk::next(const CVectori &_Position, const CBBox &_ChunkDim) const
+    CVoxelSpace::ppair CChunk::next(const Math::Vec3i &_Position, const CBBox &_ChunkDim) const
     {
-        CVectori relPos = (_Position - _ChunkDim.Beg).Abs();
+        Math::Vec3i relPos = (_Position - _ChunkDim.Beg).abs();
         for (int z = relPos.z; z < m_InnerBBox.End.z; z++)
         {
             for (int y = relPos.y; y < m_InnerBBox.End.y; y++)
@@ -431,32 +457,55 @@ namespace VoxelOptimizer
                 {
                     CVoxel &vox = m_Data[x + _ChunkDim.End.x * y + _ChunkDim.End.x * _ChunkDim.End.y * z];
                     if(vox.IsVisible())
-                        return {_ChunkDim.Beg + CVectori(x, y, z), &vox};
+                        return {_ChunkDim.Beg + Math::Vec3i(x, y, z), &vox};
                 }
             }
         }
         
-        return {CVectori(), nullptr};
+        return {Math::Vec3i(), nullptr};
     }
 
-    Voxel CVoxelSpace::CChunk::find(const CVectori &_v, const CBBox &_ChunkDim) const
+    Voxel CChunk::find(const Math::Vec3i &_v, const CBBox &_ChunkDim) const
     {
-        CVectori relPos = (_v - _ChunkDim.Beg).Abs();
-
-        if(relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z > 4096)
-        {
-            int i = 0;
-            i++;
-        }
-
+        Math::Vec3i relPos = (_v - _ChunkDim.Beg).abs();
         CVoxel &vox = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
-        if(vox.IsVisible())
+        if(vox.IsInstantiated())
             return &vox;
 
         return nullptr;
     }
 
-    void CVoxelSpace::CChunk::clear()
+    Voxel CChunk::find(const Math::Vec3i &_v, const CBBox &_ChunkDim, bool _Opaque) const
+    {
+        Math::Vec3i relPos = (_v - _ChunkDim.Beg).abs();
+        CVoxel &vox = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
+        if(vox.IsInstantiated() && (vox.Transparent != _Opaque))
+            return &vox;
+
+        return nullptr;
+    }
+
+    Voxel CChunk::findVisible(const Math::Vec3i &_v, const CBBox &_ChunkDim) const
+    {
+        Math::Vec3i relPos = (_v - _ChunkDim.Beg).abs();
+        CVoxel &vox = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
+        if(vox.IsInstantiated() && vox.IsVisible())
+            return &vox;
+
+        return nullptr;
+    }
+
+    Voxel CChunk::findVisible(const Math::Vec3i &_v, const CBBox &_ChunkDim, bool _Opaque) const
+    {
+        Math::Vec3i relPos = (_v - _ChunkDim.Beg).abs();
+        CVoxel &vox = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
+        if(vox.IsInstantiated() && vox.IsVisible() && (vox.Transparent != _Opaque))
+            return &vox;
+
+        return nullptr;
+    }
+
+    void CChunk::clear()
     {
         if(m_Data)
         {
@@ -467,7 +516,7 @@ namespace VoxelOptimizer
         m_InnerBBox = CBBox();
     }
 
-    CVoxelSpace::CChunk &CVoxelSpace::CChunk::operator=(CChunk &&_Other)
+    CChunk &CChunk::operator=(CChunk &&_Other)
     {
         clear();
         m_InnerBBox = _Other.m_InnerBBox;
@@ -485,7 +534,7 @@ namespace VoxelOptimizer
     // CVoxelSpaceIterator functions
     //////////////////////////////////////////////////
 
-    CVoxelSpaceIterator::CVoxelSpaceIterator() : m_Space(nullptr), m_Pair(CVectori(), nullptr) { }
+    CVoxelSpaceIterator::CVoxelSpaceIterator() : m_Space(nullptr), m_Pair(Math::Vec3i(), nullptr) { }
     CVoxelSpaceIterator::CVoxelSpaceIterator(const CVoxelSpace *_Space, const CBBox &_InnerBox, const pair &_Pair) : m_Space(_Space), m_InnerBox(_InnerBox), m_Pair(_Pair) { }
     CVoxelSpaceIterator::CVoxelSpaceIterator(const CVoxelSpaceIterator &_Other)
     {
@@ -545,7 +594,7 @@ namespace VoxelOptimizer
         m_InnerBox = _Other.m_InnerBox;
 
         _Other.m_Space = nullptr;
-        _Other.m_Pair = {CVectori(), nullptr};
+        _Other.m_Pair = {Math::Vec3i(), nullptr};
         _Other.m_InnerBox = CBBox();
 
         return *this;

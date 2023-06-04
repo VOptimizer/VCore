@@ -24,7 +24,6 @@ set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelMesh.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/IMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/MarchingCubesMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/Slicer/Slicer.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/Slicer/BetterSlicer.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/MeshBuilder.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/IExporter.cpp"
 

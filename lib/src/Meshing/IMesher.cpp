@@ -38,25 +38,34 @@ namespace VoxelOptimizer
 
     std::list<Mesh> IMesher::GenerateScene(SceneNode sceneTree, bool mergeChilds)
     {
-        return GenerateScene(sceneTree, CMat4x4(), mergeChilds);
+        return GenerateScene(sceneTree, Math::Mat4x4(), mergeChilds);
     }
 
-    std::list<SMeshChunk> IMesher::GenerateChunks(VoxelMesh m, bool onlyDirty)
+    std::list<SMeshChunk> IMesher::GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty, int _ChunkCount)
     {
         std::list<SMeshChunk> ret;
 
-        m_Voxels = m->QueryVisible(true);
+        // m_Voxels = _Mesh->QueryVisible(true);
 
-        std::list<SChunk> chunks;
-        if(!onlyDirty)
-            chunks = m->QueryChunks();
+        std::list<SChunkMeta> chunks;
+        if(!_OnlyDirty)
+            chunks = _Mesh->QueryChunks();
         else
-            chunks = m->QueryDirtyChunks();
+            chunks = _Mesh->QueryDirtyChunks();
 
         std::list<std::future<SMeshChunk>> futures;
+        int counter = 0;
         for (auto &&c : chunks)
         {
-            futures.push_back(std::async(&IMesher::GenerateMeshChunk, this, m, c, true));
+            if(_ChunkCount != -1)
+            {
+                if(counter == _ChunkCount)
+                    break;
+
+                counter++;
+            }
+            _Mesh->GetVoxels().markAsProcessed(c);
+            futures.push_back(std::async(&IMesher::GenerateMeshChunk, this, _Mesh, c, true));
             while(futures.size() >= std::thread::hardware_concurrency())
             {
                 auto it = futures.begin();
@@ -65,7 +74,7 @@ namespace VoxelOptimizer
                     if(is_ready(*it))
                     {
                         auto result = it->get();
-                        ret.push_back(result);
+                        ret.push_back(result);                        
                         it = futures.erase(it);
                     }
                     else
@@ -83,27 +92,36 @@ namespace VoxelOptimizer
             it = futures.erase(it);
         }
 
-        m_Voxels = m->QueryVisible(false);
-        if(!m_Voxels.empty())
-        {
-            for (auto &&c : chunks)        
-            {
-                auto mesh = GenerateMeshChunk(m, c, false);
-                auto it = std::find_if(ret.begin(), ret.end(), [&c](const SMeshChunk &_Chunk) {
-                    return _Chunk.UniqueId == c.UniqueId;
-                });
+        // m_Voxels = _Mesh->QueryVisible(false);
+        counter = 0;
+        // if(!m_Voxels.empty())
+        // {
+            // for (auto &&c : chunks)        
+            // {
+            //     if(_ChunkCount != -1)
+            //     {
+            //         if(counter == _ChunkCount)
+            //             break;
 
-                // Merge the transparent chunk with the opaque one.
-                if(it != ret.end())
-                {
-                    CMeshBuilder builder;
-                    builder.Merge(it->Mesh, std::vector<Mesh>() = { mesh.Mesh });
-                }
-                else
-                    ret.push_back(mesh);
-            }
-        }
-        m_Voxels.clear();
+            //         counter++;
+            //     }
+
+            //     auto mesh = GenerateMeshChunk(_Mesh, c, false);
+            //     auto it = std::find_if(ret.begin(), ret.end(), [&c](const SMeshChunk &_Chunk) {
+            //         return _Chunk.UniqueId == c.UniqueId;
+            //     });
+
+            //     // Merge the transparent chunk with the opaque one.
+            //     if(it != ret.end())
+            //     {
+            //         CMeshBuilder builder;
+            //         builder.Merge(it->Mesh, std::vector<Mesh>() = { mesh.Mesh });
+            //     }
+            //     else
+            //         ret.push_back(mesh);
+            // }
+        // }
+        // m_Voxels.clear();
         
         return ret;
     }
@@ -135,7 +153,7 @@ namespace VoxelOptimizer
         return builder.Build();
     }
 
-    std::list<Mesh> IMesher::GenerateScene(SceneNode sceneTree, CMat4x4 modelMatrix, bool mergeChilds)
+    std::list<Mesh> IMesher::GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds)
     {
         std::list<Mesh> ret;
 
@@ -184,4 +202,4 @@ namespace VoxelOptimizer
                 throw std::runtime_error("Invalid mesher type!");
         }
     }
-} // namespace VoxelOptimizer
+}

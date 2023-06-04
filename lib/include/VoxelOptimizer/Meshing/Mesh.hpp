@@ -38,23 +38,23 @@ namespace VoxelOptimizer
     {
         int MaterialIndex;             
         Material FaceMaterial;              //!< Material which are applied to this faces.
-        std::vector<CVector> Indices;       //!< Indices of the faces. 3 indices are always 1 triangle. One index is a tripple of x = vertex, y = normal, z = uv.
+        std::vector<Math::Vec3f> Indices;       //!< Indices of the faces. 3 indices are always 1 triangle. One index is a tripple of x = vertex, y = normal, z = uv.
     };
     using GroupedFaces = std::shared_ptr<SGroupedFaces>;
 
     struct SMesh
     {
-        std::vector<CVector> Vertices;      //!< All vertices of this mesh.
-        std::vector<CVector> Normals;       //!< All normals of this mesh.
-        std::vector<CVector> UVs;           //!< All uvs of this mesh.
+        std::vector<Math::Vec3f> Vertices;      //!< All vertices of this mesh.
+        std::vector<Math::Vec3f> Normals;       //!< All normals of this mesh.
+        std::vector<Math::Vec3f> UVs;           //!< All uvs of this mesh.
 
         std::vector<GroupedFaces> Faces;    //!< All faces of this mesh.
         std::map<TextureType, Texture> Textures;        //!< Texture used by this mesh.
 
-        CMat4x4 ModelMatrix; 
+        Math::Mat4x4 ModelMatrix; 
     };
     using Mesh = std::shared_ptr<SMesh>;
-} // namespace VoxelOptimizer
+}
 
 
 #endif //MESH_HPP

@@ -35,7 +35,6 @@
 #include <VoxelOptimizer/Meshing/Texture.hpp>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <vector>
 #include <VoxelOptimizer/Math/Vector.hpp>
@@ -51,7 +50,7 @@ namespace VoxelOptimizer
             std::string Name;
             Texture Thumbnail;
 
-            CVector Pivot;
+            Math::Vec3f Pivot;
             CBBox BBox;
 
             std::vector<Material> Materials;                //!< Used materials
@@ -62,7 +61,7 @@ namespace VoxelOptimizer
             /**
              * @brief Sets the size of the voxel space.
              */
-            inline void SetSize(const CVectori &Size)
+            inline void SetSize(const Math::Vec3i &Size)
             {
                 m_Size = Size;
                 // m_Voxels.set_size(m_Size);
@@ -75,7 +74,7 @@ namespace VoxelOptimizer
              * 
              * @return Returns the voxel space size of a voxel mesh.
              */
-            inline CVectori GetSize() const
+            inline Math::Vec3i GetSize() const
             {
                 return m_Size;
             }
@@ -98,13 +97,12 @@ namespace VoxelOptimizer
 
             inline void RecalcBBox()
             {
-                std::lock_guard<std::recursive_mutex> lock(m_Lock);
-                BBox = CBBox(CVectori(INT32_MAX, INT32_MAX, INT32_MAX), CVectori(0, 0, 0));
+                BBox = CBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i(0, 0, 0));
 
                 for (auto &&v : m_Voxels)
                 {
-                    BBox.Beg = BBox.Beg.Min(v.first);
-                    BBox.End = BBox.End.Max(v.first + CVector(1, 1, 1));
+                    BBox.Beg = BBox.Beg.min(v.first);
+                    BBox.End = BBox.End.max(v.first + Math::Vec3f(1, 1, 1));
                 }
             }
             
@@ -116,7 +114,6 @@ namespace VoxelOptimizer
              */
             inline VoxelData &GetVoxels() //const
             {
-                std::lock_guard<std::recursive_mutex> lock(m_Lock);
                 return m_Voxels;
             }
 
@@ -128,14 +125,14 @@ namespace VoxelOptimizer
              * @param Color: Color index.
              * @param Transparent: Is the block transparent?
              */
-            void SetVoxel(const CVectori &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask = CVoxel::Visibility::VISIBLE);
+            void SetVoxel(const Math::Vec3i &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask = CVoxel::Visibility::VISIBLE);
 
             /**
              * @brief Removes a voxel on a given position
              * 
              * @param Pos: Position of the voxel to remove.
              */
-            void RemoveVoxel(const CVectori &Pos);
+            void RemoveVoxel(const Math::Vec3i &Pos);
 
             /**
              * @brief Clears the mesh
@@ -150,7 +147,7 @@ namespace VoxelOptimizer
             /**
              * @return Gets a voxel on a given position.
              */
-            Voxel GetVoxel(const CVectori &Pos);
+            Voxel GetVoxel(const Math::Vec3i &Pos);
 
             /**
              * @brief Gets a voxel on a given position.
@@ -158,7 +155,20 @@ namespace VoxelOptimizer
              * @param pos: Position of the voxel
              * @param OpaqueOnly: If true than only opaque voxels are returned, otherwise all transparent one.
              */
-            Voxel GetVoxel(const CVectori &Pos, bool OpaqueOnly);
+            Voxel GetVoxel(const Math::Vec3i &Pos, bool OpaqueOnly);
+
+            /**
+             * @return Gets a visible voxel on a given position.
+             */
+            Voxel GetVisibleVoxel(const Math::Vec3i &Pos);
+
+            /**
+             * @brief Gets a visible voxel on a given position.
+             * 
+             * @param pos: Position of the voxel
+             * @param OpaqueOnly: If true than only opaque voxels are returned, otherwise all transparent one.
+             */
+            Voxel GetVisibleVoxel(const Math::Vec3i &Pos, bool OpaqueOnly);
 
             /**
              * @brief Gets the count of all setted blocks.
@@ -178,33 +188,31 @@ namespace VoxelOptimizer
              * @brief Queries all visible voxels.
              * @param opaque: If true only opaque voxels are returned, otherwise only none opaque voxels are returned.
              */
-            std::map<CVectori, Voxel> QueryVisible(bool opaque) const;
+            VectoriMap<Voxel> QueryVisible(bool opaque) const;
 
             /**
              * @return Gets a list of all chunks which has been modified.
              * @note Marks all chunks as processed.
              */
-            std::list<SChunk> QueryDirtyChunks();
+            std::list<SChunkMeta> QueryDirtyChunks();
 
             /**
              * @return Returns all chunks.
              */
-            std::list<SChunk> QueryChunks() const;
+            std::list<SChunkMeta> QueryChunks() const;
             
             ~CVoxelMesh() = default;
         private:   
-            const static CVector CHUNK_SIZE;
+            const static Math::Vec3f CHUNK_SIZE;
 
-            void SetNormal(const CVector &Pos, const CVector &Neighbor, bool IsInvisible = true);
+            void SetNormal(const Math::Vec3f &Pos, const Math::Vec3f &Neighbor, bool IsInvisible = true);
 
-            CVectori m_Size;            
+            Math::Vec3i m_Size;            
             VoxelData m_Voxels;
-
-            mutable std::recursive_mutex m_Lock;
     };
 
     using VoxelMesh = std::shared_ptr<CVoxelMesh>;
-} // namespace VoxelOptimizer
+}
 
 
 #endif //VOXELMESH_HPP

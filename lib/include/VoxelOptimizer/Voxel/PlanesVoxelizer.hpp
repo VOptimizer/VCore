@@ -48,7 +48,7 @@ namespace VoxelOptimizer
             /**
              * @brief Sets the size for the voxel space.
              */
-            void SetVoxelSpaceSize(const CVectori &_size);
+            void SetVoxelSpaceSize(const Math::Vec3i &_size);
 
             /**
              * @return Returns the mesh which is managed by this instance.
@@ -69,11 +69,11 @@ namespace VoxelOptimizer
             void ProjectTexture(Texture _planes, const CBBox &_bbox, char _axis, bool _otherSide = false);
 
             int AddOrGetColor(uint32_t _color);
-            CColor GetColor(Texture _planes, const CVectori &_pos);
+            CColor GetColor(Texture _planes, const Math::Vec2ui &_pos);
 
             VoxelMesh m_Mesh;
             std::map<uint32_t, int, std::less<uint32_t>, CAllocator<std::pair<uint32_t, int>>> m_ColorMapping;
     };
-} // namespace VoxelOptimizer
+}
 
 #endif

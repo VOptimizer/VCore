@@ -41,32 +41,32 @@ namespace VoxelOptimizer
 
             bool Visible;
 
-            inline CVector GetPosition() const
+            inline Math::Vec3f GetPosition() const
             {
                 return m_Position;
             }
             
-            inline void SetPosition(const CVector &position)
+            inline void SetPosition(const Math::Vec3f &position)
             {
                 m_Position = position;
             }
 
-            inline CVector GetRotation() const
+            inline Math::Vec3f GetRotation() const
             {
                 return m_Rotation;
             }
             
-            inline void SetRotation(const CVector &rotation)
+            inline void SetRotation(const Math::Vec3f &rotation)
             {
                 m_Rotation = rotation;
             }
 
-            inline CVector GetScale() const
+            inline Math::Vec3f GetScale() const
             {
                 return m_Scale;
             }
             
-            inline void SetScale(const CVector &scale)
+            inline void SetScale(const Math::Vec3f &scale)
             {
                 m_Scale = scale;
             }
@@ -91,16 +91,16 @@ namespace VoxelOptimizer
                 m_Name = name;
             }
 
-            inline CMat4x4 ModelMatrix() const
+            inline Math::Mat4x4 ModelMatrix() const
             {
-                CMat4x4 mm; //* CMat4x4::Rotation(m_Rotation); // * CMat4x4::Scale(m_Scale);
+                Math::Mat4x4 mm; //* Math::Mat4x4::Rotation(m_Rotation); // * Math::Mat4x4::Scale(m_Scale);
                 mm
-                    .Rotate(CVector(0, 0, 1), m_Rotation.z)
-                    .Rotate(CVector(1, 0, 0), m_Rotation.x)
-                    .Rotate(CVector(0, 1, 0), m_Rotation.y);
+                    .Rotate(Math::Vec3f(0, 0, 1), m_Rotation.z)
+                    .Rotate(Math::Vec3f(1, 0, 0), m_Rotation.x)
+                    .Rotate(Math::Vec3f(0, 1, 0), m_Rotation.y);
 
-                mm *= CMat4x4::Scale(m_Scale);
-                return CMat4x4::Translation(m_Position) * mm;
+                mm *= Math::Mat4x4::Scale(m_Scale);
+                return Math::Mat4x4::Translation(m_Position) * mm;
             }
 
             SceneNodes::iterator begin()
@@ -139,16 +139,16 @@ namespace VoxelOptimizer
                 return m_Childs.size();
             }
         private:
-            CVector m_Position;
-            CVector m_Rotation;
-            CVector m_Scale;
+            Math::Vec3f m_Position;
+            Math::Vec3f m_Rotation;
+            Math::Vec3f m_Scale;
 
             VoxelMesh m_Mesh;
             CSceneNode* m_Parent;
             SceneNodes m_Childs;
             std::string m_Name;
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //SCENENODE_HPP

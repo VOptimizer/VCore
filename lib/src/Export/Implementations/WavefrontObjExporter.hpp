@@ -35,6 +35,6 @@ public:
 
   ~CWavefrontObjExporter() = default;
 };
-} // namespace VoxelOptimizer
+}
 
 #endif // WAVEFRONTOBJEXPORTER_HPP

@@ -108,4 +108,4 @@ namespace VoxelOptimizer
     {
         return Generate(std::vector<Mesh>() = { mesh });
     }
-} // namespace VoxelOptimizer
+}

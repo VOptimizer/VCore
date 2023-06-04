@@ -228,28 +228,28 @@ namespace VoxelOptimizer
     }
 
     template<>
-    inline CBinaryStream &CBinaryStream::operator<<(const CVectori &val)
+    inline CBinaryStream &CBinaryStream::operator<<(const Math::Vec3i &val)
     {
         write((char*)val.v, sizeof(val.v));
         return *this;
     }
 
     template<>
-    inline CBinaryStream &CBinaryStream::operator>>(CVectori &val)
+    inline CBinaryStream &CBinaryStream::operator>>(Math::Vec3i &val)
     {
         read((char*)val.v, sizeof(val.v));
         return *this;
     }
 
     template<>
-    inline CBinaryStream &CBinaryStream::operator<<(const CVector &val)
+    inline CBinaryStream &CBinaryStream::operator<<(const Math::Vec3f &val)
     {
         write((char*)val.v, sizeof(val.v));
         return *this;
     }
 
     template<>
-    inline CBinaryStream &CBinaryStream::operator>>(CVector &val)
+    inline CBinaryStream &CBinaryStream::operator>>(Math::Vec3f &val)
     {
         read((char*)val.v, sizeof(val.v));
         return *this;
@@ -723,6 +723,6 @@ namespace VoxelOptimizer
     //     m_Offset = _strm.m_Offset;
     //     m_Size = _strm.m_Size;
     // }
-} // namespace VoxelOptimizer
+}
 
 #endif //BINARYSTREAM_HPP

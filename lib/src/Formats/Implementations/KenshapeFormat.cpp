@@ -68,8 +68,8 @@ namespace VoxelOptimizer
         m->SetSize(Content->Size);
 
         std::map<int, int> ColorIdx;
-        CVector Pos;
-        CVector Beg, End;
+        Math::Vec3f Pos;
+        Math::Vec3f Beg, End;
 
         Pos.z = Content->Size.z - 1;
         Pos.y = (int)(Content->Size.y / 2.f);
@@ -86,7 +86,7 @@ namespace VoxelOptimizer
                         m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture());
 
                     m_Textures[TextureType::DIFFIUSE]->AddPixel(Content->Colors[tile->ColorIdx]);
-                    IdxC = m_Textures[TextureType::DIFFIUSE]->Size().x - 1;
+                    IdxC = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;
                     ColorIdx[tile->ColorIdx] = IdxC;
                 }
                 else
@@ -96,12 +96,12 @@ namespace VoxelOptimizer
 
                 for (size_t y = Pos.y - Blocks; y <= Pos.y + Blocks; y++)
                 {
-                    CVector v(Pos.x, y, Pos.z);
+                    Math::Vec3f v(Pos.x, y, Pos.z);
                     if(Beg.IsZero())
                         Beg = v;
 
-                    Beg = Beg.Min(v);
-                    End = End.Max(v);
+                    Beg = Beg.min(v);
+                    End = End.max(v);
 
                     m->SetVoxel(v, 0, IdxC, false);
                 }
@@ -126,4 +126,4 @@ namespace VoxelOptimizer
 
         m_Models.push_back(m);
     }
-} // namespace VoxelOptimizer
+}

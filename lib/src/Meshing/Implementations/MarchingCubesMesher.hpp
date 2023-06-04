@@ -35,20 +35,23 @@ namespace VoxelOptimizer
         public:
             CMarchingCubesMesher() = default;
 
-            std::list<SMeshChunk> GenerateChunks(VoxelMesh m, bool onlyDirty = false) override;
+            std::list<SMeshChunk> GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty = false, int _ChunkCount = -1) override;
 
             ~CMarchingCubesMesher() = default;
 
         protected:
-            SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunk &_Chunk, bool Opaque) override;
+            SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque) override;
 
         private:
             VoxelMesh m_Mesh;
+            CBBox m_ChunkDimensions;
+            CBBox m_InnerBBox;
+            const CChunk *m_Chunk;
 
-            void CreateFaces(CMeshBuilder &builder, CVector pos, CVector center, short *edges);
-            Voxel GetVoxel(CVector pos, int edge);
+            void CreateFaces(CMeshBuilder &builder, Math::Vec3f pos, Math::Vec3f center, short *edges);
+            Voxel GetVoxel(Math::Vec3f pos, int edge);
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //MARCHINGCUBESMESHER_HPP

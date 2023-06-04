@@ -25,9 +25,6 @@
 #ifndef IMESHER_HPP
 #define IMESHER_HPP
 
-#include <map>
-#include <list>
-
 #include <VoxelOptimizer/Meshing/Material.hpp>
 #include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
 
@@ -45,7 +42,7 @@ namespace VoxelOptimizer
         MARCHING_CUBES
     };
 
-    struct SMeshChunk : public SChunk
+    struct SMeshChunk : public SChunkMeta
     {
         Mesh Mesh;          //!< Mesh of the voxel model.
     };
@@ -73,20 +70,19 @@ namespace VoxelOptimizer
             /**
              * @brief Generates list of meshed chunks.
              * 
-             * @param m: Voxel mesh to meshify.
-             * @param onlyDirty: Meshes only dirty chunks.
+             * @param _Mesh: Voxel mesh to meshify.
+             * @param _OnlyDirty: Meshes only dirty chunks.
+             * @param _ChunkCount: Count of chunks to meshify.
              */
-            virtual std::list<SMeshChunk> GenerateChunks(VoxelMesh m, bool onlyDirty = false);
+            virtual std::list<SMeshChunk> GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty = false, int _ChunkCount = -1);
 
             virtual ~IMesher() = default;
         protected:
-            virtual SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunk &_Chunk, bool Opaque) { return {}; }
+            virtual SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque) { return {}; }
 
-            std::list<Mesh> GenerateScene(SceneNode sceneTree, CMat4x4 modelMatrix, bool mergeChilds = false);
-            std::vector<Material> m_CurrentUsedMaterials;
-            std::map<CVectori, Voxel> m_Voxels;
+            std::list<Mesh> GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds = false);
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //IMESHER_HPP

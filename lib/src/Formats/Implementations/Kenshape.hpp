@@ -65,7 +65,7 @@ namespace VoxelOptimizer
 
             std::string Title;
             std::string Author;
-            CVector Size;
+            Math::Vec3f Size;
             std::vector<Tile> Tiles;
             std::vector<CColor> Colors;
 
@@ -101,6 +101,6 @@ namespace VoxelOptimizer
     };
 
     using Kenshape = std::shared_ptr<CKenshape>;
-} // namespace VoxelOptimizer
+}
 
 #endif //KENSHAPE_HPP

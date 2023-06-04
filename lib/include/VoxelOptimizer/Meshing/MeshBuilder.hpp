@@ -36,9 +36,9 @@ namespace VoxelOptimizer
 {
     struct SVertex
     {
-        CVector Pos;
-        CVector UV;
-        CVector Normal;
+        Math::Vec3f Pos;
+        Math::Vec3f UV;
+        Math::Vec3f Normal;
         Material Mat;
         int MaterialIndex;
     };
@@ -68,7 +68,7 @@ namespace VoxelOptimizer
              * 
              * @throws CMeshBuilderException If AddTextures has not been previously called.
              */
-            void AddFace(CVector _v1, CVector _v2, CVector _v3, CVector _v4, CVector _normal, int _color, Material _material);
+            void AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, Material _material);
 
             /**
              * @brief Adds a new triangle to the mesh.
@@ -89,12 +89,12 @@ namespace VoxelOptimizer
 
             ~CMeshBuilder() = default;
         private:
-            using VectorIndexMap = std::map<CVector, int, std::less<CVector>, CAllocator<CVector>>;
+            using VectorIndexMap = VectorMap<int>; //std::map<Math::Vec3f, int, std::less<Math::Vec3f>, CAllocator<Math::Vec3f>>;
             using MaterialFacesMap = std::map<Material, GroupedFaces, std::less<Material>, CAllocator<Material>>;
 
-            int AddPosition(CVector _pos);
-            int AddNormal(CVector _normal);
-            int AddUV(CVector _uv);
+            int AddPosition(Math::Vec3f _pos);
+            int AddNormal(Math::Vec3f _normal);
+            int AddUV(Math::Vec3f _uv);
 
             void MergeIntoThis(Mesh m);
             void GenerateCache();
@@ -106,7 +106,7 @@ namespace VoxelOptimizer
 
             Mesh m_CurrentMesh;
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //MESHBUILDER_HPP

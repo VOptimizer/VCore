@@ -165,21 +165,21 @@ namespace VoxelOptimizer
 
         // Creates a new emission texture
         if(hasEmission && !texturesHasEmission)
-            textures[TextureType::EMISSION] = Texture(new CTexture(textures[TextureType::DIFFIUSE]->Size()));
+            textures[TextureType::EMISSION] = Texture(new CTexture(textures[TextureType::DIFFIUSE]->GetSize()));
 
         auto diffiuse = textures[TextureType::DIFFIUSE];
         auto otherDiffiuse = otherTextures[TextureType::DIFFIUSE];
 
         // Merge the textures
-        for (int y = 0; y < otherDiffiuse->Size().y; y++)
+        for (int y = 0; y < otherDiffiuse->GetSize().y; y++)
         {
-            for (int x = 0; x < otherDiffiuse->Size().x; x++)
+            for (int x = 0; x < otherDiffiuse->GetSize().x; x++)
             {
-                int oldIdx = x + otherDiffiuse->Size().x * y;
+                int oldIdx = x + otherDiffiuse->GetSize().x * y;
                 int newIdx = -1;
 
-                auto &pixels = diffiuse->Pixels();
-                auto pixel = otherDiffiuse->Pixel(CVector(x, y, 0));
+                auto &pixels = diffiuse->GetPixels();
+                auto pixel = otherDiffiuse->GetPixel(Math::Vec2ui(x, y));
 
                 auto it = std::find(pixels.begin(), pixels.end(), pixel);
 
@@ -194,7 +194,7 @@ namespace VoxelOptimizer
                     if (hasEmission)
                     {
                         // Add the emission color
-                        auto emission = otherTextures[TextureType::EMISSION]->Pixel(CVector(x, y, 0));
+                        auto emission = otherTextures[TextureType::EMISSION]->GetPixel(Math::Vec2ui(x, y));
                         c.FromRGBA(emission);
 
                         textures[TextureType::EMISSION]->AddPixel(c);
@@ -205,7 +205,7 @@ namespace VoxelOptimizer
                         textures[TextureType::EMISSION]->AddPixel(c);
                     }
 
-                    newIdx = diffiuse->Size().x - 1;
+                    newIdx = diffiuse->GetSize().x - 1;
                 }
                 else
                 {
@@ -216,8 +216,8 @@ namespace VoxelOptimizer
                         // Check if the found color is an emission color.
                         while (emission != emission2)
                         {
-                            emission = otherTextures[TextureType::EMISSION]->Pixel(CVector(x, y, 0));
-                            emission2 = textures[TextureType::EMISSION]->Pixel(CVector(x, y, 0));
+                            emission = otherTextures[TextureType::EMISSION]->GetPixel(Math::Vec2ui(x, y));
+                            emission2 = textures[TextureType::EMISSION]->GetPixel(Math::Vec2ui(x, y));
                             
                             if(emission != emission2)
                             {
@@ -236,7 +236,7 @@ namespace VoxelOptimizer
                             c.FromRGBA(emission);
                             textures[TextureType::EMISSION]->AddPixel(c);
 
-                            newIdx = diffiuse->Size().x - 1;
+                            newIdx = diffiuse->GetSize().x - 1;
                         }
                         else
                             newIdx = it - pixels.begin();
@@ -315,4 +315,4 @@ namespace VoxelOptimizer
 
         return data;
     }
-} // namespace VoxelOptimizer
+}

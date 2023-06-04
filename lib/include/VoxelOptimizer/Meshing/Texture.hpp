@@ -44,33 +44,33 @@ namespace VoxelOptimizer
     {
         public:
             CTexture() = default;
-            CTexture(const CVectori &_size);
-            CTexture(const CTexture &_texture);
-            CTexture(const CVectori &_size, uint32_t *_data);
+            CTexture(const Math::Vec2ui &_Size);
+            CTexture(const CTexture &_Texture);
+            CTexture(const Math::Vec2ui &_Size, uint32_t *_Data);
 
-            void AddPixel(const CColor &color, const CVectori &pos);
-            void AddPixel(const CColor &color);
+            void AddPixel(const CColor &_Color, const Math::Vec2ui &_Position);
+            void AddPixel(const CColor &_Color);
 
-            inline CVectori Size() const
+            inline Math::Vec2ui GetSize() const
             {
                 return m_Size;
             }
 
-            const std::vector<uint32_t> &Pixels() const
+            const std::vector<uint32_t> &GetPixels() const
             {
                 return m_Pixels;
             }
 
-            uint32_t Pixel(const CVectori &pos);
+            uint32_t GetPixel(const Math::Vec2ui &_Position);
             std::vector<char> AsPNG();
 
             ~CTexture() = default;
         private:
-            CVectori m_Size;
+            Math::Vec2ui m_Size;
             std::vector<uint32_t> m_Pixels;
     };
 
     using Texture = std::shared_ptr<CTexture>;
-} // namespace VoxelOptimizer
+}
 
 #endif //TEXTURE_HPP

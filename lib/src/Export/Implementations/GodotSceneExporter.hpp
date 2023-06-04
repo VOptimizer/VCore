@@ -40,7 +40,7 @@ namespace VoxelOptimizer
         private:
         /* data */
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //GODOTSCENEEXPORTER_HPP

@@ -97,12 +97,12 @@ namespace VoxelOptimizer
                 arrayMesh << "\t\"arrays\":[" << std::endl;
                 surface++;
 
-                std::map<CVector, int> Index;
+                VectorMap<int> Index;
                 int TmpIndices[3];
                 int VertexCounter = 0;
 
                 std::vector<int> Indices;
-                std::vector<CVector> Vertices, Normals, UVs;
+                std::vector<Math::Vec3f> Vertices, Normals, UVs;
 
                 for (auto &&v : f->Indices)
                 {
@@ -111,7 +111,7 @@ namespace VoxelOptimizer
                         TmpIndices[VertexCounter] = IT->second;
                     else
                     {
-                        VoxelOptimizer::CVector Vertex, Normal, UV;
+                        VoxelOptimizer::Math::Vec3f Vertex, Normal, UV;
                         Vertex = mesh->Vertices[(size_t)v.x - 1];
                         Normal = mesh->Normals[(size_t)v.y - 1];
                         UV = mesh->UVs[(size_t)v.z - 1];
@@ -231,4 +231,4 @@ namespace VoxelOptimizer
 
         return ret;
     }
-} // namespace VoxelOptimizer
+}

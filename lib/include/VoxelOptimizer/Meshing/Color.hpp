@@ -91,6 +91,6 @@ namespace VoxelOptimizer
 
             ~CColor() = default;
     };
-} // namespace VoxelOptimizer
+}
 
 #endif //COLOR_HPP

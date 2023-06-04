@@ -43,7 +43,7 @@ namespace VoxelOptimizer
         size_t meshCounter = 0;
         size_t MatCounter = 0;
         std::map<int, size_t> processedMaterials;
-        CVector indicesOffset;
+        Math::Vec3f indicesOffset;
 
         for (auto &&mesh : Meshes)
         {
@@ -52,7 +52,7 @@ namespace VoxelOptimizer
 
             for (auto &&v : mesh->Vertices)
             {
-                CVector tmp = v;
+                Math::Vec3f tmp = v;
                 if(m_Settings->WorldSpace)
                     tmp = mesh->ModelMatrix * v;
 
@@ -60,14 +60,14 @@ namespace VoxelOptimizer
             }
 
             //"Extracts" the rotation matrix. Quick'n Dirty
-            CMat4x4 rotMat = mesh->ModelMatrix;
+            Math::Mat4x4 rotMat = mesh->ModelMatrix;
             rotMat.x.w = 0;
             rotMat.y.w = 0;
             rotMat.z.w = 0;
 
             for (auto &&vn : mesh->Normals)
             {
-                CVector tmp = vn;
+                Math::Vec3f tmp = vn;
                 if(m_Settings->WorldSpace)
                     tmp = rotMat * vn;
 
@@ -135,7 +135,7 @@ namespace VoxelOptimizer
                     ObjFile << "f";
                     for (char j = 0; j < 3; j++)
                     {
-                        CVector tmp = f->Indices[i + j] + indicesOffset;
+                        Math::Vec3f tmp = f->Indices[i + j] + indicesOffset;
 
                         ObjFile << " ";
                         ObjFile << tmp.x << "/" << tmp.z << "/" << tmp.y;
@@ -144,7 +144,7 @@ namespace VoxelOptimizer
                 }       
             }
         
-            indicesOffset += CVector(mesh->Vertices.size(), mesh->Normals.size(), mesh->UVs.size());
+            indicesOffset += Math::Vec3f(mesh->Vertices.size(), mesh->Normals.size(), mesh->UVs.size());
         }
 
         std::string ObjFileStr = ObjFile.str();
@@ -164,4 +164,4 @@ namespace VoxelOptimizer
 
         return ret;
     }
-} // namespace VoxelOptimizer
+}

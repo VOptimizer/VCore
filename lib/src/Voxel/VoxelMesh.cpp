@@ -27,23 +27,22 @@
 
 namespace VoxelOptimizer
 {
-    const CVector CVoxel::FACE_UP = CVector(0, 0, 1);
-    const CVector CVoxel::FACE_DOWN = CVector(0, 0, -1);
-    const CVector CVoxel::FACE_LEFT = CVector(-1, 0, 0);
-    const CVector CVoxel::FACE_RIGHT = CVector(1, 0, 0);
-    const CVector CVoxel::FACE_FORWARD = CVector(0, 1, 0);
-    const CVector CVoxel::FACE_BACKWARD = CVector(0, -1, 0);
-    const CVector CVoxel::FACE_ZERO = CVector(0, 0, 0);
-    const CVector CVoxelMesh::CHUNK_SIZE = CVector(16, 16, 16);
+    const Math::Vec3f CVoxel::FACE_UP = Math::Vec3f(0, 0, 1);
+    const Math::Vec3f CVoxel::FACE_DOWN = Math::Vec3f(0, 0, -1);
+    const Math::Vec3f CVoxel::FACE_LEFT = Math::Vec3f(-1, 0, 0);
+    const Math::Vec3f CVoxel::FACE_RIGHT = Math::Vec3f(1, 0, 0);
+    const Math::Vec3f CVoxel::FACE_FORWARD = Math::Vec3f(0, 1, 0);
+    const Math::Vec3f CVoxel::FACE_BACKWARD = Math::Vec3f(0, -1, 0);
+    const Math::Vec3f CVoxel::FACE_ZERO = Math::Vec3f(0, 0, 0);
+    const Math::Vec3f CVoxelMesh::CHUNK_SIZE = Math::Vec3f(16, 16, 16);
 
-    CVoxel::CVoxel()
+    CVoxel::CVoxel() : Color(-1), Material(-1), Transparent(false)
     {
         VisibilityMask = Visibility::INVISIBLE;
     }
 
-    void CVoxelMesh::SetVoxel(const CVectori &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask)
-    {
-        std::lock_guard<std::recursive_mutex> lock(m_Lock);
+    void CVoxelMesh::SetVoxel(const Math::Vec3i &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask)
+    {      
         CVoxel Tmp;// = m_Pool.alloc();
         
         Tmp.Material = Material;
@@ -54,9 +53,8 @@ namespace VoxelOptimizer
         m_Voxels.insert({Pos, Tmp});
     }
 
-    void CVoxelMesh::RemoveVoxel(const CVectori &Pos)
+    void CVoxelMesh::RemoveVoxel(const Math::Vec3i &Pos)
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Lock);
         auto IT = m_Voxels.find(Pos);
         if(IT != m_Voxels.end())
         {
@@ -76,62 +74,69 @@ namespace VoxelOptimizer
     
     void CVoxelMesh::Clear()
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Lock);
+        
         m_Voxels.clear();
     }
 
-    Voxel CVoxelMesh::GetVoxel(const CVectori &Pos)
+    Voxel CVoxelMesh::GetVoxel(const Math::Vec3i &Pos)
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Lock);
-
-        auto IT = m_Voxels.find(Pos);
-        if(IT == m_Voxels.end())
+        auto it = m_Voxels.find(Pos);
+        if(it == m_Voxels.end())
             return nullptr;
 
-        return IT->second;
+        return it->second;
     }
 
-    Voxel CVoxelMesh::GetVoxel(const CVectori &Pos, bool OpaqueOnly)
+    Voxel CVoxelMesh::GetVoxel(const Math::Vec3i &Pos, bool OpaqueOnly)
     {
-        auto voxel = GetVoxel(Pos);
-        if(voxel)
-        {
-            if(OpaqueOnly && voxel->Transparent)
-                voxel = nullptr;
-            else if(!OpaqueOnly && !voxel->Transparent)
-                voxel = nullptr;
-        }
+        auto it = m_Voxels.find(Pos, OpaqueOnly);
+        if(it == m_Voxels.end())
+            return nullptr;
 
-        return voxel;
+        return it->second;
+    }
+
+    Voxel CVoxelMesh::GetVisibleVoxel(const Math::Vec3i &Pos)
+    {
+        auto it = m_Voxels.findVisible(Pos);
+        if(it == m_Voxels.end())
+            return nullptr;
+
+        return it->second;
+    }
+
+    Voxel CVoxelMesh::GetVisibleVoxel(const Math::Vec3i &Pos, bool OpaqueOnly)
+    {
+        auto it = m_Voxels.findVisible(Pos, OpaqueOnly);
+        if(it == m_Voxels.end())
+            return nullptr;
+
+        return it->second;
     }
 
     void CVoxelMesh::GenerateVisibilityMask()
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Lock);
         m_Voxels.generateVisibilityMask();
     }
 
-    std::map<CVectori, Voxel> CVoxelMesh::QueryVisible(bool opaque) const
+    VectoriMap<Voxel> CVoxelMesh::QueryVisible(bool opaque) const
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Lock);
         return m_Voxels.queryVisible(opaque);
     }
 
-    std::list<SChunk> CVoxelMesh::QueryDirtyChunks()
+    std::list<SChunkMeta> CVoxelMesh::QueryDirtyChunks()
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Lock);
         return m_Voxels.queryDirtyChunks();
     }
 
-    std::list<SChunk> CVoxelMesh::QueryChunks() const
+    std::list<SChunkMeta> CVoxelMesh::QueryChunks() const
     {
-        std::lock_guard<std::recursive_mutex> lock(m_Lock);
         return m_Voxels.queryChunks();
     }
     
-    void CVoxelMesh::SetNormal(const CVector &Pos, const CVector &Neighbor, bool IsInvisible)
+    void CVoxelMesh::SetNormal(const Math::Vec3f &Pos, const Math::Vec3f &Neighbor, bool IsInvisible)
     {
-        static const std::map<CVector, std::pair<CVoxel::Visibility, CVoxel::Visibility>> NEIGHBOR_INDEX = {
+        static const std::map<Math::Vec3f, std::pair<CVoxel::Visibility, CVoxel::Visibility>> NEIGHBOR_INDEX = {
             {CVoxel::FACE_UP, {CVoxel::Visibility::UP, CVoxel::Visibility::DOWN}},
             {CVoxel::FACE_DOWN, {CVoxel::Visibility::DOWN, CVoxel::Visibility::UP}},
 
@@ -188,4 +193,4 @@ namespace VoxelOptimizer
         // if(neighbor)
         //     CheckInvisible(neighbor);
     }
-} // namespace VoxelOptimizer
+}

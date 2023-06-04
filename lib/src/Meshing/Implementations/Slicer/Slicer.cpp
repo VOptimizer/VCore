@@ -34,14 +34,14 @@ namespace VoxelOptimizer
     {
         m_Axis = Axis;
 
-        m_Neighbour = CVector();
+        m_Neighbour = Math::Vec3f();
         m_Neighbour.v[Axis] = 1;
     }
 
-    bool CSlicer::IsFace(CVector Pos)
+    bool CSlicer::IsFace(Math::Vec3i Pos)
     {
         if(std::any_of(m_ProcessedQuads.begin(), m_ProcessedQuads.end(), 
-        [this, Pos](std::pair<CVector, CVector> Rect)
+        [this, Pos](std::pair<Math::Vec3f, Math::Vec3f> Rect)
         {
             int X = (m_Axis + 1) % 3;
             int Y = (m_Axis + 2) % 3;
@@ -60,7 +60,7 @@ namespace VoxelOptimizer
         Voxel V1, V2;
         bool current = true;
         m_HasFace = false;
-        CVector Size = m_Mesh->GetSize();
+        Math::Vec3f Size = m_Mesh->GetSize();
 
         V1 = GetVoxel(Pos);
         if(!V1)
@@ -77,59 +77,17 @@ namespace VoxelOptimizer
         }
 
         return m_HasFace;
-
-        // V1 = GetVoxel(Pos);//m_Mesh->GetVoxel(Pos, m_Opaque);
-        // V2 = GetVoxel(Pos + m_Neighbour);//m_Mesh->GetVoxel(Pos + m_Neighbour, m_Opaque);
-
-        // // if(V1 || V2)
-        // // {
-        // //     if(!V1)
-        // //         V1 = m_Mesh->GetVoxel(Pos, m_Opaque);
-
-        // //     if(!V2)
-        // //         V2 = m_Mesh->GetVoxel(Pos + m_Neighbour, m_Opaque);
-        // // }
-
-        // if(!m_Opaque)
-        // {
-        //     // Check if neighbour is same as current
-        //     if(V1 && V2)
-        //     {
-        //         if(V1->Color != V2->Color || V1->Material != V2->Material)
-        //             V2 = nullptr;
-        //     }
-        // }
-        
-        // bool BlockCurrent = 0 <= Pos.v[m_Axis] ? ((bool)V1) : false;
-        // bool BlockCompare = Pos.v[m_Axis] < Size.v[m_Axis] - 1 ? ((bool)V2) : false;
-
-        // if(!BlockCurrent && BlockCompare)
-        // {
-        //     m_Color = V2->Color;
-        //     m_Material = V2->Material;
-        //     SetFaceNormal(V2, false);
-        // }
-        // else if(BlockCurrent && !BlockCompare)
-        // {
-        //     m_Color = V1->Color;
-        //     m_Material = V1->Material;
-        //     SetFaceNormal(V1, true);
-        // }
-    
-        // Checks if there is a visible face.
-        // return BlockCurrent != BlockCompare;
     }
 
-    Voxel CSlicer::GetVoxel(const CVector &v)
+    Voxel CSlicer::GetVoxel(const Math::Vec3i &v)
     {
-        auto it = m_Voxels.find(v);
-        if(it == m_Voxels.end())
+        if(!CBBox(m_TotalBBox.Beg, m_TotalBBox.Beg + m_Size).ContainsPoint(v))
             return nullptr;
 
-        return it->second;
+        return m_Chunk->findVisible(v, CBBox(m_TotalBBox.Beg, m_Size), m_Opaque);
     }
 
-    void CSlicer::AddProcessedQuad(CVector Pos, CVector Size)
+    void CSlicer::AddProcessedQuad(Math::Vec3i Pos, Math::Vec3i Size)
     {
         m_ProcessedQuads.push_back({Pos, Size});
     }
@@ -148,12 +106,12 @@ namespace VoxelOptimizer
             {
                 if(IsCurrent)
                 {
-                    m_Normal = CVector(1, 0, 0);
+                    m_Normal = Math::Vec3f(1, 0, 0);
                     m_HasFace = IsFaceVisible(v, CVoxel::Visibility::RIGHT);
                 } //v->Normals[CVoxel::RIGHT];
                 else
                 {
-                    m_Normal = CVector(-1, 0, 0);
+                    m_Normal = Math::Vec3f(-1, 0, 0);
                     m_HasFace = IsFaceVisible(v, CVoxel::Visibility::LEFT);
                 }
                     //v->Normals[CVoxel::LEFT];
@@ -163,12 +121,12 @@ namespace VoxelOptimizer
             {
                 if(IsCurrent)
                 {
-                    m_Normal = CVector(0, 1, 0);
+                    m_Normal = Math::Vec3f(0, 1, 0);
                     m_HasFace = IsFaceVisible(v, CVoxel::Visibility::FORWARD);
                 }//v->Normals[CVoxel::FORWARD];
                 else
                 {
-                    m_Normal = CVector(0, -1, 0);
+                    m_Normal = Math::Vec3f(0, -1, 0);
                     m_HasFace = IsFaceVisible(v, CVoxel::Visibility::BACKWARD);
                 }//v->Normals[CVoxel::BACKWARD];
             }break;
@@ -177,15 +135,15 @@ namespace VoxelOptimizer
             {
                 if(IsCurrent)
                 {
-                    m_Normal = CVector(0, 0, 1);
+                    m_Normal = Math::Vec3f(0, 0, 1);
                     m_HasFace = IsFaceVisible(v, CVoxel::Visibility::UP);
                 }//v->Normals[CVoxel::UP];
                 else
                 {
-                    m_Normal = CVector(0, 0, -1);
+                    m_Normal = Math::Vec3f(0, 0, -1);
                     m_HasFace = IsFaceVisible(v, CVoxel::Visibility::DOWN);
                 }//v->Normals[CVoxel::DOWN];
             }break;
         }
     }
-} // namespace VoxelOptimizer
+}

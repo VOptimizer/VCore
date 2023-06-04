@@ -46,15 +46,15 @@ namespace VoxelOptimizer
         for (auto &&mesh : Meshes)
         {
             GLTF::CMesh GLTFMesh;
-            Nodes.push_back(GLTF::CNode(GLTFMeshes.size(), m_Settings->WorldSpace ? mesh->ModelMatrix : CMat4x4()));
+            Nodes.push_back(GLTF::CNode(GLTFMeshes.size(), m_Settings->WorldSpace ? mesh->ModelMatrix : Math::Mat4x4()));
 
             for (auto &&f : mesh->Faces)
             {
-                std::vector<CVector> Vertices, Normals, UVs;
+                std::vector<Math::Vec3f> Vertices, Normals, UVs;
                 std::vector<int> Indices;
-                std::map<CVector, int> IndicesIndex;
+                VectorMap<int> IndicesIndex;
 
-                CVector Max, Min(10000, 10000, 10000);
+                Math::Vec3f Max, Min(10000, 10000, 10000);
 
                 // Add only "new" materials.
                 if(processedMaterials.find(f->MaterialIndex) == processedMaterials.end())
@@ -74,7 +74,7 @@ namespace VoxelOptimizer
                 {
                     for (size_t j = 0; j < 3; j++)
                     {
-                        CVector vec = f->Indices[i + j];
+                        Math::Vec3f vec = f->Indices[i + j];
 
                         int Index = 0;
 
@@ -85,8 +85,8 @@ namespace VoxelOptimizer
                             Normals.push_back(mesh->Normals[(size_t)vec.y - 1]);
                             UVs.push_back(mesh->UVs[(size_t)vec.z - 1]);
 
-                            Min = Min.Min(mesh->Vertices[(size_t)vec.x - 1]);
-                            Max = Max.Max(mesh->Vertices[(size_t)vec.x - 1]);
+                            Min = Min.min(mesh->Vertices[(size_t)vec.x - 1]);
+                            Max = Max.max(mesh->Vertices[(size_t)vec.x - 1]);
 
                             Index = Vertices.size() - 1;
                             IndicesIndex.insert({vec, Index});
@@ -101,10 +101,10 @@ namespace VoxelOptimizer
                 GLTF::CBufferView Position, Normal, UV, IndexView;
 
                 Position.Offset = Binary.size();
-                Position.Size = Vertices.size() * sizeof(CVector);
+                Position.Size = Vertices.size() * sizeof(Math::Vec3f);
 
                 Normal.Offset = Position.Offset + Position.Size;
-                Normal.Size = Normals.size() * sizeof(CVector);
+                Normal.Size = Normals.size() * sizeof(Math::Vec3f);
 
                 UV.Offset = Normal.Offset + Normal.Size;
                 UV.Size = UVs.size() * (sizeof(float) * 2);
@@ -315,4 +315,4 @@ namespace VoxelOptimizer
             {"glb", GLB}
         };
     }
-} // namespace VoxelOptimizer
+}

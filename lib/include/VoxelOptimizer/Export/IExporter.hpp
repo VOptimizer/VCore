@@ -118,7 +118,7 @@ namespace VoxelOptimizer
             std::string m_ExternalFilenames;
             ExportSettings m_Settings;
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //IEXPORTER_HPP

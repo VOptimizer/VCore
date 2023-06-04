@@ -71,7 +71,7 @@ namespace VoxelOptimizer
         class CNode
         {
             public:
-                CNode(int meshId, const CMat4x4 &mat) : m_MeshId(meshId), m_Matrix(mat) {}
+                CNode(int meshId, const Math::Mat4x4 &mat) : m_MeshId(meshId), m_Matrix(mat) {}
 
                 void Serialize(CJSON &json) const
                 {
@@ -88,7 +88,7 @@ namespace VoxelOptimizer
 
             private:
                 int m_MeshId;
-                CMat4x4 m_Matrix;
+                Math::Mat4x4 m_Matrix;
         };
 
         class CBuffer
@@ -128,7 +128,7 @@ namespace VoxelOptimizer
                 std::string Type;
                 size_t Count;
 
-                inline void SetMax(CVector Max)
+                inline void SetMax(Math::Vec3f Max)
                 {
                     if(Type == "VEC3")
                         m_Max.insert(m_Max.end(), Max.v, Max.v + 3);
@@ -138,7 +138,7 @@ namespace VoxelOptimizer
                         m_Max.push_back(Max.x);
                 }
 
-                inline void SetMin(CVector Min)
+                inline void SetMin(Math::Vec3f Min)
                 {
                     if(Type == "VEC3")
                         m_Min.insert(m_Min.end(), Min.v, Min.v + 3);
@@ -288,6 +288,6 @@ namespace VoxelOptimizer
         };
     } // namespace GLTF
     
-} // namespace VoxelOptimizer
+}
 
 #endif //NODES_HPP

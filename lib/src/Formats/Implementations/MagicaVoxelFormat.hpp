@@ -66,8 +66,8 @@ namespace VoxelOptimizer
 
                     int LayerID;
                     int NumFrames;
-                    CVector Translation;
-                    CVector Rotation;
+                    Math::Vec3f Translation;
+                    Math::Vec3f Rotation;
                     std::string Name;
 
                     int ChildID;
@@ -125,7 +125,7 @@ namespace VoxelOptimizer
             size_t m_UsedColorsPos;
             bool m_HasEmission;
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //VOXELFORMAT_HPP

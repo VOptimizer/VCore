@@ -38,7 +38,7 @@ namespace VoxelOptimizer
 
             ~CPLYExporter() = default;
     };
-} // namespace VoxelOptimizer
+}
 
 
 #endif //PLYEXPORTER_HPP

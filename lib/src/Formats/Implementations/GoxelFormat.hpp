@@ -56,7 +56,7 @@ namespace VoxelOptimizer
                         memcpy(&m_Data[0], Data, m_Data.size() * sizeof(uint32_t));
                     }
 
-                    inline uint32_t GetVoxel(CVectori v)
+                    inline uint32_t GetVoxel(Math::Vec3i v)
                     {
                         return m_Data[(size_t)v.x + 16 * (size_t)v.y + 16 * 16 * (size_t)v.z];
                     }
@@ -67,7 +67,7 @@ namespace VoxelOptimizer
 
             struct Block
             {
-                CVector Pos;
+                Math::Vec3f Pos;
                 size_t Index;
             };
 
@@ -92,6 +92,6 @@ namespace VoxelOptimizer
             void ProcessBL16(const SChunkHeader &Chunk);
             std::map<std::string, std::string> ReadDict(const SChunkHeader &Chunk, size_t StartPos);
     };
-} // namespace VoxelOptimizer
+}
 
 #endif //GOXELFORMAT_HPP

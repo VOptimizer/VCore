@@ -151,7 +151,7 @@ namespace VoxelOptimizer
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         int strmPos = 0;
 
-        CVector Beg(1000, 1000, 1000), End;
+        Math::Vec3f Beg(1000, 1000, 1000), End;
         uint32_t index = 0;
 
         while(strmPos < OutSize)
@@ -177,7 +177,7 @@ namespace VoxelOptimizer
 
                     for (uint8_t j = 0; j < c.R; j++)
                     {
-                        CVector pos;
+                        Math::Vec3f pos;
 
                         pos.y = index % (uint32_t)mesh->GetSize().y;
                         pos.x = (uint32_t)(index / (uint32_t)mesh->GetSize().y);
@@ -191,7 +191,7 @@ namespace VoxelOptimizer
                 }
                 else
                 {
-                    CVector pos;
+                    Math::Vec3f pos;
 
                     pos.y = index % (uint32_t)mesh->GetSize().y;
                     pos.x = (uint32_t)(index / (uint32_t)mesh->GetSize().y);
@@ -216,9 +216,9 @@ namespace VoxelOptimizer
 
     }
 
-    CVector CQubicleFormat::ReadVector()
+    Math::Vec3f CQubicleFormat::ReadVector()
     {
-        CVector ret;
+        Math::Vec3f ret;
 
         ret.x = ReadData<int>();
         ret.z = ReadData<int>();
@@ -247,7 +247,7 @@ namespace VoxelOptimizer
                 m_Textures[TextureType::DIFFIUSE] = Texture(new CTexture());
 
             m_Textures[TextureType::DIFFIUSE]->AddPixel(c);
-            ret = m_Textures[TextureType::DIFFIUSE]->Size().x - 1;
+            ret = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;
 
             m_ColorIdx.insert({color, ret});
         }
@@ -257,7 +257,7 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    void CQubicleFormat::AddVoxel(VoxelMesh mesh, int color, CVector pos, CVector &Beg, CVector &End)
+    void CQubicleFormat::AddVoxel(VoxelMesh mesh, int color, Math::Vec3f pos, Math::Vec3f &Beg, Math::Vec3f &End)
     {
         int cid = GetColorIdx(color);
         if(cid == -1)
@@ -268,9 +268,9 @@ namespace VoxelOptimizer
         if(pos.y < 0)
             int i = 0;
 
-        Beg = Beg.Min(pos);
-        End = End.Max(pos);
+        Beg = Beg.min(pos);
+        End = End.max(pos);
 
         mesh->SetVoxel(pos, 0, cid, false);
     }
-} // namespace VoxelOptimizer
+}
