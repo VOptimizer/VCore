@@ -67,8 +67,8 @@ namespace VoxelOptimizer
 
             struct Block
             {
-                Math::Vec3f Pos;
-                size_t Index;
+                Math::Vec3i Pos;
+                int Index;
             };
 
             struct Layer

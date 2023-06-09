@@ -78,8 +78,8 @@ namespace VoxelOptimizer
                 CJSON tmp;
                 tmp.ParseObject(SizeStr);
                 Size.x = tmp.GetValue<float>("x");
-                Size.z = tmp.GetValue<float>("y");
-                Size.y = 15;
+                Size.y = tmp.GetValue<float>("y");
+                Size.z = 16;
 
                 Tiles = json.GetValue<std::vector<Tile>>("tiles");
                 auto ColorsStrs = json.GetValue<std::vector<std::string>>("colors");

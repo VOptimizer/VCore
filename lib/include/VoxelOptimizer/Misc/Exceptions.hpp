@@ -43,21 +43,6 @@ namespace VoxelOptimizer
         private:
             std::string m_Msg;
     };
-
-    class CMeshBuilderException : public std::exception
-    {
-        public:
-            CMeshBuilderException() {}
-            CMeshBuilderException(const std::string &Msg) : m_Msg(Msg) {}
-    
-            const char *what() const noexcept override
-            {
-                return m_Msg.c_str();
-            }
-    
-        private:
-            std::string m_Msg;
-    };
 }
 
 

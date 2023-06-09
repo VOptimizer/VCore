@@ -54,7 +54,7 @@ namespace VoxelOptimizer
             void ReadRLECompressed(VoxelMesh mesh);
             int GetColorIdx(int color);
 
-            Math::Vec3f ReadVector();
+            Math::Vec3i ReadVector();
     };
 }
 

@@ -175,7 +175,7 @@ namespace VoxelOptimizer
 
     VoxelMesh CMagicaVoxelFormat::ProcessSize()
     {
-        VoxelMesh Ret = VoxelMesh(new CVoxelMesh());
+        VoxelMesh Ret = std::make_shared<CVoxelMesh>();
 
         Math::Vec3i Size;
 
@@ -385,7 +385,7 @@ namespace VoxelOptimizer
                         {
                             sceneNodes.push(currentNode);
                             auto oldCurrent = currentNode;
-                            currentNode = SceneNode(new CSceneNode());
+                            currentNode = std::make_shared<CSceneNode>();
                             oldCurrent->AddChild(currentNode);
 
                             nodeIDs.push(group->ChildrensID[group->ChildIdx]);

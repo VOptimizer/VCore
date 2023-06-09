@@ -33,19 +33,10 @@
 
 namespace VoxelOptimizer
 {
-    struct SVertex
-    {
-        Math::Vec3f Pos;
-        Math::Vec3f UV;
-        Math::Vec3f Normal;
-        Material Mat;
-        int MaterialIndex;
-    };
-
     class CMeshBuilder
     {
         public:
-            CMeshBuilder();
+            CMeshBuilder() = default;
 
             /**
              * @brief Adds all needed textures to the mesh. This must be called before AddFace
@@ -72,38 +63,39 @@ namespace VoxelOptimizer
             /**
              * @brief Adds a new triangle to the mesh.
              */
-            void AddFace(SVertex v1, SVertex v2, SVertex v3);
+            void AddFace(SVertex v1, SVertex v2, SVertex v3, Material _material);
 
             /**
              * @brief Merges a list of meshes into one.
+             * @return Returns the _MergeInto mesh or a new one, if _MergeInto is null. 
              */
-            void Merge(Mesh mergeInto, const std::vector<Mesh> &meshes);
+            Mesh Merge(Mesh _MergeInto, const std::vector<Mesh> &_Meshes);
 
             /**
              * @brief Generates the new mesh.
              */
             Mesh Build();
 
-            static Mesh Copy(Mesh mesh);
-
             ~CMeshBuilder() = default;
         private:
-            using VectorIndexMap = VectorMap<int>;
-            using MaterialFacesMap = std::map<Material, GroupedFaces, std::less<Material>>;
+            struct SIndexedSurface
+            {
+                SIndexedSurface() = default;
 
-            int AddPosition(Math::Vec3f _pos);
-            int AddNormal(Math::Vec3f _normal);
-            int AddUV(Math::Vec3f _uv);
+                std::unordered_map<SVertex, int, VertexHasher> Index;
+
+                std::vector<int> Indices;
+                std::vector<SVertex> Vertices;
+            };
+
+            int AddVertex(const SVertex &_Vertex, SIndexedSurface &_Surface);
 
             void MergeIntoThis(Mesh m);
-            void GenerateCache();
+            void GenerateCache(Mesh _MergeInto);
 
-            VectorIndexMap m_Index;
-            VectorIndexMap m_NormalIndex;
-            VectorIndexMap m_UVIndex;
-            MaterialFacesMap m_FacesIndex;
-
-            Mesh m_CurrentMesh;
+            const std::map<TextureType, Texture> *m_Textures;
+            std::map<Material, SIndexedSurface, std::less<Material>> m_Surfaces;
+            Mesh m_MergerMesh;
     };
 }
 

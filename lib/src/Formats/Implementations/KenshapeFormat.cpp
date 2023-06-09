@@ -44,7 +44,7 @@ namespace VoxelOptimizer
         size_t datasize = m_DataStream.tellg();
         m_DataStream.seekg(pos, std::ios::beg);
 
-        std::vector<char> data = ReadDataChunk(datasize);
+        std::vector<char> data = ReadDataChunk(datasize - pos);
         char *Data = stbi_zlib_decode_noheader_malloc(data.data(), data.size(), &OutSize);
 
         CJSON json;
@@ -61,7 +61,7 @@ namespace VoxelOptimizer
             throw CVoxelLoaderException("Invalid file format!");
         }
 
-        VoxelMesh m = VoxelMesh(new CVoxelMesh());
+        VoxelMesh m = std::make_shared<CVoxelMesh>();
         auto mat = std::make_shared<CMaterial>();
         m_Materials.push_back(mat);
         m->Materials.push_back(mat);
@@ -71,8 +71,8 @@ namespace VoxelOptimizer
         Math::Vec3f Pos;
         Math::Vec3f Beg, End;
 
-        Pos.z = Content->Size.z - 1;
-        Pos.y = (int)(Content->Size.y / 2.f);
+        Pos.y = Content->Size.y - 1;
+        Pos.z = (int)(Content->Size.z / 2.f);
 
         for (auto &&tile : Content->Tiles)
         {
@@ -93,10 +93,9 @@ namespace VoxelOptimizer
                     IdxC = ColorIdx[tile->ColorIdx];
 
                 int Blocks = tile->Depth - 1;
-
-                for (size_t y = Pos.y - Blocks; y <= Pos.y + Blocks; y++)
+                for (size_t z = Pos.z - Blocks; z <= Pos.z + Blocks; z++)
                 {
-                    Math::Vec3f v(Pos.x, y, Pos.z);
+                    Math::Vec3f v(Pos.x, Pos.y, z);
                     if(Beg.IsZero())
                         Beg = v;
 
@@ -107,15 +106,15 @@ namespace VoxelOptimizer
                 }
             }
 
-            Pos.z--;
-            if(Pos.z < 0)
+            Pos.y--;
+            if(Pos.y < 0)
             {
-                Pos.z = Content->Size.z - 1;;
+                Pos.y = Content->Size.y - 1;;
                 Pos.x++;
             }
         }
 
-        auto sceneNode = SceneNode(new CSceneNode());
+        auto sceneNode = std::make_shared<CSceneNode>();
         m_SceneTree->AddChild(sceneNode);
         sceneNode->SetMesh(m);
         m->Pivot = m->GetSize() / 2;

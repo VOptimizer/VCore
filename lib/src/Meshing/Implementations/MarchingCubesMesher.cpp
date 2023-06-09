@@ -391,8 +391,13 @@ namespace VoxelOptimizer
         for (auto &&pair : ret)
         {
             auto mesh = pair.Mesh;
-            for (auto &&uv : mesh->UVs)
-                uv = Math::Vec3f(((float)(uv.x + 0.5f)) / mesh->Textures[TextureType::DIFFIUSE]->GetSize().x, 0.5f, 0);
+            for (auto &&surface : mesh->Surfaces)
+            {
+                for (auto &&vertex : surface.Vertices)
+                {
+                    vertex.UV = Math::Vec2f(((float)(vertex.UV.x + 0.5f)) / mesh->Textures[TextureType::DIFFIUSE]->GetSize().x, 0.5f);
+                }
+            }
         }
         return ret;
     }
@@ -490,17 +495,22 @@ namespace VoxelOptimizer
             v2.UV.x = color.y; 
             v3.UV.x = color.z;
 
-            if(voxel1->Material == voxel2->Material || voxel1->Material == voxel3->Material)
-                v1.Mat = v2.Mat = v3.Mat = m_Mesh->Materials[voxel1->Material];
-            else if(voxel2->Material == voxel3->Material)
-                v1.Mat = v2.Mat = v3.Mat = m_Mesh->Materials[voxel2->Material];
-            else
-                v1.Mat = v2.Mat = v3.Mat = m_Mesh->Materials[voxel1->Material];
+            Material mat;
+
+            if(!m_Mesh->Materials.empty())
+            {
+                if(voxel1->Material == voxel2->Material || voxel1->Material == voxel3->Material)
+                    mat = m_Mesh->Materials[voxel1->Material];
+                else if(voxel2->Material == voxel3->Material)
+                    mat = m_Mesh->Materials[voxel2->Material];
+                else
+                    mat = m_Mesh->Materials[voxel1->Material];
+            }
 
             Math::Vec3f FaceNormal = (v2.Pos - v1.Pos).cross(v3.Pos - v1.Pos).normalize(); 
             v1.Normal = v2.Normal = v3.Normal = FaceNormal;
 
-            builder.AddFace(v1, v2, v3);
+            builder.AddFace(v3, v2, v1, mat);
         }
     }
 }

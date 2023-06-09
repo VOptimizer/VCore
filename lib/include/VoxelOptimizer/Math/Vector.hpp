@@ -102,6 +102,11 @@ namespace VoxelOptimizer
                     return TVector2(x * scalar, y * scalar);
                 }
 
+                inline bool operator==(const TVector2 &vr) const
+                {
+                    return x == vr.x && y == vr.y;
+                }
+
                 ~TVector2() = default;
         };
 
@@ -218,6 +223,15 @@ namespace VoxelOptimizer
                     x += vr.x;
                     y += vr.y;
                     z += vr.z;
+
+                    return *this;
+                }
+
+                inline TVector3 &operator*=(const TVector3 &vr)
+                {
+                    x *= vr.x;
+                    y *= vr.y;
+                    z *= vr.z;
 
                     return *this;
                 }

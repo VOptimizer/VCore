@@ -48,7 +48,7 @@ namespace VoxelOptimizer
                 continue;
 
             Math::Vec3f Beg(INFINITY, INFINITY, INFINITY), End, TranslationBeg(INFINITY, INFINITY, INFINITY);
-            VoxelMesh m = VoxelMesh(new CVoxelMesh());
+            VoxelMesh m = std::make_shared<CVoxelMesh>();
             m->Name = l.Name;
             m->SetSize(m_BBox.End + m_BBox.Beg.abs());
             std::map<int, int> meshMaterialMapping;
@@ -64,8 +64,10 @@ namespace VoxelOptimizer
                     {
                         for (int x = v.x; x < v.x + 16; x++)
                         {
-                            Math::Vec3i vi(x, y, z);
+                            // Makes y the up axis, as needed.
+                            Math::Vec3i vi(x, z, y);
                             vi += m_BBox.Beg.abs();
+                            vi *= Math::Vec3i(1, 1, -1);
 
                             //TODO: Handle negative pos.
                             uint32_t p = tmp.GetVoxel(Math::Vec3i(x - v.x, y - v.y, z - v.z));
@@ -149,7 +151,7 @@ namespace VoxelOptimizer
             m->GenerateVisibilityMask();
 
             // TODO: This is dumb! The model matrix should be created on a central point!
-            auto sceneNode = SceneNode(new CSceneNode());
+            auto sceneNode = std::make_shared<CSceneNode>();
             m->Pivot = m->BBox.GetSize() / 2;
             Math::Vec3f translation = TranslationBeg + m->Pivot;
             std::swap(translation.y, translation.z);
@@ -235,10 +237,11 @@ namespace VoxelOptimizer
             B.Pos.y = ReadData<int>();
             B.Pos.z = ReadData<int>();
 
-            Math::Vec3f v = B.Pos + Math::Vec3f(16, 16, 16);
+            Math::Vec3i v = B.Pos + Math::Vec3f(16, 16, 16);
 
-            m_BBox.Beg = m_BBox.Beg.min(B.Pos);
-            m_BBox.End = m_BBox.End.max(v);
+            // Goxel uses z as up axis. We use y.
+            m_BBox.Beg = m_BBox.Beg.min(Math::Vec3i(B.Pos.x, B.Pos.z, B.Pos.y));
+            m_BBox.End = m_BBox.End.max(Math::Vec3i(v.x, v.z, v.y));
 
             Skip(sizeof(int));
 

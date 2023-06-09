@@ -27,212 +27,163 @@
 
 namespace VoxelOptimizer
 {
-    CMeshBuilder::CMeshBuilder() : m_CurrentMesh(new SMesh()) { }
-
     void CMeshBuilder::AddTextures(const std::map<TextureType, Texture> &_textures)
     {
-        m_CurrentMesh->Textures = _textures;
+        m_Textures = &_textures;
+    }
+
+    int CMeshBuilder::AddVertex(const SVertex &_Vertex, SIndexedSurface &_Surface)
+    {
+        auto it = _Surface.Index.find(_Vertex);
+        if(it == _Surface.Index.end())
+        {
+            int idx = _Surface.Vertices.size();
+            _Surface.Vertices.push_back(_Vertex);
+            return idx;
+        }
+
+        return it->second;
     }
 
     void CMeshBuilder::AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, Material _material)
     {
-        if(m_CurrentMesh->Textures.empty())
-            throw CMeshBuilderException("Please call first CMeshBuilder::AddTextures in order to generate an uv map!");
+        auto it = m_Surfaces.find(_material);
+        if(it == m_Surfaces.end())
+            it = m_Surfaces.insert({_material, SIndexedSurface()}).first;
+
+        Math::Vec3f faceNormal = (_v2 - _v1).cross(_v3 - _v1).normalize();
+
+        // 4 UVs are needed for the case, that no colorpalette is available.
+        Math::Vec2f uv1, uv2, uv3, uv4;
+        
+        if(m_Textures && !m_Textures->empty())
+            uv1 = uv2 = uv3 = uv4 = Math::Vec2f(((float)(_color + 0.5f)) / m_Textures->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
+        else
+        {
+            uv1 = Math::Vec2f(_color, 0);
+            uv2 = Math::Vec2f(_color, 2);
+            uv3 = Math::Vec2f(_color, 1);
+            uv4 = Math::Vec2f(_color, 3);
+        }
 
         int i1, i2, i3, i4;
-        i1 = AddPosition(_v1);
-        i2 = AddPosition(_v2);
-        i3 = AddPosition(_v3);
-        i4 = AddPosition(_v4);
-
-        GroupedFaces faces;
-        auto itFaces = m_FacesIndex.find(_material);
-        if(itFaces == m_FacesIndex.end())
-        {
-            // Adds a new face group, if _material is a new material.
-            faces = std::make_shared<SGroupedFaces>();
-            m_CurrentMesh->Faces.push_back(faces);
-
-            faces->FaceMaterial = _material;
-            m_FacesIndex.insert({_material, faces});
-        }
-        else
-            faces = itFaces->second;
-            
-        Math::Vec3f faceNormal = (_v2 - _v1).cross(_v3 - _v1).normalize(); 
-        int normalIdx = AddNormal(_normal);
-        int uvIdx = AddUV(Math::Vec3f(((float)(_color + 0.5f)) / m_CurrentMesh->Textures[TextureType::DIFFIUSE]->GetSize().x, 0.5f, 0));
+        i1 = AddVertex(SVertex(_v1, _normal, uv1), it->second);
+        i2 = AddVertex(SVertex(_v2, _normal, uv2), it->second);
+        i3 = AddVertex(SVertex(_v3, _normal, uv3), it->second);
+        i4 = AddVertex(SVertex(_v4, _normal, uv4), it->second);
 
         // Checks the direction of the face.
-        if(faceNormal == _normal)
+        if(faceNormal != _normal)
         {
-            faces->Indices.push_back(Math::Vec3f(i1, normalIdx, uvIdx));
-            faces->Indices.push_back(Math::Vec3f(i2, normalIdx, uvIdx));
-            faces->Indices.push_back(Math::Vec3f(i3, normalIdx, uvIdx));
+            it->second.Indices.push_back(i1);
+            it->second.Indices.push_back(i2);
+            it->second.Indices.push_back(i3);
 
-            faces->Indices.push_back(Math::Vec3f(i1, normalIdx, uvIdx));
-            faces->Indices.push_back(Math::Vec3f(i3, normalIdx, uvIdx));
-            faces->Indices.push_back(Math::Vec3f(i4, normalIdx, uvIdx));
+            it->second.Indices.push_back(i1);
+            it->second.Indices.push_back(i3);
+            it->second.Indices.push_back(i4);
         }
         else
         {
-            faces->Indices.push_back(Math::Vec3f(i3, normalIdx, uvIdx));
-            faces->Indices.push_back(Math::Vec3f(i2, normalIdx, uvIdx));
-            faces->Indices.push_back(Math::Vec3f(i1, normalIdx, uvIdx));
+            it->second.Indices.push_back(i3);
+            it->second.Indices.push_back(i2);
+            it->second.Indices.push_back(i1);
 
-            faces->Indices.push_back(Math::Vec3f(i4, normalIdx, uvIdx));
-            faces->Indices.push_back(Math::Vec3f(i3, normalIdx, uvIdx));
-            faces->Indices.push_back(Math::Vec3f(i1, normalIdx, uvIdx));
+            it->second.Indices.push_back(i4);
+            it->second.Indices.push_back(i3);
+            it->second.Indices.push_back(i1);
         }
     }
    
-    void CMeshBuilder::AddFace(SVertex v1, SVertex v2, SVertex v3)
-    {
-        int I1, I2, I3;
-        I1 = AddPosition(v1.Pos);
-        I2 = AddPosition(v2.Pos);
-        I3 = AddPosition(v3.Pos);
+    void CMeshBuilder::AddFace(SVertex v1, SVertex v2, SVertex v3, Material _material)
+    {        
+        auto it = m_Surfaces.find(_material);
+        if(it == m_Surfaces.end())
+            it = m_Surfaces.insert({_material, SIndexedSurface()}).first;
 
-        GroupedFaces Faces;
+        int i1, i2, i3;
+        i1 = AddVertex(v1, it->second);
+        i2 = AddVertex(v2, it->second);
+        i3 = AddVertex(v3, it->second);
 
-        auto ITFaces = m_FacesIndex.find(v1.Mat);
-        if(ITFaces == m_FacesIndex.end())
-        {
-            Faces = std::make_shared<SGroupedFaces>();
-            m_CurrentMesh->Faces.push_back(Faces);
-
-            Faces->FaceMaterial = v1.Mat;
-            m_FacesIndex.insert({v1.Mat, Faces});
-        }
-        else
-            Faces = ITFaces->second;
-            
-        // Math::Vec3f FaceNormal = (v2 - v1).Cross(v3 - v1).normalize(); 
-        int NormalIdx = AddNormal(v1.Normal);
-        int UVIdx1 = AddUV(v1.UV);
-        int UVIdx2 = AddUV(v2.UV);
-        int UVIdx3 = AddUV(v3.UV);
-
-        Faces->Indices.push_back(Math::Vec3f(I1, NormalIdx, UVIdx1));
-        Faces->Indices.push_back(Math::Vec3f(I2, NormalIdx, UVIdx2));
-        Faces->Indices.push_back(Math::Vec3f(I3, NormalIdx, UVIdx3));
-    }
-
-    int CMeshBuilder::AddPosition(Math::Vec3f _pos)
-    {
-        int Ret = 0;
-        auto IT = m_Index.find(_pos);
-
-        if(IT != m_Index.end())
-            Ret = IT->second;
-        else
-        {
-            m_CurrentMesh->Vertices.push_back(_pos);
-            Ret = m_CurrentMesh->Vertices.size();
-
-            m_Index.insert({_pos, Ret});
-        }
-
-        return Ret;
-    }
-
-    int CMeshBuilder::AddNormal(Math::Vec3f _normal)
-    {
-        int Ret = 0;
-        auto IT = m_NormalIndex.find(_normal);
-
-        if(IT != m_NormalIndex.end())
-            Ret = IT->second;
-        else
-        {
-            m_CurrentMesh->Normals.push_back(_normal);
-            Ret = m_CurrentMesh->Normals.size();
-
-            m_NormalIndex.insert({_normal, Ret});
-        }
-
-        return Ret;
-    }
-
-    int CMeshBuilder::AddUV(Math::Vec3f _uv)
-    {
-        int Ret = 0;
-        auto IT = m_UVIndex.find(_uv);
-
-        if(IT != m_UVIndex.end())
-            Ret = IT->second;
-        else
-        {
-            m_CurrentMesh->UVs.push_back(_uv);
-            Ret = m_CurrentMesh->UVs.size();
-
-            m_UVIndex.insert({_uv, Ret});
-        }
-
-        return Ret;
+        it->second.Indices.push_back(i1);
+        it->second.Indices.push_back(i2);
+        it->second.Indices.push_back(i3);
     }
 
     Mesh CMeshBuilder::Build()
     {
-        // Clears the cache.
-        m_Index.clear();
-        m_NormalIndex.clear();
-        m_UVIndex.clear();
-        m_FacesIndex.clear();
-
-        auto ret = m_CurrentMesh;
-        m_CurrentMesh = std::make_shared<SMesh>();
-
-        return ret;
-    }
-
-    Mesh CMeshBuilder::Copy(Mesh mesh)
-    {
         auto ret = std::make_shared<SMesh>();
-
-        ret->Vertices = mesh->Vertices;
-        ret->UVs = mesh->UVs;
-        ret->Normals = mesh->Normals;
-
-        ret->ModelMatrix = mesh->ModelMatrix;
-        ret->Textures = mesh->Textures;
-
-        for (auto &&f : mesh->Faces)
+        for (auto &&surface : m_Surfaces)
         {
-            auto face = std::make_shared<SGroupedFaces>();
-            face->FaceMaterial = f->FaceMaterial;
-            face->Indices = f->Indices;
-            face->MaterialIndex = f->MaterialIndex;
+            ret->Surfaces.emplace_back();
+            SSurface *currentSurface = &ret->Surfaces.back();
+            currentSurface->FaceMaterial = surface.first;
 
-            ret->Faces.push_back(face);
+            currentSurface->Vertices = std::move(surface.second.Vertices);
+            currentSurface->Indices = std::move(surface.second.Indices);
         }
 
+        ret->Textures = *m_Textures;
+        m_Textures = nullptr;
+        
+        // Clears the cache.
+        m_Surfaces.clear();
+
         return ret;
     }
 
-    void CMeshBuilder::Merge(Mesh mergeInto, const std::vector<Mesh> &meshes)
+    Mesh CMeshBuilder::Merge(Mesh _MergeInto, const std::vector<Mesh> &_Meshes)
     {
-        if(mergeInto)
-            m_CurrentMesh = mergeInto;
-        GenerateCache();
+        Mesh ret;
+        if(_MergeInto)
+        {
+            GenerateCache(_MergeInto);
+            ret = _MergeInto;
+        }
+        else
+            ret = std::make_shared<SMesh>();
 
-        for (auto &&m : meshes)       
+        for (auto &&m : _Meshes)       
             MergeIntoThis(m);
+
+        ret->Surfaces.clear();
+        for (auto &&surface : m_Surfaces)
+        {
+            ret->Surfaces.emplace_back();
+            SSurface *currentSurface = &ret->Surfaces.back();
+            currentSurface->FaceMaterial = surface.first;
+
+            currentSurface->Vertices = std::move(surface.second.Vertices);
+            currentSurface->Indices = std::move(surface.second.Indices);
+        }
+
+        // Clears the cache.
+        m_Surfaces.clear();
+
+        return ret;
     }
 
-    void CMeshBuilder::GenerateCache()
+    void CMeshBuilder::GenerateCache(Mesh _MergeInto)
     {
-        for (auto &&f : m_CurrentMesh->Faces)
-            m_FacesIndex.insert({f->FaceMaterial, f});
+        for (auto &&surface : _MergeInto->Surfaces)
+        {
+            auto it = m_Surfaces.find(surface.FaceMaterial);
+            if(it == m_Surfaces.end())
+                it = m_Surfaces.insert({surface.FaceMaterial, SIndexedSurface()}).first;
 
-        for (size_t i = 0; i < m_CurrentMesh->Vertices.size(); i++)
-            m_Index.insert({m_CurrentMesh->Vertices[i], i + 1});      
+            for (auto &&i : surface.Indices)
+            {
+                if(i < surface.Vertices.size())
+                {
+                    it->second.Indices.push_back(i);
+                    it->second.Vertices.push_back(surface.Vertices[i]);
 
-        for (size_t i = 0; i < m_CurrentMesh->UVs.size(); i++)
-            m_UVIndex.insert({m_CurrentMesh->UVs[i], i + 1});  
-
-        for (size_t i = 0; i < m_CurrentMesh->Normals.size(); i++)
-            m_NormalIndex.insert({m_CurrentMesh->Normals[i], i + 1});            
+                    it->second.Index.insert({surface.Vertices[i], i});
+                }
+            }
+            
+        }       
     }
 
     void CMeshBuilder::MergeIntoThis(Mesh m)
@@ -243,40 +194,38 @@ namespace VoxelOptimizer
             .Rotate(Math::Vec3f(0, 0, 1), euler.z)
             .Rotate(Math::Vec3f(1, 0, 0), euler.x)
             .Rotate(Math::Vec3f(0, 1, 0), euler.y);
-            
-        for (auto &&f : m->Faces)
+
+        for (auto &&surface : m->Surfaces)
         {
-            for (int i = 0; i < f->Indices.size(); i += 3)
+            auto it = m_Surfaces.find(surface.FaceMaterial);
+            if(it == m_Surfaces.end())
+                it = m_Surfaces.insert({surface.FaceMaterial, SIndexedSurface()}).first;
+
+            for (size_t i = 0; i < surface.Vertices.size(); i += 3)
             {
-                Math::Vec3f idx1 = f->Indices[i];
-                Math::Vec3f idx2 = f->Indices[i + 1];
-                Math::Vec3f idx3 = f->Indices[i + 2];
+                if((i < surface.Vertices.size()) && ((i + 2) < surface.Vertices.size()))
+                {
+                    SVertex v1 = surface.Vertices[i];
+                    SVertex v2 = surface.Vertices[i + 1];
+                    SVertex v3 = surface.Vertices[i + 2];
 
-                SVertex v1 = {
-                    m->ModelMatrix * m->Vertices[idx1.x - 1],
-                    m->UVs[idx1.z - 1],
-                    rotation * m->Normals[idx1.y - 1],
-                    f->FaceMaterial,
-                    f->MaterialIndex
-                };
+                    v1.Pos = m->ModelMatrix * v1.Pos;
+                    v1.Normal = rotation * v1.Normal;
 
-                SVertex v2 = {
-                    m->ModelMatrix * m->Vertices[idx2.x - 1],
-                    m->UVs[idx2.z - 1],
-                    rotation * m->Normals[idx2.y - 1],
-                    f->FaceMaterial,
-                    f->MaterialIndex
-                };
+                    v2.Pos = m->ModelMatrix * v2.Pos;
+                    v2.Normal = rotation * v2.Normal;
 
-                SVertex v3 = {
-                    m->ModelMatrix * m->Vertices[idx3.x - 1],
-                    m->UVs[idx3.z - 1],
-                    rotation * m->Normals[idx3.y - 1],
-                    f->FaceMaterial,
-                    f->MaterialIndex
-                };
+                    v3.Pos = m->ModelMatrix * v3.Pos;
+                    v3.Normal = rotation * v3.Normal;
 
-                AddFace(v1, v2, v3);
+                    int i1 = AddVertex(v1, it->second);
+                    int i2 = AddVertex(v2, it->second);
+                    int i3 = AddVertex(v3, it->second);
+
+                    it->second.Indices.push_back(i1);
+                    it->second.Indices.push_back(i2);
+                    it->second.Indices.push_back(i3);
+                }
             }
         }
     }

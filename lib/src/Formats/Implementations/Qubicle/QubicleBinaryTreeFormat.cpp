@@ -114,7 +114,7 @@ namespace VoxelOptimizer
         std::string name(nameLen + 1, '\0');
         ReadData(&name[0], nameLen);
 
-        VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
+        VoxelMesh mesh = std::make_shared<CVoxelMesh>();
         mesh->Materials = m_Materials;
         mesh->Name = name;
         auto pos = ReadVector();
@@ -124,9 +124,8 @@ namespace VoxelOptimizer
 
         auto halfSize = (mesh->GetSize() / 2.0);
         pos += halfSize;
-        std::swap(pos.y, pos.z);
 
-        auto sceneNode = SceneNode(new CSceneNode());
+        auto sceneNode = std::make_shared<CSceneNode>();
         sceneNode->SetPosition(pos);
         sceneNode->SetMesh(mesh);
         m_SceneTree->AddChild(sceneNode);
@@ -139,12 +138,12 @@ namespace VoxelOptimizer
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         int strmPos = 0;
 
-        Math::Vec3f Beg(1000, 1000, 1000), End;
+        Math::Vec3i Beg(1000, 1000, 1000), End;
         for (uint32_t x = 0; x < (uint32_t)mesh->GetSize().x; x++)
         {
-            for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().y; z++)
+            for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().z; z++)
             {
-                for (uint32_t y = 0; y < (uint32_t)mesh->GetSize().z; y++)
+                for (uint32_t y = 0; y < (uint32_t)mesh->GetSize().y; y++)
                 {
                     int color;
                     memcpy(&color, Data + strmPos, sizeof(int));
@@ -160,8 +159,8 @@ namespace VoxelOptimizer
                     if(cid == -1 || ((color & 0xFF000000) >> 24) == 0)
                         continue;
 
-                    auto pos = Math::Vec3f(x, z, y);
-                    pos.y = (uint32_t)(mesh->GetSize().y - 1) - pos.y;
+                    auto pos = Math::Vec3i(x, y, z);
+                    pos.z = (uint32_t)(mesh->GetSize().z - 1) - pos.z;
 
                     Beg = Beg.min(pos);
                     End = End.max(pos);
@@ -183,7 +182,7 @@ namespace VoxelOptimizer
         std::string name(nameLen + 1, '\0');
         ReadData(&name[0], nameLen);
 
-        VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
+        VoxelMesh mesh = std::make_shared<CVoxelMesh>();
         mesh->Materials = m_Materials;
         mesh->Name = name;
         auto pos = ReadVector();
@@ -193,9 +192,8 @@ namespace VoxelOptimizer
 
         auto halfSize = (mesh->GetSize() / 2.0);
         pos += halfSize;
-        std::swap(pos.y, pos.z);
 
-        auto sceneNode = SceneNode(new CSceneNode());
+        auto sceneNode = std::make_shared<CSceneNode>();
         sceneNode->SetPosition(pos);
         sceneNode->SetMesh(mesh);
         m_SceneTree->AddChild(sceneNode);
@@ -207,12 +205,12 @@ namespace VoxelOptimizer
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         int strmPos = 0;
 
-        Math::Vec3f Beg(1000, 1000, 1000), End;
+        Math::Vec3i Beg(1000, 1000, 1000), End;
         for (uint32_t x = 0; x < (uint32_t)mesh->GetSize().x; x++)
         {
-            for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().y; z++)
+            for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().z; z++)
             {
-                for (uint32_t y = 0; y < (uint32_t)mesh->GetSize().z; y++)
+                for (uint32_t y = 0; y < (uint32_t)mesh->GetSize().y; y++)
                 {
                     int color;
                     memcpy(&color, Data + strmPos, sizeof(int));
@@ -228,8 +226,8 @@ namespace VoxelOptimizer
                     if(cid == -1 || ((color & 0xFF000000) >> 24) == 0)
                         continue;
 
-                    auto pos = Math::Vec3f(x, z, y);
-                    pos.y = (uint32_t)(mesh->GetSize().y - 1) - pos.y;
+                    auto pos = Math::Vec3f(x, y, z);
+                    pos.z = (uint32_t)(mesh->GetSize().z - 1) - pos.z;
 
                     Beg = Beg.min(pos);
                     End = End.max(pos);
@@ -249,13 +247,13 @@ namespace VoxelOptimizer
             LoadNode();
     }
 
-    Math::Vec3f CQubicleBinaryTreeFormat::ReadVector()
+    Math::Vec3i CQubicleBinaryTreeFormat::ReadVector()
     {
-        Math::Vec3f ret;
+        Math::Vec3i ret;
 
         ret.x = ReadData<int>();
-        ret.z = ReadData<int>();
         ret.y = ReadData<int>();
+        ret.z = ReadData<int>();
 
         return ret;
     }

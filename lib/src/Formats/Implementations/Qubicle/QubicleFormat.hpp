@@ -45,9 +45,9 @@ namespace VoxelOptimizer
             void LoadCompound();
 
             int GetColorIdx(int color);
-            void AddVoxel(VoxelMesh mesh, int color, Math::Vec3f pos, Math::Vec3f &Beg, Math::Vec3f &End);
+            void AddVoxel(VoxelMesh mesh, int color, Math::Vec3i pos, Math::Vec3i &Beg, Math::Vec3i &End);
 
-            Math::Vec3f ReadVector();
+            Math::Vec3i ReadVector();
     };
 }
 

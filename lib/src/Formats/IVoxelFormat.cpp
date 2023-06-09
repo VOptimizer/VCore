@@ -86,7 +86,7 @@ namespace VoxelOptimizer
         m_Materials.clear();
         m_Textures.clear();
 
-        m_SceneTree = SceneNode(new CSceneNode());
+        m_SceneTree = std::make_shared<CSceneNode>();
     }
 
     VoxelFormat IVoxelFormat::CreateAndLoad(const std::string &filename)

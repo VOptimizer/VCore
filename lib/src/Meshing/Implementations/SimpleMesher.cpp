@@ -116,7 +116,11 @@ namespace VoxelOptimizer
                                 }break;
                             }
 
-                            builder.AddFace(v1, v2, v3, v4, Normal, v->Color, m->Materials[v->Material]);
+                            Material mat;
+                            if(v->Material < m->Materials.size())
+                                mat = m->Materials[v->Material];
+
+                            builder.AddFace(v1, v2, v3, v4, Normal, v->Color, mat);
                         }
                     }
                 }

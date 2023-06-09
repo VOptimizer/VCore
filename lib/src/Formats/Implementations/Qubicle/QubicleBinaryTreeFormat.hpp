@@ -50,7 +50,7 @@ namespace VoxelOptimizer
 
             int GetColorIdx(int color);
 
-            Math::Vec3f ReadVector();
+            Math::Vec3i ReadVector();
     };
 }
 

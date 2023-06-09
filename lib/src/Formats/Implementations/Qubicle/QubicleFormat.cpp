@@ -128,7 +128,7 @@ namespace VoxelOptimizer
         ReadData(&name[0], nameLen);
         Skip(3); //Mysterious 3 bytes always 0x01 0x01 0x00
 
-        VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
+        VoxelMesh mesh = std::make_shared<CVoxelMesh>();
         mesh->Materials = m_Materials;
         mesh->Name = name;
         mesh->SetSize(ReadVector());
@@ -136,9 +136,8 @@ namespace VoxelOptimizer
         auto pos = ReadVector();
         auto halfSize = (mesh->GetSize() / 2.0);
         pos += halfSize;
-        std::swap(pos.y, pos.z);
 
-        auto sceneNode = SceneNode(new CSceneNode());
+        auto sceneNode = std::make_shared<CSceneNode>();
         sceneNode->SetPosition(pos);
         sceneNode->SetMesh(mesh);
         m_SceneTree->AddChild(sceneNode);
@@ -151,12 +150,12 @@ namespace VoxelOptimizer
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         int strmPos = 0;
 
-        Math::Vec3f Beg(1000, 1000, 1000), End;
+        Math::Vec3i Beg(1000, 1000, 1000), End;
         uint32_t index = 0;
 
         while(strmPos < OutSize)
         {
-            uint32_t z = 0; 
+            uint32_t y = 0; 
             uint16_t dataSize;
 
             memcpy(&dataSize, Data + strmPos, sizeof(uint16_t));
@@ -177,28 +176,28 @@ namespace VoxelOptimizer
 
                     for (uint8_t j = 0; j < c.R; j++)
                     {
-                        Math::Vec3f pos;
+                        Math::Vec3i pos;
 
-                        pos.y = index % (uint32_t)mesh->GetSize().y;
+                        pos.z = index % (uint32_t)mesh->GetSize().y;
                         pos.x = (uint32_t)(index / (uint32_t)mesh->GetSize().y);
-                        pos.z = z;
+                        pos.y = y;
                         
                         AddVoxel(mesh, data, pos, Beg, End);
-                        z++;
+                        y++;
                     }
                     
                     i++;
                 }
                 else
                 {
-                    Math::Vec3f pos;
+                    Math::Vec3i pos;
 
-                    pos.y = index % (uint32_t)mesh->GetSize().y;
+                    pos.z = index % (uint32_t)mesh->GetSize().y;
                     pos.x = (uint32_t)(index / (uint32_t)mesh->GetSize().y);
-                    pos.z = z;
+                    pos.y = y;
                     
                     AddVoxel(mesh, data, pos, Beg, End);
-                    z++;
+                    y++;
                 }
             }
 
@@ -216,13 +215,13 @@ namespace VoxelOptimizer
 
     }
 
-    Math::Vec3f CQubicleFormat::ReadVector()
+    Math::Vec3i CQubicleFormat::ReadVector()
     {
-        Math::Vec3f ret;
+        Math::Vec3i ret;
 
         ret.x = ReadData<int>();
-        ret.z = ReadData<int>();
         ret.y = ReadData<int>();
+        ret.z = ReadData<int>();
 
         return ret;
     }
@@ -257,16 +256,11 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    void CQubicleFormat::AddVoxel(VoxelMesh mesh, int color, Math::Vec3f pos, Math::Vec3f &Beg, Math::Vec3f &End)
+    void CQubicleFormat::AddVoxel(VoxelMesh mesh, int color, Math::Vec3i pos, Math::Vec3i &Beg, Math::Vec3i &End)
     {
         int cid = GetColorIdx(color);
         if(cid == -1)
             return;
-
-        pos.y = (uint32_t)(mesh->GetSize().y - 1) - pos.y;
-
-        if(pos.y < 0)
-            int i = 0;
 
         Beg = Beg.min(pos);
         End = End.max(pos);

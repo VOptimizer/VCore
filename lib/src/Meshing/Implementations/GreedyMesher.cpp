@@ -76,7 +76,7 @@ namespace VoxelOptimizer
                         {
                             int w, h;
                             Math::Vec3i Normal = Slicer.Normal();
-                            int Material = Slicer.Material();
+                            int material = Slicer.Material();
                             int Color = Slicer.Color();
 
                             //Claculates the width of the rect.
@@ -89,7 +89,7 @@ namespace VoxelOptimizer
                                 if(IsFace)
                                 {
                                     Math::Vec3i FaceNormal = Slicer.Normal();
-                                    IsFace = Normal == FaceNormal && Material == Slicer.Material() && Color == Slicer.Color();
+                                    IsFace = Normal == FaceNormal && material == Slicer.Material() && Color == Slicer.Color();
                                 }
 
                                 if(!IsFace)
@@ -110,7 +110,7 @@ namespace VoxelOptimizer
                                     if(IsFace)
                                     {
                                         Math::Vec3i FaceNormal = Slicer.Normal();
-                                        IsFace = Normal == FaceNormal && Material == Slicer.Material() && Color == Slicer.Color();
+                                        IsFace = Normal == FaceNormal && material == Slicer.Material() && Color == Slicer.Color();
                                     }
 
                                     // If there's a hole in the mask, exit
@@ -145,7 +145,11 @@ namespace VoxelOptimizer
                             // if(Normal.y != 0)
                             //     Normal.y *= -1;
 
-                            builder.AddFace(v1, v2, v3, v4, Normal, Color, materials[Material]);
+                            Material mat;
+                            if(material < materials.size())
+                                mat = materials[material];
+
+                            builder.AddFace(v1, v2, v3, v4, Normal, Color, mat);
                             Slicer.AddProcessedQuad(Math::Vec3i(x[0], x[1], x[2]), Math::Vec3i(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2]));
 
                             // Increment counters and continue

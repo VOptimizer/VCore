@@ -38,14 +38,14 @@ namespace VoxelOptimizer
 
         ReadLine();
 
-        VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
+        VoxelMesh mesh = std::make_shared<CVoxelMesh>();
         m_Materials.push_back(std::make_shared<CMaterial>());
         mesh->Materials = m_Materials;
         mesh->SetSize(ReadVector());
         ReadColors();
         ReadVoxels(mesh);
 
-        auto sceneNode = SceneNode(new CSceneNode());
+        auto sceneNode = std::make_shared<CSceneNode>();
         sceneNode->SetMesh(mesh);
         m_SceneTree->AddChild(sceneNode);
 
@@ -70,14 +70,14 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    Math::Vec3f CQubicleExchangeFormat::ReadVector()
+    Math::Vec3i CQubicleExchangeFormat::ReadVector()
     {
         std::stringstream strm;
         strm << ReadLine();
 
-        Math::Vec3f ret;
+        Math::Vec3i ret;
 
-        strm >> ret.x >> ret.z >> ret.y;
+        strm >> ret.x >> ret.y >> ret.z;
 
         return ret;
     }
@@ -109,7 +109,7 @@ namespace VoxelOptimizer
 
     void CQubicleExchangeFormat::ReadVoxels(VoxelMesh mesh)
     {
-        Math::Vec3f Beg(1000, 1000, 1000), End;
+        Math::Vec3i Beg(1000, 1000, 1000), End;
         while (!IsEof())
         {
             std::stringstream strm;
@@ -117,10 +117,8 @@ namespace VoxelOptimizer
 
             int mask, cid;
 
-            Math::Vec3f pos;
-            strm >> pos.x >> pos.z >> pos.y >> cid >> mask;
-
-            pos.y = (mesh->GetSize().y - 1) - pos.y;
+            Math::Vec3i pos;
+            strm >> pos.x >> pos.y >> pos.z >> cid >> mask;
 
             if(mask == 0)
                 continue;

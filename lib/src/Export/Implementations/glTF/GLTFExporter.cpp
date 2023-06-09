@@ -48,33 +48,29 @@ namespace VoxelOptimizer
             GLTF::CMesh GLTFMesh;
             Nodes.push_back(GLTF::CNode(GLTFMeshes.size(), m_Settings->WorldSpace ? mesh->ModelMatrix : Math::Mat4x4()));
 
-            for (auto &&f : mesh->Faces)
+            for (auto &&surface : mesh->Surfaces)
             {
-                std::vector<Math::Vec3f> Vertices, Normals, UVs;
-                std::vector<int> Indices;
-                VectorMap<int> IndicesIndex;
-
                 Math::Vec3f Max, Min(10000, 10000, 10000);
 
                 // Add only "new" materials.
-                if(processedMaterials.find(f->MaterialIndex) == processedMaterials.end())
+                if(processedMaterials.find(surface->MaterialIndex) == processedMaterials.end())
                 {
-                    processedMaterials.insert({f->MaterialIndex, true});
+                    processedMaterials.insert({surface->MaterialIndex, true});
 
                     GLTF::CMaterial Mat;
-                    Mat.Name = "Mat" + std::to_string(f->MaterialIndex);
-                    Mat.Metallic = f->FaceMaterial->Metallic;
-                    Mat.Roughness = f->FaceMaterial->Roughness;
-                    Mat.Emissive = f->FaceMaterial->Power;
-                    Mat.Transparency = f->FaceMaterial->Transparency;
+                    Mat.Name = "Mat" + std::to_string(surface->MaterialIndex);
+                    Mat.Metallic = surface->FaceMaterial->Metallic;
+                    Mat.Roughness = surface->FaceMaterial->Roughness;
+                    Mat.Emissive = surface->FaceMaterial->Power;
+                    Mat.Transparency = surface->FaceMaterial->Transparency;
                     Materials.push_back(Mat);
                 }
 
-                for (size_t i = 0; i < f->Indices.size(); i += 3)
+                for (size_t i = 0; i < surface.Indices.size(); i += 3)
                 {
                     for (size_t j = 0; j < 3; j++)
                     {
-                        Math::Vec3f vec = f->Indices[i + j];
+                        Math::Vec3f vec = surface->Indices[i + j];
 
                         int Index = 0;
 
@@ -140,7 +136,7 @@ namespace VoxelOptimizer
                 Primitive.NormalAccessor = Accessors.size() + 1;
                 Primitive.TextCoordAccessor = Accessors.size() + 2;
                 Primitive.IndicesAccessor = Accessors.size() + 3;
-                Primitive.Material = f->MaterialIndex; //GLTFMesh.Primitives.size();
+                Primitive.Material = surface->MaterialIndex; //GLTFMesh.Primitives.size();
 
                 GLTFMesh.Primitives.push_back(Primitive);
 

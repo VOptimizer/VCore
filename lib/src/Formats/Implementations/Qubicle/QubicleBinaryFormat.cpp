@@ -41,7 +41,7 @@ namespace VoxelOptimizer
 
         for (int i = 0; i < m_Header.MatrixCount; i++)
         {
-            VoxelMesh mesh = VoxelMesh(new CVoxelMesh());
+            VoxelMesh mesh = std::make_shared<CVoxelMesh>();
             mesh->Materials = m_Materials;
 
             uint8_t nameLen = ReadData<uint8_t>();
@@ -55,12 +55,10 @@ namespace VoxelOptimizer
             auto halfSize = (mesh->GetSize() / 2.0);
 
             pos += halfSize;
-            std::swap(pos.y, pos.z);
-
             if(m_Header.ZAxisOrientation == 1)
                 pos.z *= -1;
 
-            auto sceneNode = SceneNode(new CSceneNode());
+            auto sceneNode = std::make_shared<CSceneNode>();
             sceneNode->SetPosition(pos);
             sceneNode->SetMesh(mesh);
             m_SceneTree->AddChild(sceneNode);
@@ -79,23 +77,23 @@ namespace VoxelOptimizer
             m->Colorpalettes = m_Textures;
     }
 
-    Math::Vec3f CQubicleBinaryFormat::ReadVector()
+    Math::Vec3i CQubicleBinaryFormat::ReadVector()
     {
         Math::Vec3f ret;
 
         ret.x = ReadData<int>();
-        ret.z = ReadData<int>();
         ret.y = ReadData<int>();
+        ret.z = ReadData<int>();
 
         return ret;
     }
 
     void CQubicleBinaryFormat::ReadUncompressed(VoxelMesh mesh)
     {
-        Math::Vec3f Beg(1000, 1000, 1000), End;
-        for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().y; z++)
+        Math::Vec3i Beg(1000, 1000, 1000), End;
+        for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().z; z++)
         {
-            for (uint32_t y = 0; y < (uint32_t)mesh->GetSize().z; y++)
+            for (uint32_t y = 0; y < (uint32_t)mesh->GetSize().y; y++)
             {
                 for (uint32_t x = 0; x < (uint32_t)mesh->GetSize().x; x++)
                 {
@@ -104,10 +102,10 @@ namespace VoxelOptimizer
                     if(cid == -1)
                         continue;
 
-                    auto pos = Math::Vec3f(x, z, y);
+                    auto pos = Math::Vec3f(x, y, z);
 
                     if(m_Header.ZAxisOrientation == 0)
-                        pos.y = (uint32_t)(mesh->GetSize().y - 1) - pos.y;
+                        pos.z = (uint32_t)(mesh->GetSize().z - 1) - pos.z;
 
                     Beg = Beg.min(pos);
                     End = End.max(pos);
@@ -122,8 +120,8 @@ namespace VoxelOptimizer
 
     void CQubicleBinaryFormat::ReadRLECompressed(VoxelMesh mesh)
     {
-        Math::Vec3f Beg(1000, 1000, 1000), End;
-        for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().y; z++)
+        Math::Vec3i Beg(1000, 1000, 1000), End;
+        for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().z; z++)
         {
             uint32_t index = 0;
 
@@ -141,15 +139,15 @@ namespace VoxelOptimizer
 
                     for (uint32_t i = 0; i < count; i++)
                     {
-                        Math::Vec3f pos;
+                        Math::Vec3i pos;
 
                         pos.x = index % (uint32_t)mesh->GetSize().x;
-                        pos.z = (uint32_t)(index / (uint32_t)mesh->GetSize().x);
+                        pos.y = (uint32_t)(index / (uint32_t)mesh->GetSize().x);
 
                         if(m_Header.ZAxisOrientation == 0)
-                            pos.y = ((uint32_t)mesh->GetSize().y - 1) - z;
+                            pos.z = ((uint32_t)mesh->GetSize().z - 1) - z;
                         else
-                            pos.y = z;
+                            pos.z = z;
 
                         index++;
                         cid = GetColorIdx(data);
@@ -164,15 +162,15 @@ namespace VoxelOptimizer
                 }
                 else
                 {
-                    Math::Vec3f pos;
+                    Math::Vec3i pos;
 
                     pos.x = index % (uint32_t)mesh->GetSize().x;
-                    pos.z = (uint32_t)(index / (uint32_t)mesh->GetSize().x);
+                    pos.y = (uint32_t)(index / (uint32_t)mesh->GetSize().x);
 
                     if(m_Header.ZAxisOrientation == 0)
-                        pos.y = ((uint32_t)mesh->GetSize().y - 1) - z;
+                        pos.z = ((uint32_t)mesh->GetSize().z - 1) - z;
                     else
-                        pos.y = z;
+                        pos.z = z;
 
                     index++;
                     cid = GetColorIdx(data);

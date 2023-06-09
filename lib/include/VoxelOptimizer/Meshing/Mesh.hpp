@@ -34,26 +34,49 @@
 
 namespace VoxelOptimizer
 {
-    struct SGroupedFaces
+    struct SVertex
     {
-        int MaterialIndex;             
-        Material FaceMaterial;              //!< Material which are applied to this faces.
-        std::vector<Math::Vec3f> Indices;       //!< Indices of the faces. 3 indices are always 1 triangle. One index is a tripple of x = vertex, y = normal, z = uv.
+        SVertex() = default;
+        SVertex(Math::Vec3f _Pos, Math::Vec3f _Normal, Math::Vec2f _UV) : Pos(_Pos), Normal(_Normal), UV(_UV) {}
+
+        Math::Vec3f Pos;
+        Math::Vec3f Normal;
+        Math::Vec2f UV;
+
+        inline bool operator==(const SVertex &_Vertex) const
+        {
+            return _Vertex.Pos == Pos && _Vertex.Normal == Normal && _Vertex.UV == UV;
+        }
     };
-    using GroupedFaces = std::shared_ptr<SGroupedFaces>;
+
+    struct SSurface
+    {
+        Material FaceMaterial;          //!< Material used for this group.
+
+        std::vector<SVertex> Vertices;  //!< Vertices of this surface
+        std::vector<int> Indices;       //!< Indices for vertices used by this surface.
+    };
 
     struct SMesh
     {
-        std::vector<Math::Vec3f> Vertices;      //!< All vertices of this mesh.
-        std::vector<Math::Vec3f> Normals;       //!< All normals of this mesh.
-        std::vector<Math::Vec3f> UVs;           //!< All uvs of this mesh.
-
-        std::vector<GroupedFaces> Faces;    //!< All faces of this mesh.
+        std::list<SSurface> Surfaces;                   //!< All surfaces of this mesh.
         std::map<TextureType, Texture> Textures;        //!< Texture used by this mesh.
-
-        Math::Mat4x4 ModelMatrix; 
+        Math::Mat4x4 ModelMatrix;                       //!< Modelmatrix according to the voxel file.
     };
     using Mesh = std::shared_ptr<SMesh>;
+
+    struct VertexHasher
+    {
+        size_t operator()(const SVertex &_Vertex) const
+        {
+            // djb2
+            char *data = (char*)&_Vertex;
+            size_t hash = 5381;
+            for (int i = 0; i < sizeof(SVertex); i++)
+                hash = ((hash << 5) + hash) + data[i];
+            return hash;
+        }
+    };
 }
 
 

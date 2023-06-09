@@ -39,7 +39,7 @@ namespace VoxelOptimizer
         protected:
             void ParseFormat() override;
 
-            Math::Vec3f ReadVector();
+            Math::Vec3i ReadVector();
             void ReadColors();
             void ReadVoxels(VoxelMesh mesh);
 
