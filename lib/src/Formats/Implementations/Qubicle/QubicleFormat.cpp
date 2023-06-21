@@ -81,7 +81,7 @@ namespace VoxelOptimizer
         LoadNode();
 
         for (auto &&m : m_Models)
-            m->Colorpalettes = m_Textures;     
+            m->Textures = m_Textures;     
     }
 
     void CQubicleFormat::LoadNode()

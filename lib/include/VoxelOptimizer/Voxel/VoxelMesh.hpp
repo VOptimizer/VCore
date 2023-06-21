@@ -38,9 +38,16 @@
 #include <string>
 #include <vector>
 #include <VoxelOptimizer/Math/Vector.hpp>
+#include <VoxelOptimizer/Voxel/VoxelTextureMap.hpp>
 
 namespace VoxelOptimizer
 {
+    enum class TexturingTypes
+    {
+        INDEXED,    //!< Each ColorIdx of a voxel is an index for a single color.
+        TEXTURED    //!< Each ColorIdx of a voxel is an index to a tile in a texture atlas.
+    };
+
     class CVoxelMesh
     {
         using VoxelData = CVoxelSpace;//COctree<Voxel>;
@@ -53,10 +60,14 @@ namespace VoxelOptimizer
             Math::Vec3f Pivot;
             CBBox BBox;
 
-            std::vector<Material> Materials;                //!< Used materials
-            std::map<TextureType, Texture> Colorpalettes;   //!< Used colors / textures
+            // Texturing
+            TexturingTypes TexturingType;
+            CVoxelTextureMap TextureMapping;           //!< Contains information about the texture atlas mapping.
 
-            CVoxelMesh() = default;
+            std::vector<Material> Materials;           //!< Used materials
+            std::map<TextureType, Texture> Textures;   //!< Used colors / texture atlas
+
+            CVoxelMesh() : TexturingType(TexturingTypes::INDEXED) {}
 
             /**
              * @brief Sets the size of the voxel space.
@@ -77,22 +88,6 @@ namespace VoxelOptimizer
             inline Math::Vec3i GetSize() const
             {
                 return m_Size;
-            }
-
-            /**
-             * @brief Gets the bounding box.
-             */
-            inline CBBox GetBBox() const
-            {
-                return BBox;
-            }
-            
-            /**
-             * @brief Sets the bounding box.
-             */
-            inline void SetBBox(CBBox BBox)
-            {
-                BBox = BBox;
             }
 
             inline void RecalcBBox()
@@ -138,11 +133,6 @@ namespace VoxelOptimizer
              * @brief Clears the mesh
              */
             void Clear();
-
-            void ReserveVoxels(size_t _reserve)
-            {
-                // m_Pool.reserve(_reserve);
-            }
 
             /**
              * @return Gets a voxel on a given position.

@@ -147,7 +147,7 @@ namespace VoxelOptimizer
             return;
 
         std::map<int, int> colorMapping;
-        auto otherTextures = meshes.front()->Colorpalettes;
+        auto otherTextures = meshes.front()->Textures;
         bool hasEmission = otherTextures.find(TextureType::EMISSION) != otherTextures.end();
         bool texturesHasEmission = textures.find(TextureType::EMISSION) != textures.end();
 
@@ -260,7 +260,7 @@ namespace VoxelOptimizer
             for (auto &&v : m->GetVoxels())
                 v.second->Color = colorMapping[v.second->Color];
 
-            m->Colorpalettes = textures;
+            m->Textures = textures;
         }
         
     }

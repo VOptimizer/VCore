@@ -56,8 +56,20 @@ namespace VoxelOptimizer
         // 4 UVs are needed for the case, that no colorpalette is available.
         Math::Vec2f uv1, uv2, uv3, uv4;
         
-        if(m_Textures && !m_Textures->empty())
+        if(m_Textures && !m_Textures->empty() && !m_TextureMap)
             uv1 = uv2 = uv3 = uv4 = Math::Vec2f(((float)(_color + 0.5f)) / m_Textures->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
+        else if(m_TextureMap)
+        {
+            const SUVMapping *map = m_TextureMap->GetVoxelFaceInfo(_color, _normal);
+
+            if(map)
+            {
+                uv1 = map->TopLeft; 
+                uv2 = map->TopRight;
+                uv3 = map->BottomLeft;
+                uv4 = map->BottomRight;
+            }
+        }
         else
         {
             uv1 = Math::Vec2f(_color, 0);
@@ -79,9 +91,9 @@ namespace VoxelOptimizer
             it->second.Indices.push_back(i2);
             it->second.Indices.push_back(i3);
 
-            it->second.Indices.push_back(i1);
-            it->second.Indices.push_back(i3);
+            it->second.Indices.push_back(i2);
             it->second.Indices.push_back(i4);
+            it->second.Indices.push_back(i3);
         }
         else
         {
@@ -89,9 +101,9 @@ namespace VoxelOptimizer
             it->second.Indices.push_back(i2);
             it->second.Indices.push_back(i1);
 
-            it->second.Indices.push_back(i4);
             it->second.Indices.push_back(i3);
-            it->second.Indices.push_back(i1);
+            it->second.Indices.push_back(i4);
+            it->second.Indices.push_back(i2);
         }
     }
    

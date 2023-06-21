@@ -160,7 +160,7 @@ namespace VoxelOptimizer
 
         for (auto &&m : m_Models)
         {
-            m->Colorpalettes = m_Textures;
+            m->Textures = m_Textures;
         }
     }
 
@@ -200,7 +200,6 @@ namespace VoxelOptimizer
         std::map<int, int> modelMaterialMapping;
         auto count1 = 0, count2 = 0;
 
-        m->ReserveVoxels(VoxelCount);
         for (size_t i = 0; i < VoxelCount; i++)
         {
             Math::Vec3i vec;

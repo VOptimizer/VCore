@@ -353,7 +353,7 @@ namespace VoxelOptimizer
     SMeshChunk CMarchingCubesMesher::GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque)
     {
         CMeshBuilder builder;
-        builder.AddTextures(m->Colorpalettes);
+        builder.AddTextures(m->Textures);
 
         auto totalBBox = m->BBox;
         Math::Vec3f boxCenter = totalBBox.GetSize() / 2;

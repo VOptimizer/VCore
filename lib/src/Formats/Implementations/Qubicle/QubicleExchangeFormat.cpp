@@ -49,7 +49,7 @@ namespace VoxelOptimizer
         sceneNode->SetMesh(mesh);
         m_SceneTree->AddChild(sceneNode);
 
-        mesh->Colorpalettes = m_Textures;
+        mesh->Textures = m_Textures;
         mesh->GenerateVisibilityMask();
         m_Models.push_back(mesh);
     }

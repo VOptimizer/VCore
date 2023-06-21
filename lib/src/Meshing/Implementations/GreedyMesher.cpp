@@ -36,7 +36,7 @@ namespace VoxelOptimizer
     SMeshChunk CGreedyMesher::GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque)
     {
         CMeshBuilder builder;
-        builder.AddTextures(m->Colorpalettes);
+        builder.AddTextures(m->Textures);
 
         CBBox BBox = _Chunk.InnerBBox;
 

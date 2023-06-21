@@ -119,7 +119,7 @@ namespace VoxelOptimizer
         sceneNode->SetMesh(m);
         m->Pivot = m->GetSize() / 2;
 
-        m->Colorpalettes = m_Textures;
+        m->Textures = m_Textures;
         m->BBox = CBBox(Beg, End);
         m->GenerateVisibilityMask();
 

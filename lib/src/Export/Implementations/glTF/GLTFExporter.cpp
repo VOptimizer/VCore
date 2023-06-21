@@ -27,149 +27,114 @@
 #include "Nodes.hpp"
 #include <sstream>
 #include <string.h>
-#include "../GLTFExporter.hpp"
+#include "GLTFExporter.hpp"
 
 namespace VoxelOptimizer
 {
     std::map<std::string, std::vector<char>> CGLTFExporter::Generate(std::vector<Mesh> Meshes)
     {
-        std::vector<GLTF::CBufferView> BufferViews;
-        std::vector<GLTF::CAccessor> Accessors;
-        std::vector<GLTF::CMaterial> Materials;
+        std::vector<GLTF::CBufferView> bufferViews;
+        std::vector<GLTF::CAccessor> accessors;
+        std::vector<GLTF::CMaterial> materials;
 
-        std::vector<char> Binary;
+        std::vector<char> binary;
 
-        std::vector<GLTF::CNode> Nodes;
-        std::vector<GLTF::CMesh> GLTFMeshes;
-        std::map<int, bool> processedMaterials;
+        std::vector<GLTF::CNode> nodes;
+        std::vector<GLTF::CMesh> glTFMeshes;
+        size_t matId = 1;
 
         for (auto &&mesh : Meshes)
         {
             GLTF::CMesh GLTFMesh;
-            Nodes.push_back(GLTF::CNode(GLTFMeshes.size(), m_Settings->WorldSpace ? mesh->ModelMatrix : Math::Mat4x4()));
+            nodes.push_back(GLTF::CNode(glTFMeshes.size(), m_Settings->WorldSpace ? mesh->ModelMatrix : Math::Mat4x4()));
 
             for (auto &&surface : mesh->Surfaces)
             {
-                Math::Vec3f Max, Min(10000, 10000, 10000);
+                Math::Vec3f max, min(10000, 10000, 10000);
 
-                // Add only "new" materials.
-                if(processedMaterials.find(surface->MaterialIndex) == processedMaterials.end())
+                GLTF::CMaterial Mat;
+                Mat.Name = "Mat" + std::to_string(matId);
+                Mat.Metallic = surface.FaceMaterial->Metallic;
+                Mat.Roughness = surface.FaceMaterial->Roughness;
+                Mat.Emissive = surface.FaceMaterial->Power;
+                Mat.Transparency = surface.FaceMaterial->Transparency;
+                materials.push_back(Mat);
+
+                GLTF::CBufferView position, normal, uv, indexView;
+
+                position.Offset = binary.size();
+                position.Size = surface.Vertices.size() * sizeof(Math::Vec3f);
+
+                normal.Offset = position.Offset + sizeof(Math::Vec3f);//position.Size;
+                normal.Size = surface.Vertices.size() * sizeof(Math::Vec3f);
+
+                uv.Offset = normal.Offset + sizeof(Math::Vec3f);//normal.Size;
+                uv.Size = surface.Vertices.size() * sizeof(Math::Vec2f);
+
+                indexView.Offset = uv.Offset + sizeof(Math::Vec2f);//uv.Size;
+                indexView.Size = surface.Indices.size() * sizeof(int);
+
+                for (auto &&v : surface.Vertices)
                 {
-                    processedMaterials.insert({surface->MaterialIndex, true});
-
-                    GLTF::CMaterial Mat;
-                    Mat.Name = "Mat" + std::to_string(surface->MaterialIndex);
-                    Mat.Metallic = surface->FaceMaterial->Metallic;
-                    Mat.Roughness = surface->FaceMaterial->Roughness;
-                    Mat.Emissive = surface->FaceMaterial->Power;
-                    Mat.Transparency = surface->FaceMaterial->Transparency;
-                    Materials.push_back(Mat);
+                    max = v.Pos.max(max);
+                    min = v.Pos.min(min);
                 }
+                
 
-                for (size_t i = 0; i < surface.Indices.size(); i += 3)
-                {
-                    for (size_t j = 0; j < 3; j++)
-                    {
-                        Math::Vec3f vec = surface->Indices[i + j];
+                GLTF::CAccessor positionAccessor, normalAccessor, uvAccessor, indexAccessor;
+                positionAccessor.BufferView = bufferViews.size();
+                positionAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
+                positionAccessor.Count = surface.Vertices.size();
+                positionAccessor.Type = "VEC3";
+                positionAccessor.SetMin(min);
+                positionAccessor.SetMax(max);
 
-                        int Index = 0;
+                normalAccessor.BufferView = bufferViews.size() + 1;
+                normalAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
+                normalAccessor.Count = surface.Vertices.size();
+                normalAccessor.Type = "VEC3";
 
-                        auto IT = IndicesIndex.find(vec);
-                        if(IT == IndicesIndex.end())
-                        {
-                            Vertices.push_back(mesh->Vertices[(size_t)vec.x - 1]);
-                            Normals.push_back(mesh->Normals[(size_t)vec.y - 1]);
-                            UVs.push_back(mesh->UVs[(size_t)vec.z - 1]);
+                uvAccessor.BufferView = bufferViews.size() + 2;
+                uvAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
+                uvAccessor.Count = surface.Vertices.size();
+                uvAccessor.Type = "VEC2";
 
-                            Min = Min.min(mesh->Vertices[(size_t)vec.x - 1]);
-                            Max = Max.max(mesh->Vertices[(size_t)vec.x - 1]);
-
-                            Index = Vertices.size() - 1;
-                            IndicesIndex.insert({vec, Index});
-                        }
-                        else
-                            Index = IT->second;
-
-                        Indices.push_back(Index);
-                    }
-                }
-
-                GLTF::CBufferView Position, Normal, UV, IndexView;
-
-                Position.Offset = Binary.size();
-                Position.Size = Vertices.size() * sizeof(Math::Vec3f);
-
-                Normal.Offset = Position.Offset + Position.Size;
-                Normal.Size = Normals.size() * sizeof(Math::Vec3f);
-
-                UV.Offset = Normal.Offset + Normal.Size;
-                UV.Size = UVs.size() * (sizeof(float) * 2);
-
-                IndexView.Offset = UV.Offset + UV.Size;
-                IndexView.Size = Indices.size() * sizeof(int);
-
-                GLTF::CAccessor PositionAccessor, NormalAccessor, UVAccessor, IndexAccessor;
-                PositionAccessor.BufferView = BufferViews.size();
-                PositionAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
-                PositionAccessor.Count = Vertices.size();
-                PositionAccessor.Type = "VEC3";
-                PositionAccessor.SetMin(Min);
-                PositionAccessor.SetMax(Max);
-
-                NormalAccessor.BufferView = BufferViews.size() + 1;
-                NormalAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
-                NormalAccessor.Count = Normals.size();
-                NormalAccessor.Type = "VEC3";
-
-                UVAccessor.BufferView = BufferViews.size() + 2;
-                UVAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
-                UVAccessor.Count = UVs.size();
-                UVAccessor.Type = "VEC2";
-
-                IndexAccessor.BufferView = BufferViews.size() + 3;
-                IndexAccessor.ComponentType = GLTF::GLTFTypes::INT;
-                IndexAccessor.Count = Indices.size();
-                IndexAccessor.Type = "SCALAR";
+                indexAccessor.BufferView = bufferViews.size() + 3;
+                indexAccessor.ComponentType = GLTF::GLTFTypes::INT;
+                indexAccessor.Count = surface.Indices.size();
+                indexAccessor.Type = "SCALAR";
 
                 GLTF::CPrimitive Primitive;
-                Primitive.PositionAccessor = Accessors.size();
-                Primitive.NormalAccessor = Accessors.size() + 1;
-                Primitive.TextCoordAccessor = Accessors.size() + 2;
-                Primitive.IndicesAccessor = Accessors.size() + 3;
-                Primitive.Material = surface->MaterialIndex; //GLTFMesh.Primitives.size();
+                Primitive.PositionAccessor = accessors.size();
+                Primitive.NormalAccessor = accessors.size() + 1;
+                Primitive.TextCoordAccessor = accessors.size() + 2;
+                Primitive.IndicesAccessor = accessors.size() + 3;
+                Primitive.Material = matId;
+                matId++;
 
                 GLTFMesh.Primitives.push_back(Primitive);
 
-                BufferViews.push_back(Position);
-                BufferViews.push_back(Normal);
-                BufferViews.push_back(UV);
-                BufferViews.push_back(IndexView);
+                bufferViews.push_back(position);
+                bufferViews.push_back(normal);
+                bufferViews.push_back(uv);
+                bufferViews.push_back(indexView);
 
-                Accessors.push_back(PositionAccessor);
-                Accessors.push_back(NormalAccessor);
-                Accessors.push_back(UVAccessor);
-                Accessors.push_back(IndexAccessor);
+                accessors.push_back(positionAccessor);
+                accessors.push_back(normalAccessor);
+                accessors.push_back(uvAccessor);
+                accessors.push_back(indexAccessor);
 
-                size_t Pos = Binary.size();
+                size_t Pos = binary.size();
 
-                Binary.resize(Binary.size() + Position.Size + Normal.Size + UV.Size + IndexView.Size);
+                binary.resize(binary.size() + position.Size + normal.Size + uv.Size + indexView.Size);
 
-                memcpy(Binary.data() + Pos, Vertices.data(), Position.Size);
-                Pos += Position.Size;
+                memcpy(binary.data() + Pos, surface.Vertices.data(), surface.Vertices.size());
+                Pos += surface.Vertices.size();
 
-                memcpy(Binary.data() + Pos, Normals.data(), Normal.Size);
-                Pos += Normal.Size;
-
-                for (auto &&uv : UVs)
-                {
-                    memcpy(Binary.data() + Pos, &uv, sizeof(float) * 2);
-                    Pos += sizeof(float) * 2;
-                }
-
-                memcpy(Binary.data() + Pos, Indices.data(), IndexView.Size);
+                memcpy(binary.data() + Pos, surface.Indices.data(), surface.Indices.size());
             }
         
-            GLTFMeshes.push_back(GLTFMesh);
+            glTFMeshes.push_back(GLTFMesh);
         }
         
         std::vector<GLTF::CImage> Images;
@@ -186,20 +151,20 @@ namespace VoxelOptimizer
             if(textures.find(TextureType::EMISSION) != textures.end())
                 emission = textures[TextureType::EMISSION]->AsPNG();
 
-            size_t Size = Binary.size();
-            int Padding = 4 - ((Binary.size() + diffuse.size() + emission.size()) % 4);
+            size_t Size = binary.size();
+            int Padding = 4 - ((binary.size() + diffuse.size() + emission.size()) % 4);
 
-            Binary.resize(Binary.size() + diffuse.size() + emission.size() + Padding, '\0');
-            memcpy(Binary.data() + Size, diffuse.data(), diffuse.size());
-            memcpy(Binary.data() + Size + diffuse.size(), emission.data(), emission.size());
+            binary.resize(binary.size() + diffuse.size() + emission.size() + Padding, '\0');
+            memcpy(binary.data() + Size, diffuse.data(), diffuse.size());
+            memcpy(binary.data() + Size + diffuse.size(), emission.data(), emission.size());
 
             GLTF::CBufferView ImageView;
             ImageView.Offset = Size;
             ImageView.Size = diffuse.size();
 
             GLTF::CImage Image;
-            Image.BufferView = BufferViews.size();
-            BufferViews.push_back(ImageView);
+            Image.BufferView = bufferViews.size();
+            bufferViews.push_back(ImageView);
             Images.push_back(Image);
 
             if(!emission.empty())
@@ -209,8 +174,8 @@ namespace VoxelOptimizer
                 ImageView.Size = emission.size();
 
                 GLTF::CImage Image;
-                Image.BufferView = BufferViews.size();
-                BufferViews.push_back(ImageView);
+                Image.BufferView = bufferViews.size();
+                bufferViews.push_back(ImageView);
                 Images.push_back(Image);
             }
         }
@@ -231,18 +196,18 @@ namespace VoxelOptimizer
         }
             
 
-        Buffer.Size = Binary.size(); 
+        Buffer.Size = binary.size(); 
 
         CJSON json;
         json.AddPair("asset", GLTF::CAsset());
         json.AddPair("scene", 0);
-        json.AddPair("scenes", std::vector<GLTF::CScene>() = { GLTF::CScene(Nodes.size()) }); // Erweitern um nodes
-        json.AddPair("nodes", Nodes);
+        json.AddPair("scenes", std::vector<GLTF::CScene>() = { GLTF::CScene(nodes.size()) }); // Erweitern um nodes
+        json.AddPair("nodes", nodes);
 
-        json.AddPair("meshes", GLTFMeshes);
-        json.AddPair("accessors", Accessors);
-        json.AddPair("bufferViews", BufferViews);
-        json.AddPair("materials", Materials);        
+        json.AddPair("meshes", glTFMeshes);
+        json.AddPair("accessors", accessors);
+        json.AddPair("bufferViews", bufferViews);
+        json.AddPair("materials", materials);        
 
         json.AddPair("images", Images);
 
@@ -269,7 +234,7 @@ namespace VoxelOptimizer
             std::map<std::string, std::vector<char>> ret = 
             {
                 {"gltf", GLTF},
-                {"bin", Binary},
+                {"bin", binary},
                 {"albedo.png", textures[TextureType::DIFFIUSE]->AsPNG()}
             };
 
@@ -280,7 +245,7 @@ namespace VoxelOptimizer
         }
 
         // Builds the binary buffer.
-        std::vector<char> GLB(sizeof(uint32_t) * 3 + sizeof(uint32_t) * 2 + JS.size() + sizeof(uint32_t) * 2 + Binary.size(), '\0');
+        std::vector<char> GLB(sizeof(uint32_t) * 3 + sizeof(uint32_t) * 2 + JS.size() + sizeof(uint32_t) * 2 + binary.size(), '\0');
         uint32_t Magic = 0x46546C67; //GLTF in ASCII
         uint32_t Version = 2;
         uint32_t Length = GLB.size();
@@ -300,12 +265,12 @@ namespace VoxelOptimizer
 
         Pos += sizeof(uint32_t) * 2 + JS.size(); 
 
-        ChunkLength = Binary.size();
+        ChunkLength = binary.size();
         ChunkType = 0x004E4942; //Bin in ASCII
 
         memcpy(GLB.data() + Pos, &ChunkLength, sizeof(uint32_t));
         memcpy(GLB.data() + Pos + sizeof(uint32_t), &ChunkType, sizeof(uint32_t));
-        memcpy(GLB.data() + Pos + sizeof(uint32_t) * 2, Binary.data(), Binary.size());
+        memcpy(GLB.data() + Pos + sizeof(uint32_t) * 2, binary.data(), binary.size());
 
         return {
             {"glb", GLB}

@@ -26,7 +26,7 @@
 #include <algorithm>
 #include <fstream>
 #include <stdexcept>
-#include "Implementations/GLTFExporter.hpp"
+#include "Implementations/glTF/GLTFExporter.hpp"
 #include "Implementations/GodotSceneExporter.hpp"
 #include <VoxelOptimizer/Export/IExporter.hpp>
 #include "Implementations/WavefrontObjExporter.hpp"

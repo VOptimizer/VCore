@@ -8,6 +8,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelMesh.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/PlanesVoxelizer.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelSpace.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelTextureMap.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/MagicaVoxelFormat.cpp"
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/GoxelFormat.cpp"

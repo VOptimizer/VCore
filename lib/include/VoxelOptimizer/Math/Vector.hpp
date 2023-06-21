@@ -68,7 +68,7 @@ namespace VoxelOptimizer
 
                 inline TVector2 operator+(const TVector2 &vr) const
                 {
-                    return Vec4f(x + vr.x, y + vr.y);
+                    return TVector2(x + vr.x, y + vr.y);
                 }
 
                 inline TVector2 &operator+=(const TVector2 &vr)

@@ -74,7 +74,7 @@ namespace VoxelOptimizer
 
         m_ColorIdx.clear();
         for (auto &&m : m_Models)
-            m->Colorpalettes = m_Textures;
+            m->Textures = m_Textures;
     }
 
     Math::Vec3i CQubicleBinaryFormat::ReadVector()

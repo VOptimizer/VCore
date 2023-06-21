@@ -30,13 +30,22 @@
 #include <vector>
 #include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
 #include <VoxelOptimizer/Meshing/Mesh.hpp>
+#include <VoxelOptimizer/Voxel/VoxelTextureMap.hpp>
 
 namespace VoxelOptimizer
 {
     class CMeshBuilder
     {
         public:
-            CMeshBuilder() = default;
+            CMeshBuilder() : m_TextureMap(nullptr) {}
+
+            /**
+             * @brief Sets the texturing map.
+             */
+            inline void SetTextureMap(CVoxelTextureMap *_Map)
+            {
+                m_TextureMap = _Map;
+            }
 
             /**
              * @brief Adds all needed textures to the mesh. This must be called before AddFace
@@ -96,6 +105,8 @@ namespace VoxelOptimizer
             const std::map<TextureType, Texture> *m_Textures;
             std::map<Material, SIndexedSurface, std::less<Material>> m_Surfaces;
             Mesh m_MergerMesh;
+
+            CVoxelTextureMap *m_TextureMap;
     };
 }
 

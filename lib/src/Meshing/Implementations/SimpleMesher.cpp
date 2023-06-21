@@ -31,7 +31,10 @@ namespace VoxelOptimizer
     SMeshChunk CSimpleMesher::GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque)
     {
         CMeshBuilder builder;
-        builder.AddTextures(m->Colorpalettes);
+        builder.AddTextures(m->Textures);
+
+        if(m->TexturingType == TexturingTypes::TEXTURED)
+            builder.SetTextureMap(&m->TextureMapping);
 
         auto bbox = m->BBox;
         Math::Vec3i beg = bbox.Beg;
@@ -73,9 +76,9 @@ namespace VoxelOptimizer
                                         Normal = Math::Vec3f::DOWN;
 
 
-                                    v1 = Math::Vec3f(vpos.x, vpos.y + PosY, vpos.z + 1.f) - boxCenter;
-                                    v2 = Math::Vec3f(vpos.x, vpos.y + PosY, vpos.z) - boxCenter;
-                                    v3 = Math::Vec3f(vpos.x + 1.f, vpos.y + PosY, vpos.z) - boxCenter;
+                                    v1 = Math::Vec3f(vpos.x, vpos.y + PosY, vpos.z) - boxCenter;
+                                    v2 = Math::Vec3f(vpos.x + 1.f, vpos.y + PosY, vpos.z) - boxCenter;
+                                    v3 = Math::Vec3f(vpos.x, vpos.y + PosY, vpos.z + 1.f) - boxCenter;
                                     v4 = Math::Vec3f(vpos.x + 1.f, vpos.y + PosY, vpos.z + 1.f) - boxCenter;
                                 }break;
 
@@ -91,10 +94,10 @@ namespace VoxelOptimizer
                                     else
                                         Normal = Math::Vec3f::LEFT;
 
-                                    v1 = Math::Vec3f(vpos.x + Posx, vpos.y, vpos.z) - boxCenter;
-                                    v2 = Math::Vec3f(vpos.x + Posx, vpos.y, vpos.z + 1.f) - boxCenter;
-                                    v3 = Math::Vec3f(vpos.x + Posx, vpos.y + 1.f, vpos.z + 1.f) - boxCenter;
-                                    v4 = Math::Vec3f(vpos.x + Posx, vpos.y + 1.f, vpos.z) - boxCenter;
+                                    v1 = Math::Vec3f(vpos.x + Posx, vpos.y + 1.f, vpos.z) - boxCenter;
+                                    v2 = Math::Vec3f(vpos.x + Posx, vpos.y + 1.f, vpos.z + 1.f) - boxCenter;
+                                    v3 = Math::Vec3f(vpos.x + Posx, vpos.y, vpos.z) - boxCenter;
+                                    v4 = Math::Vec3f(vpos.x + Posx, vpos.y, vpos.z + 1.f) - boxCenter;
                                 }break;
 
                                 case CVoxel::Visibility::FORWARD:
@@ -109,10 +112,10 @@ namespace VoxelOptimizer
                                     else
                                         Normal = Math::Vec3f::BACK;
 
-                                    v4 = Math::Vec3f(vpos.x, vpos.y + 1.f, vpos.z + PosZ) - boxCenter;
+                                    v1 = Math::Vec3f(vpos.x, vpos.y + 1.f, vpos.z + PosZ) - boxCenter;
+                                    v2 = Math::Vec3f(vpos.x + 1.f, vpos.y + 1.f, vpos.z + PosZ) - boxCenter;
                                     v3 = Math::Vec3f(vpos.x, vpos.y, vpos.z + PosZ) - boxCenter;
-                                    v2 = Math::Vec3f(vpos.x + 1.f, vpos.y, vpos.z + PosZ) - boxCenter;
-                                    v1 = Math::Vec3f(vpos.x + 1.f, vpos.y + 1.f, vpos.z + PosZ) - boxCenter;
+                                    v4 = Math::Vec3f(vpos.x + 1.f, vpos.y, vpos.z + PosZ) - boxCenter;
                                 }break;
                             }
 

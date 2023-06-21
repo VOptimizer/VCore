@@ -57,5 +57,6 @@
 #include <VoxelOptimizer/Voxel/BBox.hpp>
 #include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
 #include <VoxelOptimizer/Voxel/PlanesVoxelizer.hpp>
+#include <VoxelOptimizer/Voxel/VoxelTextureMap.hpp>
 
 #endif //VOXELOPTIMIZER_HPP

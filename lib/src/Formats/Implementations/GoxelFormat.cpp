@@ -166,7 +166,7 @@ namespace VoxelOptimizer
         }
 
         for (auto &&m : m_Models)
-            m->Colorpalettes = m_Textures;
+            m->Textures = m_Textures;
         
         m_BBox = CBBox();
         m_BL16s.clear();

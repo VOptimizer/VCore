@@ -34,9 +34,8 @@ namespace VoxelOptimizer
 
         for (auto &&mesh : Meshes)
         {
-            VectorMap<int> Index;
-            std::vector<int> Indices;
-            std::vector<Math::Vec3f> Vertices, Normals, UVs;
+            std::stringstream vertexList, faceList;
+            size_t vertexCount = 0, faceCount = 0, indexOffset = 0;
 
             //"Extracts" the rotation matrix. Quick'n Dirty
             Math::Mat4x4 rotMat = mesh->ModelMatrix;
@@ -44,54 +43,28 @@ namespace VoxelOptimizer
             rotMat.y.w = 0;
             rotMat.z.w = 0;
 
-            for (auto &&f : mesh->Faces)
+            for (auto &&surface : mesh->Surfaces)
             {
-                int TmpIndices[3];
-                int VertexCounter = 0;
-
-                for (auto &&v : f->Indices)
+                for (auto &&v : surface.Vertices)
                 {
-                    auto IT = Index.find(v);
-                    if(IT != Index.end())
-                        TmpIndices[VertexCounter] = IT->second;
-                    else
-                    {
-                        VoxelOptimizer::Math::Vec3f Vertex, Normal, UV;
-                        Vertex = mesh->Vertices[(size_t)v.x - 1];
-                        Normal = mesh->Normals[(size_t)v.y - 1];
-                        UV = mesh->UVs[(size_t)v.z - 1];
-
-                        if(m_Settings->WorldSpace)
-                        {
-                            Vertex = mesh->ModelMatrix * Vertex;
-                            Normal = rotMat * Normal;
-                        }
-
-                        Vertices.push_back(Vertex);
-                        Normals.push_back(Normal);
-                        UVs.push_back(UV);
-
-                        int Idx = Vertices.size() - 1;
-                        Index.insert({v, Idx});
-                        TmpIndices[VertexCounter] = Idx;
-                    }
-
-                    VertexCounter++;
-                    if(VertexCounter == 3)
-                    {
-                        VertexCounter = 0;
-
-                        for (char i = 2; i > -1; i--)
-                            Indices.push_back(TmpIndices[i]);
-                    }
+                    vertexList << v.Pos.x << " " << -v.Pos.z << " " << v.Pos.y << " " << v.Normal.x << " " << -v.Normal.z << " " << v.Normal.y << " " << v.UV.x << " " << v.UV.y << std::endl;
+                    vertexCount++;
                 }
+                
+                for (size_t i = 0; i < surface.Indices.size(); i += 3)
+                {
+                    faceList << "3 " << surface.Indices[i] + indexOffset << " " << surface.Indices[i + 1] + indexOffset << " " << surface.Indices[i + 2] + indexOffset << std::endl;
+                    faceCount++;
+                }
+                indexOffset += surface.Indices.size();
             }
-            
+
+            // Fileheader
             std::stringstream file;
             file << "ply" << std::endl;
             file << "format ascii 1.0" << std::endl;
             file << "comment Generated with VoxelOptimizer" << std::endl;
-            file << "element vertex " << Vertices.size() << std::endl;
+            file << "element vertex " << vertexCount << std::endl;
             file << "property float x" << std::endl;
             file << "property float y" << std::endl;
             file << "property float z" << std::endl;
@@ -100,22 +73,12 @@ namespace VoxelOptimizer
             file << "property float nz" << std::endl;
             file << "property float s" << std::endl;
             file << "property float t" << std::endl;
-            file << "element face " << Indices.size() / 3 << std::endl;
+            file << "element face " << faceCount << std::endl;
             file << "property list uchar uint vertex_indices" << std::endl;
             file << "end_header" << std::endl;
 
-            for (size_t i = 0; i < Vertices.size(); i++)
-            {
-                Math::Vec3f v = Vertices[i];
-                Math::Vec3f n = Normals[i];
-                Math::Vec3f uv = UVs[i];
-
-                file << v.x << " " << -v.z << " " << v.y << " " << n.x << " " << -n.z << " " << n.y << " " << uv.x << " " << uv.y << std::endl;
-            }
-            
-            for (size_t i = 0; i < Indices.size(); i += 3)
-                file << "3 " << Indices[i] << " " << Indices[i + 1] << " " << Indices[i + 2] << std::endl;
-            
+            file << vertexList.rdbuf() << faceList.rdbuf();
+                                    
             std::string fileStr = file.str();
 
             std::string ext = "ply";
