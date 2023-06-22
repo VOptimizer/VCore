@@ -46,16 +46,16 @@ namespace VoxelOptimizer
 
         auto diffuse = m->Textures.at(TextureType::DIFFIUSE);
 
-        for (size_t z = 0; z < Size.z; z++)
+        for (size_t y = 0; y < Size.y; y++)
         {
             for (size_t x = 0; x < Size.x; x++)
             {
-                for (size_t y = 0; y < Size.y; y++)
+                for (size_t z = 0; z < Size.z; z++)
                 {
                     auto Vox = m->GetVoxel(Math::Vec3f(x, y, z));
 
                     if(Vox)
-                        Pixels[x + (size_t)Size.x * y + (size_t)Size.x * (size_t)Size.y * z] = diffuse->GetPixel(Math::Vec2ui(Vox->Color, 0));
+                        Pixels[x + (size_t)Size.x * z + (size_t)Size.x * (size_t)Size.z * y] = diffuse->GetPixel(Math::Vec2ui(Vox->Color, 0));
                 }
             }
         }

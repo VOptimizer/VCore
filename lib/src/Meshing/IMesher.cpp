@@ -148,9 +148,9 @@ namespace VoxelOptimizer
         }
 
         CMeshBuilder builder;
-        builder.Merge(ret, meshes);
+        ret = builder.Merge(ret, meshes);
 
-        return builder.Build();
+        return ret;
     }
 
     std::list<Mesh> IMesher::GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds)

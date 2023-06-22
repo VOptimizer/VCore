@@ -85,7 +85,7 @@ namespace VoxelOptimizer
         i4 = AddVertex(SVertex(_v4, _normal, uv4), it->second);
 
         // Checks the direction of the face.
-        if(faceNormal != _normal)
+        if(faceNormal == _normal)
         {
             it->second.Indices.push_back(i1);
             it->second.Indices.push_back(i2);
@@ -184,17 +184,14 @@ namespace VoxelOptimizer
             if(it == m_Surfaces.end())
                 it = m_Surfaces.insert({surface.FaceMaterial, SIndexedSurface()}).first;
 
+            it->second.Indices = surface.Indices;
+            it->second.Vertices = surface.Vertices;
+
             for (auto &&i : surface.Indices)
             {
                 if(i < surface.Vertices.size())
-                {
-                    it->second.Indices.push_back(i);
-                    it->second.Vertices.push_back(surface.Vertices[i]);
-
                     it->second.Index.insert({surface.Vertices[i], i});
-                }
             }
-            
         }       
     }
 

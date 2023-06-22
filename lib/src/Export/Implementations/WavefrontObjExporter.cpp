@@ -126,7 +126,7 @@ namespace VoxelOptimizer
                     objFile << "f";
                     for (char j = 0; j < 3; j++)
                     {
-                        int index = surface.Indices[i + j] + indicesOffset;
+                        int index = surface.Indices[i + j] + indicesOffset + 1;
 
                         objFile << " ";
                         objFile << index << "/" << index << "/" << index;

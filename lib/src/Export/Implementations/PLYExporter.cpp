@@ -47,7 +47,7 @@ namespace VoxelOptimizer
             {
                 for (auto &&v : surface.Vertices)
                 {
-                    vertexList << v.Pos.x << " " << -v.Pos.z << " " << v.Pos.y << " " << v.Normal.x << " " << -v.Normal.z << " " << v.Normal.y << " " << v.UV.x << " " << v.UV.y << std::endl;
+                    vertexList << v.Pos.x << " " << v.Pos.y << " " << v.Pos.z << " " << v.Normal.x << " " << v.Normal.y << " " << v.Normal.z << " " << v.UV.x << " " << v.UV.y << std::endl;
                     vertexCount++;
                 }
                 
