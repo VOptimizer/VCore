@@ -210,31 +210,28 @@ namespace VoxelOptimizer
             if(it == m_Surfaces.end())
                 it = m_Surfaces.insert({surface.FaceMaterial, SIndexedSurface()}).first;
 
-            for (size_t i = 0; i < surface.Vertices.size(); i += 3)
+            for (size_t i = 0; i < surface.Indices.size(); i += 3)
             {
-                if((i < surface.Vertices.size()) && ((i + 2) < surface.Vertices.size()))
-                {
-                    SVertex v1 = surface.Vertices[i];
-                    SVertex v2 = surface.Vertices[i + 1];
-                    SVertex v3 = surface.Vertices[i + 2];
+                SVertex v1 = surface.Vertices[surface.Indices[i]];
+                SVertex v2 = surface.Vertices[surface.Indices[i + 1]];
+                SVertex v3 = surface.Vertices[surface.Indices[i + 2]];
 
-                    v1.Pos = m->ModelMatrix * v1.Pos;
-                    v1.Normal = rotation * v1.Normal;
+                v1.Pos = m->ModelMatrix * v1.Pos;
+                v1.Normal = rotation * v1.Normal;
 
-                    v2.Pos = m->ModelMatrix * v2.Pos;
-                    v2.Normal = rotation * v2.Normal;
+                v2.Pos = m->ModelMatrix * v2.Pos;
+                v2.Normal = rotation * v2.Normal;
 
-                    v3.Pos = m->ModelMatrix * v3.Pos;
-                    v3.Normal = rotation * v3.Normal;
+                v3.Pos = m->ModelMatrix * v3.Pos;
+                v3.Normal = rotation * v3.Normal;
 
-                    int i1 = AddVertex(v1, it->second);
-                    int i2 = AddVertex(v2, it->second);
-                    int i3 = AddVertex(v3, it->second);
+                int i1 = AddVertex(v1, it->second);
+                int i2 = AddVertex(v2, it->second);
+                int i3 = AddVertex(v3, it->second);
 
-                    it->second.Indices.push_back(i1);
-                    it->second.Indices.push_back(i2);
-                    it->second.Indices.push_back(i3);
-                }
+                it->second.Indices.push_back(i1);
+                it->second.Indices.push_back(i2);
+                it->second.Indices.push_back(i3);
             }
         }
     }

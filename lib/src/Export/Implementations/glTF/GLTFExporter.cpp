@@ -41,7 +41,7 @@ namespace VoxelOptimizer
 
         std::vector<GLTF::CNode> nodes;
         std::vector<GLTF::CMesh> glTFMeshes;
-        size_t matId = 1;
+        size_t matId = 0;
 
         for (auto &&mesh : Meshes)
         {
@@ -53,33 +53,29 @@ namespace VoxelOptimizer
                 Math::Vec3f max, min(10000, 10000, 10000);
 
                 GLTF::CMaterial Mat;
-                Mat.Name = "Mat" + std::to_string(matId);
+                Mat.Name = "Mat" + std::to_string(matId + 1);
                 Mat.Metallic = surface.FaceMaterial->Metallic;
                 Mat.Roughness = surface.FaceMaterial->Roughness;
                 Mat.Emissive = surface.FaceMaterial->Power;
                 Mat.Transparency = surface.FaceMaterial->Transparency;
                 materials.push_back(Mat);
 
-                GLTF::CBufferView position, normal, uv, indexView;
+                GLTF::CBufferView surfaceVerticesView, indexView;
 
-                position.Offset = binary.size();
-                position.Size = surface.Vertices.size() * sizeof(Math::Vec3f);
+                surfaceVerticesView.Size = surface.Vertices.size() * sizeof(SVertex);
+                surfaceVerticesView.Target = GLTF::BufferTarget::ARRAY_BUFFER;
+                surfaceVerticesView.ByteStride = sizeof(SVertex);
+                surfaceVerticesView.Offset = binary.size();
 
-                normal.Offset = position.Offset + sizeof(Math::Vec3f);//position.Size;
-                normal.Size = surface.Vertices.size() * sizeof(Math::Vec3f);
-
-                uv.Offset = normal.Offset + sizeof(Math::Vec3f);//normal.Size;
-                uv.Size = surface.Vertices.size() * sizeof(Math::Vec2f);
-
-                indexView.Offset = uv.Offset + sizeof(Math::Vec2f);//uv.Size;
+                indexView.Offset = surfaceVerticesView.Offset + surfaceVerticesView.Size;//uv.Size;
                 indexView.Size = surface.Indices.size() * sizeof(int);
+                indexView.Target = GLTF::BufferTarget::ELEMENT_ARRAY_BUFFER;
 
                 for (auto &&v : surface.Vertices)
                 {
                     max = v.Pos.max(max);
                     min = v.Pos.min(min);
                 }
-                
 
                 GLTF::CAccessor positionAccessor, normalAccessor, uvAccessor, indexAccessor;
                 positionAccessor.BufferView = bufferViews.size();
@@ -89,17 +85,19 @@ namespace VoxelOptimizer
                 positionAccessor.SetMin(min);
                 positionAccessor.SetMax(max);
 
-                normalAccessor.BufferView = bufferViews.size() + 1;
+                normalAccessor.BufferView = bufferViews.size();
                 normalAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
                 normalAccessor.Count = surface.Vertices.size();
                 normalAccessor.Type = "VEC3";
+                normalAccessor.Offset = sizeof(Math::Vec3f);
 
-                uvAccessor.BufferView = bufferViews.size() + 2;
+                uvAccessor.BufferView = bufferViews.size();
                 uvAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
                 uvAccessor.Count = surface.Vertices.size();
                 uvAccessor.Type = "VEC2";
+                uvAccessor.Offset = normalAccessor.Offset + sizeof(Math::Vec3f);
 
-                indexAccessor.BufferView = bufferViews.size() + 3;
+                indexAccessor.BufferView = bufferViews.size() + 1;
                 indexAccessor.ComponentType = GLTF::GLTFTypes::INT;
                 indexAccessor.Count = surface.Indices.size();
                 indexAccessor.Type = "SCALAR";
@@ -114,9 +112,7 @@ namespace VoxelOptimizer
 
                 GLTFMesh.Primitives.push_back(Primitive);
 
-                bufferViews.push_back(position);
-                bufferViews.push_back(normal);
-                bufferViews.push_back(uv);
+                bufferViews.push_back(surfaceVerticesView);
                 bufferViews.push_back(indexView);
 
                 accessors.push_back(positionAccessor);
@@ -124,14 +120,14 @@ namespace VoxelOptimizer
                 accessors.push_back(uvAccessor);
                 accessors.push_back(indexAccessor);
 
-                size_t Pos = binary.size();
+                size_t pos = binary.size();
 
-                binary.resize(binary.size() + position.Size + normal.Size + uv.Size + indexView.Size);
+                binary.resize(binary.size() + surfaceVerticesView.Size + indexView.Size);
 
-                memcpy(binary.data() + Pos, surface.Vertices.data(), surface.Vertices.size());
-                Pos += surface.Vertices.size();
+                memcpy(binary.data() + pos, surface.Vertices.data(), surfaceVerticesView.Size);
+                pos += surfaceVerticesView.Size;
 
-                memcpy(binary.data() + Pos, surface.Indices.data(), surface.Indices.size());
+                memcpy(binary.data() + pos, surface.Indices.data(), indexView.Size);
             }
         
             glTFMeshes.push_back(GLTFMesh);

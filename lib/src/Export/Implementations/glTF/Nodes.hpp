@@ -106,27 +106,48 @@ namespace VoxelOptimizer
                 }    
         };
 
+        enum BufferTarget : uint32_t
+        {
+            NONE = 0,
+
+            ARRAY_BUFFER = 34962,
+            ELEMENT_ARRAY_BUFFER = 34963
+        };
+
         class CBufferView
         {
             public:
+                CBufferView() : Size(0), Offset(0), Target(BufferTarget::NONE), ByteStride(0) {}
+
                 size_t Size;
                 size_t Offset;
+                BufferTarget Target;
+                size_t ByteStride;
 
                 void Serialize(CJSON &json) const
                 {
                     json.AddPair("buffer", 0);
                     json.AddPair("byteLength", Size);
                     json.AddPair("byteOffset", Offset);
+
+                    if(Target != BufferTarget::NONE)
+                        json.AddPair("target", (uint32_t)Target);
+
+                    if(ByteStride != 0)
+                        json.AddPair("byteStride", ByteStride);
                 }    
         };
 
         class CAccessor
         {
             public:
+                CAccessor() : BufferView(0), ComponentType(GLTFTypes::FLOAT), Count(0), Offset(0) {}
+
                 size_t BufferView;
                 GLTFTypes ComponentType;
                 std::string Type;
                 size_t Count;
+                size_t Offset;
 
                 inline void SetMax(Math::Vec3f Max)
                 {
@@ -152,6 +173,9 @@ namespace VoxelOptimizer
                 {
                     json.AddPair("bufferView", BufferView);
                     json.AddPair("componentType", (int)ComponentType);
+
+                    if(Offset != 0)
+                        json.AddPair("byteOffset", Offset);
 
                     if(!m_Max.empty())
                         json.AddPair("max", m_Max);

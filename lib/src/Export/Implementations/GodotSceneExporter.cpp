@@ -123,12 +123,14 @@ namespace VoxelOptimizer
 
                 arrayMesh << "\t\tIntArray(";
                 bool first = true;
-                for (auto &&i : surface.Indices)
+                
+                // Godot uses Clockwise Winding Order for culling.
+                for (size_t i = 0; i < surface.Indices.size(); i += 3)                
                 {
                     if(!first)
                         arrayMesh << ", ";
 
-                    arrayMesh << i;
+                    arrayMesh << surface.Indices[i] << ", " << surface.Indices[i + 2] << ", " << surface.Indices[i + 1];
                     first = false;
                 }
                 arrayMesh << ")" << std::endl;
