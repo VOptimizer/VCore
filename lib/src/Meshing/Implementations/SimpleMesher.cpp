@@ -49,7 +49,7 @@ namespace VoxelOptimizer
                 for(int z = _Chunk.InnerBBox.Beg.z; z <= _Chunk.InnerBBox.End.z; z++)
                 {
                     Math::Vec3i vpos(x, y, z);
-                    Voxel v = _Chunk.Chunk->findVisible(vpos, chunkBBox, Opaque);
+                    Voxel v = _Chunk.Chunk->findVisible(vpos, chunkBBox);
                     if(v)
                     {
                         for (uint8_t i = 0; i < 6; i++)

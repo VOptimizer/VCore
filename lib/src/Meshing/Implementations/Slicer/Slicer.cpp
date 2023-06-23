@@ -83,7 +83,7 @@ namespace VoxelOptimizer
         if(!CBBox(m_TotalBBox.Beg, m_TotalBBox.Beg + m_Size).ContainsPoint(v))
             return nullptr;
 
-        return m_Chunk->findVisible(v, CBBox(m_TotalBBox.Beg, m_Size), m_Opaque);
+        return m_Chunk->findVisible(v, CBBox(m_TotalBBox.Beg, m_Size));
     }
 
     void CSlicer::AddProcessedQuad(Math::Vec3i Pos, Math::Vec3i Size)

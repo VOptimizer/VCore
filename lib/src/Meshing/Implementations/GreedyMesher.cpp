@@ -138,8 +138,8 @@ namespace VoxelOptimizer
 
                             Math::Vec3f v1 = Math::Vec3f(x[0], x[1], x[2]) - BoxCenter;
                             Math::Vec3f v2 = Math::Vec3f(x[0] + du[0], x[1] + du[1], x[2] + du[2]) - BoxCenter;
-                            Math::Vec3f v3 = Math::Vec3f(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2]) - BoxCenter;
-                            Math::Vec3f v4 = Math::Vec3f(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2]) - BoxCenter;
+                            Math::Vec3f v3 = Math::Vec3f(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2]) - BoxCenter;
+                            Math::Vec3f v4 = Math::Vec3f(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2]) - BoxCenter;
 
                             // std::swap(Normal.y, Normal.z);
                             // if(Normal.y != 0)
