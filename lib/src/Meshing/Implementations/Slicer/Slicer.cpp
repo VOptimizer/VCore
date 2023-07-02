@@ -62,7 +62,7 @@ namespace VoxelOptimizer
         m_HasFace = false;
 
         V1 = GetVoxel(Pos);
-        if(!V1)
+        if(!V1 || (V1->Transparent && !IsTransparentFaceVisible(V1)))
         {
             V1 = GetVoxel(Pos + m_Neighbour);
             current = false;
@@ -142,6 +142,27 @@ namespace VoxelOptimizer
                     m_Normal = Math::Vec3i::BACK;
                     m_HasFace = IsFaceVisible(v, CVoxel::Visibility::BACKWARD);
                 }//v->Normals[CVoxel::BACKWARD];
+            }break;
+        }
+    }
+
+    bool CSlicer::IsTransparentFaceVisible(Voxel v)
+    {
+        switch (m_Axis)
+        {
+            case 0: // X-Axis
+            {
+                return IsFaceVisible(v, CVoxel::Visibility::RIGHT);
+            }break;
+
+            case 1: // Y-Axis
+            {
+                return IsFaceVisible(v, CVoxel::Visibility::UP);
+            }break;
+
+            case 2: // Z-Axis
+            {
+                return m_HasFace = IsFaceVisible(v, CVoxel::Visibility::FORWARD);
             }break;
         }
     }

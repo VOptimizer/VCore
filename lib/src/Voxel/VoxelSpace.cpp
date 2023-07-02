@@ -281,19 +281,29 @@ namespace VoxelOptimizer
             // 5. Both transparent different transparency and same color faces visible
 
             bool hideFaces = false;
-            if(!_v2->Transparent && !_v->Transparent)
+            if((!_v2->Transparent && !_v->Transparent) || (_v2->Transparent && _v->Transparent))   // 1.
                 hideFaces = true;
-            else if(_v2->Transparent && !_v->Transparent || !_v2->Transparent && _v->Transparent)
-                hideFaces = false;
-            else if(_v2->Transparent && _v->Transparent)
+            else if(!_v2->Transparent && _v->Transparent) //|| (!_v2->Transparent && _v->Transparent))   // 2.
             {
-                if(_v2->Material != _v->Material)
-                    hideFaces = false;
-                else if(_v2->Color != _v->Color)
-                    hideFaces = false;
-                else
-                    hideFaces = true;
+                const std::pair<CVoxel::Visibility, CVoxel::Visibility> &adjacent_faces = ADJACENT_FACES[_axis];
+                _v->VisibilityMask &= adjacent_faces.first;
+                _v2->VisibilityMask |= (~adjacent_faces.second);
             }
+            else if(_v2->Transparent && !_v->Transparent) // 2.
+            {
+                const std::pair<CVoxel::Visibility, CVoxel::Visibility> &adjacent_faces = ADJACENT_FACES[_axis];
+                _v->VisibilityMask |= (~adjacent_faces.first);
+                _v2->VisibilityMask &= adjacent_faces.second;
+            }
+            // else if(_v2->Transparent && _v->Transparent)
+            // {
+            //     if(_v2->Material != _v->Material)    // 3.
+            //         hideFaces = false;
+            //     else if(_v2->Color != _v->Color) // 5.
+            //         hideFaces = false;
+            //     else // 4.
+            //         hideFaces = true;
+            // }
 
             if(hideFaces)
             {

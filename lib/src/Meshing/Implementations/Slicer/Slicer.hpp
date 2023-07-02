@@ -77,6 +77,8 @@ namespace VoxelOptimizer
             ~CSlicer() = default;
         private:
             void SetFaceNormal(Voxel v, bool IsCurrent);
+            bool IsTransparentFaceVisible(Voxel v);
+
             Voxel GetVoxel(const Math::Vec3i &v);
 
             VoxelMesh m_Mesh;
