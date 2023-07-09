@@ -59,6 +59,16 @@ namespace VoxelOptimizer
                 return (_Vec.x >= Beg.x && _Vec.y >= Beg.y && _Vec.z >= Beg.z) && (_Vec.x < End.x && _Vec.y < End.y && _Vec.z < End.z);
             }
 
+            inline Math::Vec3f GetExtent() const
+            {
+                return Math::Vec3f(End) - GetCenter();
+            }
+
+            inline Math::Vec3f GetCenter() const 
+            {
+                return ((Math::Vec3f(Beg) + Math::Vec3f(End)) * 0.5f);
+            }
+
             inline CBBox& operator=(const CBBox &_Other)
             {
                 Beg = _Other.Beg;

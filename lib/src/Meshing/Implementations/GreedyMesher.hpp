@@ -33,8 +33,8 @@ namespace VoxelOptimizer
     class CGreedyMesher : public IMesher
     {
         public:
-            CGreedyMesher() = default;
-            ~CGreedyMesher() = default;
+            CGreedyMesher() : IMesher() {}
+            virtual ~CGreedyMesher() = default;
         protected:
             SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque) override;
     };

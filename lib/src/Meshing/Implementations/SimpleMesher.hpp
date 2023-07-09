@@ -32,8 +32,8 @@ namespace VoxelOptimizer
     class CSimpleMesher : public IMesher
     {
         public:
-            CSimpleMesher() = default;
-            ~CSimpleMesher() = default;
+            CSimpleMesher() : IMesher() {}
+            virtual ~CSimpleMesher() = default;
 
         protected:
             SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque) override;

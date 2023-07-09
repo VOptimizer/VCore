@@ -28,6 +28,7 @@
 #include <VoxelOptimizer/Math/Vector.hpp>
 #include <VoxelOptimizer/Voxel/BBox.hpp>
 #include <VoxelOptimizer/Voxel/Voxel.hpp>
+#include <VoxelOptimizer/Voxel/Frustum.hpp>
 
 #include <list>
 
@@ -200,7 +201,7 @@ namespace VoxelOptimizer
              * @return Gets a list of all chunks which has been modified.
              * @note Marks all chunks as processed.
              */
-            std::list<SChunkMeta> queryDirtyChunks() const;
+            std::list<SChunkMeta> queryDirtyChunks(const CFrustum *_Frustum = nullptr) const;
 
             /**
              * @brief Marks a dirty chunks as clean.
@@ -210,7 +211,7 @@ namespace VoxelOptimizer
             /**
              * @return Returns all chunks.
              */
-            std::list<SChunkMeta> queryChunks() const;
+            std::list<SChunkMeta> queryChunks(const CFrustum *_Frustum = nullptr) const;
 
             /**
              * @brief Generates and updates all the visibility masks of the voxels.

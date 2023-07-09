@@ -110,14 +110,14 @@ namespace VoxelOptimizer
         return m_Voxels.queryVisible(opaque);
     }
 
-    std::list<SChunkMeta> CVoxelMesh::QueryDirtyChunks()
+    std::list<SChunkMeta> CVoxelMesh::QueryDirtyChunks(const CFrustum *_Frustum)
     {
-        return m_Voxels.queryDirtyChunks();
+        return m_Voxels.queryDirtyChunks(_Frustum);
     }
 
-    std::list<SChunkMeta> CVoxelMesh::QueryChunks() const
+    std::list<SChunkMeta> CVoxelMesh::QueryChunks(const CFrustum *_Frustum) const
     {
-        return m_Voxels.queryChunks();
+        return m_Voxels.queryChunks(_Frustum);
     }
     
     void CVoxelMesh::SetNormal(const Math::Vec3i &Pos, const Math::Vec3i &Neighbor, bool IsInvisible)

@@ -49,9 +49,9 @@ namespace VoxelOptimizer
 
         std::list<SChunkMeta> chunks;
         if(!_OnlyDirty)
-            chunks = _Mesh->QueryChunks();
+            chunks = _Mesh->QueryChunks(m_Frustum);
         else
-            chunks = _Mesh->QueryDirtyChunks();
+            chunks = _Mesh->QueryDirtyChunks(m_Frustum);
 
         std::list<std::future<SMeshChunk>> futures;
         int counter = 0;
@@ -189,6 +189,26 @@ namespace VoxelOptimizer
         }
 
         return ret;
+    }
+
+    void IMesher::SetFrustum(const CFrustum *_Frustum)
+    {
+        if(_Frustum && !m_Frustum)
+            m_Frustum = new CFrustum(*_Frustum);
+        else if(_Frustum)
+            *m_Frustum = *_Frustum;
+        else
+        {
+            if(m_Frustum)
+                delete m_Frustum;
+            m_Frustum = nullptr;
+        }
+    }
+
+    IMesher::~IMesher()
+    {
+        if(m_Frustum)
+            delete m_Frustum;
     }
 
     Mesher IMesher::Create(MesherTypes type)

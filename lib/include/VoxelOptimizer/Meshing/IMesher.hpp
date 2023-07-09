@@ -50,7 +50,7 @@ namespace VoxelOptimizer
     class IMesher
     {
         public:
-            IMesher() = default;
+            IMesher() : m_Frustum(nullptr) {}
 
             /**
              * @brief Creates a new mesher instance.
@@ -68,6 +68,11 @@ namespace VoxelOptimizer
             Mesh GenerateMesh(VoxelMesh m);
 
             /**
+             * @brief Sets a frustum, for culling.
+             */
+            void SetFrustum(const CFrustum *_Frustum);
+
+            /**
              * @brief Generates list of meshed chunks.
              * 
              * @param _Mesh: Voxel mesh to meshify.
@@ -76,11 +81,13 @@ namespace VoxelOptimizer
              */
             virtual std::list<SMeshChunk> GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty = false, int _ChunkCount = -1);
 
-            virtual ~IMesher() = default;
+            virtual ~IMesher();
         protected:
             virtual SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque) { return {}; }
 
             std::list<Mesh> GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds = false);
+
+            CFrustum *m_Frustum;
     };
 }
 
