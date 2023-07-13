@@ -25,7 +25,7 @@
 #ifndef OPTIMIZEMESHER_HPP
 #define OPTIMIZEMESHER_HPP
 
-#include <list>
+#include <vector>
 #include <VoxelOptimizer/Meshing/IMesher.hpp>
 
 namespace VoxelOptimizer

@@ -37,7 +37,11 @@ namespace VoxelOptimizer
             CPlane(CPlane &&_Other) { *this = std::move(_Other); }
             CPlane(const CPlane &_Other) { *this = _Other; }
             CPlane(float _Distance, const Math::Vec3f &_Normal) : Distance(_Distance), Normal(_Normal) {}
-            CPlane(const Math::Vec3f &_Point, const Math::Vec3f &_Normal) : Normal(_Normal.normalize()), Distance(Normal.dot(_Point)) {}
+            CPlane(const Math::Vec3f &_Point, const Math::Vec3f &_Normal) : Normal(_Normal.normalize())
+            {
+                Normal.zero_approx();
+                Distance = Normal.dot(_Point);
+            }
 
             float Distance;
             Math::Vec3f Normal;
@@ -85,11 +89,16 @@ namespace VoxelOptimizer
             inline bool IsOnFrustum(const CBBox &_BBox) const
             {
                 Math::Vec3f center = _BBox.GetCenter();
-                Math::Vec3f extent = _BBox.GetExtent();
+                Math::Vec3f extents = _BBox.GetExtents();
 
-                return IsOnOrForwardPlane(Near, center, extent) && IsOnOrForwardPlane(Far, center, extent) &&
-                       IsOnOrForwardPlane(Left, center, extent) && IsOnOrForwardPlane(Right, center, extent) &&
-                       IsOnOrForwardPlane(Top, center, extent) && IsOnOrForwardPlane(Bottom, center, extent);
+                bool b = IsOnOrForwardPlane(Near, center, extents);
+                bool b1 = IsOnOrForwardPlane(Left, center, extents);
+                bool b2 = IsOnOrForwardPlane(Top, center, extents);
+                bool b3 = IsOnOrForwardPlane(Far, center, extents);
+                bool b4 = IsOnOrForwardPlane(Right, center, extents);
+                bool b5 = IsOnOrForwardPlane(Bottom, center, extents);
+
+                return b && b1 && b2 && b3 && b4 && b5;
             }
 
             inline static CFrustum Create(const Math::Vec3f &_CamPosition, const Math::Vec3f &_CamFront, const Math::Vec3f &_CamRight, const Math::Vec3f &_CamUp, float _Aspect, float _Fov, float _Near, float _Far)

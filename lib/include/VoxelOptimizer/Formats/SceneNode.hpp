@@ -35,7 +35,7 @@ namespace VoxelOptimizer
     class CSceneNode
     {
         public:
-            using SceneNodes = std::list<SceneNode>;
+            using SceneNodes = std::vector<SceneNode>;
 
             CSceneNode() : m_Scale(1, 1, 1), m_Parent(nullptr), Visible(true) {}
 

@@ -60,7 +60,7 @@ namespace VoxelOptimizer
             /**
              * @brief Generates the scene
              */
-            std::list<Mesh> GenerateScene(SceneNode sceneTree, bool mergeChilds = false);
+            std::vector<Mesh> GenerateScene(SceneNode sceneTree, bool mergeChilds = false);
 
             /**
              * @return Returns the voxel mesh as triangulated vertices mesh.
@@ -79,13 +79,13 @@ namespace VoxelOptimizer
              * @param _OnlyDirty: Meshes only dirty chunks.
              * @param _ChunkCount: Count of chunks to meshify.
              */
-            virtual std::list<SMeshChunk> GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty = false, int _ChunkCount = -1);
+            virtual std::vector<SMeshChunk> GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty = false, int _ChunkCount = -1);
 
             virtual ~IMesher();
         protected:
             virtual SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque) { return {}; }
 
-            std::list<Mesh> GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds = false);
+            std::vector<Mesh> GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds = false);
 
             CFrustum *m_Frustum;
     };

@@ -384,10 +384,10 @@ namespace VoxelOptimizer
         return chunk;
     }
 
-    std::list<SMeshChunk> CMarchingCubesMesher::GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty, int _ChunkCount)
+    std::vector<SMeshChunk> CMarchingCubesMesher::GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty, int _ChunkCount)
     {
         m_Mesh = _Mesh;
-        std::list<SMeshChunk> ret = IMesher::GenerateChunks(_Mesh, _OnlyDirty, _ChunkCount);
+        std::vector<SMeshChunk> ret = IMesher::GenerateChunks(_Mesh, _OnlyDirty, _ChunkCount);
         for (auto &&pair : ret)
         {
             auto mesh = pair.Mesh;

@@ -28,7 +28,7 @@
 #include <array>
 #include <VoxelOptimizer/Voxel/Voxel.hpp>
 #include <VoxelOptimizer/Voxel/BBox.hpp>
-#include <list>
+#include <vector>
 #include <VoxelOptimizer/Math/Mat4x4.hpp>
 #include <VoxelOptimizer/Meshing/Material.hpp>
 #include <VoxelOptimizer/Voxel/VoxelSpace.hpp>
@@ -184,12 +184,12 @@ namespace VoxelOptimizer
              * @return Gets a list of all chunks which has been modified.
              * @note Marks all chunks as processed.
              */
-            std::list<SChunkMeta> QueryDirtyChunks(const CFrustum *_Frustum = nullptr);
+            std::vector<SChunkMeta> QueryDirtyChunks(const CFrustum *_Frustum = nullptr);
 
             /**
              * @return Returns all chunks.
              */
-            std::list<SChunkMeta> QueryChunks(const CFrustum *_Frustum = nullptr) const;
+            std::vector<SChunkMeta> QueryChunks(const CFrustum *_Frustum = nullptr) const;
             
             ~CVoxelMesh() = default;
         private:   

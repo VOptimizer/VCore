@@ -39,6 +39,7 @@ namespace VoxelOptimizer
         {
             int idx = _Surface.Vertices.size();
             _Surface.Vertices.push_back(_Vertex);
+            _Surface.Index.insert({_Vertex, idx});
             return idx;
         }
 
@@ -47,9 +48,14 @@ namespace VoxelOptimizer
 
     void CMeshBuilder::AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, Material _material)
     {
-        auto it = m_Surfaces.find(_material);
-        if(it == m_Surfaces.end())
-            it = m_Surfaces.insert({_material, SIndexedSurface()}).first;
+        if(!m_CachedSurface || m_CachedSurface->FaceMaterial != _material)
+        {
+            auto it = m_Surfaces.find((size_t)_material.get());
+            if(it == m_Surfaces.end())
+                it = m_Surfaces.insert({(size_t)_material.get(), SIndexedSurface(_material)}).first;
+            m_CachedSurface = &it->second;
+            m_CachedSurface->Index.reserve(100);
+        }
 
         Math::Vec3f faceNormal = (_v2 - _v1).cross(_v3 - _v1).normalize();
 
@@ -79,39 +85,39 @@ namespace VoxelOptimizer
         }
 
         int i1, i2, i3, i4;
-        i1 = AddVertex(SVertex(_v1, _normal, uv1), it->second);
-        i2 = AddVertex(SVertex(_v2, _normal, uv2), it->second);
-        i3 = AddVertex(SVertex(_v3, _normal, uv3), it->second);
-        i4 = AddVertex(SVertex(_v4, _normal, uv4), it->second);
+        i1 = AddVertex(SVertex(_v1, _normal, uv1), *m_CachedSurface);
+        i2 = AddVertex(SVertex(_v2, _normal, uv2), *m_CachedSurface);
+        i3 = AddVertex(SVertex(_v3, _normal, uv3), *m_CachedSurface);
+        i4 = AddVertex(SVertex(_v4, _normal, uv4), *m_CachedSurface);
 
         // Checks the direction of the face.
         if(faceNormal == _normal)
         {
-            it->second.Indices.push_back(i1);
-            it->second.Indices.push_back(i2);
-            it->second.Indices.push_back(i3);
+            m_CachedSurface->Indices.push_back(i1);
+            m_CachedSurface->Indices.push_back(i2);
+            m_CachedSurface->Indices.push_back(i3);
 
-            it->second.Indices.push_back(i2);
-            it->second.Indices.push_back(i4);
-            it->second.Indices.push_back(i3);
+            m_CachedSurface->Indices.push_back(i2);
+            m_CachedSurface->Indices.push_back(i4);
+            m_CachedSurface->Indices.push_back(i3);
         }
         else
         {
-            it->second.Indices.push_back(i3);
-            it->second.Indices.push_back(i2);
-            it->second.Indices.push_back(i1);
+            m_CachedSurface->Indices.push_back(i3);
+            m_CachedSurface->Indices.push_back(i2);
+            m_CachedSurface->Indices.push_back(i1);
 
-            it->second.Indices.push_back(i3);
-            it->second.Indices.push_back(i4);
-            it->second.Indices.push_back(i2);
+            m_CachedSurface->Indices.push_back(i3);
+            m_CachedSurface->Indices.push_back(i4);
+            m_CachedSurface->Indices.push_back(i2);
         }
     }
    
     void CMeshBuilder::AddFace(SVertex v1, SVertex v2, SVertex v3, Material _material)
     {        
-        auto it = m_Surfaces.find(_material);
+        auto it = m_Surfaces.find((size_t)_material.get());
         if(it == m_Surfaces.end())
-            it = m_Surfaces.insert({_material, SIndexedSurface()}).first;
+            it = m_Surfaces.insert({(size_t)_material.get(), SIndexedSurface(_material)}).first;
 
         int i1, i2, i3;
         i1 = AddVertex(v1, it->second);
@@ -130,7 +136,7 @@ namespace VoxelOptimizer
         {
             ret->Surfaces.emplace_back();
             SSurface *currentSurface = &ret->Surfaces.back();
-            currentSurface->FaceMaterial = surface.first;
+            currentSurface->FaceMaterial = surface.second.FaceMaterial;
 
             currentSurface->Vertices = std::move(surface.second.Vertices);
             currentSurface->Indices = std::move(surface.second.Indices);
@@ -164,7 +170,7 @@ namespace VoxelOptimizer
         {
             ret->Surfaces.emplace_back();
             SSurface *currentSurface = &ret->Surfaces.back();
-            currentSurface->FaceMaterial = surface.first;
+            currentSurface->FaceMaterial = surface.second.FaceMaterial;
 
             currentSurface->Vertices = std::move(surface.second.Vertices);
             currentSurface->Indices = std::move(surface.second.Indices);
@@ -180,9 +186,9 @@ namespace VoxelOptimizer
     {
         for (auto &&surface : _MergeInto->Surfaces)
         {
-            auto it = m_Surfaces.find(surface.FaceMaterial);
+            auto it = m_Surfaces.find((size_t)surface.FaceMaterial.get());
             if(it == m_Surfaces.end())
-                it = m_Surfaces.insert({surface.FaceMaterial, SIndexedSurface()}).first;
+                it = m_Surfaces.insert({(size_t)surface.FaceMaterial.get(), SIndexedSurface(surface.FaceMaterial)}).first;
 
             it->second.Indices = surface.Indices;
             it->second.Vertices = surface.Vertices;
@@ -206,9 +212,9 @@ namespace VoxelOptimizer
 
         for (auto &&surface : m->Surfaces)
         {
-            auto it = m_Surfaces.find(surface.FaceMaterial);
+            auto it = m_Surfaces.find((size_t)surface.FaceMaterial.get());
             if(it == m_Surfaces.end())
-                it = m_Surfaces.insert({surface.FaceMaterial, SIndexedSurface()}).first;
+                it = m_Surfaces.insert({(size_t)surface.FaceMaterial.get(), SIndexedSurface(surface.FaceMaterial)}).first;
 
             for (size_t i = 0; i < surface.Indices.size(); i += 3)
             {

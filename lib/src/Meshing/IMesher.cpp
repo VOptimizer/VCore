@@ -36,24 +36,24 @@ namespace VoxelOptimizer
     bool is_ready(std::future<R> const& f)
     { return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }
 
-    std::list<Mesh> IMesher::GenerateScene(SceneNode sceneTree, bool mergeChilds)
+    std::vector<Mesh> IMesher::GenerateScene(SceneNode sceneTree, bool mergeChilds)
     {
         return GenerateScene(sceneTree, Math::Mat4x4(), mergeChilds);
     }
 
-    std::list<SMeshChunk> IMesher::GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty, int _ChunkCount)
+    std::vector<SMeshChunk> IMesher::GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty, int _ChunkCount)
     {
-        std::list<SMeshChunk> ret;
+        std::vector<SMeshChunk> ret;
 
         // m_Voxels = _Mesh->QueryVisible(true);
 
-        std::list<SChunkMeta> chunks;
+        std::vector<SChunkMeta> chunks;
         if(!_OnlyDirty)
             chunks = _Mesh->QueryChunks(m_Frustum);
         else
             chunks = _Mesh->QueryDirtyChunks(m_Frustum);
 
-        std::list<std::future<SMeshChunk>> futures;
+        std::vector<std::future<SMeshChunk>> futures;
         int counter = 0;
         for (auto &&c : chunks)
         {
@@ -153,9 +153,9 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    std::list<Mesh> IMesher::GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds)
+    std::vector<Mesh> IMesher::GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds)
     {
-        std::list<Mesh> ret;
+        std::vector<Mesh> ret;
 
         if(!mergeChilds)
             modelMatrix = modelMatrix * sceneTree->ModelMatrix();

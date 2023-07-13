@@ -59,7 +59,7 @@ namespace VoxelOptimizer
 
     struct SMesh
     {
-        std::list<SSurface> Surfaces;                   //!< All surfaces of this mesh.
+        std::vector<SSurface> Surfaces;                 //!< All surfaces of this mesh.
         std::map<TextureType, Texture> Textures;        //!< Texture used by this mesh.
         Math::Mat4x4 ModelMatrix;                       //!< Modelmatrix according to the voxel file.
     };
@@ -69,12 +69,14 @@ namespace VoxelOptimizer
     {
         size_t operator()(const SVertex &_Vertex) const
         {
-            // djb2
-            char *data = (char*)&_Vertex;
-            size_t hash = 5381;
-            for (int i = 0; i < sizeof(SVertex); i++)
-                hash = ((hash << 5) + hash) + data[i];
-            return hash;
+            Math::Vec3fHasher v3fhasher;
+            Math::Vec2fHasher v2fhasher;
+
+            size_t ph = v3fhasher(_Vertex.Pos);
+            size_t nh = v3fhasher(_Vertex.Normal);
+            size_t uvh = v2fhasher(_Vertex.UV);
+
+            return ((ph * 73856093) ^ (nh * 19349663) ^ (uvh * 83492791));
         }
     };
 }

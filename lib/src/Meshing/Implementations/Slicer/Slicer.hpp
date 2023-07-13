@@ -90,7 +90,7 @@ namespace VoxelOptimizer
             bool m_Opaque;
             bool m_HasFace;
 
-            std::list<std::pair<Math::Vec3i, Math::Vec3i>> m_ProcessedQuads;
+            std::vector<std::pair<Math::Vec3i, Math::Vec3i>> m_ProcessedQuads;
             const CChunk *m_Chunk;
             const CBBox &m_TotalBBox;
             const Math::Vec3i m_Size;

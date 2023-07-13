@@ -58,5 +58,6 @@
 #include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
 #include <VoxelOptimizer/Voxel/PlanesVoxelizer.hpp>
 #include <VoxelOptimizer/Voxel/VoxelTextureMap.hpp>
+#include <VoxelOptimizer/Voxel/Frustum.hpp>
 
 #endif //VOXELOPTIMIZER_HPP

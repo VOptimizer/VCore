@@ -170,9 +170,9 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    std::list<SChunkMeta> CVoxelSpace::queryDirtyChunks(const CFrustum *_Frustum) const
+    std::vector<SChunkMeta> CVoxelSpace::queryDirtyChunks(const CFrustum *_Frustum) const
     {
-        std::list<SChunkMeta> ret;
+        std::vector<SChunkMeta> ret;
         int counter = 0;
         for (auto &&c : m_Chunks)
         {
@@ -196,18 +196,18 @@ namespace VoxelOptimizer
             it->second.IsDirty = false;
     }
 
-    std::list<SChunkMeta> CVoxelSpace::queryChunks(const CFrustum *_Frustum) const
+    std::vector<SChunkMeta> CVoxelSpace::queryChunks(const CFrustum *_Frustum) const
     {
-        std::list<SChunkMeta> ret;
+        std::vector<SChunkMeta> ret;
         for (auto &&c : m_Chunks)
         {
-            CBBox bbox(c.first, c.first + m_ChunkSize);
             if(_Frustum)
             {
-                if(!_Frustum->IsOnFrustum(bbox))
+                if(!_Frustum->IsOnFrustum(c.second.inner_bbox(c.first)))
                     continue;
             }
 
+            CBBox bbox(c.first, c.first + m_ChunkSize);
             ret.push_back({(size_t)&c.second, &c.second, bbox, c.second.inner_bbox(c.first)});
         }
         return ret;

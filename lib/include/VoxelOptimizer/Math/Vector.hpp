@@ -297,16 +297,21 @@ namespace VoxelOptimizer
                     return TVector3(fabs(x), fabs(y), fabs(z));
                 }
 
-                ~TVector3() = default;
-
-                class Hasher
+                inline TVector3 &zero_approx()
                 {
-                    public:
-                        std::size_t operator()(TVector3<T> const& _Vec) const noexcept
-                        {
-                            return (((int)_Vec.x * 73856093) ^ ((int)_Vec.y * 19349663) ^ ((int)_Vec.z * 83492791));
-                        }
-                };
+                    if(fabs(x) < 0.00001f)
+                        x = 0;
+
+                    if(fabs(y) < 0.00001f)
+                        y = 0;
+
+                    if(fabs(z) < 0.00001f)
+                        z = 0;
+
+                    return *this;
+                }
+
+                ~TVector3() = default;
         };
 
         class Vec4f
@@ -428,13 +433,64 @@ namespace VoxelOptimizer
         {
             return Vec3f(_Vec.x - (int)_Vec.x, _Vec.y - (int)_Vec.y, _Vec.z - (int)_Vec.z);
         }
+
+        class Vec2fHasher
+        {
+            public:
+                std::size_t operator()(Vec2f const& _Vec) const noexcept
+                {
+                    union Floatconvert
+                    {
+                        float f;
+                        int i;
+                    };
+
+                    Floatconvert x, y, z;
+                    x.f = _Vec.x;
+                    y.f = _Vec.y;
+
+                    return (x.i * 73856093) ^ (y.i * 19349663);
+                }
+        };
+
+        class Vec3fHasher
+        {
+            public:
+                std::size_t operator()(Vec3f const& _Vec) const noexcept
+                {
+                    union Floatconvert
+                    {
+                        float f;
+                        int i;
+                    };
+
+                    Floatconvert x, y, z;
+                    x.f = _Vec.x;
+                    y.f = _Vec.y;
+                    z.f = _Vec.z;
+                    
+
+                    // http://www.beosil.com/download/CollisionDetectionHashing_VMV03.pdf
+                    return ((x.i * 73856093) ^ (y.i * 19349663) ^ (z.i * 83492791));
+                }
+        };
+
+        class Vec3iHasher
+        {
+            public:
+                std::size_t operator()(Vec3i const& _Vec) const noexcept
+                {
+                    // http://www.beosil.com/download/CollisionDetectionHashing_VMV03.pdf
+                    return ((_Vec.x * 73856093) ^ (_Vec.y * 19349663) ^ (_Vec.z * 83492791));
+                }
+        };
     }
 
     template<class T, class KeyEqual = std::equal_to<Math::Vec3f>>
-    using VectorMap = std::unordered_map<Math::Vec3f, T, Math::Vec3f::Hasher, KeyEqual>;
+    using VectorMap = std::unordered_map<Math::Vec3f, T, Math::Vec3fHasher, KeyEqual>;
 
     template<class T, class KeyEqual = std::equal_to<Math::Vec3i>>
-    using VectoriMap = std::unordered_map<Math::Vec3i, T, Math::Vec3i::Hasher, KeyEqual>;
+    using VectoriMap = std::unordered_map<Math::Vec3i, T, Math::Vec3iHasher, KeyEqual>;
 }
 
 #endif //VECTOR_HPP

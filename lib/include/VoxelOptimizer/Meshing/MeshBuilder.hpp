@@ -37,7 +37,7 @@ namespace VoxelOptimizer
     class CMeshBuilder
     {
         public:
-            CMeshBuilder() : m_TextureMap(nullptr) {}
+            CMeshBuilder() : m_TextureMap(nullptr), m_CachedSurface(nullptr) {}
 
             /**
              * @brief Sets the texturing map.
@@ -89,8 +89,9 @@ namespace VoxelOptimizer
         private:
             struct SIndexedSurface
             {
-                SIndexedSurface() = default;
+                SIndexedSurface(const Material &_Material) : FaceMaterial(_Material) {}
 
+                Material FaceMaterial;
                 std::unordered_map<SVertex, int, VertexHasher> Index;
 
                 std::vector<int> Indices;
@@ -103,10 +104,11 @@ namespace VoxelOptimizer
             void GenerateCache(Mesh _MergeInto);
 
             const std::map<TextureType, Texture> *m_Textures;
-            std::map<Material, SIndexedSurface, std::less<Material>> m_Surfaces;
+            std::unordered_map<size_t, SIndexedSurface> m_Surfaces;
             Mesh m_MergerMesh;
 
             CVoxelTextureMap *m_TextureMap;
+            SIndexedSurface *m_CachedSurface;
     };
 }
 

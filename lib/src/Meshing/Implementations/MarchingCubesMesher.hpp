@@ -35,7 +35,7 @@ namespace VoxelOptimizer
         public:
             CMarchingCubesMesher() : IMesher() {}
 
-            std::list<SMeshChunk> GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty = false, int _ChunkCount = -1) override;
+            std::vector<SMeshChunk> GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty = false, int _ChunkCount = -1) override;
 
             virtual ~CMarchingCubesMesher() = default;
 
