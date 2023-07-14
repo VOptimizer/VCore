@@ -110,12 +110,17 @@ namespace VoxelOptimizer
         return m_Voxels.queryVisible(opaque);
     }
 
-    std::vector<SChunkMeta> CVoxelMesh::QueryDirtyChunks(const CFrustum *_Frustum)
+    CVoxelMesh::VoxelData::querylist CVoxelMesh::QueryDirtyChunks()
     {
-        return m_Voxels.queryDirtyChunks(_Frustum);
+        return m_Voxels.queryDirtyChunks();
     }
 
-    std::vector<SChunkMeta> CVoxelMesh::QueryChunks(const CFrustum *_Frustum) const
+    CVoxelMesh::VoxelData::querylist CVoxelMesh::QueryChunks() const
+    {
+        return m_Voxels.queryChunks();
+    }
+
+    CVoxelMesh::VoxelData::querylist CVoxelMesh::QueryChunks(const CFrustum *_Frustum) const
     {
         return m_Voxels.queryChunks(_Frustum);
     }

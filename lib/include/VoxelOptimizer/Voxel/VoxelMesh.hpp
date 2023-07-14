@@ -184,12 +184,17 @@ namespace VoxelOptimizer
              * @return Gets a list of all chunks which has been modified.
              * @note Marks all chunks as processed.
              */
-            std::vector<SChunkMeta> QueryDirtyChunks(const CFrustum *_Frustum = nullptr);
+            VoxelData::querylist QueryDirtyChunks();
 
             /**
              * @return Returns all chunks.
              */
-            std::vector<SChunkMeta> QueryChunks(const CFrustum *_Frustum = nullptr) const;
+            VoxelData::querylist QueryChunks() const;
+
+            /**
+             * @return Returns all chunks inside of the frustum
+             */
+            VoxelData::querylist QueryChunks(const CFrustum *_Frustum) const;
             
             ~CVoxelMesh() = default;
         private:   

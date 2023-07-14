@@ -139,7 +139,7 @@ namespace VoxelOptimizer
              * @param materials: vector in which the materials are merged into
              * @param meshes: Voxel meshes from another file
              */
-            static void Combine(std::map<TextureType, Texture> &textures, std::vector<Material> &materials, const std::vector<VoxelMesh> &meshes);
+            // static void Combine(std::map<TextureType, Texture> &textures, std::vector<Material> &materials, const std::vector<VoxelMesh> &meshes);
         protected:
             virtual void ClearCache();
 

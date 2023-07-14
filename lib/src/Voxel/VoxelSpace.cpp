@@ -28,6 +28,144 @@
 namespace VoxelOptimizer
 {
     //////////////////////////////////////////////////
+    // CChunkQueryList functions
+    //////////////////////////////////////////////////
+
+    CChunkQueryList::iterator CChunkQueryList::begin()
+    {
+        auto it = CChunkQueryIterator(this, m_Chunks->begin());
+        it++;
+        return it;
+    }
+
+    CChunkQueryList::iterator CChunkQueryList::end()
+    {
+        return CChunkQueryIterator(this, m_Chunks->end());
+    }
+
+    CChunkQueryList::iterator CChunkQueryList::begin() const
+    {
+        auto it = CChunkQueryIterator(this, m_Chunks->begin());
+        it++;
+        return it;
+    }
+
+    CChunkQueryList::iterator CChunkQueryList::end() const
+    {
+        return CChunkQueryIterator(this, m_Chunks->end());
+    }
+    
+    CChunkQueryList::operator std::vector<SChunkMeta>() const
+    {
+        std::vector<SChunkMeta> ret;
+
+        auto begIT = begin();
+        auto endIT = end();
+
+        while(begIT != endIT)
+        {
+            ret.push_back(*begIT);
+            begIT++;
+        }
+
+        return ret;
+    }
+
+    CChunkQueryList &CChunkQueryList::operator=(const CChunkQueryList &_Other)
+    {
+        m_Chunks = _Other.m_Chunks;
+        m_FilterFunction = _Other.m_FilterFunction;
+        m_Userdata = _Other.m_Userdata;
+        m_ChunkSize = _Other.m_ChunkSize;
+        return *this;
+    }
+
+    CChunkQueryList &CChunkQueryList::operator=(CChunkQueryList &&_Other)
+    {
+        m_Chunks = _Other.m_Chunks;
+        m_FilterFunction = _Other.m_FilterFunction;
+        m_Userdata = _Other.m_Userdata;
+        m_ChunkSize = _Other.m_ChunkSize;
+
+        _Other.m_Chunks = nullptr;
+        _Other.m_FilterFunction = nullptr;
+        _Other.m_Userdata = nullptr;
+        _Other.m_ChunkSize = Math::Vec3i();
+        return *this;
+    }
+
+    SChunkMeta CChunkQueryList::FilterNext(std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator &_Iterator) const
+    {
+        while (true)
+        {
+            _Iterator++;
+            if(_Iterator == m_Chunks->end())
+                return SChunkMeta();
+
+            CBBox bbox(_Iterator->first, _Iterator->first + m_ChunkSize);
+            bool filtered = !m_FilterFunction;
+            if(m_FilterFunction)
+                filtered = m_FilterFunction(bbox, _Iterator->second, m_Userdata);
+
+            if(filtered)
+                return {(size_t)&_Iterator->second, &_Iterator->second, bbox, _Iterator->second.inner_bbox(_Iterator->first)};
+        }
+    }
+
+    //////////////////////////////////////////////////
+    // CChunkQueryList::CChunkQueryIterator functions
+    //////////////////////////////////////////////////
+
+    const CChunkQueryList::CChunkQueryIterator::reference CChunkQueryList::CChunkQueryIterator::operator*() const
+    {
+        return m_ChunkMeta;
+    }
+
+    const CChunkQueryList::CChunkQueryIterator::pointer CChunkQueryList::CChunkQueryIterator::operator->() const
+    {
+        return &m_ChunkMeta;
+    }
+
+    CChunkQueryList::CChunkQueryIterator& CChunkQueryList::CChunkQueryIterator::operator++()
+    {
+        m_ChunkMeta = m_Parent->FilterNext(m_Iterator);
+        return *this;
+    }
+
+    CChunkQueryList::CChunkQueryIterator& CChunkQueryList::CChunkQueryIterator::operator++(int)
+    {
+        m_ChunkMeta = m_Parent->FilterNext(m_Iterator);
+        return *this;
+    }
+
+    bool CChunkQueryList::CChunkQueryIterator::operator!=(const CChunkQueryIterator &_Rhs)
+    {
+        return m_Iterator != _Rhs.m_Iterator;
+    }
+
+    bool CChunkQueryList::CChunkQueryIterator::operator==(const CChunkQueryIterator &_Rhs)
+    {
+        return m_Iterator == _Rhs.m_Iterator;
+    }
+
+    CChunkQueryList::CChunkQueryIterator& CChunkQueryList::CChunkQueryIterator::operator=(const CChunkQueryIterator &_Other)
+    {
+        m_ChunkMeta = _Other.m_ChunkMeta;
+        m_Parent = _Other.m_Parent;
+        m_Iterator = _Other.m_Iterator;
+        return *this;
+    }
+
+    CChunkQueryList::CChunkQueryIterator& CChunkQueryList::CChunkQueryIterator::operator=(CChunkQueryIterator &&_Other)
+    {
+        m_ChunkMeta = _Other.m_ChunkMeta;
+        m_Parent = _Other.m_Parent;
+        _Other.m_Parent = nullptr;
+        m_Iterator = std::move(_Other.m_Iterator);
+        return *this;
+    }
+
+    //////////////////////////////////////////////////
     // CVoxelSpace functions
     //////////////////////////////////////////////////
 
@@ -170,23 +308,28 @@ namespace VoxelOptimizer
         return ret;
     }
 
-    std::vector<SChunkMeta> CVoxelSpace::queryDirtyChunks(const CFrustum *_Frustum) const
+    CVoxelSpace::querylist CVoxelSpace::queryDirtyChunks() const
     {
-        std::vector<SChunkMeta> ret;
-        int counter = 0;
-        for (auto &&c : m_Chunks)
-        {
-            CBBox bbox(c.first, c.first + m_ChunkSize);
-            if(_Frustum)
-            {
-                if(!_Frustum->IsOnFrustum(bbox))
-                    continue;
-            }
+        // std::vector<SChunkMeta> ret;
+        // int counter = 0;
+        // for (auto &&c : m_Chunks)
+        // {
+        //     CBBox bbox(c.first, c.first + m_ChunkSize);
+        //     if(_Frustum)
+        //     {
+        //         if(!_Frustum->IsOnFrustum(bbox))
+        //             continue;
+        //     }
 
-            if(c.second.IsDirty)
-                ret.push_back({(size_t)&c.second, &c.second, bbox, c.second.inner_bbox(c.first)});
-        }
-        return ret;
+        //     if(c.second.IsDirty)
+        //         ret.push_back({(size_t)&c.second, &c.second, bbox, c.second.inner_bbox(c.first)});
+        // }
+        // return ret;
+
+        return CChunkQueryList(m_Chunks, m_ChunkSize, [](const CBBox &_BBox, const CChunk &_Chunk, void *_Userdata)
+        {
+            return _Chunk.IsDirty;
+        });
     }
 
     void CVoxelSpace::markAsProcessed(const SChunkMeta &_Chunk)
@@ -196,21 +339,32 @@ namespace VoxelOptimizer
             it->second.IsDirty = false;
     }
 
-    std::vector<SChunkMeta> CVoxelSpace::queryChunks(const CFrustum *_Frustum) const
+    CVoxelSpace::querylist CVoxelSpace::queryChunks() const
     {
-        std::vector<SChunkMeta> ret;
-        for (auto &&c : m_Chunks)
-        {
-            if(_Frustum)
-            {
-                if(!_Frustum->IsOnFrustum(c.second.inner_bbox(c.first)))
-                    continue;
-            }
+        // std::vector<SChunkMeta> ret;
+        // for (auto &&c : m_Chunks)
+        // {
+        //     if(_Frustum)
+        //     {
+        //         if(!_Frustum->IsOnFrustum(c.second.inner_bbox(c.first)))
+        //             continue;
+        //     }
 
-            CBBox bbox(c.first, c.first + m_ChunkSize);
-            ret.push_back({(size_t)&c.second, &c.second, bbox, c.second.inner_bbox(c.first)});
-        }
-        return ret;
+        //     CBBox bbox(c.first, c.first + m_ChunkSize);
+        //     ret.push_back({(size_t)&c.second, &c.second, bbox, c.second.inner_bbox(c.first)});
+        // }
+        // return ret;
+
+        return CChunkQueryList(m_Chunks, m_ChunkSize);
+    }
+
+    CVoxelSpace::querylist CVoxelSpace::queryChunks(const CFrustum *_Frustum) const
+    {
+        return CChunkQueryList(m_Chunks, m_ChunkSize, [](const CBBox &_BBox, const CChunk &_Chunk, void *_Userdata)
+        {
+            CFrustum *frustum = (CFrustum*)_Userdata;
+            return frustum->IsOnFrustum(_Chunk.inner_bbox(_BBox.Beg));
+        }, const_cast<CFrustum*>(_Frustum));
     }
 
     void CVoxelSpace::generateVisibilityMask()

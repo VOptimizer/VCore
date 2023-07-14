@@ -79,14 +79,13 @@ namespace VoxelOptimizer
              * @param _OnlyDirty: Meshes only dirty chunks.
              * @param _ChunkCount: Count of chunks to meshify.
              */
-            virtual std::vector<SMeshChunk> GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty = false, int _ChunkCount = -1);
+            virtual std::vector<SMeshChunk> GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty = false);
 
             virtual ~IMesher();
         protected:
             virtual SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque) { return {}; }
 
             std::vector<Mesh> GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds = false);
-
             CFrustum *m_Frustum;
     };
 }

@@ -141,129 +141,129 @@ namespace VoxelOptimizer
         ParseFormat();
     }
 
-    void IVoxelFormat::Combine(std::map<TextureType, Texture> &textures, std::vector<Material> &materials, const std::vector<VoxelMesh> &meshes)
-    {
-        if(meshes.empty() || textures.empty())
-            return;
+    // void IVoxelFormat::Combine(std::map<TextureType, Texture> &textures, std::vector<Material> &materials, const std::vector<VoxelMesh> &meshes)
+    // {
+    //     if(meshes.empty() || textures.empty())
+    //         return;
 
-        std::map<int, int> colorMapping;
-        auto otherTextures = meshes.front()->Textures;
-        bool hasEmission = otherTextures.find(TextureType::EMISSION) != otherTextures.end();
-        bool texturesHasEmission = textures.find(TextureType::EMISSION) != textures.end();
+    //     std::map<int, int> colorMapping;
+    //     auto otherTextures = meshes.front()->Textures;
+    //     bool hasEmission = otherTextures.find(TextureType::EMISSION) != otherTextures.end();
+    //     bool texturesHasEmission = textures.find(TextureType::EMISSION) != textures.end();
 
-        // Creates a new emission texture
-        if(hasEmission && !texturesHasEmission)
-            textures[TextureType::EMISSION] = std::make_shared<CTexture>(textures[TextureType::DIFFIUSE]->GetSize());
+    //     // Creates a new emission texture
+    //     if(hasEmission && !texturesHasEmission)
+    //         textures[TextureType::EMISSION] = std::make_shared<CTexture>(textures[TextureType::DIFFIUSE]->GetSize());
 
-        auto diffiuse = textures[TextureType::DIFFIUSE];
-        auto otherDiffiuse = otherTextures[TextureType::DIFFIUSE];
+    //     auto diffiuse = textures[TextureType::DIFFIUSE];
+    //     auto otherDiffiuse = otherTextures[TextureType::DIFFIUSE];
 
-        // Merge the textures
-        for (int y = 0; y < otherDiffiuse->GetSize().y; y++)
-        {
-            for (int x = 0; x < otherDiffiuse->GetSize().x; x++)
-            {
-                int oldIdx = x + otherDiffiuse->GetSize().x * y;
-                int newIdx = -1;
+    //     // Merge the textures
+    //     for (int y = 0; y < otherDiffiuse->GetSize().y; y++)
+    //     {
+    //         for (int x = 0; x < otherDiffiuse->GetSize().x; x++)
+    //         {
+    //             int oldIdx = x + otherDiffiuse->GetSize().x * y;
+    //             int newIdx = -1;
 
-                auto &pixels = diffiuse->GetPixels();
-                auto pixel = otherDiffiuse->GetPixel(Math::Vec2ui(x, y));
+    //             auto &pixels = diffiuse->GetPixels();
+    //             auto pixel = otherDiffiuse->GetPixel(Math::Vec2ui(x, y));
 
-                auto it = std::find(pixels.begin(), pixels.end(), pixel);
+    //             auto it = std::find(pixels.begin(), pixels.end(), pixel);
 
-                // Color not found
-                if(it == pixels.end())
-                {
-                    // Add the new diffuse color
-                    CColor c;
-                    c.FromRGBA(pixel);
-                    diffiuse->AddPixel(c);
+    //             // Color not found
+    //             if(it == pixels.end())
+    //             {
+    //                 // Add the new diffuse color
+    //                 CColor c;
+    //                 c.FromRGBA(pixel);
+    //                 diffiuse->AddPixel(c);
                     
-                    if (hasEmission)
-                    {
-                        // Add the emission color
-                        auto emission = otherTextures[TextureType::EMISSION]->GetPixel(Math::Vec2ui(x, y));
-                        c.FromRGBA(emission);
+    //                 if (hasEmission)
+    //                 {
+    //                     // Add the emission color
+    //                     auto emission = otherTextures[TextureType::EMISSION]->GetPixel(Math::Vec2ui(x, y));
+    //                     c.FromRGBA(emission);
 
-                        textures[TextureType::EMISSION]->AddPixel(c);
-                    }
-                    else if(texturesHasEmission)
-                    {
-                        c = CColor(0, 0, 0, 255);
-                        textures[TextureType::EMISSION]->AddPixel(c);
-                    }
+    //                     textures[TextureType::EMISSION]->AddPixel(c);
+    //                 }
+    //                 else if(texturesHasEmission)
+    //                 {
+    //                     c = CColor(0, 0, 0, 255);
+    //                     textures[TextureType::EMISSION]->AddPixel(c);
+    //                 }
 
-                    newIdx = diffiuse->GetSize().x - 1;
-                }
-                else
-                {
-                    if (hasEmission)
-                    {
-                        uint32_t emission = 0, emission2 = -1;
+    //                 newIdx = diffiuse->GetSize().x - 1;
+    //             }
+    //             else
+    //             {
+    //                 if (hasEmission)
+    //                 {
+    //                     uint32_t emission = 0, emission2 = -1;
 
-                        // Check if the found color is an emission color.
-                        while (emission != emission2)
-                        {
-                            emission = otherTextures[TextureType::EMISSION]->GetPixel(Math::Vec2ui(x, y));
-                            emission2 = textures[TextureType::EMISSION]->GetPixel(Math::Vec2ui(x, y));
+    //                     // Check if the found color is an emission color.
+    //                     while (emission != emission2)
+    //                     {
+    //                         emission = otherTextures[TextureType::EMISSION]->GetPixel(Math::Vec2ui(x, y));
+    //                         emission2 = textures[TextureType::EMISSION]->GetPixel(Math::Vec2ui(x, y));
                             
-                            if(emission != emission2)
-                            {
-                                it = std::find(it + 1, pixels.end(), pixel);
-                                if(it == pixels.end())
-                                    break;
-                            }
-                        }
+    //                         if(emission != emission2)
+    //                         {
+    //                             it = std::find(it + 1, pixels.end(), pixel);
+    //                             if(it == pixels.end())
+    //                                 break;
+    //                         }
+    //                     }
 
-                        // Add new color and emission if not found.
-                        if(it == pixels.end())
-                        {
-                            CColor c;
-                            c.FromRGBA(pixel);
-                            diffiuse->AddPixel(c);
-                            c.FromRGBA(emission);
-                            textures[TextureType::EMISSION]->AddPixel(c);
+    //                     // Add new color and emission if not found.
+    //                     if(it == pixels.end())
+    //                     {
+    //                         CColor c;
+    //                         c.FromRGBA(pixel);
+    //                         diffiuse->AddPixel(c);
+    //                         c.FromRGBA(emission);
+    //                         textures[TextureType::EMISSION]->AddPixel(c);
 
-                            newIdx = diffiuse->GetSize().x - 1;
-                        }
-                        else
-                            newIdx = it - pixels.begin();
-                    }
-                    else
-                        newIdx = it - pixels.begin();
-                }
+    //                         newIdx = diffiuse->GetSize().x - 1;
+    //                     }
+    //                     else
+    //                         newIdx = it - pixels.begin();
+    //                 }
+    //                 else
+    //                     newIdx = it - pixels.begin();
+    //             }
 
-                colorMapping[oldIdx] = newIdx;
-            }
-        }
+    //             colorMapping[oldIdx] = newIdx;
+    //         }
+    //     }
     
-        for (auto &&m : meshes)
-        {
-            // Merges the materials
-            for (auto &&mat : m->Materials)
-            {
-                auto it = std::find_if(materials.begin(), materials.end(), [mat](Material mat2)
-                {
-                    if(*mat == *mat2)
-                        return true;
+    //     for (auto &&m : meshes)
+    //     {
+    //         // Merges the materials
+    //         for (auto &&mat : m->Materials)
+    //         {
+    //             auto it = std::find_if(materials.begin(), materials.end(), [mat](Material mat2)
+    //             {
+    //                 if(*mat == *mat2)
+    //                     return true;
 
-                    return false;
-                });
+    //                 return false;
+    //             });
 
-                if(it != materials.end())
-                    mat = (*it);
-                else
-                    materials.push_back(mat);
-            }
+    //             if(it != materials.end())
+    //                 mat = (*it);
+    //             else
+    //                 materials.push_back(mat);
+    //         }
 
-            // Reassign the colors.
-            for (auto &&v : m->GetVoxels())
-                v.second->Color = colorMapping[v.second->Color];
+    //         // Reassign the colors.
+    //         for (auto &&v : m->GetVoxels())
+    //             v.second->Color = colorMapping[v.second->Color];
 
-            m->Textures = textures;
-        }
+    //         m->Textures = textures;
+    //     }
         
-    }
+    // }
 
     void IVoxelFormat::ReadData(char *Buf, size_t Size)
     {

@@ -39,10 +39,10 @@ namespace VoxelOptimizer
 
     struct SChunkMeta
     {
-        size_t UniqueId;    //!< Unique identifier of the chunks. Only changes, if the voxel mesh is resized.
-        const CChunk *Chunk;      //!< Chunk with is associated with this metadata.
-        CBBox TotalBBox;    //!< The total bounding box of the chunk.
-        CBBox InnerBBox;    //!< The bounding box of the model inside the chunk.
+        size_t UniqueId;            //!< Unique identifier of the chunks. Only changes, if the voxel mesh is resized.
+        const CChunk *Chunk;        //!< Chunk with is associated with this metadata.
+        CBBox TotalBBox;            //!< The total bounding box of the chunk.
+        CBBox InnerBBox;            //!< The bounding box of the model inside the chunk.
     };
 
     class CVoxelSpaceIterator
@@ -144,6 +144,66 @@ namespace VoxelOptimizer
             CBBox m_InnerBBox;
     };
 
+    class CChunkQueryList
+    {
+        class CChunkQueryIterator
+        {
+            public:
+                using reference = SChunkMeta&;
+                using pointer = SChunkMeta*;
+
+                CChunkQueryIterator() : m_Parent(nullptr) {}
+                CChunkQueryIterator(const CChunkQueryList *_Parent, std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator _Iterator) : m_Parent(_Parent), m_Iterator(_Iterator) {}
+                CChunkQueryIterator(CChunkQueryIterator &&_Other) { *this = std::move(_Other); }
+                CChunkQueryIterator(const CChunkQueryIterator &_Other) { *this = _Other; }
+
+                const reference operator*() const;
+                const pointer operator->() const;
+
+                CChunkQueryIterator& operator++();
+                CChunkQueryIterator& operator++(int);
+
+                bool operator!=(const CChunkQueryIterator &_Rhs);
+                bool operator==(const CChunkQueryIterator &_Rhs);
+
+                CChunkQueryIterator& operator=(const CChunkQueryIterator &_Other);
+                CChunkQueryIterator& operator=(CChunkQueryIterator &&_Other);
+            private:
+                const CChunkQueryList *m_Parent; 
+                mutable SChunkMeta m_ChunkMeta;
+
+                std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator m_Iterator;
+        };
+
+        public:
+            using iterator = CChunkQueryIterator;
+            using FilterFunction = bool (*)(const CBBox &_BBox, const CChunk &_Chunk, void *_Userdata);
+
+            CChunkQueryList() : m_FilterFunction(nullptr), m_Chunks(nullptr) {}
+            CChunkQueryList(const std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher> &_Chunks, const Math::Vec3i &_ChunkSize, FilterFunction _FilterFn = nullptr, void *_Userdata = nullptr) : m_FilterFunction(_FilterFn), m_Chunks(&_Chunks), m_ChunkSize(_ChunkSize), m_Userdata(_Userdata) {}
+            CChunkQueryList(const CChunkQueryList &_Other) { *this = _Other; }
+            CChunkQueryList(CChunkQueryList &&_Other) { *this = std::move(_Other); }
+
+            iterator begin();
+            iterator end();
+
+            iterator begin() const;
+            iterator end() const;
+
+            operator std::vector<SChunkMeta>() const;
+
+            CChunkQueryList &operator=(const CChunkQueryList &_Other);
+            CChunkQueryList &operator=(CChunkQueryList &&_Other);
+
+        private:
+            SChunkMeta FilterNext(std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator &_Iterator) const;
+
+            FilterFunction m_FilterFunction;
+            Math::Vec3i m_ChunkSize;
+            const std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher> *m_Chunks;
+            void *m_Userdata;
+    };
+
     class CVoxelSpace
     {
         friend CVoxelSpaceIterator;
@@ -152,6 +212,7 @@ namespace VoxelOptimizer
             using ppair = std::pair<Math::Vec3i, Voxel>;
             using pair = std::pair<Math::Vec3i, CVoxel>;
             using iterator = CVoxelSpaceIterator;
+            using querylist = CChunkQueryList;
 
             CVoxelSpace();
             CVoxelSpace(const Math::Vec3i &_ChunkSize);
@@ -201,7 +262,7 @@ namespace VoxelOptimizer
              * @return Gets a list of all chunks which has been modified.
              * @note Marks all chunks as processed.
              */
-            std::vector<SChunkMeta> queryDirtyChunks(const CFrustum *_Frustum = nullptr) const;
+            querylist queryDirtyChunks() const;
 
             /**
              * @brief Marks a dirty chunks as clean.
@@ -211,7 +272,12 @@ namespace VoxelOptimizer
             /**
              * @return Returns all chunks.
              */
-            std::vector<SChunkMeta> queryChunks(const CFrustum *_Frustum = nullptr) const;
+            querylist queryChunks() const;
+
+            /**
+             * @return Returns a list of all chunks which are falling inside the given frustum.
+             */
+            querylist queryChunks(const CFrustum *_Frustum) const;
 
             /**
              * @brief Generates and updates all the visibility masks of the voxels.
