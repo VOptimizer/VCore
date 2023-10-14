@@ -22,12 +22,12 @@
  * SOFTWARE.
  */
 
-#include <VoxelOptimizer/Meshing/Texture.hpp>
+#include <VCore/Meshing/Texture.hpp>
 #include <string.h>
 #include <stb_image_write.h>
 #include <stdexcept>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     CTexture::CTexture(const Math::Vec2ui &_Size)
     {

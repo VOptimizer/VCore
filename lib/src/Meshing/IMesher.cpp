@@ -24,13 +24,13 @@
 
 #include <stdexcept>
 #include "Implementations/GreedyMesher.hpp"
-#include <VoxelOptimizer/Meshing/IMesher.hpp>
+#include <VCore/Meshing/IMesher.hpp>
 #include "Implementations/MarchingCubesMesher.hpp"
-#include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
+#include <VCore/Meshing/MeshBuilder.hpp>
 #include "Implementations/SimpleMesher.hpp"
 #include <future>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     template<typename R>
     bool is_ready(std::future<R> const& f)

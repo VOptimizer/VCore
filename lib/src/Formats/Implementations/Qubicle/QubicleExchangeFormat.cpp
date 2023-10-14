@@ -23,10 +23,10 @@
  */
 
 #include <sstream>
-#include <VoxelOptimizer/Misc/Exceptions.hpp>
+#include <VCore/Misc/Exceptions.hpp>
 #include "QubicleExchangeFormat.hpp"
 
-namespace VoxelOptimizer
+namespace VCore
 {
     void CQubicleExchangeFormat::ParseFormat()
     {

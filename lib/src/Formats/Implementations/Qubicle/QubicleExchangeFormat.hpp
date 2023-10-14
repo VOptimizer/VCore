@@ -25,10 +25,10 @@
 #ifndef QUBICLEEXCHANGEFORMAT_HPP
 #define QUBICLEEXCHANGEFORMAT_HPP
 
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <VCore/Math/Mat4x4.hpp>
+#include <VCore/Formats/IVoxelFormat.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CQubicleExchangeFormat : public IVoxelFormat
     {

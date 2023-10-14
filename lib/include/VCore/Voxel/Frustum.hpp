@@ -25,10 +25,10 @@
 #ifndef FRUSTUM_HPP
 #define FRUSTUM_HPP
 
-#include <VoxelOptimizer/Math/Vector.hpp>
-#include <VoxelOptimizer/Voxel/BBox.hpp>
+#include <VCore/Math/Vector.hpp>
+#include <VCore/Voxel/BBox.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CPlane
     {
@@ -159,7 +159,7 @@ namespace VoxelOptimizer
                 return -r <= _Plane.SignedDistanceToPlane(_Center);
             }
     };
-} // namespace VoxelOptimizer
+} // namespace VCore
 
 
 #endif

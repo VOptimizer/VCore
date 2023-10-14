@@ -24,9 +24,9 @@
 
 #include "SimpleMesher.hpp"
 #include <algorithm>
-#include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
+#include <VCore/Meshing/MeshBuilder.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     SMeshChunk CSimpleMesher::GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque)
     {

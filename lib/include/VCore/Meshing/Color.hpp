@@ -27,7 +27,7 @@
 
 #include <stdint.h>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CColor
     {

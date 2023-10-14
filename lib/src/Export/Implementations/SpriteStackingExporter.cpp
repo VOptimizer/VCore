@@ -23,10 +23,10 @@
  */
 
 #include <fstream>
-#include <VoxelOptimizer/Export/SpriteStackingExporter.hpp>
+#include <VCore/Export/SpriteStackingExporter.hpp>
 #include <stb_image_write.h>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     void CSpriteStackingExporter::Save(const std::string &Path, VoxelMesh m)
     {

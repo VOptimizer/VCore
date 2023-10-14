@@ -22,42 +22,28 @@
  * SOFTWARE.
  */
 
-#ifndef VOXELOPTIMIZER_HPP
-#define VOXELOPTIMIZER_HPP
+#ifndef EXPORTSETTINGS_HPP
+#define EXPORTSETTINGS_HPP
 
-/**
- * Public interface of the V-SDK 
- */
+#include <memory>
 
-// Export 
-#include <VoxelOptimizer/Export/ExportSettings.hpp>
-#include <VoxelOptimizer/Export/IExporter.hpp>
-#include <VoxelOptimizer/Export/SpriteStackingExporter.hpp>
+namespace VCore
+{
+    class CExportSettings
+    {
+        public:
+            CExportSettings() : WorldSpace(false), Binary(false) {}
 
-// Formats
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
-#include <VoxelOptimizer/Formats/SceneNode.hpp>
+            //!< Exports the models in world space instead of object space.
+            bool WorldSpace;
 
-// Math
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Math/Vector.hpp>
+            //!< Not supported by all formats.
+            bool Binary;
 
-// Meshing
-#include <VoxelOptimizer/Meshing/Color.hpp>
-#include <VoxelOptimizer/Meshing/IMesher.hpp>
-#include <VoxelOptimizer/Meshing/Material.hpp>
-#include <VoxelOptimizer/Meshing/Mesh.hpp>
-#include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
-#include <VoxelOptimizer/Meshing/Texture.hpp>
+            ~CExportSettings() = default;
+    };
 
-// Miscellaneous
-#include <VoxelOptimizer/Misc/Exceptions.hpp>
+    using ExportSettings = std::shared_ptr<CExportSettings>;
+}
 
-// Voxel
-#include <VoxelOptimizer/Voxel/BBox.hpp>
-#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
-#include <VoxelOptimizer/Voxel/PlanesVoxelizer.hpp>
-#include <VoxelOptimizer/Voxel/VoxelTextureMap.hpp>
-#include <VoxelOptimizer/Voxel/Frustum.hpp>
-
-#endif //VOXELOPTIMIZER_HPP
+#endif //EXPORTSETTINGS_HPP

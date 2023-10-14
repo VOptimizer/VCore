@@ -32,7 +32,7 @@
 #include <Godot.hpp>
 #include <Reference.hpp>
 #include <String.hpp>
-#include <VoxelOptimizer/VoxelOptimizer.hpp>
+#include <VCore/VCore.hpp>
 
 using namespace godot;
 
@@ -97,12 +97,12 @@ class CMeshCache : public Reference
             m_Mesh->SetName(name.utf8().get_data());
         }
 
-        inline void SetVoxelMesh(VoxelOptimizer::VoxelMesh mesh)
+        inline void SetVoxelMesh(VCore::VoxelMesh mesh)
         {
             m_Mesh = mesh;
         }
 
-        inline VoxelOptimizer::VoxelMesh GetVoxelMesh() const
+        inline VCore::VoxelMesh GetVoxelMesh() const
         {
             return m_Mesh;
         }
@@ -110,7 +110,7 @@ class CMeshCache : public Reference
         ~CMeshCache() = default;
     private:
         int m_ID;
-        VoxelOptimizer::VoxelMesh m_Mesh;
+        VCore::VoxelMesh m_Mesh;
         Dictionary m_GodotMeshChunks;
         // Ref<ArrayMesh> m_GodotMesh;
 };

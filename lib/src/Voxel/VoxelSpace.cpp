@@ -22,10 +22,10 @@
  * SOFTWARE.
  */
 
-#include <VoxelOptimizer/Voxel/VoxelSpace.hpp>
-#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
+#include <VCore/Voxel/VoxelSpace.hpp>
+#include <VCore/Voxel/VoxelMesh.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     //////////////////////////////////////////////////
     // CChunkQueryList functions

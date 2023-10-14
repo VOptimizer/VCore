@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.3.0)
-project(godotvoxeloptimizer VERSION 0.1.0 LANGUAGES CXX C)
+project(godotVCore VERSION 0.1.0 LANGUAGES CXX C)
 
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_subdirectory(../lib libvoxeloptimizer)
+add_subdirectory(../lib libVCore)
 
 set(SRCS "${PROJECT_SOURCE_DIR}/main.cpp"
-         "${PROJECT_SOURCE_DIR}/src/GodotVoxelOptimizer.cpp")
-set(LIBS "voxeloptimizer")
+         "${PROJECT_SOURCE_DIR}/src/GodotVCore.cpp")
+set(LIBS "VCore")
 
 if(WIN32)
     set(LIBS ${LIBS} "godot-cpp.windows.release.64")

@@ -28,9 +28,9 @@
 
 #include "GoxelFormat.hpp"
 #include <string.h>
-#include <VoxelOptimizer/Misc/Exceptions.hpp>
+#include <VCore/Misc/Exceptions.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     void CGoxelFormat::ParseFormat()
     {

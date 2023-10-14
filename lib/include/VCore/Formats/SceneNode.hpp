@@ -25,9 +25,9 @@
 #ifndef SCENENODE_HPP
 #define SCENENODE_HPP
 
-#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
+#include <VCore/Voxel/VoxelMesh.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CSceneNode;
     using SceneNode = std::shared_ptr<CSceneNode>;

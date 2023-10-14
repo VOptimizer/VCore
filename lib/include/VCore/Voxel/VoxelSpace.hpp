@@ -25,14 +25,14 @@
 #ifndef VOXELSPACE_HPP
 #define VOXELSPACE_HPP
 
-#include <VoxelOptimizer/Math/Vector.hpp>
-#include <VoxelOptimizer/Voxel/BBox.hpp>
-#include <VoxelOptimizer/Voxel/Voxel.hpp>
-#include <VoxelOptimizer/Voxel/Frustum.hpp>
+#include <VCore/Math/Vector.hpp>
+#include <VCore/Voxel/BBox.hpp>
+#include <VCore/Voxel/Voxel.hpp>
+#include <VCore/Voxel/Frustum.hpp>
 
 #include <vector>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CVoxelSpace;
     class CChunk;

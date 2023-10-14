@@ -30,12 +30,12 @@
 
 #include <stb_image.h>
 #include <string.h>
-#include <VoxelOptimizer/Misc/Exceptions.hpp>
+#include <VCore/Misc/Exceptions.hpp>
 #include "QubicleFormat.hpp"
 
 using namespace std;
 
-namespace VoxelOptimizer
+namespace VCore
 {
     static int counter111 = 1;
 

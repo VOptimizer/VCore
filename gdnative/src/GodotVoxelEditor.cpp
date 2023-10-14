@@ -25,13 +25,13 @@
 #include <GodotVoxelEditor.hpp>
 #include <Helpers/VectorUtils.hpp>
 
-const static std::vector<std::pair<VoxelOptimizer::CVoxel::Visibility, VoxelOptimizer::CVector>> NORMALS = {
-    {VoxelOptimizer::CVoxel::Visibility::UP, VoxelOptimizer::CVoxel::FACE_UP},
-    {VoxelOptimizer::CVoxel::Visibility::DOWN, VoxelOptimizer::CVoxel::FACE_DOWN},
-    {VoxelOptimizer::CVoxel::Visibility::LEFT, VoxelOptimizer::CVoxel::FACE_LEFT},
-    {VoxelOptimizer::CVoxel::Visibility::RIGHT, VoxelOptimizer::CVoxel::FACE_RIGHT},
-    {VoxelOptimizer::CVoxel::Visibility::FORWARD, VoxelOptimizer::CVoxel::FACE_FORWARD},
-    {VoxelOptimizer::CVoxel::Visibility::BACKWARD, VoxelOptimizer::CVoxel::FACE_BACKWARD}
+const static std::vector<std::pair<VCore::CVoxel::Visibility, VCore::CVector>> NORMALS = {
+    {VCore::CVoxel::Visibility::UP, VCore::CVoxel::FACE_UP},
+    {VCore::CVoxel::Visibility::DOWN, VCore::CVoxel::FACE_DOWN},
+    {VCore::CVoxel::Visibility::LEFT, VCore::CVoxel::FACE_LEFT},
+    {VCore::CVoxel::Visibility::RIGHT, VCore::CVoxel::FACE_RIGHT},
+    {VCore::CVoxel::Visibility::FORWARD, VCore::CVoxel::FACE_FORWARD},
+    {VCore::CVoxel::Visibility::BACKWARD, VCore::CVoxel::FACE_BACKWARD}
 };
 
 void CGodotVoxelEditor::_register_methods()
@@ -47,13 +47,13 @@ void CGodotVoxelEditor::AddVoxel(Vector3 _Pos, Color _Color)
 {
     auto vvec = GVector3ToVVector(_Pos);
     auto mesh = m_MeshCache->GetVoxelMesh();
-    auto colorpalette = mesh->Colorpalettes()[VoxelOptimizer::TextureType::DIFFIUSE];
+    auto colorpalette = mesh->Colorpalettes()[VCore::TextureType::DIFFIUSE];
     auto &pixels = colorpalette->Pixels();
 
     if(vvec < mesh->GetSize())
     {
         int colorIdx = 0;
-        auto color = VoxelOptimizer::CColor(_Color.get_r8(), _Color.get_g8(), _Color.get_b8(), _Color.get_a8());
+        auto color = VCore::CColor(_Color.get_r8(), _Color.get_g8(), _Color.get_b8(), _Color.get_a8());
         auto it = std::find(pixels.begin(), pixels.end(), color.AsRGBA());
         if(it == pixels.end())
         {
@@ -84,7 +84,7 @@ void CGodotVoxelEditor::RemoveVoxel(Vector3 _Pos)
 
 void CGodotVoxelEditor::RegenerateMesh()
 {
-    VoxelOptimizer::Mesher mesher = VoxelOptimizer::IMesher::Create(VoxelOptimizer::MesherTypes::GREEDY);
+    VCore::Mesher mesher = VCore::IMesher::Create(VCore::MesherTypes::GREEDY);
     auto chunks = mesher->GenerateMeshes(m_MeshCache->GetVoxelMesh(), true);
     
 }
@@ -118,11 +118,11 @@ Ref<CIntersection> CGodotVoxelEditor::Intersects(Vector3 _Pos, Vector3 _Dir) con
                 continue;
 
             // Helper to remove the active axis.
-            auto rn = VoxelOptimizer::CVector(1, 1, 1) - face.second.Abs();
+            auto rn = VCore::CVector(1, 1, 1) - face.second.Abs();
 
             // Calculates the vertex on the plane.
             auto p = Voxel->Pos;
-            if(face.second > VoxelOptimizer::CVoxel::FACE_ZERO)
+            if(face.second > VCore::CVoxel::FACE_ZERO)
                 p += face.second;
 
             auto thit = (p - pr).Dot(face.second) / ur.Dot(face.second);
@@ -132,7 +132,7 @@ Ref<CIntersection> CGodotVoxelEditor::Intersects(Vector3 _Pos, Vector3 _Dir) con
 
                 // Creates a 2D AABB to check for interceptions.
                 auto beg = p;
-                auto end = beg + VoxelOptimizer::CVector(1, 1, 1) * rn;
+                auto end = beg + VCore::CVector(1, 1, 1) * rn;
 
                 // Checks for interceptions.
                 bool begComp = true, endComp = true;

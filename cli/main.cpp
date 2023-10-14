@@ -30,7 +30,7 @@
 #include <memory>
 #include <regex>
 #include <vector>
-#include <VoxelOptimizer/VoxelOptimizer.hpp>
+#include <VCore/VCore.hpp>
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -43,8 +43,8 @@ struct SFile
     string InputFile;
     string OutputFile;
 
-    VoxelOptimizer::LoaderType Type;
-    VoxelOptimizer::ExporterType OutType;
+    VCore::LoaderType Type;
+    VCore::ExporterType OutType;
     bool IsPNG;
 };
 using File = shared_ptr<SFile>;
@@ -80,23 +80,23 @@ string ToLower(const string &str)
 File CreateFile(const fs::path &Input, const fs::path &OutputPattern)
 {
     static size_t ID = 0;
-    static map<string, VoxelOptimizer::LoaderType> TYPE_MATCHER = {
-        {"gox", VoxelOptimizer::LoaderType::GOXEL},
-        {"vox", VoxelOptimizer::LoaderType::MAGICAVOXEL},
-        {"kenshape", VoxelOptimizer::LoaderType::KENSHAPE},
-        {"qbcl", VoxelOptimizer::LoaderType::QUBICLE},
-        {"qb", VoxelOptimizer::LoaderType::QUBICLE_BIN},
-        {"qbt", VoxelOptimizer::LoaderType::QUBICLE_BIN_TREE},
-        {"qef", VoxelOptimizer::LoaderType::QUBICLE_EXCHANGE},
+    static map<string, VCore::LoaderType> TYPE_MATCHER = {
+        {"gox", VCore::LoaderType::GOXEL},
+        {"vox", VCore::LoaderType::MAGICAVOXEL},
+        {"kenshape", VCore::LoaderType::KENSHAPE},
+        {"qbcl", VCore::LoaderType::QUBICLE},
+        {"qb", VCore::LoaderType::QUBICLE_BIN},
+        {"qbt", VCore::LoaderType::QUBICLE_BIN_TREE},
+        {"qef", VCore::LoaderType::QUBICLE_EXCHANGE},
     };
 
-    static map<string, VoxelOptimizer::ExporterType> OUT_TYPE_MATCHER = {
-        {"gltf", VoxelOptimizer::ExporterType::GLTF},
-        {"glb", VoxelOptimizer::ExporterType::GLB},
-        {"obj", VoxelOptimizer::ExporterType::OBJ},
-        {"escn", VoxelOptimizer::ExporterType::ESCN},
-        {"ply", VoxelOptimizer::ExporterType::PLY}
-        // {"png", VoxelOptimizer::ExporterType::PNG},
+    static map<string, VCore::ExporterType> OUT_TYPE_MATCHER = {
+        {"gltf", VCore::ExporterType::GLTF},
+        {"glb", VCore::ExporterType::GLB},
+        {"obj", VCore::ExporterType::OBJ},
+        {"escn", VCore::ExporterType::ESCN},
+        {"ply", VCore::ExporterType::PLY}
+        // {"png", VCore::ExporterType::PNG},
     };
 
     File Ret = File(new SFile());
@@ -245,23 +245,23 @@ int main(int argc, char const *argv[])
 
     try
     {
-        VoxelOptimizer::Mesher Mesher;
+        VCore::Mesher Mesher;
         if(MesherType == "greedy")
-            Mesher = VoxelOptimizer::IMesher::Create(VoxelOptimizer::MesherTypes::GREEDY);
+            Mesher = VCore::IMesher::Create(VCore::MesherTypes::GREEDY);
         else if(MesherType == "marching_cubes")
-            Mesher = VoxelOptimizer::IMesher::Create(VoxelOptimizer::MesherTypes::MARCHING_CUBES);
+            Mesher = VCore::IMesher::Create(VCore::MesherTypes::MARCHING_CUBES);
         else
-            Mesher = VoxelOptimizer::IMesher::Create(VoxelOptimizer::MesherTypes::SIMPLE);
+            Mesher = VCore::IMesher::Create(VCore::MesherTypes::SIMPLE);
 
         auto Files = ResolveFilenames(cmdl, OutputPattern);
         for (auto &&f : Files)
         {
-            VoxelOptimizer::VoxelFormat Loader = VoxelOptimizer::IVoxelFormat::Create(f->Type);
-            VoxelOptimizer::Exporter Exporter;
+            VCore::VoxelFormat Loader = VCore::IVoxelFormat::Create(f->Type);
+            VCore::Exporter Exporter;
 
             if(!f->IsPNG)
             {
-                Exporter = VoxelOptimizer::IExporter::Create(f->OutType);
+                Exporter = VCore::IExporter::Create(f->OutType);
                 Exporter->Settings()->WorldSpace = cmdl[{"-w", "--worldspace"}];
             }
 
@@ -277,7 +277,7 @@ int main(int argc, char const *argv[])
                 auto meshes = Loader->GetModels();
                 for (auto &&VoxelMesh : meshes)
                 {
-                    VoxelOptimizer::CSpriteStackingExporter Stacker;
+                    VCore::CSpriteStackingExporter Stacker;
                     std::string outputFilename = f->OutputFile;
 
                     if(meshes.size() > 1)
@@ -295,7 +295,7 @@ int main(int argc, char const *argv[])
             }
             else
             {
-                std::vector<VoxelOptimizer::Mesh> outputMeshes;
+                std::vector<VCore::Mesh> outputMeshes;
                 auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
                 outputMeshes.insert(outputMeshes.end(), meshes.begin(), meshes.end());
                 Exporter->Save(f->OutputFile, outputMeshes);

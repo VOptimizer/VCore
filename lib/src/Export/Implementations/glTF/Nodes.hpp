@@ -27,11 +27,11 @@
 
 #include <CJSON/JSON.hpp>
 #include <string.h>
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Math/Vector.hpp>
+#include <VCore/Math/Mat4x4.hpp>
+#include <VCore/Math/Vector.hpp>
 #include <cstdint>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     namespace GLTF
     {
@@ -47,7 +47,7 @@ namespace VoxelOptimizer
                 void Serialize(CJSON &json) const
                 {
                     json.AddPair("version", std::string("2.0"));
-                    json.AddPair("generator", std::string("Generated with VoxelOptimizer"));
+                    json.AddPair("generator", std::string("Generated with VCore"));
                 }        
         };
 

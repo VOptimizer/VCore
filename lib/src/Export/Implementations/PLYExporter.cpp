@@ -25,7 +25,7 @@
 #include <sstream>
 #include "PLYExporter.hpp"
 
-namespace VoxelOptimizer
+namespace VCore
 {
     std::map<std::string, std::vector<char>> CPLYExporter::Generate(std::vector<Mesh> Meshes)
     {
@@ -63,7 +63,7 @@ namespace VoxelOptimizer
             std::stringstream file;
             file << "ply" << std::endl;
             file << "format ascii 1.0" << std::endl;
-            file << "comment Generated with VoxelOptimizer" << std::endl;
+            file << "comment Generated with VCore" << std::endl;
             file << "element vertex " << vertexCount << std::endl;
             file << "property float x" << std::endl;
             file << "property float y" << std::endl;

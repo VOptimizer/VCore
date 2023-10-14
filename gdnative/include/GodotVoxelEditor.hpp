@@ -30,7 +30,7 @@
 #include <Intersection.hpp>
 #include <MeshCache.hpp>
 #include <Reference.hpp>
-#include <VoxelOptimizer/VoxelOptimizer.hpp>
+#include <VCore/VCore.hpp>
 #include <vector>
 
 using namespace godot;

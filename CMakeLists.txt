@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.3.0)
-project(VoxelOptimizer VERSION 0.1.0)
+project(VCore VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -12,4 +12,4 @@ include_directories("${PROJECT_SOURCE_DIR}/gdnative/lib/include")
 add_subdirectory("${PROJECT_SOURCE_DIR}/gdnative/lib")
 
 add_executable(${PROJECT_NAME} ${SRCS})
-target_link_libraries(${PROJECT_NAME} voxeloptimizer)
+target_link_libraries(${PROJECT_NAME} VCore)

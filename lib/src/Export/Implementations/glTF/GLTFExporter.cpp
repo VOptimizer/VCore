@@ -29,7 +29,7 @@
 #include <string.h>
 #include "GLTFExporter.hpp"
 
-namespace VoxelOptimizer
+namespace VCore
 {
     std::map<std::string, std::vector<char>> CGLTFExporter::Generate(std::vector<Mesh> Meshes)
     {

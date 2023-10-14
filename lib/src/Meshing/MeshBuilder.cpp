@@ -22,10 +22,10 @@
  * SOFTWARE.
  */
 
-#include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
-#include <VoxelOptimizer/Misc/Exceptions.hpp>
+#include <VCore/Meshing/MeshBuilder.hpp>
+#include <VCore/Misc/Exceptions.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     void CMeshBuilder::AddTextures(const std::map<TextureType, Texture> &_textures)
     {

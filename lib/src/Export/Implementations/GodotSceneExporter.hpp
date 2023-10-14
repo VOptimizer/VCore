@@ -25,9 +25,9 @@
 #ifndef GODOTSCENEEXPORTER_HPP
 #define GODOTSCENEEXPORTER_HPP
 
-#include <VoxelOptimizer/Export/IExporter.hpp>
+#include <VCore/Export/IExporter.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CGodotSceneExporter : public IExporter
     {

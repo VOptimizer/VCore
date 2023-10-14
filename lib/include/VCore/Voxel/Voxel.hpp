@@ -27,9 +27,9 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <VoxelOptimizer/Math/Vector.hpp>
+#include <VCore/Math/Vector.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CVoxel
     {

@@ -37,9 +37,9 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-#include <VoxelOptimizer/Math/Vector.hpp>
+#include <VCore/Math/Vector.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     // template<class _CharT, class _Traits = char_traits<_CharT>> 
     // class CFileBuffer : public basic_streambuf<_CharT, _Traits>

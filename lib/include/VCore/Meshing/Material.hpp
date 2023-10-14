@@ -22,28 +22,46 @@
  * SOFTWARE.
  */
 
-#ifndef EXPORTSETTINGS_HPP
-#define EXPORTSETTINGS_HPP
+#ifndef MATERIAL_HPP
+#define MATERIAL_HPP
 
 #include <memory>
+#include <string>
+#include <VCore/Meshing/Color.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
-    class CExportSettings
+    class CMaterial
     {
         public:
-            CExportSettings() : WorldSpace(false), Binary(false) {}
+            CMaterial() : Name(), Metallic(0), Specular(0), Roughness(1), IOR(0), Power(0), Transparency(0) {}
 
-            //!< Exports the models in world space instead of object space.
-            bool WorldSpace;
+            std::string Name;
+            float Metallic;
+            float Specular;
+            float Roughness;
+            float IOR;
+            float Power;    //!< For emissive.
+            float Transparency;
 
-            //!< Not supported by all formats.
-            bool Binary;
+            inline bool operator==(const CMaterial &other)
+            {
+                bool equal = false;
+                equal = Name == other.Name;
+                equal = Metallic == other.Metallic && equal;
+                equal = Specular == other.Specular && equal;
+                equal = Roughness == other.Roughness && equal;
+                equal = IOR == other.IOR && equal;
+                equal = Power == other.Power && equal;
+                equal = Transparency == other.Transparency && equal;
 
-            ~CExportSettings() = default;
+                return equal;
+            }
+
+            ~CMaterial() {}
     };
 
-    using ExportSettings = std::shared_ptr<CExportSettings>;
+    using Material = std::shared_ptr<CMaterial>;
 }
 
-#endif //EXPORTSETTINGS_HPP
+#endif //MATERIAL_HPP

@@ -25,9 +25,9 @@
 #ifndef SIMPLEMESHER_HPP
 #define SIMPLEMESHER_HPP
 
-#include <VoxelOptimizer/Meshing/IMesher.hpp>
+#include <VCore/Meshing/IMesher.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CSimpleMesher : public IMesher
     {

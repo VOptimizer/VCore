@@ -28,11 +28,11 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
-#include <VoxelOptimizer/Meshing/Mesh.hpp>
-#include <VoxelOptimizer/Voxel/VoxelTextureMap.hpp>
+#include <VCore/Formats/IVoxelFormat.hpp>
+#include <VCore/Meshing/Mesh.hpp>
+#include <VCore/Voxel/VoxelTextureMap.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CMeshBuilder
     {

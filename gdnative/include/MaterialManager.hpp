@@ -29,7 +29,7 @@
 #include <SpatialMaterial.hpp>
 #include <memory>
 #include <map>
-#include <VoxelOptimizer/VoxelOptimizer.hpp>
+#include <VCore/VCore.hpp>
 
 using namespace godot;
 
@@ -43,7 +43,7 @@ class CMaterialManager
         /**
          * @brief Creates unknown materials and returns a list of godot materials.
          */
-        const std::map<int, Ref<SpatialMaterial>> &CreateAndGetMaterials(const VoxelOptimizer::Mesh &_Mesh);
+        const std::map<int, Ref<SpatialMaterial>> &CreateAndGetMaterials(const VCore::Mesh &_Mesh);
 
         /**
          * @brief Clears all materials.

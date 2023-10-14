@@ -26,9 +26,9 @@
 #include <string.h>
 #include <sstream>
 #include <stack>
-#include <VoxelOptimizer/Misc/Exceptions.hpp>
+#include <VCore/Misc/Exceptions.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     // Copied from the official documentation. https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox.txt
     const static unsigned int default_palette[256] = {

@@ -28,11 +28,11 @@
 #include <stdexcept>
 #include "Implementations/glTF/GLTFExporter.hpp"
 #include "Implementations/GodotSceneExporter.hpp"
-#include <VoxelOptimizer/Export/IExporter.hpp>
+#include <VCore/Export/IExporter.hpp>
 #include "Implementations/WavefrontObjExporter.hpp"
 #include "Implementations/PLYExporter.hpp"
 
-namespace VoxelOptimizer
+namespace VCore
 {
     Exporter IExporter::Create(ExporterType type)
     {

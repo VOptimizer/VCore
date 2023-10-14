@@ -26,9 +26,9 @@
 #define OPTIMIZEMESHER_HPP
 
 #include <vector>
-#include <VoxelOptimizer/Meshing/IMesher.hpp>
+#include <VCore/Meshing/IMesher.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CGreedyMesher : public IMesher
     {

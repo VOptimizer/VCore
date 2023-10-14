@@ -26,26 +26,26 @@
 #define VECTORUTILS_HPP
 
 #include <Godot.hpp>
-#include <VoxelOptimizer/VoxelOptimizer.hpp>
+#include <VCore/VCore.hpp>
 
 using namespace godot;
 
-inline VoxelOptimizer::CVector GVector3ToVVector(const Vector3 &_Vec)
+inline VCore::CVector GVector3ToVVector(const Vector3 &_Vec)
 {
-    return VoxelOptimizer::CVector(_Vec.x, _Vec.z, _Vec.y);
+    return VCore::CVector(_Vec.x, _Vec.z, _Vec.y);
 }
 
-inline VoxelOptimizer::CVector GVector2ToVVector(const Vector2 &_Vec)
+inline VCore::CVector GVector2ToVVector(const Vector2 &_Vec)
 {
-    return VoxelOptimizer::CVector(_Vec.x, _Vec.y, 0);
+    return VCore::CVector(_Vec.x, _Vec.y, 0);
 }
 
-inline Vector3 VVectorToGVector3(const VoxelOptimizer::CVector &_Vec)
+inline Vector3 VVectorToGVector3(const VCore::CVector &_Vec)
 {
     return Vector3(_Vec.x, _Vec.z, _Vec.y);
 }
 
-inline Vector2 GVector2ToVVector(const VoxelOptimizer::CVector &_Vec)
+inline Vector2 GVector2ToVVector(const VCore::CVector &_Vec)
 {
     return Vector2(_Vec.x, _Vec.y);
 }

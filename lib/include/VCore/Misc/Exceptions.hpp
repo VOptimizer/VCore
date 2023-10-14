@@ -22,55 +22,28 @@
  * SOFTWARE.
  */
 
-#ifndef TEXTURE_HPP
-#define TEXTURE_HPP
+#ifndef EXCEPTIONS_HPP
+#define EXCEPTIONS_HPP
 
-#include <map>
-#include <memory>
-#include <stddef.h>
-#include <vector>
-#include <VoxelOptimizer/Meshing/Color.hpp>
-#include <VoxelOptimizer/Math/Vector.hpp>
+#include <stdexcept>
 
-namespace VoxelOptimizer
+namespace VCore
 {
-    enum class TextureType
-    {
-        DIFFIUSE,
-        EMISSION
-    };
-
-    class CTexture
+    class CVoxelLoaderException : public std::exception
     {
         public:
-            CTexture() = default;
-            CTexture(const Math::Vec2ui &_Size);
-            CTexture(const CTexture &_Texture);
-            CTexture(const Math::Vec2ui &_Size, uint32_t *_Data);
-
-            void AddPixel(const CColor &_Color, const Math::Vec2ui &_Position);
-            void AddPixel(const CColor &_Color);
-
-            inline Math::Vec2ui GetSize() const
+            CVoxelLoaderException() {}
+            CVoxelLoaderException(const std::string &Msg) : m_Msg(Msg) {}
+    
+            const char *what() const noexcept override
             {
-                return m_Size;
+                return m_Msg.c_str();
             }
-
-            const std::vector<uint32_t> &GetPixels() const
-            {
-                return m_Pixels;
-            }
-
-            uint32_t GetPixel(const Math::Vec2ui &_Position);
-            std::vector<char> AsPNG();
-
-            ~CTexture() = default;
+    
         private:
-            Math::Vec2ui m_Size;
-            std::vector<uint32_t> m_Pixels;
+            std::string m_Msg;
     };
-
-    using Texture = std::shared_ptr<CTexture>;
 }
 
-#endif //TEXTURE_HPP
+
+#endif //EXCEPTIONS_HPP

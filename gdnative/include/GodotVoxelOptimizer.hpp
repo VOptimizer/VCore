@@ -22,22 +22,22 @@
  * SOFTWARE.
  */
 
-#ifndef GODOTVOXELOPTIMIZER_HPP
-#define GODOTVOXELOPTIMIZER_HPP
+#ifndef GODOTVCore_HPP
+#define GODOTVCore_HPP
 
 #include <ArrayMesh.hpp>
 #include <Godot.hpp>
 #include <Reference.hpp>
-#include <VoxelOptimizer/VoxelOptimizer.hpp>
+#include <VCore/VCore.hpp>
 #include <vector>
 
 using namespace godot;
 
-class CGodotVoxelOptimizer : public Reference
+class CGodotVCore : public Reference
 {
-    GODOT_CLASS(CGodotVoxelOptimizer, Reference);
+    GODOT_CLASS(CGodotVCore, Reference);
     public:
-        CGodotVoxelOptimizer() : m_BlockCount(0) {}
+        CGodotVCore() : m_BlockCount(0) {}
 
         void _init() { }
 
@@ -48,13 +48,13 @@ class CGodotVoxelOptimizer : public Reference
         Array GetMeshes(int mesherType);
         Dictionary GetStatistics();
 
-        virtual ~CGodotVoxelOptimizer() = default;
+        virtual ~CGodotVCore() = default;
     private:
-        VoxelOptimizer::VoxelFormat m_Loader;
-        std::vector<VoxelOptimizer::Mesh> m_Meshes;
+        VCore::VoxelFormat m_Loader;
+        std::vector<VCore::Mesh> m_Meshes;
         int m_BlockCount;
         int m_VerticesCount;
         int m_FacesCount;
 };
 
-#endif //GODOTVOXELOPTIMIZER_HPP
+#endif //GODOTVCore_HPP

@@ -27,11 +27,11 @@
 
 #include <string>
 #include <vector>
-#include <VoxelOptimizer/Formats/SceneNode.hpp>
-#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
-#include <VoxelOptimizer/Misc/BinaryStream.hpp>
+#include <VCore/Formats/SceneNode.hpp>
+#include <VCore/Voxel/VoxelMesh.hpp>
+#include <VCore/Misc/BinaryStream.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     enum class LoaderType
     {

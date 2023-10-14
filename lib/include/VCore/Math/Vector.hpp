@@ -28,7 +28,7 @@
 #include <math.h>
 #include <unordered_map>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     namespace Math
     {

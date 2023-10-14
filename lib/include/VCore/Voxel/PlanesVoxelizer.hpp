@@ -25,9 +25,9 @@
 #ifndef PLANESVOXELIZER_HPP
 #define PLANESVOXELIZER_HPP
 
-#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
+#include <VCore/Voxel/VoxelMesh.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     struct SPlanesInfo
     {

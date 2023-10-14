@@ -26,7 +26,7 @@
 #define ARRAYMESHFACTORY_HPP
 
 #include <ArrayMesh.hpp>
-#include <VoxelOptimizer/VoxelOptimizer.hpp>
+#include <VCore/VCore.hpp>
 
 using namespace godot;
 

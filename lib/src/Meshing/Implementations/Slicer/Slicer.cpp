@@ -28,7 +28,7 @@
 
 #define IsFaceVisible(v, f) ((v->VisibilityMask & f) == f);
 
-namespace VoxelOptimizer
+namespace VCore
 {
     void CSlicer::SetActiveAxis(int Axis)
     {

@@ -25,10 +25,10 @@
 #ifndef MARCHINGCUBESMESHER_HPP
 #define MARCHINGCUBESMESHER_HPP
 
-#include <VoxelOptimizer/Meshing/IMesher.hpp>
-#include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
+#include <VCore/Meshing/IMesher.hpp>
+#include <VCore/Meshing/MeshBuilder.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CMarchingCubesMesher : public IMesher
     {

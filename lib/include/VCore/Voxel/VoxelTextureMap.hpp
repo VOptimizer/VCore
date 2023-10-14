@@ -26,9 +26,9 @@
 #define VOXELINFO_HPP
 
 #include <unordered_map>
-#include <VoxelOptimizer/Math/Vector.hpp>
+#include <VCore/Math/Vector.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     struct SUVMapping
     {

@@ -28,10 +28,10 @@
 #include <vector>
 #include <utility>
 
-#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
-#include <VoxelOptimizer/Math/Vector.hpp>
+#include <VCore/Voxel/VoxelMesh.hpp>
+#include <VCore/Math/Vector.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CSlicer
     {

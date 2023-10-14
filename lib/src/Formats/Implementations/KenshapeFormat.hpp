@@ -25,9 +25,9 @@
 #ifndef KENSHAPEFORMAT_HPP
 #define KENSHAPEFORMAT_HPP
 
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <VCore/Formats/IVoxelFormat.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CKenshapeFormat : public IVoxelFormat
     {

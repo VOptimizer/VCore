@@ -25,8 +25,8 @@
 #ifndef WAVEFRONTOBJEXPORTER_HPP
 #define WAVEFRONTOBJEXPORTER_HPP
 
-#include <VoxelOptimizer/Export/IExporter.hpp>
-namespace VoxelOptimizer {
+#include <VCore/Export/IExporter.hpp>
+namespace VCore {
 class CWavefrontObjExporter : public IExporter {
 public:
   CWavefrontObjExporter() = default;

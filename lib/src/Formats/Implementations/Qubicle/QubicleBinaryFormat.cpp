@@ -23,10 +23,10 @@
  */
 
 #include <stdint.h>
-#include <VoxelOptimizer/Misc/Exceptions.hpp>
+#include <VCore/Misc/Exceptions.hpp>
 #include "QubicleBinaryFormat.hpp"
 
-namespace VoxelOptimizer
+namespace VCore
 {
     const static int CODEFLAG = 2;
 	const static int NEXTSLICEFLAG = 6;

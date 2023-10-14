@@ -28,7 +28,7 @@
 #include <string.h>
 #include "WavefrontObjExporter.hpp"
 
-namespace VoxelOptimizer
+namespace VCore
 {   
     std::map<std::string, std::vector<char>> CWavefrontObjExporter::Generate(std::vector<Mesh> Meshes)
     {
@@ -36,7 +36,7 @@ namespace VoxelOptimizer
         if(m_ExternalFilenames.empty())
             m_ExternalFilenames = "materials";
 
-        objFile << "# Generated with VoxelOptimizer" << std::endl;
+        objFile << "# Generated with VCore" << std::endl;
         objFile << "# These comments can be removed" << std::endl;
         objFile << "mtllib " << m_ExternalFilenames << ".mtl" << std::endl;
 

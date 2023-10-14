@@ -25,9 +25,9 @@
 #include "Kenshape.hpp"
 #include "KenshapeFormat.hpp"
 #include <stb_image.h>
-#include <VoxelOptimizer/Misc/Exceptions.hpp>
+#include <VCore/Misc/Exceptions.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     void CKenshapeFormat::ParseFormat()
     {

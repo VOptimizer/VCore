@@ -23,9 +23,9 @@
  */
 
 #include <map>
-#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
+#include <VCore/Voxel/VoxelMesh.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     void CVoxelMesh::SetVoxel(const Math::Vec3i &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask)
     {      

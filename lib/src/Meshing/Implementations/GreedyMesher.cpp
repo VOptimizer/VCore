@@ -26,12 +26,12 @@
 #include <future>
 
 #include "Slicer/Slicer.hpp"
-#include <VoxelOptimizer/Meshing/MeshBuilder.hpp>
+#include <VCore/Meshing/MeshBuilder.hpp>
 #include <vector>
 
 #include "GreedyMesher.hpp"
 
-namespace VoxelOptimizer
+namespace VCore
 {
     SMeshChunk CGreedyMesher::GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque)
     {

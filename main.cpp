@@ -1,13 +1,13 @@
 #include <iostream>
-#include <VoxelOptimizer/VoxelOptimizer.hpp>
-#include <VoxelOptimizer/Loaders/Octree.hpp>
+#include <VCore/VCore.hpp>
+#include <VCore/Loaders/Octree.hpp>
 
 using namespace std;
-using namespace VoxelOptimizer;
+using namespace VCore;
 
 int main(int argc, char const *argv[])
 {
-    VoxelOptimizer::COctree<int> tree(CVector(8, 8, 8));
+    VCore::COctree<int> tree(CVector(8, 8, 8));
     tree.insert({CVector(3, 3, 3), 5});
     tree.insert({CVector(6, 6, 3), 7});
     tree.insert({CVector(2, 2, 3), 8});

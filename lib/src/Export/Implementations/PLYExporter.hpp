@@ -25,9 +25,9 @@
 #ifndef PLYEXPORTER_HPP
 #define PLYEXPORTER_HPP
 
-#include <VoxelOptimizer/Export/IExporter.hpp>
+#include <VCore/Export/IExporter.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CPLYExporter : public IExporter
     {

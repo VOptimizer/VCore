@@ -1,6 +1,6 @@
 # Introduction
 
-The cli application helps you to use the voxeloptimizer more efficiently in your workflow. At the moment there was only the V-Optimizer, which had the ability to optimize and display the model, but that was very uncomfortable for several meshes at the same time, as you could only load one voxel mesh at a time. Now there is a simpler solution, the cli.
+The cli application helps you to use the VCore more efficiently in your workflow. At the moment there was only the V-Optimizer, which had the ability to optimize and display the model, but that was very uncomfortable for several meshes at the same time, as you could only load one voxel mesh at a time. Now there is a simpler solution, the cli.
 
 # Commands
 

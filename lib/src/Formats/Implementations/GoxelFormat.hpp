@@ -25,10 +25,10 @@
 #ifndef GOXELFORMAT_HPP
 #define GOXELFORMAT_HPP
 
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <VCore/Formats/IVoxelFormat.hpp>
 #include <string.h>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CGoxelFormat : public IVoxelFormat
     {

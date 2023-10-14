@@ -22,46 +22,42 @@
  * SOFTWARE.
  */
 
-#ifndef MATERIAL_HPP
-#define MATERIAL_HPP
+#ifndef SPRITESTACKINGEXPORTER_HPP
+#define SPRITESTACKINGEXPORTER_HPP
 
-#include <memory>
+#include <VCore/Voxel/VoxelMesh.hpp>
 #include <string>
-#include <VoxelOptimizer/Meshing/Color.hpp>
+#include <vector>
 
-namespace VoxelOptimizer
+namespace VCore
 {
-    class CMaterial
+    class CSpriteStackingExporter
     {
         public:
-            CMaterial() : Name(), Metallic(0), Specular(0), Roughness(1), IOR(0), Power(0), Transparency(0) {}
+            CSpriteStackingExporter() = default;
 
-            std::string Name;
-            float Metallic;
-            float Specular;
-            float Roughness;
-            float IOR;
-            float Power;    //!< For emissive.
-            float Transparency;
+            /**
+             * @brief Generates and saves the mesh as png slices.
+             * 
+             * @param Path: Path of the file.
+             * @param Mesh: Mesh to save.
+             */
+            void Save(const std::string &Path, VoxelMesh m);
 
-            inline bool operator==(const CMaterial &other)
-            {
-                bool equal = false;
-                equal = Name == other.Name;
-                equal = Metallic == other.Metallic && equal;
-                equal = Specular == other.Specular && equal;
-                equal = Roughness == other.Roughness && equal;
-                equal = IOR == other.IOR && equal;
-                equal = Power == other.Power && equal;
-                equal = Transparency == other.Transparency && equal;
+            /**
+             * @brief Generates the file stream.
+             * 
+             * @param Mesh: Mesh to save.
+             * 
+             * @return Returns a png image.
+             */
+            std::vector<char> Generate(VoxelMesh m); 
 
-                return equal;
-            }
-
-            ~CMaterial() {}
+            ~CSpriteStackingExporter() = default;
+        private:
+        /* data */
     };
-
-    using Material = std::shared_ptr<CMaterial>;
 }
 
-#endif //MATERIAL_HPP
+
+#endif //SPRITESTACKINGEXPORTER_HPP

@@ -22,42 +22,55 @@
  * SOFTWARE.
  */
 
-#ifndef SPRITESTACKINGEXPORTER_HPP
-#define SPRITESTACKINGEXPORTER_HPP
+#ifndef TEXTURE_HPP
+#define TEXTURE_HPP
 
-#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
-#include <string>
+#include <map>
+#include <memory>
+#include <stddef.h>
 #include <vector>
+#include <VCore/Meshing/Color.hpp>
+#include <VCore/Math/Vector.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
-    class CSpriteStackingExporter
+    enum class TextureType
+    {
+        DIFFIUSE,
+        EMISSION
+    };
+
+    class CTexture
     {
         public:
-            CSpriteStackingExporter() = default;
+            CTexture() = default;
+            CTexture(const Math::Vec2ui &_Size);
+            CTexture(const CTexture &_Texture);
+            CTexture(const Math::Vec2ui &_Size, uint32_t *_Data);
 
-            /**
-             * @brief Generates and saves the mesh as png slices.
-             * 
-             * @param Path: Path of the file.
-             * @param Mesh: Mesh to save.
-             */
-            void Save(const std::string &Path, VoxelMesh m);
+            void AddPixel(const CColor &_Color, const Math::Vec2ui &_Position);
+            void AddPixel(const CColor &_Color);
 
-            /**
-             * @brief Generates the file stream.
-             * 
-             * @param Mesh: Mesh to save.
-             * 
-             * @return Returns a png image.
-             */
-            std::vector<char> Generate(VoxelMesh m); 
+            inline Math::Vec2ui GetSize() const
+            {
+                return m_Size;
+            }
 
-            ~CSpriteStackingExporter() = default;
+            const std::vector<uint32_t> &GetPixels() const
+            {
+                return m_Pixels;
+            }
+
+            uint32_t GetPixel(const Math::Vec2ui &_Position);
+            std::vector<char> AsPNG();
+
+            ~CTexture() = default;
         private:
-        /* data */
+            Math::Vec2ui m_Size;
+            std::vector<uint32_t> m_Pixels;
     };
+
+    using Texture = std::shared_ptr<CTexture>;
 }
 
-
-#endif //SPRITESTACKINGEXPORTER_HPP
+#endif //TEXTURE_HPP

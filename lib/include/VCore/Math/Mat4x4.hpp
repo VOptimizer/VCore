@@ -25,9 +25,9 @@
 #ifndef MAT4X4_HPP
 #define MAT4X4_HPP
 
-#include <VoxelOptimizer/Math/Vector.hpp>
+#include <VCore/Math/Vector.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     namespace Math
     {

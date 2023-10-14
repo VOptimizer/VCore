@@ -24,8 +24,8 @@
 
 #include <fstream>
 #include <stdexcept>
-#include <VoxelOptimizer/Misc/Exceptions.hpp>
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <VCore/Misc/Exceptions.hpp>
+#include <VCore/Formats/IVoxelFormat.hpp>
 
 #include "../FileUtils.hpp"
 
@@ -37,7 +37,7 @@
 #include "Implementations/Qubicle/QubicleExchangeFormat.hpp"
 #include "Implementations/Qubicle/QubicleFormat.hpp"
 
-namespace VoxelOptimizer
+namespace VCore
 {
     VoxelFormat IVoxelFormat::Create(LoaderType type)
     {

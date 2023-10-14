@@ -24,7 +24,7 @@
 
 #include "MarchingCubesMesher.hpp"
 
-namespace VoxelOptimizer
+namespace VCore
 {
     short triangleConnectionTable[256][16] =  
     {

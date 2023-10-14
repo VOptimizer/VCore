@@ -25,12 +25,12 @@
 #ifndef IMESHER_HPP
 #define IMESHER_HPP
 
-#include <VoxelOptimizer/Meshing/Material.hpp>
-#include <VoxelOptimizer/Voxel/VoxelMesh.hpp>
+#include <VCore/Meshing/Material.hpp>
+#include <VCore/Voxel/VoxelMesh.hpp>
 
-#include <VoxelOptimizer/Meshing/Mesh.hpp>
+#include <VCore/Meshing/Mesh.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class IMesher;
     using Mesher = std::shared_ptr<IMesher>;

@@ -9,7 +9,7 @@ set(SRCS "${PROJECT_SOURCE_DIR}/main.cpp")
 
 include_directories("${PROJECT_SOURCE_DIR}/../lib/include")
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/../lib" voxeloptimizer/)
+add_subdirectory("${PROJECT_SOURCE_DIR}/../lib" VCore/)
 
 add_executable(${PROJECT_NAME} ${SRCS})
-target_link_libraries(${PROJECT_NAME} voxeloptimizer)
+target_link_libraries(${PROJECT_NAME} VCore)

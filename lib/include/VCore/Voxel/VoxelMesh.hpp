@@ -26,21 +26,21 @@
 #define VOXELMESH_HPP
 
 #include <array>
-#include <VoxelOptimizer/Voxel/Voxel.hpp>
-#include <VoxelOptimizer/Voxel/BBox.hpp>
+#include <VCore/Voxel/Voxel.hpp>
+#include <VCore/Voxel/BBox.hpp>
 #include <vector>
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Meshing/Material.hpp>
-#include <VoxelOptimizer/Voxel/VoxelSpace.hpp>
-#include <VoxelOptimizer/Meshing/Texture.hpp>
+#include <VCore/Math/Mat4x4.hpp>
+#include <VCore/Meshing/Material.hpp>
+#include <VCore/Voxel/VoxelSpace.hpp>
+#include <VCore/Meshing/Texture.hpp>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-#include <VoxelOptimizer/Math/Vector.hpp>
-#include <VoxelOptimizer/Voxel/VoxelTextureMap.hpp>
+#include <VCore/Math/Vector.hpp>
+#include <VCore/Voxel/VoxelTextureMap.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     enum class TexturingTypes
     {

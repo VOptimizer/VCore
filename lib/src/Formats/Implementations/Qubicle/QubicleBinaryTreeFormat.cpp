@@ -24,10 +24,10 @@
 
 #include <stb_image.h>
 #include <string.h>
-#include <VoxelOptimizer/Misc/Exceptions.hpp>
+#include <VCore/Misc/Exceptions.hpp>
 #include "QubicleBinaryTreeFormat.hpp"
 
-namespace VoxelOptimizer
+namespace VCore
 {
     void CQubicleBinaryTreeFormat::ParseFormat()
     {

@@ -22,9 +22,9 @@
  * SOFTWARE.
  */
 
-#include <VoxelOptimizer/Voxel/VoxelTextureMap.hpp>
+#include <VCore/Voxel/VoxelTextureMap.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     //////////////////////////////////////////////////
     // CVoxelInfo functions

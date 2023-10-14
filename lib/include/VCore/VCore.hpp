@@ -22,28 +22,42 @@
  * SOFTWARE.
  */
 
-#ifndef EXCEPTIONS_HPP
-#define EXCEPTIONS_HPP
+#ifndef VCore_HPP
+#define VCore_HPP
 
-#include <stdexcept>
+/**
+ * Public interface of the V-SDK 
+ */
 
-namespace VoxelOptimizer
-{
-    class CVoxelLoaderException : public std::exception
-    {
-        public:
-            CVoxelLoaderException() {}
-            CVoxelLoaderException(const std::string &Msg) : m_Msg(Msg) {}
-    
-            const char *what() const noexcept override
-            {
-                return m_Msg.c_str();
-            }
-    
-        private:
-            std::string m_Msg;
-    };
-}
+// Export 
+#include <VCore/Export/ExportSettings.hpp>
+#include <VCore/Export/IExporter.hpp>
+#include <VCore/Export/SpriteStackingExporter.hpp>
 
+// Formats
+#include <VCore/Formats/IVoxelFormat.hpp>
+#include <VCore/Formats/SceneNode.hpp>
 
-#endif //EXCEPTIONS_HPP
+// Math
+#include <VCore/Math/Mat4x4.hpp>
+#include <VCore/Math/Vector.hpp>
+
+// Meshing
+#include <VCore/Meshing/Color.hpp>
+#include <VCore/Meshing/IMesher.hpp>
+#include <VCore/Meshing/Material.hpp>
+#include <VCore/Meshing/Mesh.hpp>
+#include <VCore/Meshing/MeshBuilder.hpp>
+#include <VCore/Meshing/Texture.hpp>
+
+// Miscellaneous
+#include <VCore/Misc/Exceptions.hpp>
+
+// Voxel
+#include <VCore/Voxel/BBox.hpp>
+#include <VCore/Voxel/VoxelMesh.hpp>
+#include <VCore/Voxel/PlanesVoxelizer.hpp>
+#include <VCore/Voxel/VoxelTextureMap.hpp>
+#include <VCore/Voxel/Frustum.hpp>
+
+#endif //VCore_HPP

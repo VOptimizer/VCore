@@ -25,14 +25,14 @@
 #ifndef IEXPORTER_HPP
 #define IEXPORTER_HPP
 
-#include <VoxelOptimizer/Export/ExportSettings.hpp>
+#include <VCore/Export/ExportSettings.hpp>
 #include <map>
 #include <memory>
-#include <VoxelOptimizer/Meshing/Mesh.hpp>
+#include <VCore/Meshing/Mesh.hpp>
 #include <string>
 #include <vector>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class IExporter;
     using Exporter = std::shared_ptr<IExporter>;

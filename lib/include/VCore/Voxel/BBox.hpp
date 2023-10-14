@@ -25,9 +25,9 @@
 #ifndef BBOX_HPP
 #define BBOX_HPP
 
-#include <VoxelOptimizer/Math/Vector.hpp>
+#include <VCore/Math/Vector.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CBBox
     {

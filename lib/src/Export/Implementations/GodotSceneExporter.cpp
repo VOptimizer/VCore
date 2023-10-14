@@ -25,7 +25,7 @@
 #include <sstream>
 #include "GodotSceneExporter.hpp"
 
-namespace VoxelOptimizer
+namespace VCore
 {
     std::map<std::string, std::vector<char>> CGodotSceneExporter::Generate(std::vector<Mesh> Meshes)
     {

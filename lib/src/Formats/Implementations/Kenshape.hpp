@@ -25,11 +25,11 @@
 #ifndef KENSHAPE_HPP
 #define KENSHAPE_HPP
 
-#include <VoxelOptimizer/Meshing/Color.hpp>
+#include <VCore/Meshing/Color.hpp>
 #include <CJSON/JSON.hpp>
-#include <VoxelOptimizer/Math/Vector.hpp>
+#include <VCore/Math/Vector.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     class CTile
     {

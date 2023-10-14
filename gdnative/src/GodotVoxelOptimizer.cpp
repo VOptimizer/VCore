@@ -24,21 +24,21 @@
 
 #include <File.hpp>
 #include <SpatialMaterial.hpp>
-#include <GodotVoxelOptimizer.hpp>
+#include <GodotVCore.hpp>
 #include <ImageTexture.hpp>
 #include <Image.hpp>
 #include <MeshInstance.hpp>
 
-void CGodotVoxelOptimizer::_register_methods()
+void CGodotVCore::_register_methods()
 {
-    register_method("load", &CGodotVoxelOptimizer::Load);
-    register_method("save", &CGodotVoxelOptimizer::Save);
-    register_method("save_slices", &CGodotVoxelOptimizer::SaveSlices);
-    register_method("get_meshes", &CGodotVoxelOptimizer::GetMeshes);
-    register_method("get_statistics", &CGodotVoxelOptimizer::GetStatistics);
+    register_method("load", &CGodotVCore::Load);
+    register_method("save", &CGodotVCore::Save);
+    register_method("save_slices", &CGodotVCore::SaveSlices);
+    register_method("get_meshes", &CGodotVCore::GetMeshes);
+    register_method("get_statistics", &CGodotVCore::GetStatistics);
 }
 
-godot_error CGodotVoxelOptimizer::Load(String Path)
+godot_error CGodotVCore::Load(String Path)
 {
     Ref<File> VFile = File::_new();
     if(!VFile->file_exists(Path))
@@ -59,29 +59,29 @@ godot_error CGodotVoxelOptimizer::Load(String Path)
 
     PoolByteArray Data = VFile->get_buffer(VFile->get_len());
 
-    m_Loader = VoxelOptimizer::IVoxelFormat::Create(VoxelOptimizer::IVoxelFormat::GetType(Path.utf8().get_data()));
+    m_Loader = VCore::IVoxelFormat::Create(VCore::IVoxelFormat::GetType(Path.utf8().get_data()));
 
     // String Ext = Path.get_extension().to_lower();
     // if(Ext == "vox")
-    //     m_Loader = VoxelOptimizer::Loader(new VoxelOptimizer::CMagicaVoxelLoader());
+    //     m_Loader = VCore::Loader(new VCore::CMagicaVoxelLoader());
     // else if(Ext == "gox")
-    //     m_Loader = VoxelOptimizer::Loader(new VoxelOptimizer::CGoxelLoader());
+    //     m_Loader = VCore::Loader(new VCore::CGoxelLoader());
     // else if(Ext == "kenshape")
-    //     m_Loader = VoxelOptimizer::Loader(new VoxelOptimizer::CKenshapeLoader());
+    //     m_Loader = VCore::Loader(new VCore::CKenshapeLoader());
     // else if(Ext == "qb")
-    //     m_Loader = VoxelOptimizer::Loader(new VoxelOptimizer::CQubicleBinaryLoader());
+    //     m_Loader = VCore::Loader(new VCore::CQubicleBinaryLoader());
     // else if(Ext == "qbt")
-    //     m_Loader = VoxelOptimizer::Loader(new VoxelOptimizer::CQubicleBinaryTreeLoader());
+    //     m_Loader = VCore::Loader(new VCore::CQubicleBinaryTreeLoader());
     // else if(Ext == "qef")
-    //     m_Loader = VoxelOptimizer::Loader(new VoxelOptimizer::CQubicleExchangeLoader());
+    //     m_Loader = VCore::Loader(new VCore::CQubicleExchangeLoader());
     // else if(Ext == "qbcl")
-    //     m_Loader = VoxelOptimizer::Loader(new VoxelOptimizer::CQubicleLoader());
+    //     m_Loader = VCore::Loader(new VCore::CQubicleLoader());
     
     try
     {
         m_Loader->Load((char*)Data.read().ptr(), Data.size());
     }
-    catch(const VoxelOptimizer::CVoxelLoaderException &e)
+    catch(const VCore::CVoxelLoaderException &e)
     {
         VFile->close();
 
@@ -94,7 +94,7 @@ godot_error CGodotVoxelOptimizer::Load(String Path)
     return (godot_error)Error::OK;
 }
 
-godot_error CGodotVoxelOptimizer::Save(String Path, bool exportWorldspace)
+godot_error CGodotVCore::Save(String Path, bool exportWorldspace)
 {
     if(m_Meshes.empty())
     {
@@ -103,26 +103,26 @@ godot_error CGodotVoxelOptimizer::Save(String Path, bool exportWorldspace)
     }
 
     Ref<File> VFile = File::_new();
-    VoxelOptimizer::Exporter Exporter;
+    VCore::Exporter Exporter;
 
     // String Ext = Path.get_extension().to_lower();
 
-    // VoxelOptimizer::ExporterTypes type;
+    // VCore::ExporterTypes type;
 
     // if(Ext == "gltf")
-    //     type = VoxelOptimizer::ExporterTypes::GLTF;
+    //     type = VCore::ExporterTypes::GLTF;
     // else if(Ext == "glb")
-    //     type = VoxelOptimizer::ExporterTypes::GLB;
+    //     type = VCore::ExporterTypes::GLB;
     // else if(Ext == "obj")
-    //     type = VoxelOptimizer::ExporterTypes::OBJ;
+    //     type = VCore::ExporterTypes::OBJ;
     // else if(Ext == "escn")
-    //     type = VoxelOptimizer::ExporterTypes::ESCN;
+    //     type = VCore::ExporterTypes::ESCN;
     // else if(Ext == "ply")
-    //     type = VoxelOptimizer::ExporterTypes::PLY;
+    //     type = VCore::ExporterTypes::PLY;
     // else
     //     return (godot_error)Error::ERR_FILE_UNRECOGNIZED;
 
-    Exporter = VoxelOptimizer::IExporter::Create(VoxelOptimizer::IExporter::GetType(Path.utf8().get_data()));
+    Exporter = VCore::IExporter::Create(VCore::IExporter::GetType(Path.utf8().get_data()));
     Exporter->Settings()->WorldSpace = exportWorldspace;
 
     Path = Path.get_basename();
@@ -151,7 +151,7 @@ godot_error CGodotVoxelOptimizer::Save(String Path, bool exportWorldspace)
     return (godot_error)Error::OK;
 }
 
-godot_error CGodotVoxelOptimizer::SaveSlices(String Path)
+godot_error CGodotVCore::SaveSlices(String Path)
 {
     if(m_Meshes.empty())
     {
@@ -160,7 +160,7 @@ godot_error CGodotVoxelOptimizer::SaveSlices(String Path)
     }
 
     Ref<File> VFile = File::_new();
-    VoxelOptimizer::CSpriteStackingExporter Exporter;
+    VCore::CSpriteStackingExporter Exporter;
 
     auto models = m_Loader->GetModels();
     int count = 0;
@@ -194,7 +194,7 @@ godot_error CGodotVoxelOptimizer::SaveSlices(String Path)
     return (godot_error)Error::OK;
 }
 
-Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
+Array CGodotVCore::GetMeshes(int mesherType)
 {
     Array ret;
     if(m_Loader->GetModels().empty())
@@ -208,7 +208,7 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
     m_FacesCount = 0;
     m_Meshes.clear();
 
-    VoxelOptimizer::Mesher Mesher = VoxelOptimizer::IMesher::Create((VoxelOptimizer::MesherTypes)mesherType);
+    VCore::Mesher Mesher = VCore::IMesher::Create((VCore::MesherTypes)mesherType);
     auto voxelmeshes = m_Loader->GetModels();
     for (auto &&m : voxelmeshes)
         m_BlockCount += m->GetBlockCount();
@@ -232,7 +232,7 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
         Array arr;
         arr.resize(ArrayMesh::ARRAY_MAX);
 
-        std::map<VoxelOptimizer::CVector, int> Index;
+        std::map<VCore::CVector, int> Index;
 
         PoolVector3Array Vertices, Normals;
         PoolVector2Array UVs;    
@@ -245,7 +245,7 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
 
         // Converts the colorpalette to a texture for godot.
         Ref<Image> Img = Image::_new();
-        auto albedo = mesh->Textures[VoxelOptimizer::TextureType::DIFFIUSE];
+        auto albedo = mesh->Textures[VCore::TextureType::DIFFIUSE];
 
         Img->create(albedo->Size().x, albedo->Size().y, false, Image::Format::FORMAT_RGBA8);
         Img->lock();
@@ -253,8 +253,8 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
         {
             for (size_t y = 0; y < albedo->Size().y; y++)
             {
-                VoxelOptimizer::CColor c;
-                c.FromRGBA(albedo->Pixel(VoxelOptimizer::CVector(x, y, 0)));
+                VCore::CColor c;
+                c.FromRGBA(albedo->Pixel(VCore::CVector(x, y, 0)));
 
                 Img->set_pixel(x, 0, Color(c.R / 255.f, c.G / 255.f, c.B / 255.f, c.A / 255.f));
             }
@@ -266,7 +266,7 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
 
         for (auto &&f : mesh->Faces)
         {
-            // Since libVoxelOptimizer generates highly packed meshes,
+            // Since libVCore generates highly packed meshes,
             // it's neccessary to unpack them for godot and OpenGL.
             for (auto &&v : f->Indices)
             {
@@ -276,7 +276,7 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
                     // Indices.append(IT->second);
                 else
                 {
-                    VoxelOptimizer::CVector Vertex, Normal, UV;
+                    VCore::CVector Vertex, Normal, UV;
                     Vertex = mesh->Vertices[(size_t)v.x - 1];
                     Normal = mesh->Normals[(size_t)v.y - 1];
                     UV = mesh->UVs[(size_t)v.z - 1];
@@ -332,7 +332,7 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
                 Mat->set_emission_energy(f->FaceMaterial->Power);
 
                 Ref<Image> Img = Image::_new();
-                auto emission = mesh->Textures[VoxelOptimizer::TextureType::EMISSION];
+                auto emission = mesh->Textures[VCore::TextureType::EMISSION];
 
                 Img->create(emission->Size().x, emission->Size().y, false, Image::Format::FORMAT_RGBA8);
                 Img->lock();
@@ -341,8 +341,8 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
                 {
                     for (size_t y = 0; y < emission->Size().y; y++)
                     {
-                        VoxelOptimizer::CColor c;
-                        c.FromRGBA(emission->Pixel(VoxelOptimizer::CVector(x, y, 0)));
+                        VCore::CColor c;
+                        c.FromRGBA(emission->Pixel(VCore::CVector(x, y, 0)));
 
                         Img->set_pixel(x, 0, Color(c.R / 255.f, c.G / 255.f, c.B / 255.f, c.A / 255.f));
                     }
@@ -387,7 +387,7 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
     return ret;
 }
 
-Dictionary CGodotVoxelOptimizer::GetStatistics()
+Dictionary CGodotVCore::GetStatistics()
 {
     Dictionary Ret;
 

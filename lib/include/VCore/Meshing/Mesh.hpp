@@ -25,14 +25,14 @@
 #ifndef MESH_HPP
 #define MESH_HPP
 
-#include <VoxelOptimizer/Math/Mat4x4.hpp>
-#include <VoxelOptimizer/Meshing/Material.hpp>
-#include <VoxelOptimizer/Formats/IVoxelFormat.hpp>
+#include <VCore/Math/Mat4x4.hpp>
+#include <VCore/Meshing/Material.hpp>
+#include <VCore/Formats/IVoxelFormat.hpp>
 #include <memory>
 #include <vector>
-#include <VoxelOptimizer/Math/Vector.hpp>
+#include <VCore/Math/Vector.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     struct SVertex
     {

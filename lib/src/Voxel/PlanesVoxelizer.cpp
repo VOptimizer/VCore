@@ -22,9 +22,9 @@
 * SOFTWARE.
 */
 
-#include <VoxelOptimizer/Voxel/PlanesVoxelizer.hpp>
+#include <VCore/Voxel/PlanesVoxelizer.hpp>
 
-namespace VoxelOptimizer
+namespace VCore
 {
     CPlanesVoxelizer::CPlanesVoxelizer()
     {
