@@ -220,8 +220,8 @@ namespace VCore
         Math::Vec3i ret;
 
         ret.x = ReadData<int>();
-        ret.y = ReadData<int>();
         ret.z = ReadData<int>();
+        ret.y = ReadData<int>();
 
         return ret;
     }

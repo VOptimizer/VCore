@@ -34,7 +34,16 @@ namespace VCore
     CChunkQueryList::iterator CChunkQueryList::begin()
     {
         auto it = CChunkQueryIterator(this, m_Chunks->begin());
-        it++;
+
+        // Filters until the first none filtered element is reached
+        if(m_FilterFunction)
+            it++;
+        else
+        {
+            CBBox bbox(it.m_Iterator->first, it.m_Iterator->first + m_ChunkSize);
+            it.m_ChunkMeta = {(size_t)&it.m_Iterator->second, &it.m_Iterator->second, bbox, it.m_Iterator->second.inner_bbox(it.m_Iterator->first)};
+        }
+
         return it;
     }
 
@@ -46,7 +55,15 @@ namespace VCore
     CChunkQueryList::iterator CChunkQueryList::begin() const
     {
         auto it = CChunkQueryIterator(this, m_Chunks->begin());
-        it++;
+
+        // Filters until the first none filtered element is reached
+        if(m_FilterFunction)
+            it++;
+        else
+        {
+            CBBox bbox(it.m_Iterator->first, it.m_Iterator->first + m_ChunkSize);
+            it.m_ChunkMeta = {(size_t)&it.m_Iterator->second, &it.m_Iterator->second, bbox, it.m_Iterator->second.inner_bbox(it.m_Iterator->first)};
+        }
         return it;
     }
 

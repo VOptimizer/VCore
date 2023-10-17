@@ -148,6 +148,7 @@ namespace VCore
     {
         class CChunkQueryIterator
         {
+            friend CChunkQueryList;
             public:
                 using reference = SChunkMeta&;
                 using pointer = SChunkMeta*;

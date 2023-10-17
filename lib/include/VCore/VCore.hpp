@@ -25,9 +25,7 @@
 #ifndef VCore_HPP
 #define VCore_HPP
 
-/**
- * Public interface of the V-SDK 
- */
+// Public interface
 
 // Export 
 #include <VCore/Export/ExportSettings.hpp>

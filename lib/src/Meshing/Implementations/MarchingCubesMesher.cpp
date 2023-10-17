@@ -384,10 +384,10 @@ namespace VCore
         return chunk;
     }
 
-    std::vector<SMeshChunk> CMarchingCubesMesher::GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty, int _ChunkCount)
+    std::vector<SMeshChunk> CMarchingCubesMesher::GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty)
     {
         m_Mesh = _Mesh;
-        std::vector<SMeshChunk> ret = IMesher::GenerateChunks(_Mesh, _OnlyDirty, _ChunkCount);
+        std::vector<SMeshChunk> ret = IMesher::GenerateChunks(_Mesh, _OnlyDirty);
         for (auto &&pair : ret)
         {
             auto mesh = pair.Mesh;

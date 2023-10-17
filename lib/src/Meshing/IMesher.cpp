@@ -51,7 +51,7 @@ namespace VCore
         else
         {
             if(!_OnlyDirty)
-                chunks = _Mesh->QueryChunks(m_Frustum);
+                chunks = _Mesh->QueryChunks();
             else
                 chunks = _Mesh->QueryDirtyChunks();
         }

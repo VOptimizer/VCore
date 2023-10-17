@@ -35,7 +35,7 @@ namespace VCore
         public:
             CMarchingCubesMesher() : IMesher() {}
 
-            std::vector<SMeshChunk> GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty = false, int _ChunkCount = -1) override;
+            std::vector<SMeshChunk> GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty = false) override;
 
             virtual ~CMarchingCubesMesher() = default;
 
