@@ -1,8 +1,12 @@
-cmake_minimum_required(VERSION 3.3.0)
+cmake_minimum_required(VERSION 3.5.0)
 project(VCore VERSION 0.1.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelMesh.cpp"
@@ -41,4 +45,8 @@ include_directories("${PROJECT_SOURCE_DIR}/include"
                     "${PROJECT_SOURCE_DIR}/third_party")
 
 add_library(${PROJECT_NAME} STATIC ${SRCS})
+target_compile_options(${PROJECT_NAME} PRIVATE
+  $<$<CXX_COMPILER_ID:MSVC>:/WX /W4>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Werror>
+)
 #target_link_libraries(${PROJECT_NAME} ${LIBS})

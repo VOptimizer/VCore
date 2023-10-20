@@ -37,8 +37,6 @@ using namespace std;
 
 namespace VCore
 {
-    static int counter111 = 1;
-
     void CQubicleFormat::ParseFormat()
     {
         m_Models.clear();

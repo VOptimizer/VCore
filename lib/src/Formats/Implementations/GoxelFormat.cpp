@@ -228,7 +228,7 @@ namespace VCore
 
         int Blocks = ReadData<int>();
 
-        for (size_t i = 0; i < Blocks; i++)
+        for (int i = 0; i < Blocks; i++)
         {
             Block B;
 
@@ -276,7 +276,7 @@ namespace VCore
     {
         std::map<std::string, std::string> Ret;
 
-        while (Tellg() - StartPos < Chunk.Size)
+        while (Tellg() - StartPos < (size_t)Chunk.Size)
         {
             int Size = ReadData<int>();
             std::string Key(Size, '\0');

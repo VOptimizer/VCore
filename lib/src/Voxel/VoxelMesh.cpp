@@ -29,7 +29,7 @@ namespace VCore
 {
     void CVoxelMesh::SetVoxel(const Math::Vec3i &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask)
     {      
-        CVoxel Tmp;// = m_Pool.alloc();
+        CVoxel Tmp;
         
         Tmp.Material = Material;
         Tmp.Color = Color;
@@ -43,24 +43,11 @@ namespace VCore
     {
         auto IT = m_Voxels.find(Pos);
         if(IT != m_Voxels.end())
-        {
-            // SetNormal(Pos, CVoxel::FACE_UP, false);
-            // SetNormal(Pos, CVoxel::FACE_DOWN, false);
-
-            // SetNormal(Pos, CVoxel::FACE_LEFT, false);
-            // SetNormal(Pos, CVoxel::FACE_RIGHT, false);
-
-            // SetNormal(Pos, CVoxel::FACE_FORWARD, false);
-            // SetNormal(Pos, CVoxel::FACE_BACKWARD, false);
-
             m_Voxels.erase(IT);
-            // MarkChunk(Pos);
-        }
     }
     
     void CVoxelMesh::Clear()
     {
-        
         m_Voxels.clear();
     }
 
@@ -123,65 +110,5 @@ namespace VCore
     CVoxelMesh::VoxelData::querylist CVoxelMesh::QueryChunks(const CFrustum *_Frustum) const
     {
         return m_Voxels.queryChunks(_Frustum);
-    }
-    
-    void CVoxelMesh::SetNormal(const Math::Vec3i &Pos, const Math::Vec3i &Neighbor, bool IsInvisible)
-    {
-        // static const std::map<Math::Vec3f, std::pair<CVoxel::Visibility, CVoxel::Visibility>> NEIGHBOR_INDEX = {
-        //     {CVoxel::FACE_UP, {CVoxel::Visibility::UP, CVoxel::Visibility::DOWN}},
-        //     {CVoxel::FACE_DOWN, {CVoxel::Visibility::DOWN, CVoxel::Visibility::UP}},
-
-        //     {CVoxel::FACE_LEFT, {CVoxel::Visibility::LEFT, CVoxel::Visibility::RIGHT}},
-        //     {CVoxel::FACE_RIGHT, {CVoxel::Visibility::RIGHT, CVoxel::Visibility::LEFT}},
-
-        //     {CVoxel::FACE_FORWARD, {CVoxel::Visibility::FORWARD, CVoxel::Visibility::BACKWARD}},
-        //     {CVoxel::FACE_BACKWARD, {CVoxel::Visibility::BACKWARD, CVoxel::Visibility::FORWARD}},
-        // };
-
-        // Voxel cur = GetVoxel(Pos);
-        // if(cur == nullptr)
-        //     return;
-
-        // Voxel neighbor = GetVoxel(Pos + Neighbor);
-        // auto visibility = NEIGHBOR_INDEX.at(Neighbor);
-
-        // // 1. Both opaque touching faces invisible
-        // // 2. One transparent touching faces visible
-        // // 3. Both transparent different transparency faces visible
-        // // 4. Both transparent same transparency and color faces invisible
-        // // 5. Both transparent different transparency and same color faces visible
-
-        // if(neighbor)
-        // {
-        //     bool hideFaces = false;
-
-        //     if(!neighbor->Transparent && !cur->Transparent)
-        //         hideFaces = true;
-        //     else if(neighbor->Transparent && !cur->Transparent || !neighbor->Transparent && cur->Transparent)
-        //         hideFaces = false;
-        //     else if(neighbor->Transparent && cur->Transparent)
-        //     {
-        //         if(neighbor->Material != cur->Material)
-        //             hideFaces = false;
-        //         else if(neighbor->Color != cur->Color)
-        //             hideFaces = false;
-        //         else
-        //             hideFaces = true;
-        //     }
-
-        //     if(hideFaces)
-        //     {
-        //         neighbor->VisibilityMask = IsInvisible ? (CVoxel::Visibility)(neighbor->VisibilityMask & ~visibility.second) : (CVoxel::Visibility)(neighbor->VisibilityMask | visibility.second);
-        //         cur->VisibilityMask = IsInvisible ? (CVoxel::Visibility)(cur->VisibilityMask & ~visibility.first) : (CVoxel::Visibility)(cur->VisibilityMask | visibility.first);
-        //     }
-        //     else
-        //         cur->VisibilityMask = (CVoxel::Visibility)(cur->VisibilityMask | visibility.first);
-        // }
-        // else
-        //     cur->VisibilityMask = (CVoxel::Visibility)(cur->VisibilityMask | visibility.first);
-
-        // // CheckInvisible(cur);
-        // // if(neighbor)
-        //     CheckInvisible(neighbor);
     }
 }

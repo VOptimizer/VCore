@@ -30,6 +30,8 @@ namespace VCore
 {
     SMeshChunk CSimpleMesher::GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque)
     {
+        (void)Opaque;
+
         CMeshBuilder builder;
         builder.AddTextures(m->Textures);
 
@@ -117,10 +119,12 @@ namespace VCore
                                     v3 = Math::Vec3f(vpos.x, vpos.y, vpos.z + PosZ) - boxCenter;
                                     v4 = Math::Vec3f(vpos.x + 1.f, vpos.y, vpos.z + PosZ) - boxCenter;
                                 }break;
+
+                                default: break;
                             }
 
                             Material mat;
-                            if(v->Material < m->Materials.size())
+                            if(v->Material < (short)m->Materials.size())
                                 mat = m->Materials[v->Material];
 
                             builder.AddFace(v1, v2, v3, v4, Normal, v->Color, mat);

@@ -91,7 +91,7 @@ namespace VCore
         strm >> count;
         strm.clear();
 
-        for (size_t i = 0; i < count; i++)
+        for (int i = 0; i < count; i++)
         {
             strm << ReadLine();
             float r, g, b;

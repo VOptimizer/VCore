@@ -138,7 +138,7 @@ namespace VCore
         return m_ChunkMeta;
     }
 
-    const CChunkQueryList::CChunkQueryIterator::pointer CChunkQueryList::CChunkQueryIterator::operator->() const
+    CChunkQueryList::CChunkQueryIterator::pointer CChunkQueryList::CChunkQueryIterator::operator->() const
     {
         return &m_ChunkMeta;
     }
@@ -186,7 +186,7 @@ namespace VCore
     // CVoxelSpace functions
     //////////////////////////////////////////////////
 
-    CVoxelSpace::CVoxelSpace() : m_VoxelsCount(0), m_ChunkSize(16, 16, 16) {}
+    CVoxelSpace::CVoxelSpace() : m_ChunkSize(16, 16, 16), m_VoxelsCount(0) {}
     CVoxelSpace::CVoxelSpace(const Math::Vec3i &_ChunkSize) : CVoxelSpace()
     {
         m_ChunkSize = _ChunkSize;
@@ -345,6 +345,8 @@ namespace VCore
 
         return CChunkQueryList(m_Chunks, m_ChunkSize, [](const CBBox &_BBox, const CChunk &_Chunk, void *_Userdata)
         {
+            (void)_BBox;
+            (void)_Userdata;
             return _Chunk.IsDirty;
         });
     }
@@ -403,7 +405,7 @@ namespace VCore
             Math::Vec3i beg = inner.Beg;
             Math::Vec3i end = inner.End;            
 
-            for (char axis = 0; axis < 3; axis++)
+            for (uint8_t axis = 0; axis < 3; axis++)
             {
                 int axis1 = (axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
                 int axis2 = (axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
@@ -451,7 +453,7 @@ namespace VCore
         }
     }
 
-    void CVoxelSpace::CheckVisibility(const Voxel &_v, const Voxel &_v2, char _axis)
+    void CVoxelSpace::CheckVisibility(const Voxel &_v, const Voxel &_v2, uint8_t _axis)
     {
         const static std::pair<CVoxel::Visibility, CVoxel::Visibility> ADJACENT_FACES[3] = {
             {~CVoxel::Visibility::RIGHT, ~CVoxel::Visibility::LEFT},
@@ -615,7 +617,7 @@ namespace VCore
     // CVoxelSpace::CChunk functions
     //////////////////////////////////////////////////
 
-    CChunk::CChunk(const Math::Vec3i &_ChunkSize) : m_InnerBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i()), IsDirty(false)
+    CChunk::CChunk(const Math::Vec3i &_ChunkSize) : IsDirty(false), m_InnerBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i())
     {
         m_Data = new CVoxel[_ChunkSize.x * _ChunkSize.y * _ChunkSize.z];   
     }
@@ -748,7 +750,7 @@ namespace VCore
         return m_Pair;
     }
 
-    const typename CVoxelSpaceIterator::pointer CVoxelSpaceIterator::operator->() const
+    typename CVoxelSpaceIterator::pointer CVoxelSpaceIterator::operator->() const
     {
         return &m_Pair;
     }

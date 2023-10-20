@@ -195,7 +195,7 @@ namespace VCore
 
             for (auto &&i : surface.Indices)
             {
-                if(i < surface.Vertices.size())
+                if(i < (int)surface.Vertices.size())
                     it->second.Index.insert({surface.Vertices[i], i});
             }
         }       

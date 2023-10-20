@@ -339,7 +339,6 @@ namespace VCore
 
         for (auto &&c : cube)
         {
-            bool invisible = true;
             auto voxel = m->GetVoxel(pos + c);
             if(!voxel)
                 ret |= 1 << bitPos;
@@ -352,6 +351,8 @@ namespace VCore
 
     SMeshChunk CMarchingCubesMesher::GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque)
     {
+        (void)Opaque;
+
         CMeshBuilder builder;
         builder.AddTextures(m->Textures);
 
@@ -429,7 +430,7 @@ namespace VCore
         Math::Vec4f tmpIdxs(oldidx, idxs.x, idxs.y, idxs.z);
         std::map<int, int> counter;
 
-        for (char i = 0; i < 4; i++)
+        for (uint8_t i = 0; i < 4; i++)
         {
             auto IT = counter.find(tmpIdxs.v[i]);
             if(IT != counter.end())

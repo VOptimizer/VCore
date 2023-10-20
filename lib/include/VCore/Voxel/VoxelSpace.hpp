@@ -58,7 +58,7 @@ namespace VCore
             CVoxelSpaceIterator(CVoxelSpaceIterator &&_Other);
 
             const reference operator*() const;
-            const pointer operator->() const;
+            pointer operator->() const;
 
             CVoxelSpaceIterator& operator++();
             CVoxelSpaceIterator& operator++(int);
@@ -159,7 +159,7 @@ namespace VCore
                 CChunkQueryIterator(const CChunkQueryIterator &_Other) { *this = _Other; }
 
                 const reference operator*() const;
-                const pointer operator->() const;
+                pointer operator->() const;
 
                 CChunkQueryIterator& operator++();
                 CChunkQueryIterator& operator++(int);
@@ -181,7 +181,7 @@ namespace VCore
             using FilterFunction = bool (*)(const CBBox &_BBox, const CChunk &_Chunk, void *_Userdata);
 
             CChunkQueryList() : m_FilterFunction(nullptr), m_Chunks(nullptr) {}
-            CChunkQueryList(const std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher> &_Chunks, const Math::Vec3i &_ChunkSize, FilterFunction _FilterFn = nullptr, void *_Userdata = nullptr) : m_FilterFunction(_FilterFn), m_Chunks(&_Chunks), m_ChunkSize(_ChunkSize), m_Userdata(_Userdata) {}
+            CChunkQueryList(const std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher> &_Chunks, const Math::Vec3i &_ChunkSize, FilterFunction _FilterFn = nullptr, void *_Userdata = nullptr) : m_FilterFunction(_FilterFn), m_ChunkSize(_ChunkSize), m_Chunks(&_Chunks), m_Userdata(_Userdata) {}
             CChunkQueryList(const CChunkQueryList &_Other) { *this = _Other; }
             CChunkQueryList(CChunkQueryList &&_Other) { *this = std::move(_Other); }
 
@@ -310,7 +310,7 @@ namespace VCore
 
         private:
             Math::Vec3i chunkpos(const Math::Vec3i &_Position) const;
-            void CheckVisibility(const Voxel &_v, const Voxel &_v2, char _axis);
+            void CheckVisibility(const Voxel &_v, const Voxel &_v2, uint8_t _axis);
 
             iterator next(const Math::Vec3i &_FromPosition) const;
 

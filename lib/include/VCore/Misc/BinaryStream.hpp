@@ -176,7 +176,6 @@ namespace VCore
             void skip(size_t _bytes);
 
             std::vector<char> data() {
-                size_t offset = this->offset();
                 reset();
 
                 size_t size = this->size();
@@ -215,11 +214,11 @@ namespace VCore
 
     inline CBinaryStream::CBinaryStream(std::istream &_strm) : std::iostream(_strm.rdbuf()), m_StreamBuffer(nullptr) { }
     inline CBinaryStream::CBinaryStream(std::ostream &_strm) : std::iostream(_strm.rdbuf()), m_StreamBuffer(nullptr) { }
-    inline CBinaryStream::CBinaryStream(const CBinaryStream &_strm)
+    /*inline CBinaryStream::CBinaryStream(const CBinaryStream &_strm)
     {
         this->operator=(std::move(const_cast<CBinaryStream&>(_strm)));
         this->init(m_StreamBuffer);
-    }
+    }*/
 
     inline CBinaryStream::~CBinaryStream()
     {
@@ -393,6 +392,8 @@ namespace VCore
     template<class _CharT, class _Traits> 
     typename CMemoryBuffer<_CharT, _Traits>::pos_type CMemoryBuffer<_CharT, _Traits>::seekoff(off_type off, std::ios_base::seekdir way, std::ios_base::openmode which)
     {
+        (void)which;
+
         off_type pos;
         switch (way)
         {
@@ -430,6 +431,8 @@ namespace VCore
     template<class _CharT, class _Traits> 
     typename CMemoryBuffer<_CharT, _Traits>::pos_type CMemoryBuffer<_CharT, _Traits>::seekpos(pos_type pos, std::ios_base::openmode which)
     {
+        (void)which;
+
         if(pos < 0)
             return pos_type(off_type(-1));
 

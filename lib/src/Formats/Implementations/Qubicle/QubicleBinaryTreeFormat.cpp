@@ -59,7 +59,7 @@ namespace VCore
     {
         int count = ReadData<int>();
         m_HasColormap = count > 0;
-        for (size_t i = 0; i < count; i++)
+        for (int i = 0; i < count; i++)
         {
             CColor c;
             c.FromRGBA(ReadData<uint32_t>());

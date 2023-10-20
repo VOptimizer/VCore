@@ -105,18 +105,6 @@ namespace VCore
             }
 
             /**
-             * @brief Saves the voxel mesh as a voxel file.
-             */         
-            void Save(const std::string &path, const std::vector<VoxelMesh> &meshes);
-
-            /**
-             * @brief Saves the voxel mesh as a voxel file.
-             * 
-             * @return Returns the file as memory stream.
-             */         
-            virtual std::vector<char> Save(const std::vector<VoxelMesh> &meshes);
-
-            /**
              * @return Gets the scene tree of this file.
              */
             inline SceneNode GetSceneTree() const

@@ -55,31 +55,6 @@ namespace VCore
         }
     }
 
-    void IVoxelFormat::Save(const std::string &path, const std::vector<VoxelMesh> &meshes)
-    {
-        std::ofstream out(path, std::ios::binary);
-        if(!out.is_open())
-            throw CVoxelLoaderException("Failed to open '" + path + "'");
-
-        try
-        {
-            auto File = Save(meshes);
-            out.write(File.data(), File.size());
-        }
-        catch(const std::exception& e)
-        {
-            out.close();
-            throw;
-        }
-        
-        out.close();
-    }
-
-    std::vector<char> IVoxelFormat::Save(const std::vector<VoxelMesh> &meshes)
-    {
-        throw std::runtime_error("IVoxelFormat::Save is not implemented!");
-    }
-
     void IVoxelFormat::ClearCache()
     {
         m_Models.clear();

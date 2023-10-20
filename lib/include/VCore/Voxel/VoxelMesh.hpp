@@ -198,8 +198,6 @@ namespace VCore
             
             ~CVoxelMesh() = default;
         private:   
-            void SetNormal(const Math::Vec3i &Pos, const Math::Vec3i &Neighbor, bool IsInvisible = true);
-
             Math::Vec3i m_Size;            
             VoxelData m_Voxels;
     };

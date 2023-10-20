@@ -57,7 +57,7 @@ namespace VCore
         }))
             return false;
 
-        Voxel V1, V2;
+        Voxel V1;
         bool current = true;
         m_HasFace = false;
 
@@ -165,5 +165,7 @@ namespace VCore
                 return m_HasFace = IsFaceVisible(v, CVoxel::Visibility::FORWARD);
             }break;
         }
+
+        return false;
     }
 }

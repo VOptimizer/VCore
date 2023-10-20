@@ -198,9 +198,8 @@ namespace VCore
 
         // Each model has it's used material attached, so we need to map the MagicaVoxel ID to the local one of the mesh.
         std::map<int, int> modelMaterialMapping;
-        auto count1 = 0, count2 = 0;
 
-        for (size_t i = 0; i < VoxelCount; i++)
+        for (int i = 0; i < VoxelCount; i++)
         {
             Math::Vec3i vec;
 
@@ -380,7 +379,7 @@ namespace VCore
                             sceneNodes.pop();
                         }
 
-                        if(group->ChildIdx < group->ChildrensID.size())
+                        if((size_t)group->ChildIdx < group->ChildrensID.size())
                         {
                             sceneNodes.push(currentNode);
                             auto oldCurrent = currentNode;
@@ -419,7 +418,7 @@ namespace VCore
         
         // Skips the dictionary
         int keys = ReadData<int>();
-        for (size_t i = 0; i < keys; i++)
+        for (int i = 0; i < keys; i++)
         {
             int size = ReadData<int>();
             std::string key(size, '\0'); 
@@ -443,10 +442,10 @@ namespace VCore
         Ret->LayerID = ReadData<int>();
 
         int frames = ReadData<int>();
-        for (size_t i = 0; i < frames; i++)
+        for (int i = 0; i < frames; i++)
         {
             keys = ReadData<int>();
-            for (size_t j = 0; j < keys; j++)
+            for (int j = 0; j < keys; j++)
             {
                 int size = ReadData<int>();
                 std::string Key(size, '\0'); 
@@ -472,9 +471,9 @@ namespace VCore
 
                     char rot = std::stoi(Value);
 
-                    char idx1 = rot & 3;
-                    char idx2 = (rot >> 2) & 3;
-                    char idx3 = 3 - idx1 - idx2;
+                    uint8_t idx1 = rot & 3;
+                    uint8_t idx2 = (rot >> 2) & 3;
+                    uint8_t idx3 = 3 - idx1 - idx2;
 
                     auto rotation = Math::Mat4x4(Math::Vec4f(0, 0, 0, 0),
                                             Math::Vec4f(0, 0, 0, 0),
@@ -505,7 +504,7 @@ namespace VCore
         SkipDict();
 
         int childs = ReadData<int>();
-        for (size_t i = 0; i < childs; i++)
+        for (int i = 0; i < childs; i++)
             Ret->ChildrensID.push_back(ReadData<int>());
 
         return Ret;
@@ -519,13 +518,13 @@ namespace VCore
         SkipDict();
 
         int childs = ReadData<int>();
-        for (size_t i = 0; i < childs; i++)
+        for (int i = 0; i < childs; i++)
         {
             Ret->Models.push_back(ReadData<int>());
 
             // Skips the dictionary
             int keys = ReadData<int>();
-            for (size_t i = 0; i < keys; i++)
+            for (int i = 0; i < keys; i++)
             {
                 Skip(ReadData<int>());
                 Skip(ReadData<int>());
@@ -538,7 +537,7 @@ namespace VCore
     void CMagicaVoxelFormat::SkipDict()
     {
         int keys = ReadData<int>();
-        for (size_t i = 0; i < keys; i++)
+        for (int i = 0; i < keys; i++)
         {
             int size = ReadData<int>();
             Skip(size);

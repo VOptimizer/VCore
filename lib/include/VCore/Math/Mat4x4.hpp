@@ -26,6 +26,7 @@
 #define MAT4X4_HPP
 
 #include <VCore/Math/Vector.hpp>
+#define M_PI 3.14159265358979323846
 
 namespace VCore
 {
@@ -90,6 +91,17 @@ namespace VCore
 
                     return *this;
                 }
+
+                inline Mat4x4 &operator=(const Mat4x4 &mat)
+                {
+                    x = mat.x;
+                    y = mat.y;
+                    z = mat.z;
+                    w = mat.w;
+
+                    return *this;
+                }
+
 
                 inline Mat4x4 operator+(const Mat4x4 &mat)
                 {

@@ -65,7 +65,7 @@ namespace VCore
             ~CPlanesVoxelizer() = default;
         private:
             void ProjectPlanes(Texture _planes, const SPlanesInfo &_info);
-            void ProjectTexture(Texture _planes, const CBBox &_bbox, char _axis, bool _otherSide = false);
+            void ProjectTexture(Texture _planes, const CBBox &_bbox, uint8_t _axis, bool _otherSide = false);
 
             int AddOrGetColor(uint32_t _color);
             CColor GetColor(Texture _planes, const Math::Vec2ui &_pos);

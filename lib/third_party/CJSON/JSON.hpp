@@ -1014,7 +1014,7 @@ class CJSON
 
         inline std::string NumToHexStr(uint32_t Num)
         {
-            size_t Len = sizeof(uint32_t) + 1;
+            uint32_t Len = sizeof(uint32_t) + 1;
             char *Buf = new char[Len];
             Len = snprintf(Buf, Len, "%0*x", Len - 1, Num);
 
@@ -1043,12 +1043,12 @@ class CJSON
                     uint8_t Buf[sizeof(uint32_t)] = {0};
                     Buf[Bytes] = str[i] & (0xFF >> FreeBits);
 
-                    size_t Counter = 0;
+                    int Counter = 0;
 
                     for (; Counter < Bytes; Counter++)
                     {
-                        size_t Pos = i + Counter + 1;
-                        if(Pos >= str.size())   //End of string?
+                        int Pos = i + Counter + 1;
+                        if(Pos >= (int)str.size())   //End of string?
                             break;
 
                         int ShiftBits = UTF8BitShift(str[Pos]);
@@ -1065,7 +1065,7 @@ class CJSON
                         uint32_t UTF32 = 0;
                         uint8_t Shift = 6;
 
-                        for(char i = 0; i < Bytes; i++)
+                        for(uint8_t i = 0; i < Bytes; i++)
                         {
                             //ä - xxx00011 xx100100
                             //𝄞 - xxxxx000 xx011101 xx000100 xx011110
@@ -1119,7 +1119,7 @@ class CJSON
         {
             std::string Buf;
 
-            for (Len = 0; Len < sizeof(uint32_t); Len++)
+            for (Len = 0; Len < (int)sizeof(uint32_t); Len++)
             {
                 if(!isxdigit(str[Pos]))
                     break;
@@ -1175,7 +1175,7 @@ class CJSON
                     str.erase(Pos, Len + 2);
                     for (int i = Bytes + 1; i--;)
                     {
-                        if(Pos1 >= str.size())
+                        if(Pos1 >= (int)str.size())
                             str += UTF32Ptr[i];
                         else
                             str.insert(Pos1, std::string(1, UTF32Ptr[i]));
@@ -1413,6 +1413,7 @@ class CJSON
         template<class T, typename std::enable_if<(std::is_class<T>::value && !std::is_same<T, std::string>::value && !has_push_back<T>::value && !has_push_front<T>::value && !(is_map<T>::value || is_multimap<T>::value)) /*|| std::is_pointer<T>::value*/>::type* = nullptr>
         inline T ParseValue(const std::string &val)
         {
+            (void)val;
             throw CJSONException(JSONErrorType::INVALID_CAST);
         }
 

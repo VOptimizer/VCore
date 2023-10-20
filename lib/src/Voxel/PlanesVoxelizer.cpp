@@ -117,11 +117,11 @@ namespace VCore
         }
     }
 
-    void CPlanesVoxelizer::ProjectTexture(Texture _planes, const CBBox &_bbox, char _axis, bool _otherSide)
+    void CPlanesVoxelizer::ProjectTexture(Texture _planes, const CBBox &_bbox, uint8_t _axis, bool _otherSide)
     {
         Math::Vec3i size = _bbox.GetSize() - Math::Vec3i(1, 1, 1);
-        char axis1 = (_axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
-        char axis2 = (_axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
+        uint8_t axis1 = (_axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
+        uint8_t axis2 = (_axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
 
         for (int y = 0; y < size.y; y++)
         {
@@ -136,7 +136,7 @@ namespace VCore
                 int colorIdx = AddOrGetColor(p);
 
                 // Projects the color onto the mesh.
-                for (size_t z = 0; z < m_Mesh->GetSize().v[_axis]; z++)
+                for (int z = 0; z < m_Mesh->GetSize().v[_axis]; z++)
                 {
                     // TODO: UGLY, but functional :(
                     Math::Vec3f pos;
@@ -151,7 +151,7 @@ namespace VCore
                     }
                     else
                     {
-                        if(_otherSide && _axis != 0 || (!_otherSide && _axis == 0))
+                        if((_otherSide && _axis != 0) || (!_otherSide && _axis == 0))
                             pos.v[axis1] = size.x - x - 1;
                         else
                             pos.v[axis1] = x;

@@ -83,7 +83,7 @@ namespace VCore
 
             virtual ~IMesher();
         protected:
-            virtual SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque) { return {}; }
+            virtual SMeshChunk GenerateMeshChunk(VoxelMesh, const SChunkMeta&, bool) { return {}; }
 
             std::vector<Mesh> GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds = false);
             CFrustum *m_Frustum;

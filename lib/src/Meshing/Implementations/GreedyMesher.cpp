@@ -133,9 +133,7 @@ namespace VCore
 
                             int dv[3] = {};
                             dv[Axis1] = h;
-
-                            int I1, I2, I3, I4;                            
-
+                    
                             Math::Vec3f v1 = Math::Vec3f(x[0], x[1], x[2]) - BoxCenter;
                             Math::Vec3f v2 = Math::Vec3f(x[0] + du[0], x[1] + du[1], x[2] + du[2]) - BoxCenter;
                             Math::Vec3f v3 = Math::Vec3f(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2]) - BoxCenter;
@@ -146,7 +144,7 @@ namespace VCore
                             //     Normal.y *= -1;
 
                             Material mat;
-                            if(material < materials.size())
+                            if(material < (int)materials.size())
                                 mat = materials[material];
 
                             builder.AddFace(v1, v2, v3, v4, Normal, Color, mat);

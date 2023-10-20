@@ -79,6 +79,14 @@ namespace VCore
                     return *this;
                 }
 
+                inline TVector2 &operator=(const TVector2 &vr)
+                {
+                    x = vr.x;
+                    y = vr.y;
+
+                    return *this;
+                }
+
                 inline bool operator>=(const TVector2 &vr) const
                 {
                     if(x != vr.x)
@@ -236,6 +244,15 @@ namespace VCore
                     return *this;
                 }
 
+                inline TVector3 &operator=(const TVector3 &vr)
+                {
+                    x = vr.x;
+                    y = vr.y;
+                    z = vr.z;
+
+                    return *this;
+                }
+
                 inline TVector3 operator/(const TVector3 &vr) const
                 {
                     return TVector3(x / vr.x, y / vr.y, z / vr.z);
@@ -370,6 +387,16 @@ namespace VCore
                     return *this;
                 }
 
+                inline Vec4f &operator=(const Vec4f &vr)
+                {
+                    x = vr.x;
+                    y = vr.y;
+                    z = vr.z;
+                    w = vr.w;
+
+                    return *this;
+                }
+
                 inline Vec4f operator/(const Vec4f &vr) const
                 {
                     return Vec4f(x / vr.x, y / vr.y, z / vr.z, w / vr.w);
@@ -445,7 +472,7 @@ namespace VCore
                         int i;
                     };
 
-                    Floatconvert x, y, z;
+                    Floatconvert x, y;
                     x.f = _Vec.x;
                     y.f = _Vec.y;
 

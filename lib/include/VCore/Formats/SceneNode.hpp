@@ -37,7 +37,7 @@ namespace VCore
         public:
             using SceneNodes = std::vector<SceneNode>;
 
-            CSceneNode() : m_Scale(1, 1, 1), m_Parent(nullptr), Visible(true) {}
+            CSceneNode() : Visible(true), m_Scale(1, 1, 1), m_Parent(nullptr) {}
 
             bool Visible;
 

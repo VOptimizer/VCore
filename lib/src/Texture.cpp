@@ -72,7 +72,7 @@ namespace VCore
 
     uint32_t CTexture::GetPixel(const Math::Vec2ui &_Position)
     {
-        if(_Position.x >= m_Size.x || _Position.y >= m_Size.y || _Position.x < 0 || _Position.y < 0)
+        if(_Position.x >= m_Size.x || _Position.y >= m_Size.y)
             throw std::runtime_error("Position out of bounds!");
 
         return m_Pixels[_Position.x + m_Size.x * _Position.y];
