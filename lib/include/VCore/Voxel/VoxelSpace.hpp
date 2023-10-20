@@ -57,7 +57,7 @@ namespace VCore
             CVoxelSpaceIterator(const CVoxelSpaceIterator &_Other);
             CVoxelSpaceIterator(CVoxelSpaceIterator &&_Other);
 
-            const reference operator*() const;
+            reference operator*() const;
             pointer operator->() const;
 
             CVoxelSpaceIterator& operator++();
@@ -158,7 +158,7 @@ namespace VCore
                 CChunkQueryIterator(CChunkQueryIterator &&_Other) { *this = std::move(_Other); }
                 CChunkQueryIterator(const CChunkQueryIterator &_Other) { *this = _Other; }
 
-                const reference operator*() const;
+                reference operator*() const;
                 pointer operator->() const;
 
                 CChunkQueryIterator& operator++();

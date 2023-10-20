@@ -133,7 +133,7 @@ namespace VCore
     // CChunkQueryList::CChunkQueryIterator functions
     //////////////////////////////////////////////////
 
-    const CChunkQueryList::CChunkQueryIterator::reference CChunkQueryList::CChunkQueryIterator::operator*() const
+    CChunkQueryList::CChunkQueryIterator::reference CChunkQueryList::CChunkQueryIterator::operator*() const
     {
         return m_ChunkMeta;
     }
@@ -745,7 +745,7 @@ namespace VCore
         *this = std::move(_Other);
     }
 
-    const typename CVoxelSpaceIterator::reference CVoxelSpaceIterator::operator*() const
+    typename CVoxelSpaceIterator::reference CVoxelSpaceIterator::operator*() const
     {
         return m_Pair;
     }
