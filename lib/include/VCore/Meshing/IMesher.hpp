@@ -44,7 +44,7 @@ namespace VCore
 
     struct SMeshChunk : public SChunkMeta
     {
-        Mesh Mesh;          //!< Mesh of the voxel model.
+        Mesh MeshData;          //!< Mesh of the voxel model.
     };
 
     class IMesher

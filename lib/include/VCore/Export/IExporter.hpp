@@ -85,7 +85,7 @@ namespace VCore
              * 
              * @return Returns a map where the key is the type and the std::vector<char> is the data.
              */
-            virtual std::map<std::string, std::vector<char>> Generate(Mesh Mesh);
+            virtual std::map<std::string, std::vector<char>> Generate(Mesh mesh);
 
             /**
              * @brief Generates a file stream.

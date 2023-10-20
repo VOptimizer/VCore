@@ -168,7 +168,7 @@ namespace VCore
         chunk.UniqueId = _Chunk.UniqueId;
         chunk.InnerBBox = _Chunk.InnerBBox;
         chunk.TotalBBox = _Chunk.TotalBBox;
-        chunk.Mesh = builder.Build();
+        chunk.MeshData = builder.Build();
 
         return chunk;
     }

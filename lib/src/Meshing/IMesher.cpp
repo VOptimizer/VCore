@@ -103,10 +103,10 @@ namespace VCore
         for (auto &&c : chunks)
         {
             if(!ret)
-                ret = c.Mesh;
+                ret = c.MeshData;
             else
             {
-                meshes[idx] = c.Mesh;
+                meshes[idx] = c.MeshData;
                 idx++;
             }
         }

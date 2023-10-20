@@ -381,7 +381,7 @@ namespace VCore
         chunk.UniqueId = _Chunk.UniqueId;
         chunk.InnerBBox = _Chunk.InnerBBox;
         chunk.TotalBBox = _Chunk.TotalBBox;
-        chunk.Mesh = builder.Build();
+        chunk.MeshData = builder.Build();
         return chunk;
     }
 
@@ -391,7 +391,7 @@ namespace VCore
         std::vector<SMeshChunk> ret = IMesher::GenerateChunks(_Mesh, _OnlyDirty);
         for (auto &&pair : ret)
         {
-            auto mesh = pair.Mesh;
+            auto mesh = pair.MeshData;
             for (auto &&surface : mesh->Surfaces)
             {
                 for (auto &&vertex : surface.Vertices)
