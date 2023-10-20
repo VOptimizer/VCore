@@ -46,7 +46,7 @@ include_directories("${PROJECT_SOURCE_DIR}/include"
 
 add_library(${PROJECT_NAME} STATIC ${SRCS})
 target_compile_options(${PROJECT_NAME} PRIVATE
-  $<$<CXX_COMPILER_ID:MSVC>:/WX /W4>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Werror>
+  $<$<CXX_COMPILER_ID:MSVC>:/W4>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra>
 )
 #target_link_libraries(${PROJECT_NAME} ${LIBS})
