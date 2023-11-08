@@ -23,32 +23,30 @@
  */
 
 #include <File.hpp>
-#include <SpatialMaterial.hpp>
-#include <GodotVCore.hpp>
-#include <ImageTexture.hpp>
+#include <GodotVoxelOptimizer.hpp>
 #include <Image.hpp>
 #include <MeshInstance.hpp>
 
-void CGodotVCore::_register_methods()
+void CGodotVoxelOptimizer::_register_methods()
 {
-    register_method("load", &CGodotVCore::Load);
-    register_method("save", &CGodotVCore::Save);
-    register_method("save_slices", &CGodotVCore::SaveSlices);
-    register_method("get_meshes", &CGodotVCore::GetMeshes);
-    register_method("get_statistics", &CGodotVCore::GetStatistics);
+    register_method("load", &CGodotVoxelOptimizer::Load);
+    register_method("save", &CGodotVoxelOptimizer::Save);
+    register_method("save_slices", &CGodotVoxelOptimizer::SaveSlices);
+    register_method("get_meshes", &CGodotVoxelOptimizer::GetMeshes);
+    register_method("get_statistics", &CGodotVoxelOptimizer::GetStatistics);
 }
 
-godot_error CGodotVCore::Load(String Path)
+godot_error CGodotVoxelOptimizer::Load(String Path)
 {
-    Ref<File> VFile = File::_new();
-    if(!VFile->file_exists(Path))
+    Ref<File> file = File::_new();
+    if(!file->file_exists(Path))
     {
         ERR_PRINT("File " + Path + " doesn't exists!");
         return (godot_error)Error::ERR_FILE_NOT_FOUND;
     }
 
-    Error err = VFile->open(Path, File::READ);
-    if(!VFile->is_open())
+    Error err = file->open(Path, File::READ);
+    if(!file->is_open())
     {
         ERR_PRINT("Couldn't open file: " + Path);
         return (godot_error)Error::ERR_FILE_CANT_READ;
@@ -57,44 +55,28 @@ godot_error CGodotVCore::Load(String Path)
     if(err != Error::OK)
         return (godot_error)err;
 
-    PoolByteArray Data = VFile->get_buffer(VFile->get_len());
+    PoolByteArray data = file->get_buffer(file->get_len());
 
     m_Loader = VCore::IVoxelFormat::Create(VCore::IVoxelFormat::GetType(Path.utf8().get_data()));
-
-    // String Ext = Path.get_extension().to_lower();
-    // if(Ext == "vox")
-    //     m_Loader = VCore::Loader(new VCore::CMagicaVoxelLoader());
-    // else if(Ext == "gox")
-    //     m_Loader = VCore::Loader(new VCore::CGoxelLoader());
-    // else if(Ext == "kenshape")
-    //     m_Loader = VCore::Loader(new VCore::CKenshapeLoader());
-    // else if(Ext == "qb")
-    //     m_Loader = VCore::Loader(new VCore::CQubicleBinaryLoader());
-    // else if(Ext == "qbt")
-    //     m_Loader = VCore::Loader(new VCore::CQubicleBinaryTreeLoader());
-    // else if(Ext == "qef")
-    //     m_Loader = VCore::Loader(new VCore::CQubicleExchangeLoader());
-    // else if(Ext == "qbcl")
-    //     m_Loader = VCore::Loader(new VCore::CQubicleLoader());
     
     try
     {
-        m_Loader->Load((char*)Data.read().ptr(), Data.size());
+        m_Loader->Load((char*)data.read().ptr(), data.size());
     }
     catch(const VCore::CVoxelLoaderException &e)
     {
-        VFile->close();
+        file->close();
 
         ERR_PRINT(e.what());
         return (godot_error)Error::ERR_PARSE_ERROR;
     }
     
-    VFile->close();
+    file->close();
 
     return (godot_error)Error::OK;
 }
 
-godot_error CGodotVCore::Save(String Path, bool exportWorldspace)
+godot_error CGodotVoxelOptimizer::Save(String Path, bool exportWorldspace)
 {
     if(m_Meshes.empty())
     {
@@ -102,56 +84,40 @@ godot_error CGodotVCore::Save(String Path, bool exportWorldspace)
         return (godot_error)Error::ERR_INVALID_DATA;
     }
 
-    Ref<File> VFile = File::_new();
-    VCore::Exporter Exporter;
+    Ref<File> file = File::_new();
+    VCore::Exporter exporter;
 
-    // String Ext = Path.get_extension().to_lower();
-
-    // VCore::ExporterTypes type;
-
-    // if(Ext == "gltf")
-    //     type = VCore::ExporterTypes::GLTF;
-    // else if(Ext == "glb")
-    //     type = VCore::ExporterTypes::GLB;
-    // else if(Ext == "obj")
-    //     type = VCore::ExporterTypes::OBJ;
-    // else if(Ext == "escn")
-    //     type = VCore::ExporterTypes::ESCN;
-    // else if(Ext == "ply")
-    //     type = VCore::ExporterTypes::PLY;
-    // else
-    //     return (godot_error)Error::ERR_FILE_UNRECOGNIZED;
-
-    Exporter = VCore::IExporter::Create(VCore::IExporter::GetType(Path.utf8().get_data()));
-    Exporter->Settings()->WorldSpace = exportWorldspace;
+    exporter = VCore::IExporter::Create(VCore::IExporter::GetType(Path.utf8().get_data()));
+    exporter->Settings()->WorldSpace = exportWorldspace;
 
     Path = Path.get_basename();
-    Exporter->SetExternaFilenames(std::string(Path.get_file().utf8().get_data()));
-    auto Files = Exporter->Generate(m_Meshes);
+    exporter->SetExternaFilenames(std::string(Path.get_file().utf8().get_data()));
+    auto files = exporter->Generate(m_Meshes);
 
-    for (auto &&f : Files)
+    // Saves all generated files.
+    for (auto &&f : files)
     {
-        auto err = VFile->open(Path + String(".") + String(f.first.c_str()), File::WRITE);
+        auto err = file->open(Path + String(".") + String(f.first.c_str()), File::WRITE);
         
-        if(!VFile->is_open())
+        if(!file->is_open())
         {
             ERR_PRINT("Couldn't open file: " + Path);
             return (godot_error)Error::ERR_FILE_CANT_WRITE;
         }
 
-        PoolByteArray Data;
-        Data.resize(f.second.size());
-        auto Writer = Data.write();
-        memcpy(Writer.ptr(), f.second.data(), f.second.size());
+        PoolByteArray data;
+        data.resize(f.second.size());
+        auto writer = data.write();
+        memcpy(writer.ptr(), f.second.data(), f.second.size());
 
-        VFile->store_buffer(Data);
-        VFile->close();
+        file->store_buffer(data);
+        file->close();
     }
     
     return (godot_error)Error::OK;
 }
 
-godot_error CGodotVCore::SaveSlices(String Path)
+godot_error CGodotVoxelOptimizer::SaveSlices(String Path)
 {
     if(m_Meshes.empty())
     {
@@ -159,15 +125,15 @@ godot_error CGodotVCore::SaveSlices(String Path)
         return (godot_error)Error::ERR_INVALID_DATA;
     }
 
-    Ref<File> VFile = File::_new();
-    VCore::CSpriteStackingExporter Exporter;
+    Ref<File> file = File::_new();
+    VCore::CSpriteStackingExporter exporter;
 
     auto models = m_Loader->GetModels();
     int count = 0;
 
     for (auto &&m : models)
     {
-        auto Image = Exporter.Generate(m);
+        auto image = exporter.Generate(m);
 
         if(models.size() > 1)
         {
@@ -175,26 +141,26 @@ godot_error CGodotVCore::SaveSlices(String Path)
             count++;
         }
 
-        VFile->open(Path, File::WRITE);
-        if(!VFile->is_open())
+        file->open(Path, File::WRITE);
+        if(!file->is_open())
         {
             ERR_PRINT("Couldn't open file: " + Path);
             return (godot_error)Error::ERR_FILE_CANT_WRITE;
         }
 
-        PoolByteArray Data;
-        Data.resize(Image.size());
-        auto Writer = Data.write();
-        memcpy(Writer.ptr(), Image.data(), Image.size());
+        PoolByteArray data;
+        data.resize(image.size());
+        auto writer = data.write();
+        memcpy(writer.ptr(), image.data(), image.size());
 
-        VFile->store_buffer(Data);
-        VFile->close();
+        file->store_buffer(data);
+        file->close();
     }
     
     return (godot_error)Error::OK;
 }
 
-Array CGodotVCore::GetMeshes(int mesherType)
+Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
 {
     Array ret;
     if(m_Loader->GetModels().empty())
@@ -208,163 +174,38 @@ Array CGodotVCore::GetMeshes(int mesherType)
     m_FacesCount = 0;
     m_Meshes.clear();
 
-    VCore::Mesher Mesher = VCore::IMesher::Create((VCore::MesherTypes)mesherType);
+    VCore::Mesher mesher = VCore::IMesher::Create((VCore::MesherTypes)mesherType);
     auto voxelmeshes = m_Loader->GetModels();
     for (auto &&m : voxelmeshes)
         m_BlockCount += m->GetBlockCount();
     
-    auto meshes = Mesher->GenerateScene(m_Loader->GetSceneTree());
+    auto meshes = mesher->GenerateScene(m_Loader->GetSceneTree());
     for (auto &&mesh : meshes)
     {
-        // if(m->GetBlockCount() == 0)
-        //     continue;
-
-        // auto mesh = Mesher->GenerateMesh(m);
-        m_Meshes.push_back(mesh);
-
-        // m_BlockCount += m->GetBlockCount();
-        m_VerticesCount += mesh->Vertices.size();
-        
-        for (auto &&f : mesh->Faces)
-            m_FacesCount += f->Indices.size() / 3;        
-
         Ref<ArrayMesh> tmpMesh = ArrayMesh::_new();
         Array arr;
         arr.resize(ArrayMesh::ARRAY_MAX);
 
-        std::map<VCore::CVector, int> Index;
+        int surfaceIdx = 0;
 
-        PoolVector3Array Vertices, Normals;
-        PoolVector2Array UVs;    
-        PoolIntArray Indices;
-
-        int Surface = 0;
-
-        int TmpIndices[3];
-        int VertexCounter = 0;
-
-        // Converts the colorpalette to a texture for godot.
-        Ref<Image> Img = Image::_new();
-        auto albedo = mesh->Textures[VCore::TextureType::DIFFIUSE];
-
-        Img->create(albedo->Size().x, albedo->Size().y, false, Image::Format::FORMAT_RGBA8);
-        Img->lock();
-        for (size_t x = 0; x < albedo->Size().x; x++)
+        m_Meshes.push_back(mesh);
+        for (auto &&surface : mesh->Surfaces)
         {
-            for (size_t y = 0; y < albedo->Size().y; y++)
-            {
-                VCore::CColor c;
-                c.FromRGBA(albedo->Pixel(VCore::CVector(x, y, 0)));
+            m_VerticesCount += surface.Size();
+            m_FacesCount += surface.Indices.size() / 3;
 
-                Img->set_pixel(x, 0, Color(c.R / 255.f, c.G / 255.f, c.B / 255.f, c.A / 255.f));
-            }
-        }
-        Img->unlock();
+            PoolIntArray indices;
+            indices.resize(surface.Indices.size());
+            memcpy(indices.write().ptr(), surface.Indices.data(), indices.size() * sizeof(int));  
 
-        Ref<ImageTexture> Tex = ImageTexture::_new();
-        Tex->create_from_image(Img);
-
-        for (auto &&f : mesh->Faces)
-        {
-            // Since libVCore generates highly packed meshes,
-            // it's neccessary to unpack them for godot and OpenGL.
-            for (auto &&v : f->Indices)
-            {
-                auto IT = Index.find(v);
-                if(IT != Index.end())
-                    TmpIndices[VertexCounter] = IT->second;
-                    // Indices.append(IT->second);
-                else
-                {
-                    VCore::CVector Vertex, Normal, UV;
-                    Vertex = mesh->Vertices[(size_t)v.x - 1];
-                    Normal = mesh->Normals[(size_t)v.y - 1];
-                    UV = mesh->UVs[(size_t)v.z - 1];
-
-                    Vertices.append(Vector3(Vertex.x, Vertex.y, Vertex.z));
-                    Normals.append(Vector3(Normal.x, Normal.y, Normal.z));
-                    UVs.append(Vector2(UV.x, UV.y));
-
-                    int Idx = Vertices.size() - 1;
-                    Index.insert({v, Idx});
-                    TmpIndices[VertexCounter] = Idx;
-                }
-
-                VertexCounter++;
-                if(VertexCounter == 3)
-                {
-                    VertexCounter = 0;
-
-                    for (char i = 2; i > -1; i--)
-                        Indices.append(TmpIndices[i]);
-                }
-            }
-
-            arr[ArrayMesh::ARRAY_VERTEX] = Vertices;
-            arr[ArrayMesh::ARRAY_NORMAL] = Normals;
-            arr[ArrayMesh::ARRAY_TEX_UV] = UVs;
-            // arr[ArrayMesh::ARRAY_TEX_UV2] = UVs2;
-            arr[ArrayMesh::ARRAY_INDEX] = Indices;
+            arr[ArrayMesh::ARRAY_VERTEX] = surface.Vertices;
+            arr[ArrayMesh::ARRAY_NORMAL] = surface.Normals;
+            arr[ArrayMesh::ARRAY_TEX_UV] = surface.UVs;
+            arr[ArrayMesh::ARRAY_INDEX] = indices;
             tmpMesh->add_surface_from_arrays(ArrayMesh::PRIMITIVE_TRIANGLES, arr);
 
-            Ref<SpatialMaterial> Mat = SpatialMaterial::_new();
-
-            Mat->set_texture(SpatialMaterial::TextureParam::TEXTURE_ALBEDO, Tex);
-            Mat->set_metallic(f->FaceMaterial->Metallic);
-            Mat->set_specular(f->FaceMaterial->Specular);
-            Mat->set_roughness(f->FaceMaterial->Roughness);
-
-            // if(f->FaceMaterial->IOR != 0.0)
-            // {
-            //     Mat->set_feature(SpatialMaterial::Feature::FEATURE_REFRACTION, true);
-            //     Mat->set_refraction(f->FaceMaterial->IOR);
-            // }        
-
-            if(f->FaceMaterial->Transparency != 0.0)
-            {
-                Mat->set_feature(SpatialMaterial::Feature::FEATURE_TRANSPARENT, true);
-                Mat->set_albedo(Color(1, 1, 1, 1 - f->FaceMaterial->Transparency));
-            }
-
-            if(f->FaceMaterial->Power != 0.0)
-            {
-                Mat->set_feature(SpatialMaterial::Feature::FEATURE_EMISSION, true);
-                Mat->set_emission_energy(f->FaceMaterial->Power);
-
-                Ref<Image> Img = Image::_new();
-                auto emission = mesh->Textures[VCore::TextureType::EMISSION];
-
-                Img->create(emission->Size().x, emission->Size().y, false, Image::Format::FORMAT_RGBA8);
-                Img->lock();
-
-                for (size_t x = 0; x < emission->Size().x; x++)
-                {
-                    for (size_t y = 0; y < emission->Size().y; y++)
-                    {
-                        VCore::CColor c;
-                        c.FromRGBA(emission->Pixel(VCore::CVector(x, y, 0)));
-
-                        Img->set_pixel(x, 0, Color(c.R / 255.f, c.G / 255.f, c.B / 255.f, c.A / 255.f));
-                    }
-                }
-
-                Img->unlock();
-
-                Ref<ImageTexture> Tex = ImageTexture::_new();
-                Tex->create_from_image(Img);
-
-                Mat->set_texture(SpatialMaterial::TextureParam::TEXTURE_EMISSION, Tex);
-            }
-
-            tmpMesh->surface_set_material(Surface, Mat);
-            Surface++;
-
-            Index.clear();
-            Vertices = PoolVector3Array();
-            Normals = PoolVector3Array();
-            UVs = PoolVector2Array();
-            // UVs2 = PoolVector2Array();
-            Indices = PoolIntArray();
+            tmpMesh->surface_set_material(surfaceIdx, ConvertMaterialToGodot(surface.FaceMaterial, mesh->Textures));
+            surfaceIdx++;
         }
 
         auto instance = MeshInstance::_new();
@@ -387,7 +228,7 @@ Array CGodotVCore::GetMeshes(int mesherType)
     return ret;
 }
 
-Dictionary CGodotVCore::GetStatistics()
+Dictionary CGodotVoxelOptimizer::GetStatistics()
 {
     Dictionary Ret;
 
@@ -405,4 +246,62 @@ Dictionary CGodotVCore::GetStatistics()
     }
 
     return Ret;
+}
+
+Ref<ImageTexture> CGodotVoxelOptimizer::ConvertTextureToGodot(const VCore::Texture &_Texture)
+{
+    // Converts the colorpalette to a texture for godot.
+    Ref<Image> img = Image::_new();
+
+    img->create(_Texture->GetSize().x, _Texture->GetSize().y, false, Image::Format::FORMAT_RGBA8);
+    img->lock();
+    for (size_t x = 0; x < _Texture->GetSize().x; x++)
+    {
+        for (size_t y = 0; y < _Texture->GetSize().y; y++)
+        {
+            VCore::CColor c;
+            c.FromRGBA(_Texture->GetPixel(VCore::Math::Vec2ui(x, y)));
+
+            img->set_pixel(x, 0, Color(c.R / 255.f, c.G / 255.f, c.B / 255.f, c.A / 255.f));
+        }
+    }
+    img->unlock();
+
+    Ref<ImageTexture> tex = ImageTexture::_new();
+    tex->create_from_image(img);
+
+    return tex;
+}
+
+Ref<SpatialMaterial> CGodotVoxelOptimizer::ConvertMaterialToGodot(const VCore::Material &_Material, const std::map<VCore::TextureType, VCore::Texture> &_Textures)
+{
+    Ref<SpatialMaterial> material = SpatialMaterial::_new();
+
+    material->set_texture(SpatialMaterial::TextureParam::TEXTURE_ALBEDO, ConvertTextureToGodot(_Textures.at(VCore::TextureType::DIFFIUSE)));
+    material->set_metallic(_Material->Metallic);
+    material->set_specular(_Material->Specular);
+    material->set_roughness(_Material->Roughness);
+    material->set_cull_mode(SpatialMaterial::CULL_FRONT);
+
+    // if(_Material->IOR != 0.0)
+    // {
+    //     Mat->set_feature(SpatialMaterial::Feature::FEATURE_REFRACTION, true);
+    //     Mat->set_refraction(_Material->IOR);
+    // }        
+
+    if(_Material->Transparency != 0.0)
+    {
+        material->set_feature(SpatialMaterial::Feature::FEATURE_TRANSPARENT, true);
+        material->set_albedo(Color(1, 1, 1, 1 - _Material->Transparency));
+    }
+
+    if(_Material->Power != 0.0)
+    {
+        material->set_feature(SpatialMaterial::Feature::FEATURE_EMISSION, true);
+        material->set_emission_energy(_Material->Power);
+
+        material->set_texture(SpatialMaterial::TextureParam::TEXTURE_EMISSION, ConvertTextureToGodot(_Textures.at(VCore::TextureType::EMISSION)));
+    }
+
+    return material;
 }

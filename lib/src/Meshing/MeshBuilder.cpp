@@ -37,8 +37,8 @@ namespace VCore
         auto it = _Surface.Index.find(_Vertex);
         if(it == _Surface.Index.end())
         {
-            int idx = _Surface.Vertices.size();
-            _Surface.Vertices.push_back(_Vertex);
+            int idx = _Surface.Surface.Size();
+            _Surface.Surface.AddVertex(_Vertex);
             _Surface.Index.insert({_Vertex, idx});
             return idx;
         }
@@ -48,7 +48,7 @@ namespace VCore
 
     void CMeshBuilder::AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, Material _material)
     {
-        if(!m_CachedSurface || m_CachedSurface->FaceMaterial != _material)
+        if(!m_CachedSurface || m_CachedSurface->Surface.FaceMaterial != _material)
         {
             auto it = m_Surfaces.find((size_t)_material.get());
             if(it == m_Surfaces.end())
@@ -93,23 +93,23 @@ namespace VCore
         // Checks the direction of the face.
         if(faceNormal == _normal)
         {
-            m_CachedSurface->Indices.push_back(i1);
-            m_CachedSurface->Indices.push_back(i2);
-            m_CachedSurface->Indices.push_back(i3);
+            m_CachedSurface->Surface.Indices.push_back(i1);
+            m_CachedSurface->Surface.Indices.push_back(i2);
+            m_CachedSurface->Surface.Indices.push_back(i3);
 
-            m_CachedSurface->Indices.push_back(i2);
-            m_CachedSurface->Indices.push_back(i4);
-            m_CachedSurface->Indices.push_back(i3);
+            m_CachedSurface->Surface.Indices.push_back(i2);
+            m_CachedSurface->Surface.Indices.push_back(i4);
+            m_CachedSurface->Surface.Indices.push_back(i3);
         }
         else
         {
-            m_CachedSurface->Indices.push_back(i3);
-            m_CachedSurface->Indices.push_back(i2);
-            m_CachedSurface->Indices.push_back(i1);
+            m_CachedSurface->Surface.Indices.push_back(i3);
+            m_CachedSurface->Surface.Indices.push_back(i2);
+            m_CachedSurface->Surface.Indices.push_back(i1);
 
-            m_CachedSurface->Indices.push_back(i3);
-            m_CachedSurface->Indices.push_back(i4);
-            m_CachedSurface->Indices.push_back(i2);
+            m_CachedSurface->Surface.Indices.push_back(i3);
+            m_CachedSurface->Surface.Indices.push_back(i4);
+            m_CachedSurface->Surface.Indices.push_back(i2);
         }
     }
    
@@ -124,9 +124,9 @@ namespace VCore
         i2 = AddVertex(v2, it->second);
         i3 = AddVertex(v3, it->second);
 
-        it->second.Indices.push_back(i1);
-        it->second.Indices.push_back(i2);
-        it->second.Indices.push_back(i3);
+        it->second.Surface.Indices.push_back(i1);
+        it->second.Surface.Indices.push_back(i2);
+        it->second.Surface.Indices.push_back(i3);
     }
 
     Mesh CMeshBuilder::Build()
@@ -134,12 +134,14 @@ namespace VCore
         auto ret = std::make_shared<SMesh>();
         for (auto &&surface : m_Surfaces)
         {
-            ret->Surfaces.emplace_back();
-            SSurface *currentSurface = &ret->Surfaces.back();
-            currentSurface->FaceMaterial = surface.second.FaceMaterial;
+            ret->Surfaces.emplace_back(std::move(surface.second.Surface));
 
-            currentSurface->Vertices = std::move(surface.second.Vertices);
-            currentSurface->Indices = std::move(surface.second.Indices);
+            // ret->Surfaces.emplace_back();
+            // 
+            // currentSurface->FaceMaterial = surface.second.Surface.FaceMaterial;
+
+            // currentSurface->Vertices = std::move(surface.second.Vertices);
+            // currentSurface->Indices = std::move(surface.second.Indices);
         }
 
         ret->Textures = *m_Textures;
@@ -168,12 +170,13 @@ namespace VCore
         ret->Surfaces.clear();
         for (auto &&surface : m_Surfaces)
         {
-            ret->Surfaces.emplace_back();
-            SSurface *currentSurface = &ret->Surfaces.back();
-            currentSurface->FaceMaterial = surface.second.FaceMaterial;
+            ret->Surfaces.emplace_back(std::move(surface.second.Surface));
+            // ret->Surfaces.emplace_back();
+            // SSurface *currentSurface = &ret->Surfaces.back();
+            // currentSurface->FaceMaterial = surface.second.FaceMaterial;
 
-            currentSurface->Vertices = std::move(surface.second.Vertices);
-            currentSurface->Indices = std::move(surface.second.Indices);
+            // currentSurface->Vertices = std::move(surface.second.Vertices);
+            // currentSurface->Indices = std::move(surface.second.Indices);
         }
 
         // Clears the cache.
@@ -190,13 +193,14 @@ namespace VCore
             if(it == m_Surfaces.end())
                 it = m_Surfaces.insert({(size_t)surface.FaceMaterial.get(), SIndexedSurface(surface.FaceMaterial)}).first;
 
-            it->second.Indices = surface.Indices;
-            it->second.Vertices = surface.Vertices;
+            it->second.Surface = std::move(surface);
+            // it->second.Indices = surface.Indices;
+            // it->second.Vertices = surface.Vertices;
 
             for (auto &&i : surface.Indices)
             {
-                if(i < (int)surface.Vertices.size())
-                    it->second.Index.insert({surface.Vertices[i], i});
+                if(i < (int)surface.Size())
+                    it->second.Index.insert({surface[i], i});
             }
         }       
     }
@@ -218,9 +222,9 @@ namespace VCore
 
             for (size_t i = 0; i < surface.Indices.size(); i += 3)
             {
-                SVertex v1 = surface.Vertices[surface.Indices[i]];
-                SVertex v2 = surface.Vertices[surface.Indices[i + 1]];
-                SVertex v3 = surface.Vertices[surface.Indices[i + 2]];
+                SVertex v1 = surface[surface.Indices[i]];
+                SVertex v2 = surface[surface.Indices[i + 1]];
+                SVertex v3 = surface[surface.Indices[i + 2]];
 
                 v1.Pos = m->ModelMatrix * v1.Pos;
                 v1.Normal = rotation * v1.Normal;
@@ -235,9 +239,9 @@ namespace VCore
                 int i2 = AddVertex(v2, it->second);
                 int i3 = AddVertex(v3, it->second);
 
-                it->second.Indices.push_back(i1);
-                it->second.Indices.push_back(i2);
-                it->second.Indices.push_back(i3);
+                it->second.Surface.Indices.push_back(i1);
+                it->second.Surface.Indices.push_back(i2);
+                it->second.Surface.Indices.push_back(i3);
             }
         }
     }

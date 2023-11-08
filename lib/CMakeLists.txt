@@ -41,12 +41,29 @@ set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelMesh.cpp"
          "${PROJECT_SOURCE_DIR}/src/Texture.cpp")
 #set(LIBS "")
 
-include_directories("${PROJECT_SOURCE_DIR}/include"
-                    "${PROJECT_SOURCE_DIR}/third_party")
+include_directories(
+  "${PROJECT_SOURCE_DIR}/include"
+  "${PROJECT_SOURCE_DIR}/third_party")
 
 add_library(${PROJECT_NAME} STATIC ${SRCS})
+
+target_include_directories(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}")
 target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W4>
   $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra>
 )
-#target_link_libraries(${PROJECT_NAME} ${LIBS})
+
+INSTALL(
+    DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+    DESTINATION include
+    FILES_MATCHING PATTERN "*.h*")
+
+install(TARGETS ${PROJECT_NAME}
+    # for executables and dll on Win
+    RUNTIME DESTINATION bin
+    # shared libraries
+    LIBRARY DESTINATION lib
+    # for static libraries
+    ARCHIVE DESTINATION lib
+    # public headers
+    INCLUDES DESTINATION include)

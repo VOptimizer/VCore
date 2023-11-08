@@ -89,13 +89,18 @@ namespace VCore
         private:
             struct SIndexedSurface
             {
-                SIndexedSurface(const Material &_Material) : FaceMaterial(_Material) {}
+                SIndexedSurface(const Material &_Material) 
+                {
+                    Surface.FaceMaterial = _Material;
+                }
 
-                Material FaceMaterial;
+                // Material FaceMaterial;
                 std::unordered_map<SVertex, int, VertexHasher> Index;
 
-                std::vector<int> Indices;
-                std::vector<SVertex> Vertices;
+                SSurface Surface;
+
+                // std::vector<int> Indices;
+                // std::vector<SVertex> Vertices;
             };
 
             int AddVertex(const SVertex &_Vertex, SIndexedSurface &_Surface);

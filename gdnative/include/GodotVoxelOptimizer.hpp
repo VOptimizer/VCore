@@ -27,17 +27,19 @@
 
 #include <ArrayMesh.hpp>
 #include <Godot.hpp>
+#include <ImageTexture.hpp>
 #include <Reference.hpp>
+#include <SpatialMaterial.hpp>
 #include <VCore/VCore.hpp>
 #include <vector>
 
 using namespace godot;
 
-class CGodotVCore : public Reference
+class CGodotVoxelOptimizer : public Reference
 {
-    GODOT_CLASS(CGodotVCore, Reference);
+    GODOT_CLASS(CGodotVoxelOptimizer, Reference);
     public:
-        CGodotVCore() : m_BlockCount(0) {}
+        CGodotVoxelOptimizer() : m_BlockCount(0) {}
 
         void _init() { }
 
@@ -48,8 +50,11 @@ class CGodotVCore : public Reference
         Array GetMeshes(int mesherType);
         Dictionary GetStatistics();
 
-        virtual ~CGodotVCore() = default;
+        virtual ~CGodotVoxelOptimizer() = default;
     private:
+        Ref<ImageTexture> ConvertTextureToGodot(const VCore::Texture &_Texture);
+        Ref<SpatialMaterial> ConvertMaterialToGodot(const VCore::Material &_Material, const std::map<VCore::TextureType, VCore::Texture> &_Textures);
+
         VCore::VoxelFormat m_Loader;
         std::vector<VCore::Mesh> m_Meshes;
         int m_BlockCount;

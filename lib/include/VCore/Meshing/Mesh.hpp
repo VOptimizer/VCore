@@ -31,6 +31,7 @@
 #include <memory>
 #include <vector>
 #include <VCore/Math/Vector.hpp>
+#include <VCore/VConfig.hpp>
 
 namespace VCore
 {
@@ -51,9 +52,28 @@ namespace VCore
 
     struct SSurface
     {
+        SSurface() {}
+        SSurface(SSurface &&_Other) { *this = std::move(_Other); }
+
         Material FaceMaterial;          //!< Material used for this group.
 
-        std::vector<SVertex> Vertices;  //!< Vertices of this surface
+        // std::vector<SVertex> Vertices;  //!< Vertices of this surface
+
+        VERTEX_DATA                     //!< Vertices of this surface
+        ADD_VERTEX_DATA_METHOD
+        GET_VERTEX_DATA_METHOD
+        GET_VERTEX_STREAM_METHOD
+        GET_VERTEX_DATA_SIZE_METHOD
+
+        SSurface &operator=(SSurface &&_Other)
+        {
+            FaceMaterial = std::move(_Other.FaceMaterial);
+            Indices = std::move(_Other.Indices);
+            MOVE_VERTEX_DATA
+
+            return *this;
+        }
+
         std::vector<int> Indices;       //!< Indices for vertices used by this surface.
     };
 

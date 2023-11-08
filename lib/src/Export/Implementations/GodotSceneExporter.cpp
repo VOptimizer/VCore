@@ -91,8 +91,10 @@ namespace VCore
                     normalList << "\t\tVector3Array(";
                     uvList << "\t\tVector2Array(";
                     bool first = true;
-                    for (auto &&v : surface.Vertices)
+                    for(int i = 0; i < surface.Size(); i++)
                     {
+                        auto v = surface[i];
+
                         if(!first)
                         {
                             vertexList << ", ";

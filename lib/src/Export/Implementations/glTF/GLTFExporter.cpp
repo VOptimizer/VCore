@@ -62,7 +62,9 @@ namespace VCore
 
                 GLTF::CBufferView surfaceVerticesView, indexView;
 
-                surfaceVerticesView.Size = surface.Vertices.size() * sizeof(SVertex);
+                auto vertices = surface.GetVertices();
+
+                surfaceVerticesView.Size = vertices.size() * sizeof(SVertex);
                 surfaceVerticesView.Target = GLTF::BufferTarget::ARRAY_BUFFER;
                 surfaceVerticesView.ByteStride = sizeof(SVertex);
                 surfaceVerticesView.Offset = binary.size();
@@ -71,7 +73,7 @@ namespace VCore
                 indexView.Size = surface.Indices.size() * sizeof(int);
                 indexView.Target = GLTF::BufferTarget::ELEMENT_ARRAY_BUFFER;
 
-                for (auto &&v : surface.Vertices)
+                for (auto &&v : vertices)
                 {
                     max = v.Pos.max(max);
                     min = v.Pos.min(min);
@@ -80,20 +82,20 @@ namespace VCore
                 GLTF::CAccessor positionAccessor, normalAccessor, uvAccessor, indexAccessor;
                 positionAccessor.BufferView = bufferViews.size();
                 positionAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
-                positionAccessor.Count = surface.Vertices.size();
+                positionAccessor.Count = vertices.size();
                 positionAccessor.Type = "VEC3";
                 positionAccessor.SetMin(min);
                 positionAccessor.SetMax(max);
 
                 normalAccessor.BufferView = bufferViews.size();
                 normalAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
-                normalAccessor.Count = surface.Vertices.size();
+                normalAccessor.Count = vertices.size();
                 normalAccessor.Type = "VEC3";
                 normalAccessor.Offset = sizeof(Math::Vec3f);
 
                 uvAccessor.BufferView = bufferViews.size();
                 uvAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
-                uvAccessor.Count = surface.Vertices.size();
+                uvAccessor.Count = vertices.size();
                 uvAccessor.Type = "VEC2";
                 uvAccessor.Offset = normalAccessor.Offset + sizeof(Math::Vec3f);
 
@@ -124,7 +126,7 @@ namespace VCore
 
                 binary.resize(binary.size() + surfaceVerticesView.Size + indexView.Size);
 
-                memcpy(binary.data() + pos, surface.Vertices.data(), surfaceVerticesView.Size);
+                memcpy(binary.data() + pos, vertices.data(), surfaceVerticesView.Size);
                 pos += surfaceVerticesView.Size;
 
                 memcpy(binary.data() + pos, surface.Indices.data(), indexView.Size);

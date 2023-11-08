@@ -389,17 +389,18 @@ namespace VCore
     {
         m_Mesh = _Mesh;
         std::vector<SMeshChunk> ret = IMesher::GenerateChunks(_Mesh, _OnlyDirty);
-        for (auto &&pair : ret)
-        {
-            auto mesh = pair.MeshData;
-            for (auto &&surface : mesh->Surfaces)
-            {
-                for (auto &&vertex : surface.Vertices)
-                {
-                    vertex.UV = Math::Vec2f(((float)(vertex.UV.x + 0.5f)) / mesh->Textures[TextureType::DIFFIUSE]->GetSize().x, 0.5f);
-                }
-            }
-        }
+        // TODO: FIX
+        // for (auto &&pair : ret)
+        // {
+        //     auto mesh = pair.MeshData;
+        //     for (auto &&surface : mesh->Surfaces)
+        //     {
+        //         for (auto &&vertex : surface.Vertices)
+        //         {
+        //             vertex.UV = Math::Vec2f(((float)(vertex.UV.x + 0.5f)) / mesh->Textures[TextureType::DIFFIUSE]->GetSize().x, 0.5f);
+        //         }
+        //     }
+        // }
         return ret;
     }
 
