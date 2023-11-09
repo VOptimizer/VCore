@@ -33,7 +33,7 @@ namespace VCore
 
     void CQubicleBinaryFormat::ParseFormat()
     {
-        m_Header = ReadData<SQubicleBinaryHeader>();
+        m_Header = m_DataStream->Read<SQubicleBinaryHeader>();
         if(m_Header.Version[0] != 1 || m_Header.Version[1] != 1 || m_Header.Version[2] != 0 || m_Header.Version[3] != 0)
             throw CVoxelLoaderException("Version: " + std::to_string(m_Header.Version[0]) + "." + std::to_string(m_Header.Version[1]) + "." + std::to_string(m_Header.Version[2]) + "." + std::to_string(m_Header.Version[3]) + " is not supported");
 
@@ -44,9 +44,9 @@ namespace VCore
             VoxelMesh mesh = std::make_shared<CVoxelMesh>();
             mesh->Materials = m_Materials;
 
-            uint8_t nameLen = ReadData<uint8_t>();
+            uint8_t nameLen = m_DataStream->Read<uint8_t>();
             std::string name(nameLen + 1, '\0');
-            ReadData(&name[0], nameLen);
+            m_DataStream->Read(&name[0], nameLen);
 
             mesh->Name = name;
             mesh->SetSize(ReadVector());
@@ -81,9 +81,9 @@ namespace VCore
     {
         Math::Vec3f ret;
 
-        ret.x = ReadData<int>();
-        ret.y = ReadData<int>();
-        ret.z = ReadData<int>();
+        ret.x = m_DataStream->Read<int>();
+        ret.y = m_DataStream->Read<int>();
+        ret.z = m_DataStream->Read<int>();
 
         return ret;
     }
@@ -97,7 +97,7 @@ namespace VCore
             {
                 for (uint32_t x = 0; x < (uint32_t)mesh->GetSize().x; x++)
                 {
-                    int color = ReadData<int>();
+                    int color = m_DataStream->Read<int>();
                     int cid = GetColorIdx(color);
                     if(cid == -1)
                         continue;
@@ -127,15 +127,15 @@ namespace VCore
 
             while (true)
             {
-                uint32_t data = ReadData<uint32_t>();
+                uint32_t data = m_DataStream->Read<uint32_t>();
                 int cid = 0;
 
                 if(data == NEXTSLICEFLAG)
                     break;
                 else if(data == CODEFLAG)
                 {
-                    uint32_t count = ReadData<uint32_t>();
-                    data = ReadData<uint32_t>();
+                    uint32_t count = m_DataStream->Read<uint32_t>();
+                    data = m_DataStream->Read<uint32_t>();
 
                     for (uint32_t i = 0; i < count; i++)
                     {

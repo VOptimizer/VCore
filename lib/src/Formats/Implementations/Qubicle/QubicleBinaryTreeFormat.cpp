@@ -31,22 +31,22 @@ namespace VCore
 {
     void CQubicleBinaryTreeFormat::ParseFormat()
     {
-        if(ReadData<int>() != 0x32204251)
+        if(m_DataStream->Read<int>() != 0x32204251)
             throw CVoxelLoaderException("Unknown file format");
 
-        char major = ReadData<char>();
-        char minor = ReadData<char>();
+        char major = m_DataStream->Read<char>();
+        char minor = m_DataStream->Read<char>();
 
         if(major != 1 && minor != 0)
             throw CVoxelLoaderException("Unsupported version!");
 
         m_Materials.push_back(std::make_shared<CMaterial>());
 
-        Skip(3 * sizeof(float));
-        Skip(8); // COLORMAP
+        m_DataStream->Seek(3 * sizeof(float));
+        m_DataStream->Seek(8); // COLORMAP
         ReadColors();
 
-        Skip(8); // DATATREE
+        m_DataStream->Seek(8); // DATATREE
         LoadNode();
 
         m_ColorIdx.clear();
@@ -57,12 +57,12 @@ namespace VCore
 
     void CQubicleBinaryTreeFormat::ReadColors()
     {
-        int count = ReadData<int>();
+        int count = m_DataStream->Read<int>();
         m_HasColormap = count > 0;
         for (int i = 0; i < count; i++)
         {
             CColor c;
-            c.FromRGBA(ReadData<uint32_t>());
+            c.FromRGBA(m_DataStream->Read<uint32_t>());
 
             auto texIT = m_Textures.find(TextureType::DIFFIUSE);
             if(texIT == m_Textures.end())
@@ -74,8 +74,8 @@ namespace VCore
 
     void CQubicleBinaryTreeFormat::LoadNode()
     {
-        uint32_t type = ReadData<uint32_t>();
-        uint32_t size = ReadData<uint32_t>();
+        uint32_t type = m_DataStream->Read<uint32_t>();
+        uint32_t size = m_DataStream->Read<uint32_t>();
 
         switch (type)
         {
@@ -96,30 +96,30 @@ namespace VCore
         
             default:
             {
-                Skip(size);
+                m_DataStream->Seek(size);
             } break;
         }
     }
 
     void CQubicleBinaryTreeFormat::LoadModel()
     {
-        uint32_t childCount = ReadData<uint32_t>();
+        uint32_t childCount = m_DataStream->Read<uint32_t>();
         for (uint32_t i = 0; i < childCount; i++)
             LoadNode();
     }
 
     void CQubicleBinaryTreeFormat::LoadMatrix()
     {
-        int nameLen = ReadData<int>();
+        int nameLen = m_DataStream->Read<int>();
         std::string name(nameLen + 1, '\0');
-        ReadData(&name[0], nameLen);
+        m_DataStream->Read(&name[0], nameLen);
 
         VoxelMesh mesh = std::make_shared<CVoxelMesh>();
         mesh->Materials = m_Materials;
         mesh->Name = name;
         auto pos = ReadVector();
 
-        Skip(6 * sizeof(int));
+        m_DataStream->Seek(6 * sizeof(int));
         mesh->SetSize(ReadVector());
 
         auto halfSize = (mesh->GetSize() / 2.0);
@@ -130,11 +130,12 @@ namespace VCore
         sceneNode->SetMesh(mesh);
         m_SceneTree->AddChild(sceneNode);
 
-        uint32_t dataSize = ReadData<uint32_t>();
+        uint32_t dataSize = m_DataStream->Read<uint32_t>();
 
         int OutSize = 0;
 
-        std::vector<char> data = ReadDataChunk(dataSize);
+        std::vector<char> data(dataSize, 0);
+        m_DataStream->Read(&data[0], dataSize);
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         int strmPos = 0;
 
@@ -178,16 +179,16 @@ namespace VCore
 
     void CQubicleBinaryTreeFormat::LoadCompound()
     {
-        int nameLen = ReadData<int>();
+        int nameLen = m_DataStream->Read<int>();
         std::string name(nameLen + 1, '\0');
-        ReadData(&name[0], nameLen);
+        m_DataStream->Read(&name[0], nameLen);
 
         VoxelMesh mesh = std::make_shared<CVoxelMesh>();
         mesh->Materials = m_Materials;
         mesh->Name = name;
         auto pos = ReadVector();
 
-        Skip(6 * sizeof(int));
+        m_DataStream->Seek(6 * sizeof(int));
         mesh->SetSize(ReadVector());
 
         auto halfSize = (mesh->GetSize() / 2.0);
@@ -198,10 +199,11 @@ namespace VCore
         sceneNode->SetMesh(mesh);
         m_SceneTree->AddChild(sceneNode);
 
-        uint32_t dataSize = ReadData<uint32_t>();
+        uint32_t dataSize = m_DataStream->Read<uint32_t>();
 
         int OutSize = 0;
-        std::vector<char> data = ReadDataChunk(dataSize);
+        std::vector<char> data(dataSize, 0);
+        m_DataStream->Read(&data[0], dataSize);
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         int strmPos = 0;
 
@@ -242,7 +244,7 @@ namespace VCore
         mesh->GenerateVisibilityMask();
         m_Models.push_back(mesh);
 
-        uint32_t childCount = ReadData<uint32_t>();
+        uint32_t childCount = m_DataStream->Read<uint32_t>();
         for (uint32_t i = 0; i < childCount; i++)
             LoadNode();
     }
@@ -251,9 +253,9 @@ namespace VCore
     {
         Math::Vec3i ret;
 
-        ret.x = ReadData<int>();
-        ret.y = ReadData<int>();
-        ret.z = ReadData<int>();
+        ret.x = m_DataStream->Read<int>();
+        ret.y = m_DataStream->Read<int>();
+        ret.z = m_DataStream->Read<int>();
 
         return ret;
     }

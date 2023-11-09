@@ -47,35 +47,35 @@ namespace VCore
         m_Materials.push_back(std::make_shared<CMaterial>());
 
         std::string Signature(4, '\0');
-        ReadData(&Signature[0], 4);
+        m_DataStream->Read(&Signature[0], 4);
         Signature += "\0";
 
         // Checks the file header
         if(Signature != "QBCL")
             throw CVoxelLoaderException("Unknown file format");
 
-        Skip(4);    // Program version e.g. 3.1.2.0
+        m_DataStream->Seek(4);    // Program version e.g. 3.1.2.0
 
-        int version = ReadData<int>();
+        int version = m_DataStream->Read<int>();
         if(version != 2)   // Version 2.0
             throw CVoxelLoaderException("Unsupported version!");
 
         //Thumbnail size
-        uint32_t width = ReadData<uint32_t>();
-        uint32_t height = ReadData<uint32_t>();
+        uint32_t width = m_DataStream->Read<uint32_t>();
+        uint32_t height = m_DataStream->Read<uint32_t>();
 
-        // Skips the BGRA encoded thumbnail.
-        Skip(width * height * 4);
+        // m_DataStream->Seeks the BGRA encoded thumbnail.
+        m_DataStream->Seek(width * height * 4);
 
         // Metadata
-        // Skips all the metadata. (Same order as in the gui)
+        // m_DataStream->Seeks all the metadata. (Same order as in the gui)
         for (char i = 0; i < 7; i++)
         {
-            uint32_t size = ReadData<uint32_t>();
-            Skip(size);
+            uint32_t size = m_DataStream->Read<uint32_t>();
+            m_DataStream->Seek(size);
         }
 
-        Skip(16);   //Timestamp?
+        m_DataStream->Seek(16);   //Timestamp?
         LoadNode();
 
         for (auto &&m : m_Models)
@@ -84,9 +84,9 @@ namespace VCore
 
     void CQubicleFormat::LoadNode()
     {
-        uint32_t type = ReadData<uint32_t>();
-        Skip(sizeof(int));  // I dont know.
-        // uint32_t size = ReadData<uint32_t>();
+        uint32_t type = m_DataStream->Read<uint32_t>();
+        m_DataStream->Seek(sizeof(int));  // I dont know.
+        // uint32_t size = m_DataStream->Read<uint32_t>();
 
         switch (type)
         {
@@ -103,28 +103,28 @@ namespace VCore
             default:
             {
                 throw CVoxelLoaderException("Unknown type: " + std::to_string(type));
-                // Skip(size);
+                // m_DataStream->Seek(size);
             } break;
         }
     }
 
     void CQubicleFormat::LoadModel()
     {
-        uint32_t size = ReadData<uint32_t>();
-        Skip(size);
-        Skip(39);   // I dont know for which this chunk is for. It's always the same.
+        uint32_t size = m_DataStream->Read<uint32_t>();
+        m_DataStream->Seek(size);
+        m_DataStream->Seek(39);   // I dont know for which this chunk is for. It's always the same.
 
-        uint32_t childCount = ReadData<uint32_t>();
+        uint32_t childCount = m_DataStream->Read<uint32_t>();
         for (uint32_t i = 0; i < childCount; i++)
             LoadNode();        
     }
 
     void CQubicleFormat::LoadMatrix()
     {
-        uint32_t nameLen = ReadData<uint32_t>();
+        uint32_t nameLen = m_DataStream->Read<uint32_t>();
         std::string name(nameLen + 1, '\0');
-        ReadData(&name[0], nameLen);
-        Skip(3); //Mysterious 3 bytes always 0x01 0x01 0x00
+        m_DataStream->Read(&name[0], nameLen);
+        m_DataStream->Seek(3); //Mysterious 3 bytes always 0x01 0x01 0x00
 
         VoxelMesh mesh = std::make_shared<CVoxelMesh>();
         mesh->Materials = m_Materials;
@@ -139,12 +139,13 @@ namespace VCore
         sceneNode->SetPosition(pos);
         sceneNode->SetMesh(mesh);
         m_SceneTree->AddChild(sceneNode);
-        Skip(3 * sizeof(float));    //Pivot position.
+        m_DataStream->Seek(3 * sizeof(float));    //Pivot position.
 
-        uint32_t dataSize = ReadData<uint32_t>();
+        uint32_t dataSize = m_DataStream->Read<uint32_t>();
 
         int OutSize = 0;
-        std::vector<char> data = ReadDataChunk(dataSize);
+        std::vector<char> data(dataSize, 0);
+        m_DataStream->Read(&data[0], dataSize);
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         int strmPos = 0;
 
@@ -217,9 +218,9 @@ namespace VCore
     {
         Math::Vec3i ret;
 
-        ret.x = ReadData<int>();
-        ret.z = ReadData<int>();
-        ret.y = ReadData<int>();
+        ret.x = m_DataStream->Read<int>();
+        ret.z = m_DataStream->Read<int>();
+        ret.y = m_DataStream->Read<int>();
 
         return ret;
     }

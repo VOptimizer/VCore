@@ -68,7 +68,7 @@ namespace VCore
             ~CVoxel() = default;
     };
 
-    using Voxel = CVoxel*; //std::shared_ptr<CVoxel>;
+    using Voxel = CVoxel*;
 
     //////////////////////////////////////////////////
     // CVoxel functions

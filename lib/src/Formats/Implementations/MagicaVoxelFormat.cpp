@@ -65,34 +65,34 @@ namespace VCore
     void CMagicaVoxelFormat::ParseFormat()
     {   
         std::string Signature(4, '\0');
-        ReadData(&Signature[0], 4);
+        m_DataStream->Read(&Signature[0], 4);
         Signature += "\0";
 
         // Checks the file header
         if(Signature != "VOX ")
             throw CVoxelLoaderException("Unknown file format");
 
-        int Version = ReadData<int>();
+        int Version = m_DataStream->Read<int>();
         if(Version != 150)
             throw CVoxelLoaderException("Version: " + std::to_string(Version) + " is not supported");
 
         // First processes the materials that are at the end of the file. 
         ProcessMaterialAndSceneGraph();
-        Skip(8);
+        m_DataStream->Seek(8);
 
-        if(!IsEof())
+        if(!m_DataStream->Eof())
         {
-            SChunkHeader Tmp = ReadData<SChunkHeader>();
+            SChunkHeader Tmp = m_DataStream->Read<SChunkHeader>();
             if(strncmp(Tmp.ID, "MAIN", sizeof(Tmp.ID)) == 0)
             {
-                while (!IsEof())
+                while (!m_DataStream->Eof())
                 {
-                    Tmp = ReadData<SChunkHeader>();
+                    Tmp = m_DataStream->Read<SChunkHeader>();
 
                     if(strncmp(Tmp.ID, "SIZE", sizeof(Tmp.ID)) == 0)
                     {
                         VoxelMesh m = ProcessSize();
-                        Tmp = ReadData<SChunkHeader>();
+                        Tmp = m_DataStream->Read<SChunkHeader>();
                         if(strncmp(Tmp.ID, "XYZI", sizeof(Tmp.ID)) != 0)
                             throw CVoxelLoaderException("Can't understand the format.");
 
@@ -123,10 +123,10 @@ namespace VCore
                     else if(strncmp(Tmp.ID, "RGBA", sizeof(Tmp.ID)) == 0)
                     {
                         for (size_t i = 0; i < m_ColorPalette.size(); i++)
-                            ReadData((char*)m_ColorPalette[i].c, 4);
+                            m_DataStream->Read((char*)m_ColorPalette[i].c, 4);
                     }
                     else
-                        Skip(Tmp.ChunkContentSize + Tmp.ChildChunkSize);
+                        m_DataStream->Seek(Tmp.ChunkContentSize + Tmp.ChildChunkSize);
                 }
             }
         }
@@ -181,9 +181,9 @@ namespace VCore
 
         // Since in MagicaVoxel the z axis is the gravity axis (Up axis), we need to read the vector in the following order xzy.
         // So the gravity axis will be the y axis.
-        Size.x = ReadData<int>();
-        Size.z = ReadData<int>();
-        Size.y = ReadData<int>();
+        Size.x = m_DataStream->Read<int>();
+        Size.z = m_DataStream->Read<int>();
+        Size.y = m_DataStream->Read<int>();
 
         Ret->SetSize(Size);
 
@@ -192,7 +192,7 @@ namespace VCore
 
     void CMagicaVoxelFormat::ProcessXYZI(VoxelMesh m)
     {
-        int VoxelCount = ReadData<int>();
+        int VoxelCount = m_DataStream->Read<int>();
 
         Math::Vec3i Beg(INT32_MAX, INT32_MAX, INT32_MAX), End;
 
@@ -205,7 +205,7 @@ namespace VCore
 
             uint8_t data[4];
 
-            ReadData((char*)data, sizeof(data));            
+            m_DataStream->Read((char*)data, sizeof(data));            
 
             // Since in MagicaVoxel the z axis is the gravity axis (Up axis), we need to read the vector in the following order xzy.
             // So the gravity axis will be the y axis.
@@ -266,37 +266,37 @@ namespace VCore
         std::map<int, Node> nodes;
         m_Materials.push_back(std::make_shared<CMaterial>());
 
-        if(!IsEof())
+        if(!m_DataStream->Eof())
         {
-            SChunkHeader Tmp = ReadData<SChunkHeader>();
+            SChunkHeader Tmp = m_DataStream->Read<SChunkHeader>();
             if(strncmp(Tmp.ID, "MAIN", sizeof(Tmp.ID)) == 0)
             {
-                while (!IsEof())
+                while (!m_DataStream->Eof())
                 {
-                    Tmp = ReadData<SChunkHeader>();
+                    Tmp = m_DataStream->Read<SChunkHeader>();
 
                     if(strncmp(Tmp.ID, "MATL", sizeof(Tmp.ID)) == 0)
                     {
                         Material Mat = std::make_shared<CMaterial>();
-                        int ID = ReadData<int>();
-                        int KeyValueCount = ReadData<int>();
+                        int ID = m_DataStream->Read<int>();
+                        int KeyValueCount = m_DataStream->Read<int>();
 
                         std::string MaterialType;
 
                         for (int i = 0; i < KeyValueCount; i++)
                         {
-                            int StrLen = ReadData<int>();
+                            int StrLen = m_DataStream->Read<int>();
 
                             std::string Key(StrLen, '\0'); 
-                            ReadData(&Key[0], StrLen);
+                            m_DataStream->Read(&Key[0], StrLen);
 
                             if(Key == "_plastic")
                                 continue;
 
-                            StrLen = ReadData<int>();
+                            StrLen = m_DataStream->Read<int>();
 
                             std::string Value(StrLen, '\0'); 
-                            ReadData(&Value[0], StrLen);
+                            m_DataStream->Read(&Value[0], StrLen);
 
                             if(Key == "_type")
                                 MaterialType = Value;
@@ -339,7 +339,7 @@ namespace VCore
                         nodes.insert({tmp->NodeID, tmp});
                     }
                     else
-                        Skip(Tmp.ChunkContentSize + Tmp.ChildChunkSize);
+                        m_DataStream->Seek(Tmp.ChunkContentSize + Tmp.ChildChunkSize);
                 }
             }
         }
@@ -407,55 +407,55 @@ namespace VCore
         else
             m_ModelSceneTreeMapping.insert({0, m_SceneTree});
 
-        Reset();
+        m_DataStream->Seek(0, SeekOrigin::BEG);
     }
 
     CMagicaVoxelFormat::TransformNode CMagicaVoxelFormat::ProcessTransformNode()
     {
         TransformNode Ret = TransformNode(new STransformNode());
 
-        Ret->NodeID = ReadData<int>();
+        Ret->NodeID = m_DataStream->Read<int>();
         
         // Skips the dictionary
-        int keys = ReadData<int>();
+        int keys = m_DataStream->Read<int>();
         for (int i = 0; i < keys; i++)
         {
-            int size = ReadData<int>();
+            int size = m_DataStream->Read<int>();
             std::string key(size, '\0'); 
-            ReadData(&key[0], size);
+            m_DataStream->Read(&key[0], size);
             if(key == "_name")
             {              
-                size = ReadData<int>();
+                size = m_DataStream->Read<int>();
                 std::string value(size, '\0'); 
-                ReadData(&value[0], size);
+                m_DataStream->Read(&value[0], size);
                 Ret->Name = value;
             }
             else
             {
-                int size = ReadData<int>();
-                Skip(size);
+                int size = m_DataStream->Read<int>();
+                m_DataStream->Seek(size);
             }            
         }
 
-        Ret->ChildID = ReadData<int>();
-        Skip(sizeof(int));
-        Ret->LayerID = ReadData<int>();
+        Ret->ChildID = m_DataStream->Read<int>();
+        m_DataStream->Seek(sizeof(int));
+        Ret->LayerID = m_DataStream->Read<int>();
 
-        int frames = ReadData<int>();
+        int frames = m_DataStream->Read<int>();
         for (int i = 0; i < frames; i++)
         {
-            keys = ReadData<int>();
+            keys = m_DataStream->Read<int>();
             for (int j = 0; j < keys; j++)
             {
-                int size = ReadData<int>();
+                int size = m_DataStream->Read<int>();
                 std::string Key(size, '\0'); 
-                ReadData(&Key[0], size);
+                m_DataStream->Read(&Key[0], size);
 
                 if(Key == "_t")
                 {
-                    size = ReadData<int>();
+                    size = m_DataStream->Read<int>();
                     std::string Value(size, '\0'); 
-                    ReadData(&Value[0], size);
+                    m_DataStream->Read(&Value[0], size);
 
                     std::stringstream tmp;
                     tmp << Value;
@@ -465,9 +465,9 @@ namespace VCore
                 }
                 else if(Key == "_r")
                 {
-                    size = ReadData<int>();
+                    size = m_DataStream->Read<int>();
                     std::string Value(size, '\0'); 
-                    ReadData(&Value[0], size);
+                    m_DataStream->Read(&Value[0], size);
 
                     char rot = std::stoi(Value);
 
@@ -489,7 +489,7 @@ namespace VCore
                     std::swap(Ret->Rotation.y, Ret->Rotation.z);
                 }
                 else if(Key == "_f")
-                    Skip(ReadData<int>());
+                    m_DataStream->Seek(m_DataStream->Read<int>());
             }
         }
 
@@ -500,12 +500,12 @@ namespace VCore
     {
         GroupNode Ret = GroupNode(new SGroupNode());
 
-        Ret->NodeID = ReadData<int>();
+        Ret->NodeID = m_DataStream->Read<int>();
         SkipDict();
 
-        int childs = ReadData<int>();
+        int childs = m_DataStream->Read<int>();
         for (int i = 0; i < childs; i++)
-            Ret->ChildrensID.push_back(ReadData<int>());
+            Ret->ChildrensID.push_back(m_DataStream->Read<int>());
 
         return Ret;
     }
@@ -514,20 +514,20 @@ namespace VCore
     {
         ShapeNode Ret = ShapeNode(new SShapeNode());
 
-        Ret->NodeID = ReadData<int>();
+        Ret->NodeID = m_DataStream->Read<int>();
         SkipDict();
 
-        int childs = ReadData<int>();
+        int childs = m_DataStream->Read<int>();
         for (int i = 0; i < childs; i++)
         {
-            Ret->Models.push_back(ReadData<int>());
+            Ret->Models.push_back(m_DataStream->Read<int>());
 
             // Skips the dictionary
-            int keys = ReadData<int>();
+            int keys = m_DataStream->Read<int>();
             for (int i = 0; i < keys; i++)
             {
-                Skip(ReadData<int>());
-                Skip(ReadData<int>());
+                m_DataStream->Seek(m_DataStream->Read<int>());
+                m_DataStream->Seek(m_DataStream->Read<int>());
             }
         }
 
@@ -536,13 +536,13 @@ namespace VCore
 
     void CMagicaVoxelFormat::SkipDict()
     {
-        int keys = ReadData<int>();
+        int keys = m_DataStream->Read<int>();
         for (int i = 0; i < keys; i++)
         {
-            int size = ReadData<int>();
-            Skip(size);
-            size = ReadData<int>();
-            Skip(size);
+            int size = m_DataStream->Read<int>();
+            m_DataStream->Seek(size);
+            size = m_DataStream->Read<int>();
+            m_DataStream->Seek(size);
         }
     }
 }

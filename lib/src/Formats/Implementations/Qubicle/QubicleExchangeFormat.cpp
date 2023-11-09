@@ -61,11 +61,11 @@ namespace VCore
         char c = 0;
         do
         {
-            c = ReadData<char>();
+            c = m_DataStream->Read<char>();
 
             if(c != '\n' && c != '\r')
                 ret += c;
-        }while(c != '\n' && !IsEof());
+        }while(c != '\n' && !m_DataStream->Eof());
 
         return ret;
     }
@@ -110,7 +110,7 @@ namespace VCore
     void CQubicleExchangeFormat::ReadVoxels(VoxelMesh mesh)
     {
         Math::Vec3i Beg(1000, 1000, 1000), End;
-        while (!IsEof())
+        while (!m_DataStream->Eof())
         {
             std::stringstream strm;
             strm << ReadLine();

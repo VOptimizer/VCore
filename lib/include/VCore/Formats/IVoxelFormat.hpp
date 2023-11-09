@@ -29,7 +29,7 @@
 #include <vector>
 #include <VCore/Formats/SceneNode.hpp>
 #include <VCore/Voxel/VoxelMesh.hpp>
-#include <VCore/Misc/BinaryStream.hpp>
+#include <VCore/Misc/FileStream.hpp>
 
 namespace VCore
 {
@@ -56,35 +56,45 @@ namespace VCore
              * 
              * @throws CVoxelLoaderException If there is no loader for the given file or the file couldn't be load.
              */
-            static VoxelFormat CreateAndLoad(const std::string &filename);
+            template<class Stream = CDefaultFileStream>
+            static VoxelFormat CreateAndLoad(const std::string &_Filename)
+            {
+                auto loader = Create(GetType(_Filename));
+                loader->Load<Stream>(_Filename);
+
+                return loader;
+            }
 
             /**
              * @return Returns the loader type of a given file.
              */
-            static LoaderType GetType(const std::string &filename);
+            static LoaderType GetType(const std::string &_Filename);
 
             /**
              * @brief Creates an instance of a the given loader;
              */
-            static VoxelFormat Create(LoaderType type);
+            static VoxelFormat Create(LoaderType _Type);
 
             /**
              * @brief Loads a voxel file from disk.
              * 
-             * @param File: Path to the voxel file.
+             * @param _File: Path to the voxel file.
              * @throws CVoxelLoaderException If the file couldn't be load.
              */
-            virtual void Load(const std::string &File);
+            template<class Stream = CDefaultFileStream>
+            void Load(const std::string &_File)
+            {
+                Load(new Stream(_File, "rb"));
+            }
 
             /**
-             * @brief Loads voxel file from memory.
+             * @brief Loads a voxel file from stream.
+             * The loader takes the ownership of the _Strm instance, and will free it properly.
              * 
-             * @param Data: Data of the file.
-             * @param Lenght: Data size.
-             * 
+             * @param _Strm: Stream to load the file from.
              * @throws CVoxelLoaderException If the file couldn't be load.
              */
-            virtual void Load(const char *Data, size_t Length);
+            virtual void Load(IFileStream *_Strm);
 
             /**
              * @return Gets a list with all models inside the voxel file.
@@ -115,10 +125,12 @@ namespace VCore
             /**
              * @brief Sets the scene tree.
              */
-            inline void SetSceneTree(SceneNode tree)
+            inline void SetSceneTree(SceneNode _Tree)
             {
-                m_SceneTree = tree;
+                m_SceneTree = _Tree;
             }
+
+            virtual ~IVoxelFormat() { DeleteFileStream(); }
 
             /**
              * @brief Merges all colors and materials into one list. With this helper method it is possible to merge multiple voxel files together.
@@ -130,9 +142,10 @@ namespace VCore
             // static void Combine(std::map<TextureType, Texture> &textures, std::vector<Material> &materials, const std::vector<VoxelMesh> &meshes);
         protected:
             virtual void ClearCache();
+            void DeleteFileStream();
 
             SceneNode m_SceneTree;
-            CBinaryStream m_DataStream;
+            IFileStream *m_DataStream;
 
             std::vector<VoxelMesh> m_Models;
             std::vector<Material> m_Materials;
@@ -140,20 +153,20 @@ namespace VCore
 
             virtual void ParseFormat() = 0;
 
-            template<class T>
-            T ReadData()
-            {
-                T Ret;
-                ReadData((char*)&Ret, sizeof(Ret));
-                return Ret;
-            }
+            // template<class T>
+            // T ReadData()
+            // {
+            //     T Ret;
+            //     ReadData((char*)&Ret, sizeof(Ret));
+            //     return Ret;
+            // }
 
-            void ReadData(char *Buf, size_t Size);
-            bool IsEof();
-            size_t Tellg();
-            void Skip(size_t Bytes);
-            void Reset();
-            std::vector<char> ReadDataChunk(size_t size);
+            // void ReadData(char *Buf, size_t Size);
+            // bool IsEof();
+            // size_t Tellg();
+            // void Skip(size_t Bytes);
+            // void Reset();
+            // std::vector<char> ReadDataChunk(size_t size);
     };
 }
 

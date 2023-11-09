@@ -13,7 +13,8 @@ include_directories("${PROJECT_SOURCE_DIR}/include"
 add_subdirectory(../lib libVCore)
 
 set(SRCS "${PROJECT_SOURCE_DIR}/main.cpp"
-         "${PROJECT_SOURCE_DIR}/src/GodotVoxelOptimizer.cpp")
+         "${PROJECT_SOURCE_DIR}/src/GodotVoxelOptimizer.cpp"
+         "${PROJECT_SOURCE_DIR}/src/GodotFileStream.cpp")
 set(LIBS "VCore")
 
 if(WIN32)

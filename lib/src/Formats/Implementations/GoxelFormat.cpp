@@ -176,20 +176,20 @@ namespace VCore
     void CGoxelFormat::ReadFile()
     {
         std::string Signature(4, '\0');
-        ReadData(&Signature[0], 4);
+        m_DataStream->Read(&Signature[0], 4);
         Signature += "\0";
 
         // Checks the file header
         if(Signature != "GOX ")
             throw CVoxelLoaderException("Unknown file format");
 
-        int Version = ReadData<int>();
+        int Version = m_DataStream->Read<int>();
         if(Version != 2)
             throw CVoxelLoaderException("Version: " + std::to_string(Version) + " is not supported");
 
-        while (!IsEof())
+        while (!m_DataStream->Eof())
         {
-            SChunkHeader Chunk = ReadData<SChunkHeader>();
+            SChunkHeader Chunk = m_DataStream->Read<SChunkHeader>();
 
             if(strncmp(Chunk.Type, "BL16", sizeof(Chunk.Type)) == 0)
                 ProcessBL16(Chunk);
@@ -198,13 +198,13 @@ namespace VCore
             else if(strncmp(Chunk.Type, "MATE", sizeof(Chunk.Type)) == 0)
                 ProcessMaterial(Chunk);
             else
-                Skip(Chunk.Size + sizeof(int));
+                m_DataStream->Seek(Chunk.Size + sizeof(int));
         }
     }
 
     void CGoxelFormat::ProcessMaterial(const SChunkHeader &Chunk)
     {
-        auto Dict = ReadDict(Chunk, Tellg());
+        auto Dict = ReadDict(Chunk, m_DataStream->Tell());
         m_Materials.push_back(std::make_shared<CMaterial>());
 
         float c[4];
@@ -218,24 +218,24 @@ namespace VCore
         if(m_Materials.back()->Power != 0.0)
             m_HasEmission = true;
 
-        Skip(sizeof(int));
+        m_DataStream->Seek(sizeof(int));
     }
 
     void CGoxelFormat::ProcessLayer(const SChunkHeader &Chunk)
     {
         Layer l;
-        size_t StartPos = Tellg();
+        size_t StartPos = m_DataStream->Tell();
 
-        int Blocks = ReadData<int>();
+        int Blocks = m_DataStream->Read<int>();
 
         for (int i = 0; i < Blocks; i++)
         {
             Block B;
 
-            B.Index = ReadData<int>();
-            B.Pos.x = ReadData<int>();
-            B.Pos.y = ReadData<int>();
-            B.Pos.z = ReadData<int>();
+            B.Index = m_DataStream->Read<int>();
+            B.Pos.x = m_DataStream->Read<int>();
+            B.Pos.y = m_DataStream->Read<int>();
+            B.Pos.z = m_DataStream->Read<int>();
 
             Math::Vec3i v = B.Pos + Math::Vec3f(16, 16, 16);
 
@@ -243,7 +243,7 @@ namespace VCore
             m_BBox.Beg = m_BBox.Beg.min(Math::Vec3i(B.Pos.x, B.Pos.z, B.Pos.y));
             m_BBox.End = m_BBox.End.max(Math::Vec3i(v.x, v.z, v.y));
 
-            Skip(sizeof(int));
+            m_DataStream->Seek(sizeof(int));
 
             l.Blocks.push_back(B);
         }
@@ -254,13 +254,13 @@ namespace VCore
         l.Visible = *((int*)(Dict["visible"].data()));
         
         m_Layers.push_back(l);
-        Skip(sizeof(int));
+        m_DataStream->Seek(sizeof(int));
     }
 
     void CGoxelFormat::ProcessBL16(const SChunkHeader &Chunk)
     {
         stbi_uc *PngData = new stbi_uc[Chunk.Size];
-        ReadData((char*)PngData, Chunk.Size);
+        m_DataStream->Read((char*)PngData, Chunk.Size);
 
         int w, h, c;
         uint32_t *ImgData = (uint32_t*)stbi_load_from_memory(PngData, Chunk.Size, &w, &h, &c, 4);
@@ -269,23 +269,23 @@ namespace VCore
         delete[] ImgData;
         delete[] PngData;
 
-        Skip(sizeof(int));
+        m_DataStream->Seek(sizeof(int));
     }
 
     std::map<std::string, std::string> CGoxelFormat::ReadDict(const SChunkHeader &Chunk, size_t StartPos)
     {
         std::map<std::string, std::string> Ret;
 
-        while (Tellg() - StartPos < (size_t)Chunk.Size)
+        while (m_DataStream->Tell() - StartPos < (size_t)Chunk.Size)
         {
-            int Size = ReadData<int>();
+            int Size = m_DataStream->Read<int>();
             std::string Key(Size, '\0');
-            ReadData(&Key[0], Size);
+            m_DataStream->Read(&Key[0], Size);
             // Key += '\0';
 
-            Size = ReadData<int>();
+            Size = m_DataStream->Read<int>();
             std::string Value(Size, '\0');
-            ReadData(&Value[0], Size);
+            m_DataStream->Read(&Value[0], Size);
 
             Ret[Key] = Value;
         }

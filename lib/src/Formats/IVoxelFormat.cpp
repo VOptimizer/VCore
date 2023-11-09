@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 
-#include <fstream>
 #include <stdexcept>
 #include <VCore/Misc/Exceptions.hpp>
 #include <VCore/Formats/IVoxelFormat.hpp>
@@ -39,9 +38,9 @@
 
 namespace VCore
 {
-    VoxelFormat IVoxelFormat::Create(LoaderType type)
+    VoxelFormat IVoxelFormat::Create(LoaderType _Type)
     {
-        switch (type)
+        switch (_Type)
         {
             case LoaderType::MAGICAVOXEL: return VoxelFormat(new CMagicaVoxelFormat());
             case LoaderType::GOXEL: return VoxelFormat(new CGoxelFormat());
@@ -64,17 +63,9 @@ namespace VCore
         m_SceneTree = std::make_shared<CSceneNode>();
     }
 
-    VoxelFormat IVoxelFormat::CreateAndLoad(const std::string &filename)
+    LoaderType IVoxelFormat::GetType(const std::string &_Filename)
     {
-        auto loader = Create(GetType(filename));
-        loader->Load(filename);
-
-        return loader;
-    }
-
-    LoaderType IVoxelFormat::GetType(const std::string &filename)
-    {
-        std::string ext = GetFileExt(filename);
+        std::string ext = GetFileExt(_Filename);
         LoaderType type = LoaderType::UNKNOWN;
         
         if(ext == "vox")
@@ -95,25 +86,21 @@ namespace VCore
         return type;
     }
 
-    void IVoxelFormat::Load(const std::string &File)
+    void IVoxelFormat::Load(IFileStream *_Strm)
     {
-        std::ifstream in(File, std::ios::binary);
-        if(in.is_open())
-        {
-            m_DataStream = in;
-            ClearCache();
-            ParseFormat();
-        }
-        else
-            throw CVoxelLoaderException("Failed to open '" + File + "'");
-    }
-
-    void IVoxelFormat::Load(const char *Data, size_t Length)
-    {
-        m_DataStream = CBinaryStream(Data, Length);
+        DeleteFileStream();
+        m_DataStream = _Strm;
 
         ClearCache();
         ParseFormat();
+    }
+
+    void IVoxelFormat::DeleteFileStream()
+    {
+        if(m_DataStream)
+            delete m_DataStream;
+
+        m_DataStream = nullptr;
     }
 
     // void IVoxelFormat::Combine(std::map<TextureType, Texture> &textures, std::vector<Material> &materials, const std::vector<VoxelMesh> &meshes)
@@ -240,42 +227,42 @@ namespace VCore
         
     // }
 
-    void IVoxelFormat::ReadData(char *Buf, size_t Size)
-    {
-        size_t off = m_DataStream.offset();
-        size_t size = m_DataStream.size();
+    // void IVoxelFormat::ReadData(char *Buf, size_t Size)
+    // {
+    //     size_t off = m_DataStream.offset();
+    //     size_t size = m_DataStream.size();
 
-        if(off + Size > size)
-            throw CVoxelLoaderException("Unexpected file ending.");
+    //     if(off + Size > size)
+    //         throw CVoxelLoaderException("Unexpected file ending.");
 
-        m_DataStream.read(Buf, Size);
-    }
+    //     m_DataStream.read(Buf, Size);
+    // }
 
-    bool IVoxelFormat::IsEof()
-    {
-        return m_DataStream.offset() >= m_DataStream.size();
-    }
+    // bool IVoxelFormat::IsEof()
+    // {
+    //     return m_DataStream.offset() >= m_DataStream.size();
+    // }
 
-    size_t IVoxelFormat::Tellg()
-    {
-        return m_DataStream.offset();
-    }
+    // size_t IVoxelFormat::Tellg()
+    // {
+    //     return m_DataStream.offset();
+    // }
 
-    void IVoxelFormat::Skip(size_t Bytes)
-    {
-        m_DataStream.skip(Bytes);
-    }
+    // void IVoxelFormat::Skip(size_t Bytes)
+    // {
+    //     m_DataStream.skip(Bytes);
+    // }
 
-    void IVoxelFormat::Reset()
-    {
-        m_DataStream.reset();
-    }
+    // void IVoxelFormat::Reset()
+    // {
+    //     m_DataStream.reset();
+    // }
 
-    std::vector<char> IVoxelFormat::ReadDataChunk(size_t size)
-    {
-        std::vector<char> data(size, 0);
-        ReadData(&data[0], data.size());
+    // std::vector<char> IVoxelFormat::ReadDataChunk(size_t size)
+    // {
+    //     std::vector<char> data(size, 0);
+    //     ReadData(&data[0], data.size());
 
-        return data;
-    }
+    //     return data;
+    // }
 }

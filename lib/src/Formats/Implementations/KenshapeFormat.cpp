@@ -32,19 +32,18 @@ namespace VCore
     void CKenshapeFormat::ParseFormat()
     {
         // Quick'n dirty gzip check.
-        if(ReadData<uint8_t>() != 0x1f || ReadData<uint8_t>() != 0x8b || ReadData<uint8_t>() != 8)
+        if(m_DataStream->Read<uint8_t>() != 0x1f || m_DataStream->Read<uint8_t>() != 0x8b || m_DataStream->Read<uint8_t>() != 8)
             throw CVoxelLoaderException("Invalid file format!");
 
-        Skip(7);
+        m_DataStream->Seek(7);
 
         int OutSize = 0;
-        int pos = m_DataStream.tellg();
+        int pos = m_DataStream->Tell();
 
-        m_DataStream.seekg(0, std::ios::end);
-        size_t datasize = m_DataStream.tellg();
-        m_DataStream.seekg(pos, std::ios::beg);
+        size_t dataSize = m_DataStream->Size() - pos;
 
-        std::vector<char> data = ReadDataChunk(datasize - pos);
+        std::vector<char> data(dataSize, 0);
+        m_DataStream->Read(&data[0], dataSize);
         char *Data = stbi_zlib_decode_noheader_malloc(data.data(), data.size(), &OutSize);
 
         CJSON json;

@@ -32,6 +32,8 @@ set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelMesh.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/MeshBuilder.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/IExporter.cpp"
 
+         "${PROJECT_SOURCE_DIR}/src/Misc/FileStream.cpp"
+
          "${PROJECT_SOURCE_DIR}/src/Export/Implementations/WavefrontObjExporter.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/Implementations/SpriteStackingExporter.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/Implementations/GodotSceneExporter.cpp"

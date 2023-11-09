@@ -50,6 +50,7 @@
 
 // Miscellaneous
 #include <VCore/Misc/Exceptions.hpp>
+#include <VCore/Misc/FileStream.hpp>
 
 // Voxel
 #include <VCore/Voxel/BBox.hpp>

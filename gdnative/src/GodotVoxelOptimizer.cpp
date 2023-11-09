@@ -26,6 +26,7 @@
 #include <GodotVoxelOptimizer.hpp>
 #include <Image.hpp>
 #include <MeshInstance.hpp>
+#include <GodotFileStream.hpp>
 
 void CGodotVoxelOptimizer::_register_methods()
 {
@@ -45,23 +46,24 @@ godot_error CGodotVoxelOptimizer::Load(String Path)
         return (godot_error)Error::ERR_FILE_NOT_FOUND;
     }
 
-    Error err = file->open(Path, File::READ);
-    if(!file->is_open())
-    {
-        ERR_PRINT("Couldn't open file: " + Path);
-        return (godot_error)Error::ERR_FILE_CANT_READ;
-    }
+    // Error err = file->open(Path, File::READ);
+    // if(!file->is_open())
+    // {
+    //     ERR_PRINT("Couldn't open file: " + Path);
+    //     return (godot_error)Error::ERR_FILE_CANT_READ;
+    // }
 
-    if(err != Error::OK)
-        return (godot_error)err;
+    // if(err != Error::OK)
+    //     return (godot_error)err;
 
-    PoolByteArray data = file->get_buffer(file->get_len());
+    // PoolByteArray data = file->get_buffer(file->get_len());
 
-    m_Loader = VCore::IVoxelFormat::Create(VCore::IVoxelFormat::GetType(Path.utf8().get_data()));
+    // m_Loader = VCore::IVoxelFormat::Create(VCore::IVoxelFormat::GetType(Path.utf8().get_data()));
     
     try
     {
-        m_Loader->Load((char*)data.read().ptr(), data.size());
+        // m_Loader->Load((char*)data.read().ptr(), data.size());
+        m_Loader = VCore::IVoxelFormat::CreateAndLoad<CGodotFileStream>(Path.utf8().get_data());
     }
     catch(const VCore::CVoxelLoaderException &e)
     {
@@ -71,7 +73,7 @@ godot_error CGodotVoxelOptimizer::Load(String Path)
         return (godot_error)Error::ERR_PARSE_ERROR;
     }
     
-    file->close();
+    // file->close();
 
     return (godot_error)Error::OK;
 }

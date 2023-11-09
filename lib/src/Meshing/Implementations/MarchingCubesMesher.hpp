@@ -34,22 +34,14 @@ namespace VCore
     {
         public:
             CMarchingCubesMesher() : IMesher() {}
-
-            std::vector<SMeshChunk> GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty = false) override;
-
             virtual ~CMarchingCubesMesher() = default;
 
         protected:
             SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque) override;
 
         private:
-            VoxelMesh m_Mesh;
-            CBBox m_ChunkDimensions;
-            CBBox m_InnerBBox;
-            const CChunk *m_Chunk;
-
-            void CreateFaces(CMeshBuilder &builder, Math::Vec3f pos, Math::Vec3f center, short *edges);
-            Voxel GetVoxel(Math::Vec3f pos, int edge);
+            void CreateFaces(CMeshBuilder &builder, VoxelMesh m, const SChunkMeta &_Chunk, Math::Vec3f pos, Math::Vec3f center, short *edges);
+            Voxel GetVoxel(VoxelMesh m, const SChunkMeta &_Chunk, Math::Vec3f pos, int edge);
     };
 }
 
