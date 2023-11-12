@@ -65,9 +65,10 @@ namespace VCore
                         for (int x = v.x; x < v.x + 16; x++)
                         {
                             // Makes y the up axis, as needed.
-                            Math::Vec3i vi(x, z, y);
+                            // Also Goxel uses a left handed coordinate system, VCore uses a right handed one. So we need to convert the coordinates.
+                            Math::Vec3i vi(m->GetSize().x - x, z, y);
                             vi += m_BBox.Beg.abs();
-                            vi *= Math::Vec3i(1, 1, -1);
+                            // vi *= Math::Vec3i(1, 1, -1);
 
                             //TODO: Handle negative pos.
                             uint32_t p = tmp.GetVoxel(Math::Vec3i(x - v.x, y - v.y, z - v.z));

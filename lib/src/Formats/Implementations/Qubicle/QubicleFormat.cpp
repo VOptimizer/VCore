@@ -177,8 +177,8 @@ namespace VCore
                     {
                         Math::Vec3i pos;
 
-                        pos.z = index % (uint32_t)mesh->GetSize().y;
-                        pos.x = (uint32_t)(index / (uint32_t)mesh->GetSize().y);
+                        pos.z = index % (uint32_t)mesh->GetSize().z;
+                        pos.x = (uint32_t)(index / (uint32_t)mesh->GetSize().z);
                         pos.y = y;
                         
                         AddVoxel(mesh, data, pos, Beg, End);
@@ -191,8 +191,8 @@ namespace VCore
                 {
                     Math::Vec3i pos;
 
-                    pos.z = index % (uint32_t)mesh->GetSize().y;
-                    pos.x = (uint32_t)(index / (uint32_t)mesh->GetSize().y);
+                    pos.z = index % (uint32_t)mesh->GetSize().z;
+                    pos.x = (uint32_t)(index / (uint32_t)mesh->GetSize().z);
                     pos.y = y;
                     
                     AddVoxel(mesh, data, pos, Beg, End);
@@ -219,8 +219,8 @@ namespace VCore
         Math::Vec3i ret;
 
         ret.x = m_DataStream->Read<int>();
-        ret.z = m_DataStream->Read<int>();
         ret.y = m_DataStream->Read<int>();
+        ret.z = m_DataStream->Read<int>();
 
         return ret;
     }

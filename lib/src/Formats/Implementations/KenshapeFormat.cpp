@@ -66,7 +66,6 @@ namespace VCore
         m->Materials.push_back(mat);
         m->SetSize(Content->Size);
 
-        std::map<int, int> ColorIdx;
         Math::Vec3f Pos;
         Math::Vec3f Beg, End;
 
@@ -77,22 +76,15 @@ namespace VCore
         {
             if(tile->ColorIdx != -1)
             {
-                int IdxC = 0;
-                if(ColorIdx.find(tile->ColorIdx) == ColorIdx.end())
-                {
-                    auto texIT = m_Textures.find(TextureType::DIFFIUSE);
-                    if(texIT == m_Textures.end())
-                        m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
+                int idx = GetColorIdx(Content, tile->ColorIdx);
+                int backIdx = idx;
+                if(tile->ColorBack != -1)
+                    backIdx = GetColorIdx(Content, tile->ColorBack);
 
-                    m_Textures[TextureType::DIFFIUSE]->AddPixel(Content->Colors[tile->ColorIdx]);
-                    IdxC = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;
-                    ColorIdx[tile->ColorIdx] = IdxC;
-                }
-                else
-                    IdxC = ColorIdx[tile->ColorIdx];
+                int blocks = tile->Depth - 1;
+                size_t z = (tile->DepthBack <= 0) ? (Pos.z - blocks) : (Pos.z - (tile->DepthBack - 1));
 
-                int Blocks = tile->Depth - 1;
-                for (size_t z = Pos.z - Blocks; z <= Pos.z + Blocks; z++)
+                for (; z <= Pos.z + blocks; z++)
                 {
                     Math::Vec3f v(Pos.x, Pos.y, z);
                     if(Beg.IsZero())
@@ -101,7 +93,7 @@ namespace VCore
                     Beg = Beg.min(v);
                     End = End.max(v);
 
-                    m->SetVoxel(v, 0, IdxC, false);
+                    m->SetVoxel(v, 0, (z < Pos.z) ? backIdx : idx, false);
                 }
             }
 
@@ -118,10 +110,30 @@ namespace VCore
         sceneNode->SetMesh(m);
         m->Pivot = m->GetSize() / 2;
 
-        m->Textures = m_Textures;
+        m->Textures = std::move(m_Textures);
         m->BBox = CBBox(Beg, End);
         m->GenerateVisibilityMask();
 
         m_Models.push_back(m);
+        m_ColorIdx.clear();
+    }
+
+    int CKenshapeFormat::GetColorIdx(Kenshape _Content, int _ColorIdx)
+    {
+        int idx;
+        if(m_ColorIdx.find(_ColorIdx) == m_ColorIdx.end())
+        {
+            auto texIT = m_Textures.find(TextureType::DIFFIUSE);
+            if(texIT == m_Textures.end())
+                m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
+
+            m_Textures[TextureType::DIFFIUSE]->AddPixel(_Content->Colors[_ColorIdx]);
+            idx = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;
+            m_ColorIdx[_ColorIdx] = idx;
+        }
+        else
+            idx = m_ColorIdx[_ColorIdx];
+
+        return idx;
     }
 }

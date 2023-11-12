@@ -40,8 +40,8 @@ namespace VCore
             float Angle;
             int ColorIdx;
             int Depth;
-            bool Enabled;
-            bool Visited;
+            int ColorBack;
+            int DepthBack;
 
             void Deserialize(CJSON &json)
             {
@@ -49,8 +49,8 @@ namespace VCore
                 Angle = json.GetValue<float>("angle");
                 ColorIdx = json.GetValue<int>("color");
                 Depth = json.GetValue<int>("depth");
-                Enabled = json.GetValue<bool>("enabled");
-                Visited = json.GetValue<bool>("visited");
+                ColorBack = json.GetValue<int>("colorBack", -1);
+                DepthBack = json.GetValue<int>("depthBack", 0);
             }
 
             ~CTile() = default;

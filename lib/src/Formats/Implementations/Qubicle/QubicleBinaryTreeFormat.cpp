@@ -161,7 +161,6 @@ namespace VCore
                         continue;
 
                     auto pos = Math::Vec3i(x, y, z);
-                    pos.z = (uint32_t)(mesh->GetSize().z - 1) - pos.z;
 
                     Beg = Beg.min(pos);
                     End = End.max(pos);
@@ -229,7 +228,6 @@ namespace VCore
                         continue;
 
                     auto pos = Math::Vec3f(x, y, z);
-                    pos.z = (uint32_t)(mesh->GetSize().z - 1) - pos.z;
 
                     Beg = Beg.min(pos);
                     End = End.max(pos);

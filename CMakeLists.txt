@@ -4,12 +4,14 @@ project(VCore VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(SRCS "${PROJECT_SOURCE_DIR}/main.cpp")
+# set(SRCS "${PROJECT_SOURCE_DIR}/main.cpp")
 #set(LIBS "")
 
-include_directories("${PROJECT_SOURCE_DIR}/gdnative/lib/include")
+include_directories("${PROJECT_SOURCE_DIR}/Test")
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/gdnative/lib")
+add_subdirectory("${PROJECT_SOURCE_DIR}/lib")
 
-add_executable(${PROJECT_NAME} ${SRCS})
-target_link_libraries(${PROJECT_NAME} VCore)
+install(FILES "${PROJECT_SOURCE_DIR}/lib/Test/VCore/VConfig.hpp" DESTINATION include)
+
+# add_executable(${PROJECT_NAME} ${SRCS})
+# target_link_libraries(${PROJECT_NAME} VCore)

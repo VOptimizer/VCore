@@ -26,6 +26,7 @@
 #define KENSHAPEFORMAT_HPP
 
 #include <VCore/Formats/IVoxelFormat.hpp>
+#include "Kenshape.hpp"
 
 namespace VCore
 {
@@ -35,7 +36,11 @@ namespace VCore
             CKenshapeFormat() = default;
             ~CKenshapeFormat() = default;
         private:
+            int GetColorIdx(Kenshape _Content, int _ColorIdx);
+
             void ParseFormat() override;   
+
+            std::map<int, int> m_ColorIdx;
     };
 }
 

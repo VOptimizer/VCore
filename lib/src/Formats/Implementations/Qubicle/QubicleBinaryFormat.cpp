@@ -104,8 +104,8 @@ namespace VCore
 
                     auto pos = Math::Vec3f(x, y, z);
 
-                    if(m_Header.ZAxisOrientation == 0)
-                        pos.z = (uint32_t)(mesh->GetSize().z - 1) - pos.z;
+                    if(m_Header.ZAxisOrientation == 1)
+                        pos.z = (uint32_t)(mesh->GetSize().z) - pos.z;
 
                     Beg = Beg.min(pos);
                     End = End.max(pos);
@@ -143,12 +143,11 @@ namespace VCore
 
                         pos.x = index % (uint32_t)mesh->GetSize().x;
                         pos.y = (uint32_t)(index / (uint32_t)mesh->GetSize().x);
+                        pos.z = z;
 
-                        if(m_Header.ZAxisOrientation == 0)
-                            pos.z = ((uint32_t)mesh->GetSize().z - 1) - z;
-                        else
-                            pos.z = z;
-
+                        if(m_Header.ZAxisOrientation == 1)
+                            pos.z = ((uint32_t)mesh->GetSize().z) - pos.z;
+                            
                         index++;
                         cid = GetColorIdx(data);
                         if(cid == -1)
@@ -166,11 +165,11 @@ namespace VCore
 
                     pos.x = index % (uint32_t)mesh->GetSize().x;
                     pos.y = (uint32_t)(index / (uint32_t)mesh->GetSize().x);
+                    pos.z = z;
 
-                    if(m_Header.ZAxisOrientation == 0)
-                        pos.z = ((uint32_t)mesh->GetSize().z - 1) - z;
-                    else
-                        pos.z = z;
+                    if(m_Header.ZAxisOrientation == 1)
+                        pos.z = ((uint32_t)mesh->GetSize().z) - pos.z;
+
 
                     index++;
                     cid = GetColorIdx(data);
