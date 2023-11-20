@@ -33,7 +33,7 @@
 
 namespace VCore
 {
-    SMeshChunk CGreedyMesher::GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque)
+    SMeshChunk CGreedyMesher::GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque)
     {
         CMeshBuilder builder;
         builder.AddTextures(m->Textures);

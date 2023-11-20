@@ -41,7 +41,24 @@ namespace VCore
         return GenerateScene(sceneTree, Math::Mat4x4(), mergeChilds);
     }
 
-    std::vector<SMeshChunk> IMesher::GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty)
+    std::vector<SMeshFrame> IMesher::GenerateAnimation(VoxelAnimation _Anim)
+    {
+        std::vector<SMeshFrame> ret;
+
+        for (size_t i = 0; i < _Anim->GetFrameCount(); i++)
+        {
+            SMeshFrame frame;
+            auto voxelFrame = _Anim->GetFrame(i);
+            frame.FrameTime = voxelFrame.FrameTime;
+
+            frame.mesh = GenerateMesh(voxelFrame.Model);
+            ret.push_back(frame);
+        }
+
+        return ret;
+    }
+
+    std::vector<SMeshChunk> IMesher::GenerateChunks(VoxelModel _Mesh, bool _OnlyDirty)
     {
         std::vector<SMeshChunk> ret;
 
@@ -90,7 +107,7 @@ namespace VCore
         return ret;
     }
 
-    Mesh IMesher::GenerateMesh(VoxelMesh m)
+    Mesh IMesher::GenerateMesh(VoxelModel m)
     {
         auto chunks = GenerateChunks(m);
         if(chunks.empty())

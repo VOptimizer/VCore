@@ -217,7 +217,7 @@ namespace VCore
 
             CVoxelSpace();
             CVoxelSpace(const Math::Vec3i &_ChunkSize);
-            CVoxelSpace(const CVoxelSpace &_Other) = delete;;
+            CVoxelSpace(const CVoxelSpace &_Other) = delete;
             CVoxelSpace(CVoxelSpace &&_Other);
 
             /**
@@ -314,7 +314,6 @@ namespace VCore
 
             iterator next(const Math::Vec3i &_FromPosition) const;
 
-            Math::Vec3i m_Size;
             Math::Vec3i m_ChunkSize;
             size_t m_VoxelsCount;
             std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher> m_Chunks;

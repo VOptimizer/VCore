@@ -9,7 +9,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelMesh.cpp"
+set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelModel.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelAnimation.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/PlanesVoxelizer.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelSpace.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelTextureMap.cpp"

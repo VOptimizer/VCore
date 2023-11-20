@@ -25,7 +25,7 @@
 #ifndef SCENENODE_HPP
 #define SCENENODE_HPP
 
-#include <VCore/Voxel/VoxelMesh.hpp>
+#include <VCore/Voxel/VoxelModel.hpp>
 
 namespace VCore
 {
@@ -71,12 +71,12 @@ namespace VCore
                 m_Scale = scale;
             }
 
-            inline VoxelMesh GetMesh() const
+            inline VoxelModel GetMesh() const
             {
                 return m_Mesh;
             }
             
-            inline void SetMesh(VoxelMesh mesh)
+            inline void SetMesh(VoxelModel mesh)
             {
                 m_Mesh = mesh;
             }
@@ -143,7 +143,7 @@ namespace VCore
             Math::Vec3f m_Rotation;
             Math::Vec3f m_Scale;
 
-            VoxelMesh m_Mesh;
+            VoxelModel m_Mesh;
             CSceneNode* m_Parent;
             SceneNodes m_Childs;
             std::string m_Name;

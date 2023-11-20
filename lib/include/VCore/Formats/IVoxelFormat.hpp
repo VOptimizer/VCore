@@ -28,7 +28,8 @@
 #include <string>
 #include <vector>
 #include <VCore/Formats/SceneNode.hpp>
-#include <VCore/Voxel/VoxelMesh.hpp>
+#include <VCore/Voxel/VoxelModel.hpp>
+#include <VCore/Voxel/VoxelAnimation.hpp>
 #include <VCore/Misc/FileStream.hpp>
 
 namespace VCore
@@ -99,9 +100,17 @@ namespace VCore
             /**
              * @return Gets a list with all models inside the voxel file.
              */
-            inline std::vector<VoxelMesh> GetModels() const
+            inline std::vector<VoxelModel> GetModels() const
             {
                 return m_Models;
+            }
+
+            /**
+             * @return Gets a list with all animations of the voxel file.
+             */
+            inline std::vector<VoxelAnimation> GetAnimations() const
+            {
+                return m_Animations;
             }
 
             inline std::map<TextureType, Texture> GetTextures() const
@@ -147,7 +156,8 @@ namespace VCore
             SceneNode m_SceneTree;
             IFileStream *m_DataStream;
 
-            std::vector<VoxelMesh> m_Models;
+            std::vector<VoxelModel> m_Models;
+            std::vector<VoxelAnimation> m_Animations;
             std::vector<Material> m_Materials;
             std::map<TextureType, Texture> m_Textures;
 

@@ -48,17 +48,16 @@ namespace VCore
         TEXTURED    //!< Each ColorIdx of a voxel is an index to a tile in a texture atlas.
     };
 
-    class CVoxelMesh
+    class CVoxelModel
     {
-        using VoxelData = CVoxelSpace;//COctree<Voxel>;
+        using VoxelData = CVoxelSpace;
 
         public:
             // For the gui
             std::string Name;
-            Texture Thumbnail;
 
-            Math::Vec3f Pivot;
             CBBox BBox;
+            Math::Vec3f Pivot;
 
             // Texturing
             TexturingTypes TexturingType;
@@ -67,22 +66,17 @@ namespace VCore
             std::vector<Material> Materials;           //!< Used materials
             std::map<TextureType, Texture> Textures;   //!< Used colors / texture atlas
 
-            CVoxelMesh() : TexturingType(TexturingTypes::INDEXED) {}
+            CVoxelModel() : TexturingType(TexturingTypes::INDEXED) {}
 
             /**
-             * @brief Sets the size of the voxel space.
+             * @brief Sets the size of the voxel model.
              */
             inline void SetSize(const Math::Vec3i &Size)
             {
                 m_Size = Size;
-                // m_Voxels.set_size(m_Size);
-                // m_Pool.clear();
             }
 
             /**
-             * The voxel space begins always at (0, 0, 0) which is the bottom, front left corner.
-             * The z axis is the Up axis and y the forward axis.
-             * 
              * @return Returns the voxel space size of a voxel mesh.
              */
             inline Math::Vec3i GetSize() const
@@ -90,16 +84,16 @@ namespace VCore
                 return m_Size;
             }
 
-            inline void RecalcBBox()
-            {
-                BBox = CBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i(0, 0, 0));
+            // inline void RecalcBBox()
+            // {
+            //     BBox = CBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i(0, 0, 0));
 
-                for (auto &&v : m_Voxels)
-                {
-                    BBox.Beg = BBox.Beg.min(v.first);
-                    BBox.End = BBox.End.max(v.first + Math::Vec3i(1, 1, 1));
-                }
-            }
+            //     for (auto &&v : m_Voxels)
+            //     {
+            //         BBox.Beg = BBox.Beg.min(v.first);
+            //         BBox.End = BBox.End.max(v.first + Math::Vec3i(1, 1, 1));
+            //     }
+            // }
             
             /**
              * List of voxels. The size of the list is always the size of the voxel space.
@@ -120,7 +114,7 @@ namespace VCore
              * @param Color: Color index.
              * @param Transparent: Is the block transparent?
              */
-            void SetVoxel(const Math::Vec3i &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask = CVoxel::Visibility::VISIBLE);
+            void SetVoxel(const Math::Vec3i &Pos, int Material, int Color, bool Transparent);
 
             /**
              * @brief Removes a voxel on a given position
@@ -130,7 +124,7 @@ namespace VCore
             void RemoveVoxel(const Math::Vec3i &Pos);
 
             /**
-             * @brief Clears the mesh
+             * @brief Clears all voxeldata.
              */
             void Clear();
 
@@ -196,13 +190,13 @@ namespace VCore
              */
             VoxelData::querylist QueryChunks(const CFrustum *_Frustum) const;
             
-            ~CVoxelMesh() = default;
+            ~CVoxelModel() = default;
         private:   
             Math::Vec3i m_Size;            
             VoxelData m_Voxels;
     };
 
-    using VoxelMesh = std::shared_ptr<CVoxelMesh>;
+    using VoxelModel = std::shared_ptr<CVoxelModel>;
 }
 
 

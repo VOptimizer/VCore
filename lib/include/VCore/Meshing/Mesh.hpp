@@ -85,6 +85,12 @@ namespace VCore
     };
     using Mesh = std::shared_ptr<SMesh>;
 
+    struct SMeshFrame
+    {
+        Mesh mesh;
+        unsigned int FrameTime; //!< How long this frame should be last, in ms.
+    };
+
     struct VertexHasher
     {
         size_t operator()(const SVertex &_Vertex) const

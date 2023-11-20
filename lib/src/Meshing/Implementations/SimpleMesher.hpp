@@ -36,7 +36,7 @@ namespace VCore
             virtual ~CSimpleMesher() = default;
 
         protected:
-            SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque) override;
+            SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
     };
 }
 

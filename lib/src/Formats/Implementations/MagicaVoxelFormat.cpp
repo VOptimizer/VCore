@@ -30,6 +30,12 @@
 
 namespace VCore
 {
+    struct SFrameSpeed
+    {
+        VoxelAnimation Anim;
+        unsigned int FrameTime;
+    };
+
     // Copied from the official documentation. https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox.txt
     const static unsigned int default_palette[256] = {
         0x00000000, 0xffffffff, 0xffccffff, 0xff99ffff, 0xff66ffff, 0xff33ffff, 0xff00ffff, 0xffffccff, 0xffccccff, 0xff99ccff, 0xff66ccff, 0xff33ccff, 0xff00ccff, 0xffff99ff, 0xffcc99ff, 0xff9999ff,
@@ -76,8 +82,26 @@ namespace VCore
         if(Version < 150)
             throw CVoxelLoaderException("Version: " + std::to_string(Version) + " is not supported");
 
+        std::unordered_map<int, SFrameSpeed> animations;
+
         // First processes the materials that are at the end of the file. 
-        ProcessMaterialAndSceneGraph();
+        auto anims = ProcessMaterialAndSceneGraph();
+        // TODO: This is very ugly, but I'm currently clueless.
+        for (auto &&frames : anims)
+        {
+            VoxelAnimation anim = std::make_shared<CVoxelAnimation>();
+            m_Animations.push_back(anim);
+
+            for (auto &&frame : frames)
+            {
+                SFrameSpeed speed;
+                speed.Anim = anim;
+                speed.FrameTime = frame.FrameIdx * 100;
+                animations[frame.ModelId] = speed;
+            }
+        }
+        
+
         m_DataStream->Seek(8);
 
         if(!m_DataStream->Eof())
@@ -91,7 +115,7 @@ namespace VCore
 
                     if(strncmp(Tmp.ID, "SIZE", sizeof(Tmp.ID)) == 0)
                     {
-                        VoxelMesh m = ProcessSize();
+                        VoxelModel m = ProcessSize();
                         Tmp = m_DataStream->Read<SChunkHeader>();
                         if(strncmp(Tmp.ID, "XYZI", sizeof(Tmp.ID)) != 0)
                             throw CVoxelLoaderException("Can't understand the format.");
@@ -103,6 +127,12 @@ namespace VCore
                         auto halfSize = (m->GetSize() / 2.0);
 
                         auto treeNode = m_ModelSceneTreeMapping.at(m_Models.size() - 1);
+
+                        // TODO: Animation support.
+                        // Now happy?
+                        auto frame = animations.find(m_Models.size() - 1);
+                        if(frame != animations.end())
+                            frame->second.Anim->AddFrame(m, frame->second.FrameTime);
 
                         // 1. Translation is always relative to the center of the voxel space size. (Without fraction)
                         // 2. All meshers centers the mehs in object space so we need to add the fractal part to the translation
@@ -116,7 +146,6 @@ namespace VCore
                         auto pos = treeNode->GetPosition();
                         treeNode->SetPosition(pos + spaceCenter);
 
-                        // TODO: Animation support.
                         treeNode->SetMesh(m); 
                         m->Name = treeNode->GetName();                     
                     }
@@ -173,9 +202,9 @@ namespace VCore
         }
     }
 
-    VoxelMesh CMagicaVoxelFormat::ProcessSize()
+    VoxelModel CMagicaVoxelFormat::ProcessSize()
     {
-        VoxelMesh Ret = std::make_shared<CVoxelMesh>();
+        VoxelModel Ret = std::make_shared<CVoxelModel>();
 
         Math::Vec3i Size;
 
@@ -190,7 +219,7 @@ namespace VCore
         return Ret;
     }
 
-    void CMagicaVoxelFormat::ProcessXYZI(VoxelMesh m)
+    void CMagicaVoxelFormat::ProcessXYZI(VoxelModel m)
     {
         int VoxelCount = m_DataStream->Read<int>();
 
@@ -262,9 +291,10 @@ namespace VCore
         m->BBox = CBBox(Beg, End);
     }
 
-    void CMagicaVoxelFormat::ProcessMaterialAndSceneGraph()
+    std::vector<std::vector<CMagicaVoxelFormat::SFrame>> CMagicaVoxelFormat::ProcessMaterialAndSceneGraph()
     {
         std::map<int, Node> nodes;
+        std::vector<std::vector<SFrame>> ret;
         m_Materials.push_back(std::make_shared<CMaterial>());
 
         if(!m_DataStream->Eof())
@@ -338,6 +368,9 @@ namespace VCore
                     {
                         auto tmp = ProcessShapeNode();
                         nodes.insert({tmp->NodeID, tmp});
+
+                        if(tmp->Models.size() > 1)
+                            ret.push_back(tmp->Models);
                     }
                     else
                         m_DataStream->Seek(Tmp.ChunkContentSize + Tmp.ChildChunkSize);
@@ -364,8 +397,8 @@ namespace VCore
                         auto transform = std::static_pointer_cast<STransformNode>(tmp);
                         nodeIDs.pop();
 
-                        currentNode->SetPosition(transform->Translation);
-                        currentNode->SetRotation(transform->Rotation);
+                        currentNode->SetPosition(transform->Frames[0].Translation);
+                        currentNode->SetRotation(transform->Frames[0].Rotation);
                         currentNode->SetName(transform->Name);
 
                         nodeIDs.push(transform->ChildID);
@@ -399,8 +432,13 @@ namespace VCore
                         nodeIDs.pop();
                         auto shapes = std::static_pointer_cast<SShapeNode>(tmp);
 
-                        for (auto &&m : shapes->Models)
-                            m_ModelSceneTreeMapping.insert({m, currentNode});                
+                        if(!shapes->Models.empty())
+                            m_ModelSceneTreeMapping.insert({shapes->Models[0].ModelId, currentNode});
+
+                        // for (auto &&m : shapes->Models)
+                        // {
+                        //     m_ModelSceneTreeMapping.insert({m.ModelId, currentNode});
+                        // }             
                     } break;
                 }
             }
@@ -409,6 +447,8 @@ namespace VCore
             m_ModelSceneTreeMapping.insert({0, m_SceneTree});
 
         m_DataStream->Seek(0, SeekOrigin::BEG);
+
+        return ret;
     }
 
     CMagicaVoxelFormat::TransformNode CMagicaVoxelFormat::ProcessTransformNode()
@@ -445,6 +485,8 @@ namespace VCore
         int frames = m_DataStream->Read<int>();
         for (int i = 0; i < frames; i++)
         {
+            SFrameTransform frameTransform;
+
             keys = m_DataStream->Read<int>();
             for (int j = 0; j < keys; j++)
             {
@@ -462,7 +504,7 @@ namespace VCore
                     tmp << Value;
 
                     // Scenetree always in OpenGL Y-UP Space
-                    tmp >> Ret->Translation.x >> Ret->Translation.z >> Ret->Translation.y;
+                    tmp >> frameTransform.Translation.x >> frameTransform.Translation.z >> frameTransform.Translation.y;
                 }
                 else if(Key == "_r")
                 {
@@ -486,12 +528,20 @@ namespace VCore
                     rotation.z.v[idx3] = ((rot & 0x40) == 0x40) ? -1 : 1;
 
                     // Gets the euler angle, y is the up axis.
-                    Ret->Rotation = rotation.GetEuler();
-                    std::swap(Ret->Rotation.y, Ret->Rotation.z);
+                    frameTransform.Rotation = rotation.GetEuler();
+                    std::swap(frameTransform.Rotation.y, frameTransform.Rotation.z);
                 }
                 else if(Key == "_f")
-                    m_DataStream->Seek(m_DataStream->Read<int>());
+                {
+                    int size = m_DataStream->Read<int>();
+                    std::string value(size, '\0'); 
+                    m_DataStream->Read(&value[0], size);
+
+                    frameTransform.FrameIdx = std::stoi(value);
+                }
             }
+
+            Ret->Frames.push_back(frameTransform);
         }
 
         return Ret;
@@ -521,15 +571,30 @@ namespace VCore
         int childs = m_DataStream->Read<int>();
         for (int i = 0; i < childs; i++)
         {
-            Ret->Models.push_back(m_DataStream->Read<int>());
+            SFrame frame;
+            frame.ModelId = m_DataStream->Read<int>();
 
             // Skips the dictionary
             int keys = m_DataStream->Read<int>();
             for (int i = 0; i < keys; i++)
             {
-                m_DataStream->Seek(m_DataStream->Read<int>());
-                m_DataStream->Seek(m_DataStream->Read<int>());
+                int size = m_DataStream->Read<int>();
+                std::string key(size, '\0'); 
+                m_DataStream->Read(&key[0], size);
+
+                if(key == "_f")
+                {
+                    int size = m_DataStream->Read<int>();
+                    std::string value(size, '\0'); 
+                    m_DataStream->Read(&value[0], size);
+
+                    frame.FrameIdx = std::stoi(value);
+                }
+                else
+                    m_DataStream->Seek(m_DataStream->Read<int>());
             }
+
+            Ret->Models.push_back(frame);
         }
 
         return Ret;

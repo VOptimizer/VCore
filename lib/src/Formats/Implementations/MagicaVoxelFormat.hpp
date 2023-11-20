@@ -59,6 +59,13 @@ namespace VCore
                     std::map<std::string, std::string> Attributes;
             };
 
+            struct SFrameTransform
+            {
+                Math::Vec3f Translation;
+                Math::Vec3f Rotation;
+                int FrameIdx;
+            };
+
             struct STransformNode : public SNode
             {
                 public:
@@ -66,11 +73,11 @@ namespace VCore
 
                     int LayerID;
                     int NumFrames;
-                    Math::Vec3f Translation;
-                    Math::Vec3f Rotation;
+
                     std::string Name;
 
                     int ChildID;
+                    std::vector<SFrameTransform> Frames;
             };
 
             struct SGroupNode : public SNode
@@ -83,12 +90,18 @@ namespace VCore
                     std::vector<int> ChildrensID;
             };
 
+            struct SFrame
+            {
+                int ModelId;
+                int FrameIdx;
+            };
+
             struct SShapeNode : public SNode
             {
                 public:
                     SShapeNode() : SNode(NodeType::SHAPE) {}
 
-                    std::vector<int> Models;
+                    std::vector<SFrame> Models;
             };
 
             using Node = std::shared_ptr<SNode>;
@@ -105,9 +118,9 @@ namespace VCore
 
             void LoadDefaultPalette();
 
-            VoxelMesh ProcessSize();
-            void ProcessXYZI(VoxelMesh m);
-            void ProcessMaterialAndSceneGraph();
+            VoxelModel ProcessSize();
+            void ProcessXYZI(VoxelModel m);
+            std::vector<std::vector<SFrame>> ProcessMaterialAndSceneGraph();
 
             TransformNode ProcessTransformNode();
             GroupNode ProcessGroupNode();

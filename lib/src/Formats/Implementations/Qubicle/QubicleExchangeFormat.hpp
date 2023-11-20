@@ -41,7 +41,7 @@ namespace VCore
 
             Math::Vec3i ReadVector();
             void ReadColors();
-            void ReadVoxels(VoxelMesh mesh);
+            void ReadVoxels(VoxelModel mesh);
 
             std::string ReadLine();
     };

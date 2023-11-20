@@ -114,7 +114,7 @@ namespace VCore
         std::string name(nameLen + 1, '\0');
         m_DataStream->Read(&name[0], nameLen);
 
-        VoxelMesh mesh = std::make_shared<CVoxelMesh>();
+        VoxelModel mesh = std::make_shared<CVoxelModel>();
         mesh->Materials = m_Materials;
         mesh->Name = name;
         auto pos = ReadVector();
@@ -182,7 +182,7 @@ namespace VCore
         std::string name(nameLen + 1, '\0');
         m_DataStream->Read(&name[0], nameLen);
 
-        VoxelMesh mesh = std::make_shared<CVoxelMesh>();
+        VoxelModel mesh = std::make_shared<CVoxelModel>();
         mesh->Materials = m_Materials;
         mesh->Name = name;
         auto pos = ReadVector();

@@ -28,7 +28,7 @@
 #include <vector>
 #include <utility>
 
-#include <VCore/Voxel/VoxelMesh.hpp>
+#include <VCore/Voxel/VoxelModel.hpp>
 #include <VCore/Math/Vector.hpp>
 
 namespace VCore
@@ -36,7 +36,7 @@ namespace VCore
     class CSlicer
     {
         public:
-            CSlicer(VoxelMesh Mesh, bool Opaque, const CChunk *_Chunk, const CBBox &_TotalBBox) : m_Mesh(Mesh), m_Opaque(Opaque), m_Chunk(_Chunk), m_TotalBBox(_TotalBBox), m_Size(_TotalBBox.GetSize())
+            CSlicer(VoxelModel Mesh, bool Opaque, const CChunk *_Chunk, const CBBox &_TotalBBox) : m_Mesh(Mesh), m_Opaque(Opaque), m_Chunk(_Chunk), m_TotalBBox(_TotalBBox), m_Size(_TotalBBox.GetSize())
             {
                 // auto &voxels = m_Mesh->GetVoxels();
                 // m_Voxels = voxels.queryVisible();
@@ -81,7 +81,7 @@ namespace VCore
 
             Voxel GetVoxel(const Math::Vec3i &v);
 
-            VoxelMesh m_Mesh;
+            VoxelModel m_Mesh;
             Math::Vec3i m_Neighbour;
             int m_Axis;
             Math::Vec3i m_Normal;

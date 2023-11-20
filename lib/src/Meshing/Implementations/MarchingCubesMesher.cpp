@@ -320,7 +320,7 @@ namespace VCore
       {Math::Vec3f(0, 1, 1), Math::Vec3f(0, 1, 0)}
     };
 
-    uint8_t GetTableIndex(VoxelMesh m, Math::Vec3f pos)
+    uint8_t GetTableIndex(VoxelModel m, Math::Vec3f pos)
     {
         uint8_t ret = 0;
         int bitPos = 0;
@@ -349,7 +349,7 @@ namespace VCore
         return ret;
     }
 
-    SMeshChunk CMarchingCubesMesher::GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque)
+    SMeshChunk CMarchingCubesMesher::GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque)
     {
         (void)Opaque;
 
@@ -381,7 +381,7 @@ namespace VCore
         return chunk;
     }
 
-    Voxel CMarchingCubesMesher::GetVoxel(VoxelMesh m, const SChunkMeta &_Chunk, Math::Vec3f pos, int edge)
+    Voxel CMarchingCubesMesher::GetVoxel(VoxelModel m, const SChunkMeta &_Chunk, Math::Vec3f pos, int edge)
     {
         auto chunkDimension = CBBox(_Chunk.TotalBBox.Beg, _Chunk.TotalBBox.GetSize());
         auto corners = Corners[edge];
@@ -439,7 +439,7 @@ namespace VCore
         return idxs;     
     }
 
-    void CMarchingCubesMesher::CreateFaces(CMeshBuilder &builder, VoxelMesh m, const SChunkMeta &_Chunk, Math::Vec3f pos, Math::Vec3f center, short *edges)
+    void CMarchingCubesMesher::CreateFaces(CMeshBuilder &builder, VoxelModel m, const SChunkMeta &_Chunk, Math::Vec3f pos, Math::Vec3f center, short *edges)
     {
         int cidxtmp = -1;
 

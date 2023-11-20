@@ -60,7 +60,7 @@ namespace VCore
             throw CVoxelLoaderException("Invalid file format!");
         }
 
-        VoxelMesh m = std::make_shared<CVoxelMesh>();
+        VoxelModel m = std::make_shared<CVoxelModel>();
         auto mat = std::make_shared<CMaterial>();
         m_Materials.push_back(mat);
         m->Materials.push_back(mat);

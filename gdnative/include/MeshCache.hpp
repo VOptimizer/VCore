@@ -97,12 +97,12 @@ class CMeshCache : public Reference
             m_Mesh->SetName(name.utf8().get_data());
         }
 
-        inline void SetVoxelMesh(VCore::VoxelMesh mesh)
+        inline void SetVoxelMesh(VCore::VoxelModel mesh)
         {
             m_Mesh = mesh;
         }
 
-        inline VCore::VoxelMesh GetVoxelMesh() const
+        inline VCore::VoxelModel GetVoxelMesh() const
         {
             return m_Mesh;
         }
@@ -110,7 +110,7 @@ class CMeshCache : public Reference
         ~CMeshCache() = default;
     private:
         int m_ID;
-        VCore::VoxelMesh m_Mesh;
+        VCore::VoxelModel m_Mesh;
         Dictionary m_GodotMeshChunks;
         // Ref<ArrayMesh> m_GodotMesh;
 };

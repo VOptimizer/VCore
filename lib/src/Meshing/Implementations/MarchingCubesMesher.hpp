@@ -37,11 +37,11 @@ namespace VCore
             virtual ~CMarchingCubesMesher() = default;
 
         protected:
-            SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque) override;
+            SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
 
         private:
-            void CreateFaces(CMeshBuilder &builder, VoxelMesh m, const SChunkMeta &_Chunk, Math::Vec3f pos, Math::Vec3f center, short *edges);
-            Voxel GetVoxel(VoxelMesh m, const SChunkMeta &_Chunk, Math::Vec3f pos, int edge);
+            void CreateFaces(CMeshBuilder &builder, VoxelModel m, const SChunkMeta &_Chunk, Math::Vec3f pos, Math::Vec3f center, short *edges);
+            Voxel GetVoxel(VoxelModel m, const SChunkMeta &_Chunk, Math::Vec3f pos, int edge);
     };
 }
 

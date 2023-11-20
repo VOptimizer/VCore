@@ -26,8 +26,8 @@
 #define IMESHER_HPP
 
 #include <VCore/Meshing/Material.hpp>
-#include <VCore/Voxel/VoxelMesh.hpp>
-
+#include <VCore/Voxel/VoxelModel.hpp>
+#include <VCore/Voxel/VoxelAnimation.hpp>
 #include <VCore/Meshing/Mesh.hpp>
 
 namespace VCore
@@ -63,9 +63,14 @@ namespace VCore
             std::vector<Mesh> GenerateScene(SceneNode sceneTree, bool mergeChilds = false);
 
             /**
+             * @return Returns a list of all frames, of the animation.
+             */
+            std::vector<SMeshFrame> GenerateAnimation(VoxelAnimation _Anim);
+
+            /**
              * @return Returns the voxel mesh as triangulated vertices mesh.
              */
-            Mesh GenerateMesh(VoxelMesh m);
+            Mesh GenerateMesh(VoxelModel m);
 
             /**
              * @brief Sets a frustum, for culling.
@@ -79,11 +84,11 @@ namespace VCore
              * @param _OnlyDirty: Meshes only dirty chunks.
              * @param _ChunkCount: Count of chunks to meshify.
              */
-            virtual std::vector<SMeshChunk> GenerateChunks(VoxelMesh _Mesh, bool _OnlyDirty = false);
+            virtual std::vector<SMeshChunk> GenerateChunks(VoxelModel _Mesh, bool _OnlyDirty = false);
 
             virtual ~IMesher();
         protected:
-            virtual SMeshChunk GenerateMeshChunk(VoxelMesh, const SChunkMeta&, bool) { return {}; }
+            virtual SMeshChunk GenerateMeshChunk(VoxelModel, const SChunkMeta&, bool) { return {}; }
 
             std::vector<Mesh> GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds = false);
             CFrustum *m_Frustum;

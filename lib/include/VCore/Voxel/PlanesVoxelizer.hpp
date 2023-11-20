@@ -25,7 +25,7 @@
 #ifndef PLANESVOXELIZER_HPP
 #define PLANESVOXELIZER_HPP
 
-#include <VCore/Voxel/VoxelMesh.hpp>
+#include <VCore/Voxel/VoxelModel.hpp>
 
 namespace VCore
 {
@@ -52,7 +52,7 @@ namespace VCore
             /**
              * @return Returns the mesh which is managed by this instance.
              */
-            VoxelMesh GetMesh();
+            VoxelModel GetMesh();
 
             /**
              * @brief Updates the mesh with the given planes.
@@ -70,7 +70,7 @@ namespace VCore
             int AddOrGetColor(uint32_t _color);
             CColor GetColor(Texture _planes, const Math::Vec2ui &_pos);
 
-            VoxelMesh m_Mesh;
+            VoxelModel m_Mesh;
             std::map<uint32_t, int, std::less<uint32_t>> m_ColorMapping;
     };
 }

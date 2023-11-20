@@ -126,7 +126,7 @@ namespace VCore
         m_DataStream->Read(&name[0], nameLen);
         m_DataStream->Seek(3); //Mysterious 3 bytes always 0x01 0x01 0x00
 
-        VoxelMesh mesh = std::make_shared<CVoxelMesh>();
+        VoxelModel mesh = std::make_shared<CVoxelModel>();
         mesh->Materials = m_Materials;
         mesh->Name = name;
         mesh->SetSize(ReadVector());
@@ -255,7 +255,7 @@ namespace VCore
         return ret;
     }
 
-    void CQubicleFormat::AddVoxel(VoxelMesh mesh, int color, Math::Vec3i pos, Math::Vec3i &Beg, Math::Vec3i &End)
+    void CQubicleFormat::AddVoxel(VoxelModel mesh, int color, Math::Vec3i pos, Math::Vec3i &Beg, Math::Vec3i &End)
     {
         int cid = GetColorIdx(color);
         if(cid == -1)

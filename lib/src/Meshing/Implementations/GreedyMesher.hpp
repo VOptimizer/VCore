@@ -36,7 +36,7 @@ namespace VCore
             CGreedyMesher() : IMesher() {}
             virtual ~CGreedyMesher() = default;
         protected:
-            SMeshChunk GenerateMeshChunk(VoxelMesh m, const SChunkMeta &_Chunk, bool Opaque) override;
+            SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
     };
 }
 

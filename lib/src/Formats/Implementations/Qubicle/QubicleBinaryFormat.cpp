@@ -41,7 +41,7 @@ namespace VCore
 
         for (int i = 0; i < m_Header.MatrixCount; i++)
         {
-            VoxelMesh mesh = std::make_shared<CVoxelMesh>();
+            VoxelModel mesh = std::make_shared<CVoxelModel>();
             mesh->Materials = m_Materials;
 
             uint8_t nameLen = m_DataStream->Read<uint8_t>();
@@ -88,7 +88,7 @@ namespace VCore
         return ret;
     }
 
-    void CQubicleBinaryFormat::ReadUncompressed(VoxelMesh mesh)
+    void CQubicleBinaryFormat::ReadUncompressed(VoxelModel mesh)
     {
         Math::Vec3i Beg(1000, 1000, 1000), End;
         for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().z; z++)
@@ -118,7 +118,7 @@ namespace VCore
         mesh->BBox = CBBox(Beg, End);
     }
 
-    void CQubicleBinaryFormat::ReadRLECompressed(VoxelMesh mesh)
+    void CQubicleBinaryFormat::ReadRLECompressed(VoxelModel mesh)
     {
         Math::Vec3i Beg(1000, 1000, 1000), End;
         for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().z; z++)

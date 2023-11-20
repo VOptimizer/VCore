@@ -28,7 +28,7 @@
 
 namespace VCore
 {
-    void CSpriteStackingExporter::Save(const std::string &Path, VoxelMesh m)
+    void CSpriteStackingExporter::Save(const std::string &Path, VoxelModel m)
     {
         auto Image = Generate(m);
         std::ofstream out(Path, std::ios::binary);
@@ -39,7 +39,7 @@ namespace VCore
         }
     }
 
-    std::vector<char> CSpriteStackingExporter::Generate(VoxelMesh m)
+    std::vector<char> CSpriteStackingExporter::Generate(VoxelModel m)
     {
         Math::Vec3f Size = m->GetSize();
         std::vector<uint32_t> Pixels(Size.x * Size.y * Size.z, 0);

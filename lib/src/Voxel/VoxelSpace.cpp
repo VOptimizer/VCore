@@ -23,7 +23,7 @@
  */
 
 #include <VCore/Voxel/VoxelSpace.hpp>
-#include <VCore/Voxel/VoxelMesh.hpp>
+#include <VCore/Voxel/VoxelModel.hpp>
 
 namespace VCore
 {
@@ -597,7 +597,6 @@ namespace VCore
 
     CVoxelSpace &CVoxelSpace::operator=(CVoxelSpace &&_Other)
     {
-        m_Size = _Other.m_Size;
         m_ChunkSize = _Other.m_ChunkSize;
         m_VoxelsCount = _Other.m_VoxelsCount;
         m_Chunks = std::move(_Other.m_Chunks);

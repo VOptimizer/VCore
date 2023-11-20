@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021 Christian Tost
+ * Copyright (c) 2023 Christian Tost
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,42 +22,27 @@
  * SOFTWARE.
  */
 
-#ifndef VCore_HPP
-#define VCore_HPP
-
-// Public interface
-
-// Export 
-#include <VCore/Export/ExportSettings.hpp>
-#include <VCore/Export/IExporter.hpp>
-#include <VCore/Export/SpriteStackingExporter.hpp>
-
-// Formats
-#include <VCore/Formats/IVoxelFormat.hpp>
-#include <VCore/Formats/SceneNode.hpp>
-
-// Math
-#include <VCore/Math/Mat4x4.hpp>
-#include <VCore/Math/Vector.hpp>
-
-// Meshing
-#include <VCore/Meshing/Color.hpp>
-#include <VCore/Meshing/IMesher.hpp>
-#include <VCore/Meshing/Material.hpp>
-#include <VCore/Meshing/Mesh.hpp>
-#include <VCore/Meshing/MeshBuilder.hpp>
-#include <VCore/Meshing/Texture.hpp>
-
-// Miscellaneous
-#include <VCore/Misc/Exceptions.hpp>
-#include <VCore/Misc/FileStream.hpp>
-
-// Voxel
-#include <VCore/Voxel/BBox.hpp>
 #include <VCore/Voxel/VoxelAnimation.hpp>
-#include <VCore/Voxel/VoxelModel.hpp>
-#include <VCore/Voxel/PlanesVoxelizer.hpp>
-#include <VCore/Voxel/VoxelTextureMap.hpp>
-#include <VCore/Voxel/Frustum.hpp>
 
-#endif //VCore_HPP
+namespace VCore
+{
+    void CVoxelAnimation::AddFrame(VoxelModel _Model, unsigned int _FrameTime)
+    {
+        m_Frames.push_back({_Model, _FrameTime});
+    }
+
+    void CVoxelAnimation::RemoveFrame(size_t _Frame)
+    {
+        if(_Frame < m_Frames.size())
+            m_Frames.erase(m_Frames.begin() + _Frame);
+    }
+
+    SVoxelFrame CVoxelAnimation::GetFrame(size_t _Frame) const
+    {
+        SVoxelFrame result = {.Model = nullptr, .FrameTime = 0};
+        if(_Frame < m_Frames.size())
+            result = m_Frames[_Frame];
+
+        return result;
+    }
+} // namespace VCore

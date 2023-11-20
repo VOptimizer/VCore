@@ -48,7 +48,7 @@ namespace VCore
                 continue;
 
             Math::Vec3f Beg(INFINITY, INFINITY, INFINITY), End, TranslationBeg(INFINITY, INFINITY, INFINITY);
-            VoxelMesh m = std::make_shared<CVoxelMesh>();
+            VoxelModel m = std::make_shared<CVoxelModel>();
             m->Name = l.Name;
             m->SetSize(m_BBox.End + m_BBox.Beg.abs());
             std::map<int, int> meshMaterialMapping;

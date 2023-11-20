@@ -23,35 +23,35 @@
  */
 
 #include <map>
-#include <VCore/Voxel/VoxelMesh.hpp>
+#include <VCore/Voxel/VoxelModel.hpp>
 
 namespace VCore
 {
-    void CVoxelMesh::SetVoxel(const Math::Vec3i &Pos, int Material, int Color, bool Transparent, CVoxel::Visibility mask)
+    void CVoxelModel::SetVoxel(const Math::Vec3i &Pos, int Material, int Color, bool Transparent)
     {      
         CVoxel Tmp;
         
         Tmp.Material = Material;
         Tmp.Color = Color;
         Tmp.Transparent = Transparent;
-        Tmp.VisibilityMask = mask;
+        Tmp.VisibilityMask = CVoxel::Visibility::VISIBLE;
 
         m_Voxels.insert({Pos, Tmp});
     }
 
-    void CVoxelMesh::RemoveVoxel(const Math::Vec3i &Pos)
+    void CVoxelModel::RemoveVoxel(const Math::Vec3i &Pos)
     {
         auto IT = m_Voxels.find(Pos);
         if(IT != m_Voxels.end())
             m_Voxels.erase(IT);
     }
     
-    void CVoxelMesh::Clear()
+    void CVoxelModel::Clear()
     {
         m_Voxels.clear();
     }
 
-    Voxel CVoxelMesh::GetVoxel(const Math::Vec3i &Pos)
+    Voxel CVoxelModel::GetVoxel(const Math::Vec3i &Pos)
     {
         auto it = m_Voxels.find(Pos);
         if(it == m_Voxels.end())
@@ -60,7 +60,7 @@ namespace VCore
         return it->second;
     }
 
-    Voxel CVoxelMesh::GetVoxel(const Math::Vec3i &Pos, bool OpaqueOnly)
+    Voxel CVoxelModel::GetVoxel(const Math::Vec3i &Pos, bool OpaqueOnly)
     {
         auto it = m_Voxels.find(Pos, OpaqueOnly);
         if(it == m_Voxels.end())
@@ -69,7 +69,7 @@ namespace VCore
         return it->second;
     }
 
-    Voxel CVoxelMesh::GetVisibleVoxel(const Math::Vec3i &Pos)
+    Voxel CVoxelModel::GetVisibleVoxel(const Math::Vec3i &Pos)
     {
         auto it = m_Voxels.findVisible(Pos);
         if(it == m_Voxels.end())
@@ -78,7 +78,7 @@ namespace VCore
         return it->second;
     }
 
-    Voxel CVoxelMesh::GetVisibleVoxel(const Math::Vec3i &Pos, bool OpaqueOnly)
+    Voxel CVoxelModel::GetVisibleVoxel(const Math::Vec3i &Pos, bool OpaqueOnly)
     {
         auto it = m_Voxels.findVisible(Pos, OpaqueOnly);
         if(it == m_Voxels.end())
@@ -87,27 +87,27 @@ namespace VCore
         return it->second;
     }
 
-    void CVoxelMesh::GenerateVisibilityMask()
+    void CVoxelModel::GenerateVisibilityMask()
     {
         m_Voxels.generateVisibilityMask();
     }
 
-    VectoriMap<Voxel> CVoxelMesh::QueryVisible(bool opaque) const
+    VectoriMap<Voxel> CVoxelModel::QueryVisible(bool opaque) const
     {
         return m_Voxels.queryVisible(opaque);
     }
 
-    CVoxelMesh::VoxelData::querylist CVoxelMesh::QueryDirtyChunks()
+    CVoxelModel::VoxelData::querylist CVoxelModel::QueryDirtyChunks()
     {
         return m_Voxels.queryDirtyChunks();
     }
 
-    CVoxelMesh::VoxelData::querylist CVoxelMesh::QueryChunks() const
+    CVoxelModel::VoxelData::querylist CVoxelModel::QueryChunks() const
     {
         return m_Voxels.queryChunks();
     }
 
-    CVoxelMesh::VoxelData::querylist CVoxelMesh::QueryChunks(const CFrustum *_Frustum) const
+    CVoxelModel::VoxelData::querylist CVoxelModel::QueryChunks(const CFrustum *_Frustum) const
     {
         return m_Voxels.queryChunks(_Frustum);
     }

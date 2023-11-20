@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021 Christian Tost
+ * Copyright (c) 2023 Christian Tost
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,42 +22,63 @@
  * SOFTWARE.
  */
 
-#ifndef SPRITESTACKINGEXPORTER_HPP
-#define SPRITESTACKINGEXPORTER_HPP
+#ifndef VOXELANIMATION_HPP
+#define VOXELANIMATION_HPP
 
 #include <VCore/Voxel/VoxelModel.hpp>
-#include <string>
 #include <vector>
 
 namespace VCore
 {
-    class CSpriteStackingExporter
+    struct SVoxelFrame
+    {
+        VoxelModel Model;
+        unsigned int FrameTime; //!< How long this frame should be last, in ms.
+    };
+    
+
+    class CVoxelAnimation
     {
         public:
-            CSpriteStackingExporter() = default;
+            CVoxelAnimation() = default;
 
             /**
-             * @brief Generates and saves the mesh as png slices.
+             * @brief Adds a new Frame to the collection
              * 
-             * @param Path: Path of the file.
-             * @param Mesh: Mesh to save.
-             */
-            void Save(const std::string &Path, VoxelModel m);
+             * @param _Model: Model of the new frame.
+             * @param _FrameTime: How long this frame should be last, in ms.
+            */
+            void AddFrame(VoxelModel _Model, unsigned int _FrameTime);
 
             /**
-             * @brief Generates the file stream.
+             * @brief Removes a frame from the animation.
              * 
-             * @param Mesh: Mesh to save.
-             * 
-             * @return Returns a png image.
+             * @param _Frame: Frame index starts by 0.
              */
-            std::vector<char> Generate(VoxelModel m); 
+            void RemoveFrame(size_t _Frame);
 
-            ~CSpriteStackingExporter() = default;
+            /**
+             * @return Returns the frame count
+             */
+            inline size_t GetFrameCount() const
+            {
+                return m_Frames.size();
+            }
+
+            /**
+             * @param _Frame: Frame index starts by 0.
+             * 
+             * @return Returns the frame data of a given frame.
+             */
+            SVoxelFrame GetFrame(size_t _Frame) const;
+
+            ~CVoxelAnimation() = default;
+
         private:
-        /* data */
+            std::vector<SVoxelFrame> m_Frames;
     };
-}
 
+    using VoxelAnimation = std::shared_ptr<CVoxelAnimation>;
+} // namespace VCore
 
-#endif //SPRITESTACKINGEXPORTER_HPP
+#endif

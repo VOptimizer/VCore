@@ -28,7 +28,7 @@ namespace VCore
 {
     CPlanesVoxelizer::CPlanesVoxelizer()
     {
-        m_Mesh = std::make_shared<CVoxelMesh>();
+        m_Mesh = std::make_shared<CVoxelModel>();
         m_Mesh->Materials.push_back(std::make_shared<CMaterial>());
     }
 
@@ -38,7 +38,7 @@ namespace VCore
         m_Mesh->BBox = CBBox(Math::Vec3i(), m_Mesh->GetSize());
     }
 
-    VoxelMesh CPlanesVoxelizer::GetMesh()
+    VoxelModel CPlanesVoxelizer::GetMesh()
     {
         return m_Mesh;
     }
