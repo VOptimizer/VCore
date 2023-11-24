@@ -51,7 +51,7 @@ cmake --build .
 
 ## Documentation
 
-Explore the [examples](examples/) directory for detailed usage examples of this library.
+Explore the [examples](examples/) directory for detailed usage examples of this library or look at the [Sourcetree](Docs/Sourcetree/README.md) documentation for a deep dive into the source code.
 
 ## License
 

@@ -88,7 +88,12 @@ namespace VCore
 
             virtual ~IMesher();
         protected:
-            virtual SMeshChunk GenerateMeshChunk(VoxelModel, const SChunkMeta&, bool) { return {}; }
+            /// @brief Called inside ::GenerateChunks for every chunk using multiple threads.
+            /// @param _Model: The VoxelModel which is currently processed.
+            /// @param _Chunk: Assigned chunk data which needs to be meshed.
+            /// @param Deprecated
+            /// @return Returns the _Chunk + its generated mesh.
+            virtual SMeshChunk GenerateMeshChunk(VoxelModel _Model, const SChunkMeta& _Chunk, bool) { return {}; }
 
             std::vector<Mesh> GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds = false);
             CFrustum *m_Frustum;
