@@ -37,7 +37,7 @@ Ensure you have the following prerequisites before getting started:
 Follow these steps to build the library:
 
 1. Clone this repo <br>
-`git clone https://github.com/tostc/VCore.git`
+`git clone https://github.com/VOptimizer/VCore.git`
 
 2. Build the library<br>
 ```bash
@@ -48,6 +48,10 @@ cmake ..
 cmake --build .
 ```
 - Copy the static library and the `include` directory of the source tree to your project.
+
+## Who is using VCore?
+
+- [V-Optimizer](https://github.com/VOptimizer/VoxelOptimizer) on [itch.io](https://vailor1.itch.io/v-optimizer)
 
 ## Documentation
 
