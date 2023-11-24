@@ -49,6 +49,10 @@ cmake --build .
 ```
 - Copy the static library and the `include` directory of the source tree to your project.
 
+## Who is using VCore?
+
+- [V-Optimizer](https://github.com/VOptimizer/VoxelOptimizer) on [itch.io](https://vailor1.itch.io/v-optimizer)
+
 ## Documentation
 
 Explore the [examples](examples/) directory for detailed usage examples of this library.
