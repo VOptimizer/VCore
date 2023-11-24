@@ -184,50 +184,71 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
     auto meshes = mesher->GenerateScene(m_Loader->GetSceneTree());
     for (auto &&mesh : meshes)
     {
-        Ref<ArrayMesh> tmpMesh = ArrayMesh::_new();
-        Array arr;
-        arr.resize(ArrayMesh::ARRAY_MAX);
-
-        int surfaceIdx = 0;
-
         m_Meshes.push_back(mesh);
-        for (auto &&surface : mesh->Surfaces)
-        {
-            m_VerticesCount += surface.Size();
-            m_FacesCount += surface.Indices.size() / 3;
-
-            PoolIntArray indices;
-            indices.resize(surface.Indices.size());
-            memcpy(indices.write().ptr(), surface.Indices.data(), indices.size() * sizeof(int));  
-
-            arr[ArrayMesh::ARRAY_VERTEX] = surface.Vertices;
-            arr[ArrayMesh::ARRAY_NORMAL] = surface.Normals;
-            arr[ArrayMesh::ARRAY_TEX_UV] = surface.UVs;
-            arr[ArrayMesh::ARRAY_INDEX] = indices;
-            tmpMesh->add_surface_from_arrays(ArrayMesh::PRIMITIVE_TRIANGLES, arr);
-
-            tmpMesh->surface_set_material(surfaceIdx, ConvertMaterialToGodot(surface.FaceMaterial, mesh->Textures));
-            surfaceIdx++;
-        }
-
-        auto instance = MeshInstance::_new();
-        instance->set_mesh(tmpMesh);
-        instance->set_flag(GeometryInstance::Flags::FLAG_USE_BAKED_LIGHT, true);
-
-        // Worldspace
-        if(meshes.size() > 1)
-        {
-            auto matrix = mesh->ModelMatrix;
-            instance->set_transform(Transform(matrix.x.x, matrix.y.x, matrix.z.x,
-                                              matrix.x.y, matrix.y.y, matrix.z.y,
-                                              matrix.x.z, matrix.y.z, matrix.z.z,
-                                              matrix.x.w, matrix.y.w, matrix.z.w));
-        }
-
-        ret.append(instance);
+        ret.append(CreateMesh(mesh, meshes.size() > 1));
     }
     
+    auto animations = m_Loader->GetAnimations();
+    for (auto &&anim : animations)
+    {
+        auto frames = mesher->GenerateAnimation(anim);
+        Array animFrames;
+        for (auto &&frame : frames)
+        {
+            Dictionary result;
+            result["frameTime"] = frame.FrameTime;
+            result["mesh"] = CreateMesh(frame.mesh, meshes.size() > 1);
+            animFrames.append(result);
+        }
+
+        ret.append(animFrames);
+    }
+
     return ret;
+}
+
+MeshInstance *CGodotVoxelOptimizer::CreateMesh(const VCore::Mesh &_Mesh, bool _Worldspace)
+{
+    Ref<ArrayMesh> tmpMesh = ArrayMesh::_new();
+    Array arr;
+    arr.resize(ArrayMesh::ARRAY_MAX);
+
+    int surfaceIdx = 0;
+
+    for (auto &&surface : _Mesh->Surfaces)
+    {
+        m_VerticesCount += surface.Size();
+        m_FacesCount += surface.Indices.size() / 3;
+
+        PoolIntArray indices;
+        indices.resize(surface.Indices.size());
+        memcpy(indices.write().ptr(), surface.Indices.data(), indices.size() * sizeof(int));  
+
+        arr[ArrayMesh::ARRAY_VERTEX] = surface.Vertices;
+        arr[ArrayMesh::ARRAY_NORMAL] = surface.Normals;
+        arr[ArrayMesh::ARRAY_TEX_UV] = surface.UVs;
+        arr[ArrayMesh::ARRAY_INDEX] = indices;
+        tmpMesh->add_surface_from_arrays(ArrayMesh::PRIMITIVE_TRIANGLES, arr);
+
+        tmpMesh->surface_set_material(surfaceIdx, ConvertMaterialToGodot(surface.FaceMaterial, _Mesh->Textures));
+        surfaceIdx++;
+    }
+
+    auto instance = MeshInstance::_new();
+    instance->set_mesh(tmpMesh);
+    instance->set_flag(GeometryInstance::Flags::FLAG_USE_BAKED_LIGHT, true);
+
+    // Worldspace
+    if(_Worldspace)
+    {
+        auto matrix = _Mesh->ModelMatrix;
+        instance->set_transform(Transform(matrix.x.x, matrix.y.x, matrix.z.x,
+                                            matrix.x.y, matrix.y.y, matrix.z.y,
+                                            matrix.x.z, matrix.y.z, matrix.z.z,
+                                            matrix.x.w, matrix.y.w, matrix.z.w));
+    }
+
+    return instance;
 }
 
 Dictionary CGodotVoxelOptimizer::GetStatistics()

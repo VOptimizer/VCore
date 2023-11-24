@@ -55,6 +55,8 @@ class CGodotVoxelOptimizer : public Reference
         Ref<ImageTexture> ConvertTextureToGodot(const VCore::Texture &_Texture);
         Ref<SpatialMaterial> ConvertMaterialToGodot(const VCore::Material &_Material, const std::map<VCore::TextureType, VCore::Texture> &_Textures);
 
+        MeshInstance *CreateMesh(const VCore::Mesh &_Mesh, bool _Worldspace);
+
         VCore::VoxelFormat m_Loader;
         std::vector<VCore::Mesh> m_Meshes;
         int m_BlockCount;
