@@ -25,7 +25,6 @@
 #include <File.hpp>
 #include <GodotVoxelOptimizer.hpp>
 #include <Image.hpp>
-#include <MeshInstance.hpp>
 #include <GodotFileStream.hpp>
 
 void CGodotVoxelOptimizer::_register_methods()

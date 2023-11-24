@@ -32,6 +32,7 @@
 #include <SpatialMaterial.hpp>
 #include <VCore/VCore.hpp>
 #include <vector>
+#include <MeshInstance.hpp>
 
 using namespace godot;
 
