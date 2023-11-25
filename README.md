@@ -88,6 +88,8 @@ The cli will be statically with VCore.
 
 Explore the [examples](examples/) directory for detailed usage examples of this library or look at the [Sourcetree](Docs/Sourcetree/README.md) documentation for a deep dive into the source code.
 
+For a more seamless integration of VCore into your engine or framework, additional information are available in the [Customization README](Docs/Customization/README.md).
+
 ## License
 
 This library is under the [MIT License](LICENSE.txt)

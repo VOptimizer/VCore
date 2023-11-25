@@ -4,6 +4,8 @@ project(godotvoxeloptimizer VERSION 0.1.0 LANGUAGES CXX C)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Make sure you include the GDNative directories before you compile libVCore.
+# If you skip this step, VCore might end up using its default config instead of the Godot one.
 include_directories("${PROJECT_SOURCE_DIR}/include"
                     "${PROJECT_SOURCE_DIR}/../godot-cpp/include"
                     "${PROJECT_SOURCE_DIR}/../godot-cpp/include/core"
@@ -11,6 +13,8 @@ include_directories("${PROJECT_SOURCE_DIR}/include"
                     "${PROJECT_SOURCE_DIR}/../godot-cpp/godot-headers"
 )
 add_subdirectory(../lib libVCore)
+
+
 
 set(SRCS "${PROJECT_SOURCE_DIR}/main.cpp"
          "${PROJECT_SOURCE_DIR}/src/GodotVoxelOptimizer.cpp"
