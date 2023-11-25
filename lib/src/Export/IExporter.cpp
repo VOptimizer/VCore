@@ -24,7 +24,6 @@
 
 #include "../FileUtils.hpp"
 #include <algorithm>
-#include <fstream>
 #include <stdexcept>
 #include "Implementations/glTF/GLTFExporter.hpp"
 #include "Implementations/GodotSceneExporter.hpp"
@@ -34,9 +33,9 @@
 
 namespace VCore
 {
-    Exporter IExporter::Create(ExporterType type)
+    Exporter IExporter::Create(ExporterType _Type)
     {
-        switch (type)
+        switch (_Type)
         {
             case ExporterType::OBJ: return Exporter(new CWavefrontObjExporter());
 
@@ -44,7 +43,7 @@ namespace VCore
             case ExporterType::GLB:
             {
                 auto tmp = Exporter(new CGLTFExporter());
-                tmp->Settings()->Binary = type == ExporterType::GLB;
+                tmp->Settings()->Binary = _Type == ExporterType::GLB;
 
                 return tmp;
             } 
@@ -57,9 +56,9 @@ namespace VCore
         }
     }
 
-    ExporterType IExporter::GetType(const std::string &filename)
+    ExporterType IExporter::GetType(const std::string &_Filename)
     {
-        std::string ext = GetFileExt(filename);
+        std::string ext = GetFileExt(_Filename);
         ExporterType type = ExporterType::UNKNOWN;
         
         if(ext == "obj")
@@ -81,31 +80,44 @@ namespace VCore
 
     }
 
-    void IExporter::Save(const std::string &Path, Mesh mesh)
+    void IExporter::Save(IIOHandler *_Handler, const std::string &_Path, Mesh _Mesh)
     {
-        Save(Path, std::vector<Mesh>() = { mesh });
+        Save(_Handler, _Path, std::vector<Mesh>() = { _Mesh });
     }
 
-    void IExporter::Save(const std::string &Path, std::vector<Mesh> Meshes)
+    void IExporter::Save(IIOHandler *_Handler, const std::string &_Path, const std::vector<Mesh> &_Meshes)
     {
-        // Names all files like thhe output file.
-        m_ExternalFilenames = GetFilenameWithoutExt(Path);
-        std::string PathWithoutExt = GetPathWithoutExt(Path);
+        // Names all files like the output file.
+        // m_ExternalFilenames = GetFilenameWithoutExt(_Path);
+        // std::string PathWithoutExt = GetPathWithoutExt(_Path);
+        DeleteFileStream();
+        m_IOHandler = _Handler;
+        WriteData(_Path, _Meshes);
+    }
 
-        auto Files = Generate(Meshes);
-        for (auto &&f : Files)
+    void IExporter::SaveTexture(const Texture &_Texture, const std::string &_Path, const std::string &_Suffix)
+    {
+        auto path = _Path;
+        if(!_Suffix.empty())
         {
-            std::ofstream out(PathWithoutExt + std::string(".") + f.first, std::ios::binary);
-            if(out.is_open())
-            {
-                out.write(f.second.data(), f.second.size());
-                out.close();
-            }
+            path = GetPathWithoutExt(path);
+            path += "." + _Suffix + ".png";
         }
+
+        auto strm = m_IOHandler->Open(path, "wb");
+
+        auto data = _Texture->AsPNG();
+        strm->Write(data.data(), data.size());
+
+        m_IOHandler->Close(strm);
     }
 
-    std::map<std::string, std::vector<char>> IExporter::Generate(Mesh mesh)
+    void IExporter::DeleteFileStream()
     {
-        return Generate(std::vector<Mesh>() = { mesh });
+        if(m_IOHandler)
+        {
+            delete m_IOHandler;
+            m_IOHandler = nullptr;
+        }
     }
 }

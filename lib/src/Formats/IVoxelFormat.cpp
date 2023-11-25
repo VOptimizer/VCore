@@ -86,10 +86,11 @@ namespace VCore
         return type;
     }
 
-    void IVoxelFormat::Load(IFileStream *_Strm)
+    void IVoxelFormat::Load(IIOHandler *_IOHandler, const std::string _File)
     {
         DeleteFileStream();
-        m_DataStream = _Strm;
+        m_IOHandler = _IOHandler;
+        m_DataStream = m_IOHandler->Open(_File, "rb");
 
         ClearCache();
         ParseFormat();
@@ -97,10 +98,15 @@ namespace VCore
 
     void IVoxelFormat::DeleteFileStream()
     {
-        if(m_DataStream)
-            delete m_DataStream;
+        if(m_IOHandler)
+        {
+            if(m_DataStream)
+                m_IOHandler->Close(m_DataStream);
 
-        m_DataStream = nullptr;
+            delete m_IOHandler;
+            m_IOHandler = nullptr;
+            m_DataStream = nullptr; 
+        }
     }
 
     // void IVoxelFormat::Combine(std::map<TextureType, Texture> &textures, std::vector<Material> &materials, const std::vector<VoxelMesh> &meshes)

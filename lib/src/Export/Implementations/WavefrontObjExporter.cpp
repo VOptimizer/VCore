@@ -24,29 +24,33 @@
 
 #include <algorithm>
 #include <fstream>
-#include <sstream>
 #include <string.h>
+#include <sstream>
 #include "WavefrontObjExporter.hpp"
+#include "../../FileUtils.hpp"
 
 namespace VCore
 {   
-    std::map<std::string, std::vector<char>> CWavefrontObjExporter::Generate(std::vector<Mesh> Meshes)
+    // std::map<std::string, std::vector<char>> CWavefrontObjExporter::Generate(std::vector<Mesh> Meshes)
+    void CWavefrontObjExporter::WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes)
     {
-        std::stringstream objFile, mtlFile;
-        if(m_ExternalFilenames.empty())
-            m_ExternalFilenames = "materials";
+        std::string filenameWithoutExt = GetFilenameWithoutExt(_Path);
+        std::string filePathWithoutExt = GetPathWithoutExt(_Path);
 
-        objFile << "# Generated with VCore" << std::endl;
-        objFile << "# These comments can be removed" << std::endl;
-        objFile << "mtllib " << m_ExternalFilenames << ".mtl" << std::endl;
+        auto objFile = m_IOHandler->Open(filePathWithoutExt + ".obj", "wb");
+        auto mtlFile = m_IOHandler->Open(filePathWithoutExt + ".mtl", "wb");
+
+        objFile->Write("# Generated with VCore\n");
+        objFile->Write("# These comments can be removed\n");
+        objFile->Write("mtllib " + filenameWithoutExt + ".mtl\n");
 
         size_t meshCounter = 0;
         size_t matCounter = 0;
         int indicesOffset = 0;
 
-        for (auto &&mesh : Meshes)
+        for (auto &&mesh : _Meshes)
         {
-            objFile << "o VoxelMesh" << meshCounter << std::endl;
+            objFile->Write("o VoxelMesh" + std::to_string(meshCounter) + "\n");
             meshCounter++;
 
             for (auto &&surface : mesh->Surfaces)
@@ -77,7 +81,9 @@ namespace VCore
                         uvList << "vt " << v.UV.x << " " << v.UV.y << std::endl;
                     }
 
-                    objFile << vertexList.rdbuf() << normalList.rdbuf() << uvList.rdbuf();
+                    objFile->Write(vertexList.str() + "\n");
+                    objFile->Write(normalList.str() + "\n");
+                    objFile->Write(uvList.str() + "\n");
                 }
                 
                 size_t matID = 0;
@@ -100,59 +106,51 @@ namespace VCore
                     alpha = 1 - surface.FaceMaterial->Transparency;
                 }
 
-                mtlFile << "newmtl Mat" << matCounter << std::endl;
-                mtlFile << "Ns " << surface.FaceMaterial->Roughness * 1000.f << std::endl;
-                mtlFile << "Ka " << ambient << " " << ambient << " " << ambient << std::endl;
-                mtlFile << "Kd 1.0 1.0 1.0" << std::endl;
-                mtlFile << "Ks " << surface.FaceMaterial->Specular << " " << surface.FaceMaterial->Specular << " " << surface.FaceMaterial->Specular << std::endl;
+                mtlFile->Write("newmtl Mat" + std::to_string(matCounter) + "\n");
+                mtlFile->Write("Ns " + std::to_string(surface.FaceMaterial->Roughness * 1000.f) + "\n");
+                mtlFile->Write("Ka " + std::to_string(ambient) + " " + std::to_string(ambient) + " " + std::to_string(ambient) + "\n");
+                mtlFile->Write("Kd 1.0 1.0 1.0\n");
+                mtlFile->Write("Ks " + std::to_string(surface.FaceMaterial->Specular) + " " + std::to_string(surface.FaceMaterial->Specular) + " "  + std::to_string(surface.FaceMaterial->Specular) + "\n");
                 
                 if(surface.FaceMaterial->Power != 0.0)
                 {
-                    mtlFile << "Ke " << surface.FaceMaterial->Power << " " << surface.FaceMaterial->Power << " " << surface.FaceMaterial->Power << std::endl;
-                    mtlFile << "map_Ke " << m_ExternalFilenames << ".emission.png" << std::endl;
+                    mtlFile->Write("Ke " + std::to_string(surface.FaceMaterial->Power) + " " + std::to_string(surface.FaceMaterial->Power) + " " + std::to_string(surface.FaceMaterial->Power) + "\n");
+                    mtlFile->Write("map_Ke " + filenameWithoutExt + ".emission.png\n");
                 }
 
-                mtlFile << "Tr " << transparency << std::endl;
-                mtlFile << "d " << alpha << std::endl;
-                mtlFile << "Ni " << surface.FaceMaterial->IOR << std::endl;
-                mtlFile << "illum " << illum << std::endl;
-                mtlFile << "map_Kd " << m_ExternalFilenames << ".albedo.png" << std::endl;
+                mtlFile->Write("Tr " + std::to_string(transparency) + "\n");
+                mtlFile->Write("d " + std::to_string(alpha) + "\n");
+                mtlFile->Write("Ni " + std::to_string(surface.FaceMaterial->IOR) + "\n");
+                mtlFile->Write("illum " + std::to_string(illum) + "\n");
+                mtlFile->Write("map_Kd " + filenameWithoutExt + ".albedo.png\n");
 
                 matCounter++;  
                 
-                objFile << "usemtl Mat" << matID << std::endl;
+                objFile->Write("usemtl Mat" + std::to_string(matID) + "\n");
 
                 for (size_t i = 0; i < surface.Indices.size(); i += 3)
                 {
-                    objFile << "f";
+                    objFile->Write("f");
                     for (char j = 0; j < 3; j++)
                     {
                         int index = surface.Indices[i + j] + indicesOffset + 1;
 
-                        objFile << " ";
-                        objFile << index << "/" << index << "/" << index;
+                        objFile->Write(" ");
+                        objFile->Write(std::to_string(index) + "/" + std::to_string(index) + "/" + std::to_string(index));
                     }
-                    objFile << std::endl;
+                    objFile->Write("\n");
                 }
                 indicesOffset += surface.Indices.size();
             }
         }
 
-        std::string objFileStr = objFile.str();
-        std::string mtlFileStr = mtlFile.str();
+        m_IOHandler->Close(objFile);
+        m_IOHandler->Close(mtlFile);
 
-        auto textures = Meshes[0]->Textures;
-
-        std::map<std::string, std::vector<char>> ret = 
-        {
-            {"obj", std::vector<char>(objFileStr.begin(), objFileStr.end())},
-            {"mtl", std::vector<char>(mtlFileStr.begin(), mtlFileStr.end())},
-            {"albedo.png", textures[TextureType::DIFFIUSE]->AsPNG()}
-        };
-
+        // Write all textures to disk.
+        auto textures = _Meshes[0]->Textures;
+        SaveTexture(textures[TextureType::DIFFIUSE], _Path, "albedo");
         if(textures.find(TextureType::EMISSION) != textures.end())
-            ret["emission.png"] = textures[TextureType::EMISSION]->AsPNG();
-
-        return ret;
+            SaveTexture(textures[TextureType::EMISSION], _Path, "emission");
     }
 }

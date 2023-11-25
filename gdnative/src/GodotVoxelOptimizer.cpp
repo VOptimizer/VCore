@@ -62,7 +62,7 @@ godot_error CGodotVoxelOptimizer::Load(String Path)
     try
     {
         // m_Loader->Load((char*)data.read().ptr(), data.size());
-        m_Loader = VCore::IVoxelFormat::CreateAndLoad<CGodotFileStream>(Path.utf8().get_data());
+        m_Loader = VCore::IVoxelFormat::CreateAndLoad<CGodotIOHandler>(Path.utf8().get_data());
     }
     catch(const VCore::CVoxelLoaderException &e)
     {
@@ -91,29 +91,8 @@ godot_error CGodotVoxelOptimizer::Save(String Path, bool exportWorldspace)
     exporter = VCore::IExporter::Create(VCore::IExporter::GetType(Path.utf8().get_data()));
     exporter->Settings()->WorldSpace = exportWorldspace;
 
-    Path = Path.get_basename();
-    exporter->SetExternaFilenames(std::string(Path.get_file().utf8().get_data()));
-    auto files = exporter->Generate(m_Meshes);
-
-    // Saves all generated files.
-    for (auto &&f : files)
-    {
-        auto err = file->open(Path + String(".") + String(f.first.c_str()), File::WRITE);
-        
-        if(!file->is_open())
-        {
-            ERR_PRINT("Couldn't open file: " + Path);
-            return (godot_error)Error::ERR_FILE_CANT_WRITE;
-        }
-
-        PoolByteArray data;
-        data.resize(f.second.size());
-        auto writer = data.write();
-        memcpy(writer.ptr(), f.second.data(), f.second.size());
-
-        file->store_buffer(data);
-        file->close();
-    }
+    // Path = Path.get_basename();
+    exporter->Save<CGodotIOHandler>(Path.utf8().get_data(), m_Meshes);
     
     return (godot_error)Error::OK;
 }

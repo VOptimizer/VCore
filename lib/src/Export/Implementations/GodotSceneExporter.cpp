@@ -24,20 +24,22 @@
 
 #include <sstream>
 #include "GodotSceneExporter.hpp"
+#include "../../FileUtils.hpp"
 
 namespace VCore
 {
-    std::map<std::string, std::vector<char>> CGodotSceneExporter::Generate(std::vector<Mesh> Meshes)
+    void CGodotSceneExporter::WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes)
     {
+        auto filenameWithoutExt = GetFilenameWithoutExt(_Path);
         std::stringstream os, nodes;
         // os << "[gd_scene load_steps=" << 3 + Mesh->Faces.size() << " format=2]\n" << std::endl;
         size_t id = 1;
-        os << "[ext_resource path=\"res://" << m_ExternalFilenames << ".albedo.png\" type=\"Texture\" id=1]\n" << std::endl;
+        os << "[ext_resource path=\"res://" << filenameWithoutExt << ".albedo.png\" type=\"Texture\" id=1]\n" << std::endl;
 
-        auto textures = Meshes[0]->Textures;
+        auto textures = _Meshes[0]->Textures;
         if(textures.find(TextureType::EMISSION) != textures.end())
         {
-            os << "[ext_resource path=\"res://" << m_ExternalFilenames << ".emission.png\" type=\"Texture\" id=2]\n" << std::endl;
+            os << "[ext_resource path=\"res://" << filenameWithoutExt << ".emission.png\" type=\"Texture\" id=2]\n" << std::endl;
             id++;
         }
 
@@ -45,7 +47,7 @@ namespace VCore
 
         nodes << "[node name=\"root\" type=\"Spatial\"]\n" << std::endl;
 
-        for (auto &&mesh : Meshes)
+        for (auto &&mesh : _Meshes)
         {
             std::stringstream arrayMesh;
             loadStepsSize += mesh->Surfaces.size();
@@ -169,15 +171,12 @@ namespace VCore
         
         std::string ESCNFileStr = "[gd_scene load_steps=" + std::to_string(3 + loadStepsSize) + " format=2]\n\n" + os.str();
 
-        std::map<std::string, std::vector<char>> ret = 
-        {
-            {"escn", std::vector<char>(ESCNFileStr.begin(), ESCNFileStr.end())},
-            {"albedo.png", textures[TextureType::DIFFIUSE]->AsPNG()},
-        };
+        auto strm = m_IOHandler->Open(_Path, "wb");
+        strm->Write(ESCNFileStr);
+        m_IOHandler->Close(strm);
 
+        SaveTexture(textures[TextureType::DIFFIUSE], _Path, "albedo");
         if(textures.find(TextureType::EMISSION) != textures.end())
-            ret["emission.png"] = textures[TextureType::EMISSION]->AsPNG();
-
-        return ret;
+            SaveTexture(textures[TextureType::EMISSION], _Path, "emission");
     }
 }

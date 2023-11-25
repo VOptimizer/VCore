@@ -31,8 +31,9 @@ Ensure you have the following prerequisites before getting started:
 - [cmake](https://cmake.org/)
 - C++ compiler supporting at least C++14 (Currently tested with gcc, compatibility with LLVM and MSVC expected)
 - git (optional)
+- scons (Only for the Godot build)
 
-### Building
+### Building static library
 
 Follow these steps to build the library:
 
@@ -48,6 +49,36 @@ cmake ..
 cmake --build .
 ```
 - Copy the static library and the `include` directory of the source tree to your project.
+
+### Building gdnative
+
+```bash
+git clone --recursive https://github.com/godotengine/godot-cpp -b 3.5 # Call inside the root directory of vcore
+cd godot-cpp
+scons platform=<your platform> generate_bindings=yes
+cd ..
+cd gnative
+mkdir build
+cd build
+cmake ..
+cmake --build .
+```
+
+Replace `<your platform>` with either `windows`, `linux`, `osx` or `android`.
+
+For more information please visit the official [repository](https://github.com/godotengine/godot-cpp/tree/3.5).
+
+### Building CLI
+
+```bash
+cd cli
+mkdir build
+cd build
+cmake ..
+cmake --build .
+```
+
+The cli will be statically with VCore.
 
 ## Who is using VCore?
 

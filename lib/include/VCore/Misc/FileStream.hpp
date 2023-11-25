@@ -29,6 +29,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <string.h>
 #include <vector>
 #include <VCore/Math/Vector.hpp>
 
@@ -66,6 +67,12 @@ namespace VCore
                 T retVal;
                 Read((char*)&retVal, sizeof(T));
                 return retVal;
+            }
+
+            template<class T>
+            inline void Write(T _Data)
+            {
+                Write((const char*)&_Data, sizeof(T));
             }
 
             /**
@@ -114,6 +121,36 @@ namespace VCore
             virtual ~IFileStream() { Close(); }
     };
 
+    template<>
+    inline void IFileStream::Write<const char*>(const char* _Data)
+    {
+        Write(_Data, strlen(_Data));
+    }
+
+    template<>
+    inline void IFileStream::Write<std::string>(std::string _Data)
+    {
+        Write(_Data.c_str(), _Data.size());
+    }
+
+    class IIOHandler
+    {
+        public:
+            /**
+             * @brief Creates a new filestream.
+             * 
+             * @return Returns the newly created filestream.
+             */
+            virtual IFileStream *Open(const std::string &_File, const char *_OpenMode) = 0;
+
+            /**
+             * @brief Close and free a given stream.
+             */
+            virtual void Close(IFileStream *_Stream) = 0;
+
+            virtual ~IIOHandler() = default;
+    };
+
     class CDefaultFileStream : public IFileStream
     {
         public:
@@ -132,150 +169,20 @@ namespace VCore
             FILE *m_File;
     };
 
-    // class CBinaryStream
-    // {
-    //     public:
-    //         CBinaryStream() {}
-    //         CBinaryStream(const CBinaryStream &_Other) = delete;
-    //         CBinaryStream(CBinaryStream &&_Other) { *this = std::move(_Other); }
+    class CDefaultIOHandler : public IIOHandler
+    {
+        public:
+            IFileStream *Open(const std::string &_File, const char *_OpenMode)
+            {
+                return new CDefaultFileStream(_File, _OpenMode);
+            }
 
-    //         CBinaryStream &operator=(CBinaryStream &&_Other);
-    //         CBinaryStream &operator=(const CBinaryStream &_Other) = delete;
-
-    //         template<class T>
-    //         inline CBinaryStream &operator<<(T val)
-    //         {
-    //             write((char*)&val, sizeof(T));
-    //             return *this;
-    //         }
-
-    //         template<class T>
-    //         inline CBinaryStream &operator>>(T val)
-    //         {
-    //             read((char*)&val, sizeof(T));
-    //             return *this;
-    //         }
-
-    //         size_t offset();
-    //         size_t size();
-    //         void reset();
-    //         void skip(size_t _bytes);
-
-    //         std::vector<char> data() {
-    //             reset();
-
-    //             size_t size = this->size();
-    //             std::vector<char> ret(size, 0);
-
-    //             read(&ret[0], size);
-
-    //             return ret;
-    //         }
-
-    //         size_t read(char *_Buffer, size_t _Size);
-    //         size_t write(const char *_Buffer, size_t _Size);
-
-    //         virtual ~CBinaryStream() = default;
-
-    //     private:
-    //         CDefaultFileStream m_StreamBuffer;
-    // };
-
-    // //////////////////////////////////////////////////
-    // // CBinaryStream functions
-    // //////////////////////////////////////////////////
-
-    // template<>
-    // inline CBinaryStream &CBinaryStream::operator<<(const Math::Vec3i &val)
-    // {
-    //     write((char*)val.v, sizeof(val.v));
-    //     return *this;
-    // }
-
-    // template<>
-    // inline CBinaryStream &CBinaryStream::operator>>(Math::Vec3i &val)
-    // {
-    //     read((char*)val.v, sizeof(val.v));
-    //     return *this;
-    // }
-
-    // template<>
-    // inline CBinaryStream &CBinaryStream::operator<<(const Math::Vec3f &val)
-    // {
-    //     write((char*)val.v, sizeof(val.v));
-    //     return *this;
-    // }
-
-    // template<>
-    // inline CBinaryStream &CBinaryStream::operator>>(Math::Vec3f &val)
-    // {
-    //     read((char*)val.v, sizeof(val.v));
-    //     return *this;
-    // }
-
-    // /**
-    //  * @brief Special overload for std::string.
-    //  */
-    // template<>
-    // inline CBinaryStream &CBinaryStream::operator<<(const std::string &_val)
-    // {
-    //     uint32_t len = _val.size();
-    //     write((char*)&len, sizeof(len));
-    //     write(_val.data(), len);
-
-    //     return *this;
-    // }
-
-    // /**
-    //  * @brief Special overload for std::string.
-    //  */
-    // template<>
-    // inline CBinaryStream &CBinaryStream::operator>>(std::string &_val)
-    // {
-    //     uint32_t len = 0;
-    //     read((char*)&len, sizeof(len));
-
-    //     _val.resize(len);
-    //     read(&_val[0], len);
-
-    //     return *this;
-    // }
-
-    // inline size_t CBinaryStream::offset()
-    // {
-    //     return m_StreamBuffer.offset();
-    // }
-
-    // inline size_t CBinaryStream::size()
-    // {
-    //     return m_StreamBuffer.size();
-    // }
-
-    // inline void CBinaryStream::reset()
-    // {
-    //     m_StreamBuffer.reset();
-    // }
-
-    // inline void CBinaryStream::skip(size_t _bytes)
-    // {
-    //     m_StreamBuffer.skip(_bytes);
-    // }
-
-    // inline CBinaryStream &CBinaryStream::operator=(CBinaryStream &&_Other)
-    // {
-    //     m_StreamBuffer = std::move(_Other.m_StreamBuffer);
-    //     return *this;
-    // }
-
-    // inline size_t CBinaryStream::read(char *_Buffer, size_t _Size)
-    // {
-    //     return m_StreamBuffer.read(_Buffer, _Size);
-    // }
-
-    // inline size_t CBinaryStream::write(const char *_Buffer, size_t _Size)
-    // {
-    //     return m_StreamBuffer.write(_Buffer, _Size);
-    // }
+            void Close(IFileStream *_Stream)
+            {
+                if(_Stream)
+                    delete _Stream;
+            }
+    };
 }
 
 #endif //BINARYSTREAM_HPP

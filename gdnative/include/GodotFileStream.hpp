@@ -20,4 +20,19 @@ class CGodotFileStream : public VCore::IFileStream
         godot::Ref<godot::File> m_File;
 };
 
+class CGodotIOHandler : public VCore::IIOHandler
+{
+    public:
+        VCore::IFileStream *Open(const std::string &_File, const char *_OpenMode)
+        {
+            return new CGodotFileStream(_File, _OpenMode);
+        }
+
+        void Close(VCore::IFileStream *_Stream)
+        {
+            if(_Stream)
+                delete _Stream;
+        }
+};
+
 #endif

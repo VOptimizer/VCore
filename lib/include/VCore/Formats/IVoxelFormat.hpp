@@ -57,11 +57,11 @@ namespace VCore
              * 
              * @throws CVoxelLoaderException If there is no loader for the given file or the file couldn't be load.
              */
-            template<class Stream = CDefaultFileStream>
+            template<class IOHandler = CDefaultIOHandler>
             static VoxelFormat CreateAndLoad(const std::string &_Filename)
             {
                 auto loader = Create(GetType(_Filename));
-                loader->Load<Stream>(_Filename);
+                loader->Load<IOHandler>(_Filename);
 
                 return loader;
             }
@@ -82,20 +82,21 @@ namespace VCore
              * @param _File: Path to the voxel file.
              * @throws CVoxelLoaderException If the file couldn't be load.
              */
-            template<class Stream = CDefaultFileStream>
+            template<class IOHandler = CDefaultIOHandler>
             void Load(const std::string &_File)
             {
-                Load(new Stream(_File, "rb"));
+                Load(new IOHandler(), _File);
             }
 
             /**
-             * @brief Loads a voxel file from stream.
+             * @brief Loads a voxel file using a given io handler.
              * The loader takes the ownership of the _Strm instance, and will free it properly.
              * 
-             * @param _Strm: Stream to load the file from.
+             * @param _IOHandler: IOHandler to use.
+             * @param _File: File to load.
              * @throws CVoxelLoaderException If the file couldn't be load.
              */
-            virtual void Load(IFileStream *_Strm);
+            virtual void Load(IIOHandler *_IOHandler, const std::string _File);
 
             /**
              * @return Gets a list with all models inside the voxel file.
@@ -154,6 +155,8 @@ namespace VCore
             void DeleteFileStream();
 
             SceneNode m_SceneTree;
+
+            IIOHandler *m_IOHandler;
             IFileStream *m_DataStream;
 
             std::vector<VoxelModel> m_Models;

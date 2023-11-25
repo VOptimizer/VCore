@@ -29,6 +29,7 @@
 #include <map>
 #include <memory>
 #include <VCore/Meshing/Mesh.hpp>
+#include <VCore/Misc/FileStream.hpp>
 #include <string>
 #include <vector>
 
@@ -55,67 +56,68 @@ namespace VCore
             /**
              * @brief Creates a new exporter instance.
              */
-            static Exporter Create(ExporterType type);
+            static Exporter Create(ExporterType _Type);
 
             /**
              * @return Returns the exporter type of a given file.
              */
-            static ExporterType GetType(const std::string &filename);
+            static ExporterType GetType(const std::string &_Filename);
+
+            /**
+             * @brief Saves given meshdata to a file.
+             * 
+             * @param _Path: Path where to save the data.
+             * @param _MeshData: Mesh data to save.
+             */
+            template<class IOHandler = CDefaultIOHandler, class T>
+            void Save(const std::string &_Path, const T &_MeshData)
+            {
+                Save(new IOHandler(), _Path, _MeshData);
+            }
 
             /**
              * @brief Generates and saves a mesh.
              * 
-             * @param Path: Path of the file.
-             * @param Mesh: Mesh to save.
+             * @param _Handler: IOHandler instance.
+             * @param _Path: Path of the file.
+             * @param _Mesh: Mesh to save.
              */
-            virtual void Save(const std::string &Path, Mesh mesh);
+            virtual void Save(IIOHandler *_Handler, const std::string &_Path, Mesh _Mesh);
 
             /**
              * @brief Generates and saves a list of meshes.
              * 
-             * @param Path: Path of the file.
-             * @param Meshes: Meshes to save.
+             * @param _Handler: IOHandler instance.
+             * @param _Path: Path of the file.
+             * @param _Meshes: Meshes to save.
              */
-            virtual void Save(const std::string &Path, std::vector<Mesh> Meshes);
-
-            /**
-             * @brief Generates a file stream.
-             * 
-             * @param Mesh: Mesh to save.
-             * 
-             * @return Returns a map where the key is the type and the std::vector<char> is the data.
-             */
-            virtual std::map<std::string, std::vector<char>> Generate(Mesh mesh);
-
-            /**
-             * @brief Generates a file stream.
-             * 
-             * @param Meshes: Meshes to save.
-             * 
-             * @return Returns a map where the key is the type and the std::vector<char> is the data.
-             */
-            virtual std::map<std::string, std::vector<char>> Generate(std::vector<Mesh> Meshes) = 0;
-
-            /**
-             * @brief Sets the name for the all the external files. Only needed for memory generation.
-             */
-            inline void SetExternaFilenames(std::string ExternalFilenames)
-            {
-                m_ExternalFilenames = ExternalFilenames;
-            }
+            virtual void Save(IIOHandler *_Handler, const std::string &_Path, const std::vector<Mesh> &_Meshes);
 
             inline ExportSettings Settings() const
             {
                 return m_Settings;
             }
             
-            inline void Settings(ExportSettings Settings)
+            inline void Settings(ExportSettings _Settings)
             {
-                m_Settings = Settings;
+                m_Settings = _Settings;
             }
+
+            virtual ~IExporter() { DeleteFileStream(); }
         
         protected:
-            std::string m_ExternalFilenames;
+            /**
+             * @brief Must be implement by the exporter implementation.
+             * @param _Path: Path to write the file to.
+             * @param _Meshes: List of meshes to write.
+             */
+            virtual void WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes) = 0;
+
+            void SaveTexture(const Texture &_Texture, const std::string &_Path, const std::string &_Suffix);
+
+            void DeleteFileStream();
+
+            IIOHandler *m_IOHandler;
             ExportSettings m_Settings;
     };
 }

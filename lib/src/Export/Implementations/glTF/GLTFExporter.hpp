@@ -33,10 +33,9 @@ namespace VCore
     {
         public:
             CGLTFExporter() = default;
-
-            std::map<std::string, std::vector<char>> Generate(std::vector<Mesh> Meshes) override;
-
             virtual ~CGLTFExporter() = default;
+        protected:
+            void WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes) override;
     };
 }
 

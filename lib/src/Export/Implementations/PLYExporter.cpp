@@ -24,16 +24,19 @@
 
 #include <sstream>
 #include "PLYExporter.hpp"
+#include "../../FileUtils.hpp"
 
 namespace VCore
 {
-    std::map<std::string, std::vector<char>> CPLYExporter::Generate(std::vector<Mesh> Meshes)
+    void CPLYExporter::WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes)
     {
         size_t counter = 0;
-        std::map<std::string, std::vector<char>> ret;
+        auto pathWithoutExt = GetPathWithoutExt(_Path);
 
-        for (auto &&mesh : Meshes)
+        for (auto &&mesh : _Meshes)
         {
+            auto filestrm = m_IOHandler->Open(pathWithoutExt + "." + std::to_string(counter) + ".ply", "wb");
+
             std::stringstream vertexList, faceList;
             size_t vertexCount = 0, faceCount = 0, indexOffset = 0;
 
@@ -61,35 +64,27 @@ namespace VCore
             }
 
             // Fileheader
-            std::stringstream file;
-            file << "ply" << std::endl;
-            file << "format ascii 1.0" << std::endl;
-            file << "comment Generated with VCore" << std::endl;
-            file << "element vertex " << vertexCount << std::endl;
-            file << "property float x" << std::endl;
-            file << "property float y" << std::endl;
-            file << "property float z" << std::endl;
-            file << "property float nx" << std::endl;
-            file << "property float nx" << std::endl;
-            file << "property float nz" << std::endl;
-            file << "property float s" << std::endl;
-            file << "property float t" << std::endl;
-            file << "element face " << faceCount << std::endl;
-            file << "property list uchar uint vertex_indices" << std::endl;
-            file << "end_header" << std::endl;
+            filestrm->Write("ply\n");
+            filestrm->Write("format ascii 1.0\n");
+            filestrm->Write("comment Generated with VCore\n");
+            filestrm->Write("element vertex " + std::to_string(vertexCount) + "\n");
+            filestrm->Write("property float x\n");
+            filestrm->Write("property float y\n");
+            filestrm->Write("property float z\n");
+            filestrm->Write("property float nx\n");
+            filestrm->Write("property float nx\n");
+            filestrm->Write("property float nz\n");
+            filestrm->Write("property float s\n");
+            filestrm->Write("property float t\n");
+            filestrm->Write("element face " + std::to_string(faceCount) + "\n");
+            filestrm->Write("property list uchar uint vertex_indices\n");
+            filestrm->Write("end_header\n");
 
-            file << vertexList.rdbuf() << faceList.rdbuf();
-                                    
-            std::string fileStr = file.str();
+            filestrm->Write(vertexList.str() + "\n");
+            filestrm->Write(faceList.str() + "\n");
 
-            std::string ext = "ply";
-            if(Meshes.size() > 1)
-                ext = std::to_string(counter) + ".ply";
-
-            ret.insert({ext, std::vector<char>(fileStr.begin(), fileStr.end())});
             counter++;
+            m_IOHandler->Close(filestrm);
         }
-
-        return ret;
     }
 }

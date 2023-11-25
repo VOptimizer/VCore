@@ -33,12 +33,9 @@ namespace VCore
     {
         public:
             CGodotSceneExporter() = default;
-
-            std::map<std::string, std::vector<char>> Generate(std::vector<Mesh> Meshes) override;
-
             ~CGodotSceneExporter() = default;
-        private:
-        /* data */
+        protected:
+            void WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes) override;
     };
 }
 

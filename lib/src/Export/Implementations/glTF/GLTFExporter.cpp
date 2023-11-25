@@ -28,11 +28,14 @@
 #include <sstream>
 #include <string.h>
 #include "GLTFExporter.hpp"
+#include "../../../FileUtils.hpp"
 
 namespace VCore
 {
-    std::map<std::string, std::vector<char>> CGLTFExporter::Generate(std::vector<Mesh> Meshes)
+    void CGLTFExporter::WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes)
     {
+        auto filenameWithoutExt = GetFilenameWithoutExt(_Path);
+
         std::vector<GLTF::CBufferView> bufferViews;
         std::vector<GLTF::CAccessor> accessors;
         std::vector<GLTF::CMaterial> materials;
@@ -43,7 +46,7 @@ namespace VCore
         std::vector<GLTF::CMesh> glTFMeshes;
         size_t matId = 0;
 
-        for (auto &&mesh : Meshes)
+        for (auto &&mesh : _Meshes)
         {
             GLTF::CMesh GLTFMesh;
             nodes.push_back(GLTF::CNode(glTFMeshes.size(), m_Settings->WorldSpace ? mesh->ModelMatrix : Math::Mat4x4()));
@@ -138,9 +141,9 @@ namespace VCore
         std::vector<GLTF::CImage> Images;
         GLTF::CBuffer Buffer;
 
-        auto textures = Meshes[0]->Textures;
+        auto textures = _Meshes[0]->Textures;
 
-        // For glb add padding to satify the 4 Byte boundary.
+        // For glb add padding to satisfy the 4 Byte boundary.
         if(m_Settings->Binary)
         {          
             std::vector<char> diffuse, emission;
@@ -180,17 +183,17 @@ namespace VCore
         else
         {
             GLTF::CImage Image;
-            Image.Uri = m_ExternalFilenames + ".albedo.png";
+            Image.Uri = filenameWithoutExt + ".albedo.png";
             Images.push_back(Image);
 
             if(textures.find(TextureType::EMISSION) != textures.end())
             {
                 GLTF::CImage Image;
-                Image.Uri = m_ExternalFilenames + ".emission.png";
+                Image.Uri = filenameWithoutExt + ".emission.png";
                 Images.push_back(Image);
             }
 
-            Buffer.Uri = m_ExternalFilenames + ".bin";
+            Buffer.Uri = filenameWithoutExt + ".bin";
         }
             
 
@@ -217,61 +220,45 @@ namespace VCore
         json.AddPair("buffers", std::vector<GLTF::CBuffer>() = { Buffer });
         
         std::string JS = json.Serialize();
-
-        // Padding for the binary format
-        if(m_Settings->Binary)
+        if(!m_Settings->Binary)
         {
+            auto strm = m_IOHandler->Open(_Path, "wb");
+            strm->Write(JS);
+            m_IOHandler->Close(strm);
+
+            strm = m_IOHandler->Open(GetPathWithoutExt(_Path) + ".bin", "wb");
+            strm->Write(binary.data(), binary.size());
+            m_IOHandler->Close(strm);
+
+            SaveTexture(textures[TextureType::DIFFIUSE], _Path, "albedo");
+            if(textures.find(TextureType::EMISSION) != textures.end())
+                SaveTexture(textures[TextureType::EMISSION], _Path, "emission");
+        }
+        else
+        {
+            // Adds padding to the json, so its a multiple of 4.
             int Padding = 4 - (JS.size() % 4);
             for (int i = 0; i < Padding; i++)
                 JS += ' ';
+
+            auto strm = m_IOHandler->Open(_Path, "wb");
+
+            // File header
+            strm->Write((uint32_t)0x46546C67);  // GLTF in ASCII
+            strm->Write((uint32_t)2);  // Version
+            strm->Write((uint32_t)(sizeof(uint32_t) * 3 + sizeof(uint32_t) * 2 + JS.size() + sizeof(uint32_t) * 2 + binary.size())); // Total file size.
+
+            // Json data
+            strm->Write((uint32_t)JS.size());   // Chunk length
+            strm->Write((uint32_t)0x4E4F534A);  // JSON in ASCII
+            strm->Write(JS);                    // JSON Data
+
+            // Binary blob
+            strm->Write((uint32_t)binary.size());   // Chunk length
+            strm->Write((uint32_t)0x004E4942);  // Bin in ASCII
+            strm->Write(binary.data(), binary.size()); // Bin Data
+
+            m_IOHandler->Close(strm);
         }
-
-        if(!m_Settings->Binary)
-        {
-            std::vector<char> GLTF(JS.begin(), JS.end());
-            std::map<std::string, std::vector<char>> ret = 
-            {
-                {"gltf", GLTF},
-                {"bin", binary},
-                {"albedo.png", textures[TextureType::DIFFIUSE]->AsPNG()}
-            };
-
-            if(textures.find(TextureType::EMISSION) != textures.end())
-                ret["emission.png"] = textures[TextureType::EMISSION]->AsPNG();
-
-            return ret;
-        }
-
-        // Builds the binary buffer.
-        std::vector<char> GLB(sizeof(uint32_t) * 3 + sizeof(uint32_t) * 2 + JS.size() + sizeof(uint32_t) * 2 + binary.size(), '\0');
-        uint32_t Magic = 0x46546C67; //GLTF in ASCII
-        uint32_t Version = 2;
-        uint32_t Length = GLB.size();
-
-        memcpy(GLB.data(), &Magic, sizeof(uint32_t));
-        memcpy(GLB.data() + sizeof(uint32_t), &Version, sizeof(uint32_t));
-        memcpy(GLB.data() + sizeof(uint32_t) * 2, &Length, sizeof(uint32_t));
-
-        size_t Pos = sizeof(uint32_t) * 3; 
-
-        uint32_t ChunkLength = JS.size();
-        uint32_t ChunkType = 0x4E4F534A; //JSON in ASCII
-
-        memcpy(GLB.data() + Pos, &ChunkLength, sizeof(uint32_t));
-        memcpy(GLB.data() + Pos + sizeof(uint32_t), &ChunkType, sizeof(uint32_t));
-        memcpy(GLB.data() + Pos + sizeof(uint32_t) * 2, JS.data(), JS.size());
-
-        Pos += sizeof(uint32_t) * 2 + JS.size(); 
-
-        ChunkLength = binary.size();
-        ChunkType = 0x004E4942; //Bin in ASCII
-
-        memcpy(GLB.data() + Pos, &ChunkLength, sizeof(uint32_t));
-        memcpy(GLB.data() + Pos + sizeof(uint32_t), &ChunkType, sizeof(uint32_t));
-        memcpy(GLB.data() + Pos + sizeof(uint32_t) * 2, binary.data(), binary.size());
-
-        return {
-            {"glb", GLB}
-        };
     }
 }

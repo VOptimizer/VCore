@@ -26,15 +26,16 @@
 #define WAVEFRONTOBJEXPORTER_HPP
 
 #include <VCore/Export/IExporter.hpp>
-namespace VCore {
-class CWavefrontObjExporter : public IExporter {
-public:
-  CWavefrontObjExporter() = default;
-
-  std::map<std::string, std::vector<char>> Generate(std::vector<Mesh> Meshes) override;
-
-  ~CWavefrontObjExporter() = default;
-};
+namespace VCore 
+{
+  class CWavefrontObjExporter : public IExporter 
+  {
+    public:
+      CWavefrontObjExporter() = default;
+      ~CWavefrontObjExporter() = default;
+    private:
+      void WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes) override;
+  };
 }
 
 #endif // WAVEFRONTOBJEXPORTER_HPP
