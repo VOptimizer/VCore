@@ -166,21 +166,25 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
         ret.append(CreateMesh(mesh, meshes.size() > 1));
     }
     
-    auto animations = m_Loader->GetAnimations();
-    for (auto &&anim : animations)
-    {
-        auto frames = mesher->GenerateAnimation(anim);
-        Array animFrames;
-        for (auto &&frame : frames)
-        {
-            Dictionary result;
-            result["frameTime"] = frame.FrameTime;
-            result["mesh"] = CreateMesh(frame.mesh, meshes.size() > 1);
-            animFrames.append(result);
-        }
+    // TODO: Find a good way to support animations in the ui.
+    // auto animations = m_Loader->GetAnimations();
+    // for (auto &&anim : animations)
+    // {
+    //     auto frames = mesher->GenerateAnimation(anim);
+    //     Array animFrames;
+    //     for (auto &&frame : frames)
+    //     {
+    //         Dictionary result;
+    //         result["frameTime"] = frame.FrameTime;
+    //         auto it = std::find(m_Meshes.begin(), m_Meshes.end(), frame.mesh);
+    //         result["mesh"] = ret[it - m_Meshes.begin()];
 
-        ret.append(animFrames);
-    }
+    //         // result["mesh"] = CreateMesh(frame.mesh, meshes.size() > 1);
+    //         animFrames.append(result);
+    //     }
+
+    //     ret.append(animFrames);
+    // }
 
     return ret;
 }

@@ -143,11 +143,14 @@ namespace VCore
                         std::swap(spaceCenter.y, spaceCenter.z);
                         spaceCenter.z *= -1;
 
-                        auto pos = treeNode->GetPosition();
-                        treeNode->SetPosition(pos + spaceCenter);
+                        if(!treeNode->GetMesh())
+                        {
+                            auto pos = treeNode->GetPosition();
+                            treeNode->SetPosition(pos + spaceCenter);
 
-                        treeNode->SetMesh(m); 
-                        m->Name = treeNode->GetName();                     
+                            treeNode->SetMesh(m); 
+                            m->Name = treeNode->GetName();  
+                        }                   
                     }
                     else if(strncmp(Tmp.ID, "RGBA", sizeof(Tmp.ID)) == 0)
                     {
@@ -432,13 +435,13 @@ namespace VCore
                         nodeIDs.pop();
                         auto shapes = std::static_pointer_cast<SShapeNode>(tmp);
 
-                        if(!shapes->Models.empty())
-                            m_ModelSceneTreeMapping.insert({shapes->Models[0].ModelId, currentNode});
+                        // if(!shapes->Models.empty())
+                        //     m_ModelSceneTreeMapping.insert({shapes->Models[0].ModelId, currentNode});
 
-                        // for (auto &&m : shapes->Models)
-                        // {
-                        //     m_ModelSceneTreeMapping.insert({m.ModelId, currentNode});
-                        // }             
+                        for (auto &&m : shapes->Models)
+                        {
+                            m_ModelSceneTreeMapping.insert({m.ModelId, currentNode});
+                        }             
                     } break;
                 }
             }

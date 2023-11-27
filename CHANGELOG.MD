@@ -1,3 +1,10 @@
+# Version 0.0.9-Alpha (27.11.2023)
+- Support for newer MagicaVoxel format
+- Added Github link
+
+# Version 0.0.8-Alpha (23.11.2023)
+- Bugfix: Missing icons in file dialog.
+
 # Version 0.0.7-Alpha (30.01.2023)
 - Speedup meshing
 
