@@ -40,6 +40,7 @@ set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelModel.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/Implementations/GodotSceneExporter.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/Implementations/glTF/GLTFExporter.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/Implementations/PLYExporter.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Export/Implementations/fbx/FbxExporter.cpp"
          "${PROJECT_SOURCE_DIR}/src/stb_image_write.c"
          "${PROJECT_SOURCE_DIR}/src/Texture.cpp")
 #set(LIBS "")

@@ -30,6 +30,7 @@
 #include <VCore/Export/IExporter.hpp>
 #include "Implementations/WavefrontObjExporter.hpp"
 #include "Implementations/PLYExporter.hpp"
+#include "Implementations/fbx/FbxExporter.hpp"
 
 namespace VCore
 {
@@ -38,6 +39,8 @@ namespace VCore
         switch (_Type)
         {
             case ExporterType::OBJ: return Exporter(new CWavefrontObjExporter());
+
+            case ExporterType::FBX: return Exporter(new CFbxExporter());
 
             case ExporterType::GLTF: 
             case ExporterType::GLB:
@@ -71,6 +74,8 @@ namespace VCore
             type = ExporterType::ESCN;
         else if(ext == "ply")
             type = ExporterType::PLY;
+        else if(ext == "fbx")
+            type = ExporterType::FBX;
 
         return type;
     }

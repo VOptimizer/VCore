@@ -45,7 +45,8 @@ namespace VCore
         GLTF,
         GLB,
         ESCN,
-        PLY
+        PLY,
+        FBX
     };
 
     class IExporter

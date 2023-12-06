@@ -44,7 +44,7 @@ size_t CGodotFileStream::Write(const char *_Buffer, size_t _Size)
 
 void CGodotFileStream::Seek(size_t _Offset, VCore::SeekOrigin _Origin)
 {
-    if(m_File.is_null() || _Offset >= Size())
+    if(m_File.is_null() || _Offset > Size())
         return;
 
     switch (_Origin)
