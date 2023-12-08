@@ -1,9 +1,23 @@
 #include "FbxExporter.hpp"
 #include <time.h>
 
+// Sources:
+// This post describes the ascii format of fbx
+// https://banexdevblog.wordpress.com/2014/06/23/a-quick-tutorial-about-the-fbx-ascii-format/
+// 
+// This post contains the basic data structures, which are used in the format
+// https://code.blender.org/2013/08/fbx-binary-file-format-specification/
+// 
+// This wiki seems outdated but describes the neccessary nodes to create a fbx file.
+// https://archive.blender.org/wiki/index.php/User:Mont29/Foundation/FBX_File_Structure/#Texture_Data
+// 
+// Also Blender is good to find issues during the development.
+// It's also useful to export models from Blender to fbx and look inside them using a hex editor.
+
+// Tells the parser that this is the binary form of fbx.
 static const char SIGNATURE[] = "Kaydara FBX Binary  \0";
 
-// Generic values, which seem to work.
+// Generic values, which seems to work.
 static const char GENERIC_CTIME[] = "1970-01-01 10:00:00:000";
 static const unsigned char GENERIC_FILEID[] =
     {0x28, 0xb3, 0x2a, 0xeb, 0xb6, 0x24, 0xcc, 0xc2, 0xbf, 0xc8, 0xb0, 0x2a, 0xa9, 0x2b, 0xfc, 0xf1};
@@ -149,9 +163,14 @@ namespace VCore
             for (auto &&m : _Meshes)
             {
                 AddMesh(objects, m);
-                connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty((int64_t)m.get()), CFbxProperty((int)0) });
+
+                // Creates connections betweend model, geometry, material and the root node 0
+                connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty(((int64_t)m.get()) + 1), CFbxProperty((int64_t)0) });
+                connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty((int64_t)m.get()), CFbxProperty(((int64_t)m.get()) + 1) });
             }
+            objects.AddSubNode("", {});
             objects.Serialize(strm);
+
             connections.AddSubNode("", {}); // Zero node
             connections.Serialize(strm);
 
@@ -205,11 +224,11 @@ namespace VCore
 
         CFbxNode prop70("Properties70");
         prop70.AddP70("UpAxis", "int", "Integer", "", 1);
-        prop70.AddP70("UpAxisSign", "int", "Integer", "", 2);
-        prop70.AddP70("FrontAxis", "int", "Integer", "", 1);
-        prop70.AddP70("FrontAxisSign", "int", "Integer", "", 1);
+        prop70.AddP70("UpAxisSign", "int", "Integer", "", 1);
+        prop70.AddP70("FrontAxis", "int", "Integer", "", 2);
+        prop70.AddP70("FrontAxisSign", "int", "Integer", "", -1);
         prop70.AddP70("CoordAxis", "int", "Integer", "", 0);
-        prop70.AddP70("CoordAxisSign", "int", "Integer", "", 1);
+        prop70.AddP70("CoordAxisSign", "int", "Integer", "", -1);
         prop70.AddP70("OriginalUpAxis", "int", "Integer", "", 1);
         prop70.AddP70("OriginalUpAxisSign", "int", "Integer", "", 1);
 
@@ -267,11 +286,19 @@ namespace VCore
 
     void CFbxExporter::AddMesh(CFbxNode &_Objects, Mesh _Mesh)
     {
-        CFbxNode geometry("Geometry", { CFbxProperty(((int64_t)_Mesh.get())), CFbxProperty("VoxelMesh\x00\x01Geometry", 19, true), CFbxProperty("Mesh") });
+        // Each mesh consists of a geometry node and a model node.
+        // The geometry node contains all informations of a model such as vertices, normals, uvs, material, blend shapes and more.
+        // The model contains the transformation data and is linked via the connections with the corresponding geometry node.
+
+        //                                                      | Each object needs a unique id. I'm lazy so I use the "unique id" of the ram. 
+        //                                                      v
+        CFbxNode geometry("Geometry", { CFbxProperty(((int64_t)_Mesh.get())), CFbxProperty("VoxelModel\x00\x01Geometry", 19, true), CFbxProperty("Mesh") });
         geometry.AddSubNode("Properties70", {});
         geometry.AddSubNode("GeometryVersion", { CFbxProperty((int)0x7C) });
 
         std::vector<float> vertices;
+        std::vector<float> normals;
+        std::vector<float> uvs;
         std::vector<int> indices;
         int indexOffset = 0;
 
@@ -283,18 +310,86 @@ namespace VCore
                 vertices.push_back(vertex.Pos.x);
                 vertices.push_back(vertex.Pos.y);
                 vertices.push_back(vertex.Pos.z);
+
+                normals.push_back(vertex.Normal.x);
+                normals.push_back(vertex.Normal.y);
+                normals.push_back(vertex.Normal.z);
+
+                uvs.push_back(vertex.UV.x);
+                uvs.push_back(vertex.UV.y);
             }
             
+            int counter = 1;
             for(auto &&i: surface.Indices)
-                indices.push_back(indexOffset + i);
+            {
+                int idx = indexOffset + i;
+
+                // The last index need to be xored by -1. Since we use triangles instead of quads its every third index.
+                if(counter % 3 == 0)
+                    idx ^= -1;
+
+                indices.push_back(idx);
+                counter++;
+            }
             indexOffset += surface.Indices.size();
         }
 
+        // Vertices and it's indices.
         geometry.AddSubNode("Vertices", { CFbxProperty(vertices) });
         geometry.AddSubNode("PolygonVertexIndex", { CFbxProperty(indices) });
-        geometry.AddSubNode("", {});
+
+        // It's possible to have more than one normal layer, but we only need one.
+        CFbxNode normalLayer("LayerElementNormal", { CFbxProperty(0) });
+        normalLayer.AddSubNode("Version", { CFbxProperty(101) });
+        normalLayer.AddSubNode("Name", { CFbxProperty("") });
+        normalLayer.AddSubNode("MappingInformationType", { CFbxProperty("ByVertice") });
+        normalLayer.AddSubNode("ReferenceInformationType", { CFbxProperty("Direct") });
+        normalLayer.AddSubNode("Normals", { CFbxProperty(normals) });
+        normalLayer.AddSubNode("", {});
+        geometry.AddSubNode(std::move(normalLayer));
+
+        // Also we can have multiple uv layers.
+        CFbxNode uvLayer("LayerElementUV", { CFbxProperty(0) });
+        uvLayer.AddSubNode("Version", { CFbxProperty(101) });
+        uvLayer.AddSubNode("Name", { CFbxProperty("UVMap") });
+        uvLayer.AddSubNode("MappingInformationType", { CFbxProperty("ByVertice") });
+        uvLayer.AddSubNode("ReferenceInformationType", { CFbxProperty("Direct") });
+        uvLayer.AddSubNode("UV", { CFbxProperty(uvs) });
+        uvLayer.AddSubNode("", {});
+        geometry.AddSubNode(std::move(uvLayer));
+
+        // Connects different layers and surfaces.
+        CFbxNode layer("Layer", { CFbxProperty(0) });
+        layer.AddSubNode("Version", { CFbxProperty(100) });
+
+        CFbxNode layerelement("LayerElement");    
+        layerelement.AddSubNode("Type", { CFbxProperty("LayerElementNormal") });
+        layerelement.AddSubNode("TypedIndex", { CFbxProperty(0) });
+        layerelement.AddSubNode("", {});
+        layer.AddSubNode(std::move(layerelement));
+
+        layerelement = std::move(CFbxNode("LayerElement"));
+        layerelement.AddSubNode("Type", { CFbxProperty("LayerElementUV") });
+        layerelement.AddSubNode("TypedIndex", { CFbxProperty(0) });
+        layerelement.AddSubNode("", {});
+        layer.AddSubNode(std::move(layerelement));
+
+        layer.AddSubNode("", {});
+
+        // Add the layer to the object.
+        geometry.AddSubNode(std::move(layer));
+        geometry.AddSubNode("", {}); // Zero node.
 
         _Objects.AddSubNode(std::move(geometry));
-        _Objects.AddSubNode("", {});
+
+        // Creates the model object. The connection is made in ::WriteData.
+
+        //                                                      | Same as above but now I use the next address, which should be fine since it's in the mesh object.
+        //                                                      v
+        CFbxNode model("Model", { CFbxProperty(((int64_t)_Mesh.get()) + 1), CFbxProperty("VoxelModel\x00\x01Model", 17, true), CFbxProperty("Mesh") });
+        model.AddSubNode("Version", { CFbxProperty(232) });
+        model.AddSubNode("Properties70", {});
+        model.AddSubNode("", {});
+        _Objects.AddSubNode(std::move(model));
     }
 } // namespace VoxelOptimizer
