@@ -1,5 +1,6 @@
 #include "FbxExporter.hpp"
 #include <time.h>
+#include "../../../FileUtils.hpp"
 
 // Sources:
 // This post describes the ascii format of fbx
@@ -9,7 +10,7 @@
 // https://code.blender.org/2013/08/fbx-binary-file-format-specification/
 // 
 // This wiki seems outdated but describes the neccessary nodes to create a fbx file.
-// https://archive.blender.org/wiki/index.php/User:Mont29/Foundation/FBX_File_Structure/#Texture_Data
+// https://archive.blender.org/wiki/index.php/User:Mont29/Foundation/FBX_File_Structure/
 // 
 // Also Blender is good to find issues during the development.
 // It's also useful to export models from Blender to fbx and look inside them using a hex editor.
@@ -147,6 +148,9 @@ namespace VCore
 
     void CFbxExporter::WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes)
     {
+        if(_Meshes.empty())
+            return;
+
         auto strm = m_IOHandler->Open(_Path, "wb");
         if(strm)
         {
@@ -160,14 +164,13 @@ namespace VCore
 
             CFbxNode objects("Objects");
             CFbxNode connections("Connections");
-            for (auto &&m : _Meshes)
-            {
-                AddMesh(objects, m);
 
-                // Creates connections betweend model, geometry, material and the root node 0
-                connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty(((int64_t)m.get()) + 1), CFbxProperty((int64_t)0) });
-                connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty((int64_t)m.get()), CFbxProperty(((int64_t)m.get()) + 1) });
-            }
+            for (auto &&texture : _Meshes[0]->Textures)
+                AddTexture(_Path, objects, texture.second, texture.first);
+
+            for (auto &&m : _Meshes)
+                AddMesh(objects, connections, m);
+
             objects.AddSubNode("", {});
             objects.Serialize(strm);
 
@@ -284,7 +287,42 @@ namespace VCore
         _Stream->Write((char*)FOOT_MAGIC, sizeof(FOOT_MAGIC));
     }
 
-    void CFbxExporter::AddMesh(CFbxNode &_Objects, Mesh _Mesh)
+    void CFbxExporter::AddTexture(const std::string &_Path, CFbxNode &_Objects, Texture _Texture, TextureType _Type)
+    {
+        auto filenameWithoutExt = GetFilenameWithoutExt(_Path);
+        auto name = filenameWithoutExt;
+        switch (_Type)
+        {
+            case TextureType::DIFFIUSE: name += ".albedo"; break;
+            case TextureType::EMISSION: name += ".emission"; break;
+        }
+
+        auto className = BuildClassName(name, "Texture");
+
+        CFbxNode texture("Texture", { CFbxProperty((int64_t)_Texture.get()), CFbxProperty(className.c_str(), className.size(), true), CFbxProperty("") });
+        texture.AddSubNode("Type", { CFbxProperty("TextureVideoClip") });
+        texture.AddSubNode("Version", { CFbxProperty(202) });
+        texture.AddSubNode("TextureName", { CFbxProperty(className.c_str(), className.size(), true) });
+    
+        className = BuildClassName(name, "Video");
+        texture.AddSubNode("Media", { CFbxProperty(className.c_str(), className.size(), true) });
+        texture.AddSubNode("RelativeFilename", { CFbxProperty((name + ".png").c_str()) });
+
+        CFbxNode prop70("Properties70");
+        prop70.AddP70("UseMaterial", "bool", "", "", 1);
+        prop70.AddP70("UseMipMap", "bool", "", "", 0);
+        prop70.AddSubNode("", {});
+
+        texture.AddSubNode(std::move(prop70));
+        texture.AddSubNode("", {});
+
+        _Objects.AddSubNode(std::move(texture));
+
+        // Save the texture
+        SaveTexture(_Texture, GetBasename(_Path) + "/" + name + ".png", "");
+    }
+
+    void CFbxExporter::AddMesh(CFbxNode &_Objects, CFbxNode &_Connections, Mesh _Mesh)
     {
         // Each mesh consists of a geometry node and a model node.
         // The geometry node contains all informations of a model such as vertices, normals, uvs, material, blend shapes and more.
@@ -292,7 +330,7 @@ namespace VCore
 
         //                                                      | Each object needs a unique id. I'm lazy so I use the "unique id" of the ram. 
         //                                                      v
-        CFbxNode geometry("Geometry", { CFbxProperty(((int64_t)_Mesh.get())), CFbxProperty("VoxelModel\x00\x01Geometry", 19, true), CFbxProperty("Mesh") });
+        CFbxNode geometry("Geometry", { CFbxProperty(((int64_t)_Mesh.get())), CFbxProperty("VoxelModel\x00\x01Geometry", 20, true), CFbxProperty("Mesh") });
         geometry.AddSubNode("Properties70", {});
         geometry.AddSubNode("GeometryVersion", { CFbxProperty((int)0x7C) });
 
@@ -301,6 +339,16 @@ namespace VCore
         std::vector<float> uvs;
         std::vector<int> indices;
         int indexOffset = 0;
+
+        // Material polygon map.
+        std::vector<int> materials;
+
+        // Creates connections between model, geometry and the root node 0
+        _Connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty(((int64_t)_Mesh.get()) + 1), CFbxProperty((int64_t)0) });
+        _Connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty((int64_t)_Mesh.get()), CFbxProperty(((int64_t)_Mesh.get()) + 1) });
+
+        std::unordered_map<uint64_t, int> materialIndexMap;
+        int materialIndex = 0;
 
         for (auto &&surface : _Mesh->Surfaces)
         {
@@ -318,6 +366,23 @@ namespace VCore
                 uvs.push_back(vertex.UV.x);
                 uvs.push_back(vertex.UV.y);
             }
+
+            int currentMatIdx = 0;
+            auto it = materialIndexMap.find((uint64_t)surface.FaceMaterial.get());
+            if(it == materialIndexMap.end())
+            {
+                AddMaterial(_Objects, surface.FaceMaterial);
+
+                // Connects the material with the mesh.
+                _Connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty((int64_t)surface.FaceMaterial.get()), CFbxProperty(((int64_t)_Mesh.get()) + 1) });
+            
+                currentMatIdx = materialIndex;
+                materialIndexMap[(uint64_t)surface.FaceMaterial.get()] = materialIndex++;
+
+                ConnectTextures(_Connections, surface.FaceMaterial, _Mesh->Textures);
+            }
+            else
+                currentMatIdx = it->second;
             
             int counter = 1;
             for(auto &&i: surface.Indices)
@@ -326,13 +391,27 @@ namespace VCore
 
                 // The last index need to be xored by -1. Since we use triangles instead of quads its every third index.
                 if(counter % 3 == 0)
+                {
+                    // Adds for each polygon the corresponding material
+                    materials.push_back(currentMatIdx);
                     idx ^= -1;
+                }
 
                 indices.push_back(idx);
                 counter++;
             }
             indexOffset += surface.Indices.size();
         }
+
+        // Creates the material layer. Which is just the way to assign different materials to different polygons.
+        CFbxNode materialLayer("LayerElementMaterial", { CFbxProperty(0) });
+        materialLayer.AddSubNode("Version", { CFbxProperty(101) });
+        materialLayer.AddSubNode("Name", { CFbxProperty("material") });
+        materialLayer.AddSubNode("MappingInformationType", { CFbxProperty("ByPolygon") });
+        materialLayer.AddSubNode("ReferenceInformationType", { CFbxProperty("IndexToDirect") });
+        materialLayer.AddSubNode("Materials", { CFbxProperty(materials) });
+        materialLayer.AddSubNode("", {});
+        geometry.AddSubNode(std::move(materialLayer));
 
         // Vertices and it's indices.
         geometry.AddSubNode("Vertices", { CFbxProperty(vertices) });
@@ -374,6 +453,12 @@ namespace VCore
         layerelement.AddSubNode("", {});
         layer.AddSubNode(std::move(layerelement));
 
+        layerelement = std::move(CFbxNode("LayerElement"));
+        layerelement.AddSubNode("Type", { CFbxProperty("LayerElementMaterial") });
+        layerelement.AddSubNode("TypedIndex", { CFbxProperty(0) });
+        layerelement.AddSubNode("", {});
+        layer.AddSubNode(std::move(layerelement));
+
         layer.AddSubNode("", {});
 
         // Add the layer to the object.
@@ -382,7 +467,7 @@ namespace VCore
 
         _Objects.AddSubNode(std::move(geometry));
 
-        // Creates the model object. The connection is made in ::WriteData.
+        // Creates the model object.
 
         //                                                      | Same as above but now I use the next address, which should be fine since it's in the mesh object.
         //                                                      v
@@ -391,5 +476,46 @@ namespace VCore
         model.AddSubNode("Properties70", {});
         model.AddSubNode("", {});
         _Objects.AddSubNode(std::move(model));
+    }
+
+    void CFbxExporter::AddMaterial(CFbxNode &_Objects, Material _Material)
+    {
+        CFbxNode material("Material", { CFbxProperty((int64_t)_Material.get()), CFbxProperty("default\x00\x01Material", 17, true), CFbxProperty("") });
+        material.AddSubNode("Version", { CFbxProperty(102) });
+        material.AddSubNode("ShadingModel", { CFbxProperty("Phong") });
+        material.AddSubNode("MultiLayer", { CFbxProperty(0) });
+
+        CFbxNode prop70("Properties70");
+        prop70.AddP70("DiffuseColor", "Color", "", "A", 0.8, 0.8, 0.8);
+        prop70.AddP70("AmbientColor", "Color", "", "A", 0.8, 0.8, 0.8);
+        prop70.AddP70("EmissiveColor", "Color", "", "A", 0.8, 0.8, 0.8);
+        prop70.AddP70("SpecularColor", "Color", "", "A", 0.8, 0.8, 0.8);
+        prop70.AddP70("TransparentColor", "Color", "", "A", 1.0, 1.0, 1.0);
+
+        prop70.AddP70("EmissiveFactor", "Number", "", "A", _Material->Power);
+        prop70.AddP70("SpecularFactor", "Number", "", "A", _Material->Specular);
+        prop70.AddP70("TransparencyFactor", "Number", "", "A", _Material->Transparency);
+        
+        prop70.AddSubNode("", {});
+        material.AddSubNode(std::move(prop70));
+
+        material.AddSubNode("", {});
+        _Objects.AddSubNode(std::move(material));
+    }
+
+    void CFbxExporter::ConnectTextures(CFbxNode &_Connections, Material _Material, const std::map<TextureType, Texture> &_Textures)
+    {
+        // Connects every texture with the given material.
+        for (auto &&texture : _Textures)
+        {
+            std::string propName;
+            switch (texture.first)
+            {
+                case TextureType::DIFFIUSE: propName = "DiffuseColor"; break;
+                case TextureType::EMISSION: propName = "EmissiveColor"; break;
+            }
+
+            _Connections.AddSubNode("C", { CFbxProperty("OP"), CFbxProperty((int64_t)texture.second.get()), CFbxProperty((int64_t)_Material.get()), CFbxProperty(propName.c_str()) });
+        }
     }
 } // namespace VoxelOptimizer

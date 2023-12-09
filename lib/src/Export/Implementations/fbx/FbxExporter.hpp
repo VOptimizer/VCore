@@ -94,11 +94,23 @@ namespace VCore
             void WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes) override;
 
         private:
+            inline std::string BuildClassName(const std::string &_Name, const std::string &_Class)
+            {
+                std::string retVal = _Name;
+                retVal.insert(retVal.end(), 0);
+                retVal.insert(retVal.end(), 1);
+                retVal += _Class;
+                return retVal;
+            }
+
             void WriteFBXHeader(IFileStream *_Stream);
             void WriteGlobalSettings(IFileStream *_Stream);
             void WriteFBXFooter(IFileStream *_Stream);
 
-            void AddMesh(CFbxNode &_Objects, Mesh _Mesh);
+            void AddTexture(const std::string &_Path, CFbxNode &_Objects, Texture _Texture, TextureType _Type);
+            void AddMesh(CFbxNode &_Objects, CFbxNode &_Connections, Mesh _Mesh);
+            void AddMaterial(CFbxNode &_Objects, Material _Material);
+            void ConnectTextures(CFbxNode &_Connections, Material _Material, const std::map<TextureType, Texture> &_Textures);
     };
 }
 

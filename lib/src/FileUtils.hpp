@@ -42,6 +42,15 @@ namespace VCore
         return Path;
     }
 
+    inline std::string GetBasename(std::string Path)
+    {
+        // Replaces all '\' to '/'
+        std::replace(Path.begin(), Path.end(), '\\', '/');
+
+        size_t Pos = Path.find_last_of("/");
+        return Path.substr(0, Pos);
+    }
+
     inline std::string GetPathWithoutExt(std::string Path)
     {
         // Removes the file extension.
