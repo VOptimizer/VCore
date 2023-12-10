@@ -89,12 +89,12 @@ class CMeshCache : public Reference
 
         inline String GetName() const
         {
-            return String(m_Mesh->GetName().c_str());
+            return String(m_Mesh->Name;
         }
 
         inline void SetName(String name)
         {
-            m_Mesh->SetName(name.utf8().get_data());
+            m_Mesh->Name = name.utf8().get_data();
         }
 
         inline void SetVoxelMesh(VCore::VoxelModel mesh)

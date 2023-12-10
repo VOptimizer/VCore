@@ -40,6 +40,8 @@ namespace VCore
     class CVoxelAnimation
     {
         public:
+            static const int FRAME_TIME = 50;
+
             CVoxelAnimation() = default;
 
             /**

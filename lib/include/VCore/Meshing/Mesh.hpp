@@ -82,14 +82,11 @@ namespace VCore
         std::vector<SSurface> Surfaces;                 //!< All surfaces of this mesh.
         std::map<TextureType, Texture> Textures;        //!< Texture used by this mesh.
         Math::Mat4x4 ModelMatrix;                       //!< Modelmatrix according to the voxel file.
-    };
-    using Mesh = std::shared_ptr<SMesh>;
 
-    struct SMeshFrame
-    {
-        Mesh mesh;
+        std::string Name;       //!< Same as of the voxel model.
         unsigned int FrameTime; //!< How long this frame should be last, in ms.
     };
+    using Mesh = std::shared_ptr<SMesh>;
 
     struct VertexHasher
     {

@@ -136,8 +136,8 @@ namespace VCore
         pos += halfSize;
 
         auto sceneNode = std::make_shared<CSceneNode>();
-        sceneNode->SetPosition(pos);
-        sceneNode->SetMesh(mesh);
+        sceneNode->Position = pos;
+        sceneNode->Mesh = mesh;
         m_SceneTree->AddChild(sceneNode);
         m_DataStream->Seek(3 * sizeof(float));    //Pivot position.
 

@@ -65,7 +65,7 @@ namespace VCore
             /**
              * @return Returns a list of all frames, of the animation.
              */
-            std::vector<SMeshFrame> GenerateAnimation(VoxelAnimation _Anim);
+            std::vector<Mesh> GenerateAnimation(VoxelAnimation _Anim);
 
             /**
              * @return Returns the voxel mesh as triangulated vertices mesh.

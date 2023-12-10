@@ -96,7 +96,7 @@ namespace VCore
             {
                 SFrameSpeed speed;
                 speed.Anim = anim;
-                speed.FrameTime = frame.FrameIdx * 100;
+                speed.FrameTime = frame.FrameIdx * CVoxelAnimation::FRAME_TIME + CVoxelAnimation::FRAME_TIME;
                 animations[frame.ModelId] = speed;
             }
         }
@@ -130,9 +130,13 @@ namespace VCore
 
                         // TODO: Animation support.
                         // Now happy?
+                        bool isAnimation = false;
                         auto frame = animations.find(m_Models.size() - 1);
                         if(frame != animations.end())
+                        {
+                            isAnimation = true;
                             frame->second.Anim->AddFrame(m, frame->second.FrameTime);
+                        }
 
                         // 1. Translation is always relative to the center of the voxel space size. (Without fraction)
                         // 2. All meshers centers the mehs in object space so we need to add the fractal part to the translation
@@ -143,13 +147,21 @@ namespace VCore
                         std::swap(spaceCenter.y, spaceCenter.z);
                         spaceCenter.z *= -1;
 
-                        if(!treeNode->GetMesh())
-                        {
-                            auto pos = treeNode->GetPosition();
-                            treeNode->SetPosition(pos + spaceCenter);
+                        if(isAnimation && !treeNode->Animation)
+                        {    
+                            auto pos = treeNode->Position;
+                            treeNode->Position = pos + spaceCenter;
 
-                            treeNode->SetMesh(m); 
-                            m->Name = treeNode->GetName();  
+                            treeNode->Animation = frame->second.Anim; 
+                            m->Name = treeNode->Name;  
+                        }
+                        else if(!isAnimation && !treeNode->Mesh)
+                        {
+                            auto pos = treeNode->Position;
+                            treeNode->Position = pos + spaceCenter;
+
+                            treeNode->Mesh = m; 
+                            m->Name = treeNode->Name;  
                         }                   
                     }
                     else if(strncmp(Tmp.ID, "RGBA", sizeof(Tmp.ID)) == 0)
@@ -400,9 +412,9 @@ namespace VCore
                         auto transform = std::static_pointer_cast<STransformNode>(tmp);
                         nodeIDs.pop();
 
-                        currentNode->SetPosition(transform->Frames[0].Translation);
-                        currentNode->SetRotation(transform->Frames[0].Rotation);
-                        currentNode->SetName(transform->Name);
+                        currentNode->Position = transform->Frames[0].Translation;
+                        currentNode->Rotation = transform->Frames[0].Rotation;
+                        currentNode->Name = transform->Name;
 
                         nodeIDs.push(transform->ChildID);
                     } break;

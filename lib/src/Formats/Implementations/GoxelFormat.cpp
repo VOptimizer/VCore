@@ -158,8 +158,8 @@ namespace VCore
             std::swap(translation.y, translation.z);
             translation.z *= -1;
 
-            sceneNode->SetMesh(m);
-            sceneNode->SetPosition(translation);
+            sceneNode->Mesh = m;
+            sceneNode->Position = translation;
             m_SceneTree->AddChild(sceneNode);
             m_SceneTree->Visible = l.Visible;
 

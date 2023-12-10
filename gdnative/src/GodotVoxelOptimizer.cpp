@@ -26,6 +26,8 @@
 #include <GodotVoxelOptimizer.hpp>
 #include <Image.hpp>
 #include <GodotFileStream.hpp>
+#include <Animation.hpp>
+#include <AnimationPlayer.hpp>
 
 void CGodotVoxelOptimizer::_register_methods()
 {
@@ -152,18 +154,57 @@ Array CGodotVoxelOptimizer::GetMeshes(int mesherType)
     m_BlockCount = 0;
     m_VerticesCount = 0;
     m_FacesCount = 0;
-    m_Meshes.clear();
 
     VCore::Mesher mesher = VCore::IMesher::Create((VCore::MesherTypes)mesherType);
     auto voxelmeshes = m_Loader->GetModels();
     for (auto &&m : voxelmeshes)
         m_BlockCount += m->GetBlockCount();
     
-    auto meshes = mesher->GenerateScene(m_Loader->GetSceneTree());
-    for (auto &&mesh : meshes)
+    m_Meshes = mesher->GenerateScene(m_Loader->GetSceneTree());
+    // for (auto &&mesh : m_Meshes)
+    for (size_t i = 0; i < m_Meshes.size(); i++)
     {
-        m_Meshes.push_back(mesh);
-        ret.append(CreateMesh(mesh, meshes.size() > 1));
+        auto mesh = m_Meshes[i];
+        if(mesh->FrameTime == 0)
+            ret.append(CreateMesh(mesh, m_Meshes.size() > 1));
+        else
+        {
+            auto root = Spatial::_new();
+            Ref<Animation> animation = Animation::_new();
+            float length = 0;
+            bool firstOne = true;
+            for (; i < m_Meshes.size(); i++)
+            {
+                if(mesh->FrameTime == 0)
+                {
+                    i--;
+                    break;
+                }
+
+                mesh = m_Meshes[i];
+                auto gmesh = CreateMesh(mesh, m_Meshes.size() > 1);
+                root->add_child(gmesh);
+                gmesh->set_visible(firstOne);
+
+                int64_t track_id = animation->add_track(Animation::TYPE_VALUE);
+				animation->track_set_path(track_id, "./" + gmesh->get_name() + ":visible");
+				animation->track_insert_key(track_id, length / 1000.0, true);
+				animation->track_insert_key(track_id, (length + mesh->FrameTime) / 1000.0, false);
+				
+				length += mesh->FrameTime;
+                firstOne = false;
+            }
+
+            auto player = AnimationPlayer::_new();
+            root->add_child(player);
+			animation->set_length(length / 1000.0);
+			animation->set_loop(true);
+
+			player->add_animation("Animation", animation);
+			player->play("Animation");
+
+            ret.append(root);
+        }
     }
     
     // TODO: Find a good way to support animations in the ui.
@@ -219,6 +260,9 @@ MeshInstance *CGodotVoxelOptimizer::CreateMesh(const VCore::Mesh &_Mesh, bool _W
     auto instance = MeshInstance::_new();
     instance->set_mesh(tmpMesh);
     instance->set_flag(GeometryInstance::Flags::FLAG_USE_BAKED_LIGHT, true);
+
+    // if(!_Mesh->Name.empty())
+    //     instance->set_name(_Mesh->Name.c_str());
 
     // Worldspace
     if(_Worldspace)

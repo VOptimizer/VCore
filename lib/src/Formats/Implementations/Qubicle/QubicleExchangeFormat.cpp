@@ -46,7 +46,7 @@ namespace VCore
         ReadVoxels(mesh);
 
         auto sceneNode = std::make_shared<CSceneNode>();
-        sceneNode->SetMesh(mesh);
+        sceneNode->Mesh = mesh;
         m_SceneTree->AddChild(sceneNode);
 
         mesh->Textures = m_Textures;

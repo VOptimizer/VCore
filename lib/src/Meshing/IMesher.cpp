@@ -41,18 +41,18 @@ namespace VCore
         return GenerateScene(sceneTree, Math::Mat4x4(), mergeChilds);
     }
 
-    std::vector<SMeshFrame> IMesher::GenerateAnimation(VoxelAnimation _Anim)
+    std::vector<Mesh> IMesher::GenerateAnimation(VoxelAnimation _Anim)
     {
-        std::vector<SMeshFrame> ret;
+        std::vector<Mesh> ret;
 
         for (size_t i = 0; i < _Anim->GetFrameCount(); i++)
         {
-            SMeshFrame frame;
             auto voxelFrame = _Anim->GetFrame(i);
-            frame.FrameTime = voxelFrame.FrameTime;
 
-            frame.mesh = GenerateMesh(voxelFrame.Model);
-            ret.push_back(frame);
+            auto mesh = GenerateMesh(voxelFrame.Model);
+            mesh->FrameTime = voxelFrame.FrameTime;
+
+            ret.push_back(mesh);
         }
 
         return ret;
@@ -86,6 +86,7 @@ namespace VCore
                     if(is_ready(*it))
                     {
                         auto result = it->get();
+                        result.MeshData->FrameTime = 0;
                         ret.push_back(result);                        
                         it = futures.erase(it);
                     }
@@ -100,6 +101,7 @@ namespace VCore
         {
             it->wait();
             auto result = it->get();
+            result.MeshData->FrameTime = 0;
             ret.push_back(result);
             it = futures.erase(it);
         }
@@ -130,6 +132,8 @@ namespace VCore
 
         CMeshBuilder builder;
         ret = builder.Merge(ret, meshes);
+        ret->Name = m->Name;
+        ret->FrameTime = 0;
 
         return ret;
     }
@@ -139,22 +143,31 @@ namespace VCore
         std::vector<Mesh> ret;
 
         if(!mergeChilds)
-            modelMatrix = modelMatrix * sceneTree->ModelMatrix();
+            modelMatrix = modelMatrix * sceneTree->GetModelMatrix();
         else
-            modelMatrix = sceneTree->ModelMatrix();
+            modelMatrix = sceneTree->GetModelMatrix();
 
-        if(sceneTree->GetMesh() && sceneTree->GetMesh()->GetBlockCount() != 0)
+        if(sceneTree->Mesh)
         {
-            auto mesh = GenerateMesh(sceneTree->GetMesh());
+            auto mesh = GenerateMesh(sceneTree->Mesh);
             mesh->ModelMatrix = modelMatrix;
             ret.push_back(mesh);
+        }
+        else if(sceneTree->Animation)
+        {
+            auto meshes = GenerateAnimation(sceneTree->Animation);
+            for (auto &&m : meshes)
+            {
+                m->ModelMatrix = modelMatrix;
+                ret.push_back(m);
+            }
         }
 
         for (auto &&node : *sceneTree)
         {
             auto res = GenerateScene(node, modelMatrix, mergeChilds);
 
-            if(!mergeChilds || !sceneTree->GetMesh())
+            if(!mergeChilds || !sceneTree->Mesh)
                 ret.insert(ret.end(), res.begin(), res.end());
             else
             {

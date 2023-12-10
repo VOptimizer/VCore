@@ -154,7 +154,7 @@ Ref<CIntersection> CGodotVoxelEditor::Intersects(Vector3 _Pos, Vector3 _Dir) con
                     {
                         dist = newDist;
 
-                        intersection->SetPosition(VVectorToGVector3(Voxel->Pos));
+                        intersection->Position = VVectorToGVector3(Voxel->Pos);
                         intersection->SetNormal(VVectorToGVector3(face.second));
                     }
                 }             

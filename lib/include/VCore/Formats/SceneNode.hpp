@@ -26,6 +26,7 @@
 #define SCENENODE_HPP
 
 #include <VCore/Voxel/VoxelModel.hpp>
+#include <VCore/Voxel/VoxelAnimation.hpp>
 
 namespace VCore
 {
@@ -37,96 +38,53 @@ namespace VCore
         public:
             using SceneNodes = std::vector<SceneNode>;
 
-            CSceneNode() : Visible(true), m_Scale(1, 1, 1), m_Parent(nullptr) {}
+            CSceneNode() : Visible(true), Scale(1, 1, 1), m_Parent(nullptr) {}
 
             bool Visible;
+            Math::Vec3f Position;
+            Math::Vec3f Rotation;
+            Math::Vec3f Scale;
+            std::string Name;
 
-            inline Math::Vec3f GetPosition() const
-            {
-                return m_Position;
-            }
-            
-            inline void SetPosition(const Math::Vec3f &position)
-            {
-                m_Position = position;
-            }
+            VoxelModel Mesh;            //!< A scene node can either have a mesh or an animation
+            VoxelAnimation Animation;   //!< A scene node can either have a mesh or an animation
 
-            inline Math::Vec3f GetRotation() const
+            inline Math::Mat4x4 GetModelMatrix() const
             {
-                return m_Rotation;
-            }
-            
-            inline void SetRotation(const Math::Vec3f &rotation)
-            {
-                m_Rotation = rotation;
-            }
-
-            inline Math::Vec3f GetScale() const
-            {
-                return m_Scale;
-            }
-            
-            inline void SetScale(const Math::Vec3f &scale)
-            {
-                m_Scale = scale;
-            }
-
-            inline VoxelModel GetMesh() const
-            {
-                return m_Mesh;
-            }
-            
-            inline void SetMesh(VoxelModel mesh)
-            {
-                m_Mesh = mesh;
-            }
-
-            inline std::string GetName() const
-            {
-                return m_Name;
-            }
-            
-            inline void SetName(const std::string &name)
-            {
-                m_Name = name;
-            }
-
-            inline Math::Mat4x4 ModelMatrix() const
-            {
-                Math::Mat4x4 mm; //* Math::Mat4x4::Rotation(m_Rotation); // * Math::Mat4x4::Scale(m_Scale);
+                Math::Mat4x4 mm;
                 mm
-                    .Rotate(Math::Vec3f(0, 0, 1), m_Rotation.z)
-                    .Rotate(Math::Vec3f(1, 0, 0), m_Rotation.x)
-                    .Rotate(Math::Vec3f(0, 1, 0), m_Rotation.y);
+                    .Rotate(Math::Vec3f(0, 0, 1), Rotation.z)
+                    .Rotate(Math::Vec3f(1, 0, 0), Rotation.x)
+                    .Rotate(Math::Vec3f(0, 1, 0), Rotation.y);
 
-                mm *= Math::Mat4x4::Scale(m_Scale);
-                return Math::Mat4x4::Translation(m_Position) * mm;
+                mm *= Math::Mat4x4::Scale(Scale);
+                return Math::Mat4x4::Translation(Position) * mm;
             }
 
             SceneNodes::iterator begin()
             {
-                return m_Childs.begin();
+                return m_Children.begin();
             }
 
             SceneNodes::iterator end()
             {
-                return m_Childs.end();
+                return m_Children.end();
             }
 
             SceneNodes::const_iterator begin() const
             {
-                return m_Childs.begin();
+                return m_Children.begin();
             }
 
             SceneNodes::const_iterator end() const
             {
-                return m_Childs.end();
+                return m_Children.end();
             }
 
             void AddChild(SceneNode node)
             {
                 node->m_Parent = this;
-                m_Childs.push_back(node);
+                m_Children.push_back(node);
             }
 
             CSceneNode *GetParent()
@@ -134,19 +92,13 @@ namespace VCore
                 return m_Parent;
             }
 
-            uint32_t ChildCount() const
+            uint32_t GetChildrenCount() const
             {
-                return m_Childs.size();
+                return m_Children.size();
             }
         private:
-            Math::Vec3f m_Position;
-            Math::Vec3f m_Rotation;
-            Math::Vec3f m_Scale;
-
-            VoxelModel m_Mesh;
             CSceneNode* m_Parent;
-            SceneNodes m_Childs;
-            std::string m_Name;
+            SceneNodes m_Children;
     };
 }
 

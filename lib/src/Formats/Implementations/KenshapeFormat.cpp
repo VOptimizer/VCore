@@ -107,7 +107,7 @@ namespace VCore
 
         auto sceneNode = std::make_shared<CSceneNode>();
         m_SceneTree->AddChild(sceneNode);
-        sceneNode->SetMesh(m);
+        sceneNode->Mesh = m;
         m->Pivot = m->GetSize() / 2;
 
         m->Textures = std::move(m_Textures);
