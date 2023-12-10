@@ -129,9 +129,9 @@ namespace VCore
                 inline static Mat4x4 Scale(const Vec3f &scale)
                 {
                     Mat4x4 ret;
-                    ret.x.x = scale.x;
-                    ret.y.y = scale.y;
-                    ret.z.z = scale.z;
+                    ret.x.x *= scale.x;
+                    ret.y.y *= scale.y;
+                    ret.z.z *= scale.z;
 
                     return ret;
                 }
@@ -150,6 +150,15 @@ namespace VCore
 
                     *this = rotMat * (*this);
                     return *this;
+                }
+
+                inline Vec3f GetScale()
+                {
+                    Vec3f c1(x.x, y.x, z.x);
+                    Vec3f c2(x.y, y.y, z.y);
+                    Vec3f c3(x.z, y.z, z.z);
+
+                    return Vec3f(c1.length(), c2.length(), c3.length());
                 }
 
                 inline Vec3f GetEuler()

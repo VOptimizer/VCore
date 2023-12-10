@@ -1,6 +1,7 @@
 #include "FbxExporter.hpp"
 #include <time.h>
 #include "../../../FileUtils.hpp"
+#include <stb_image_write.h>
 
 // Sources:
 // This post describes the ascii format of fbx
@@ -56,12 +57,16 @@ namespace VCore
                 int size = m_FloatArray.size();
                 _Stream->Write((char*)&size, sizeof(int));
 
-                int encoding = 0;
-                int compressionLength = size * sizeof(float);
+                int encoding = 1;
+                int compressionLength = 0;
+
+                auto compressedArray = stbi_zlib_compress((unsigned char*)m_FloatArray.data(), m_FloatArray.size() * sizeof(float), &compressionLength, 6);
+
                 _Stream->Write((char*)&encoding, sizeof(int));
                 _Stream->Write((char*)&compressionLength, sizeof(int));
 
-                _Stream->Write((char*)m_FloatArray.data(), m_FloatArray.size() * sizeof(float));
+                _Stream->Write((char*)compressedArray, compressionLength);
+                free(compressedArray);
             } break;
 
             case 'i':
@@ -69,12 +74,16 @@ namespace VCore
                 int size = m_IntArray.size();
                 _Stream->Write((char*)&size, sizeof(int));
 
-                int encoding = 0;
-                int compressionLength = size * sizeof(int);
+                int encoding = 1;
+                int compressionLength = 0;
+
+                auto compressedArray = stbi_zlib_compress((unsigned char*)m_IntArray.data(), m_IntArray.size() * sizeof(int), &compressionLength, 6);
+
                 _Stream->Write((char*)&encoding, sizeof(int));
                 _Stream->Write((char*)&compressionLength, sizeof(int));
 
-                _Stream->Write((char*)m_IntArray.data(), m_IntArray.size() * sizeof(int));
+                _Stream->Write((char*)compressedArray, compressionLength);
+                free(compressedArray);
             } break;
         }
     }
@@ -400,7 +409,7 @@ namespace VCore
                 indices.push_back(idx);
                 counter++;
             }
-            indexOffset += surface.Indices.size();
+            indexOffset += surface.Vertices.size();
         }
 
         // Creates the material layer. Which is just the way to assign different materials to different polygons.
@@ -473,7 +482,18 @@ namespace VCore
         //                                                      v
         CFbxNode model("Model", { CFbxProperty(((int64_t)_Mesh.get()) + 1), CFbxProperty("VoxelModel\x00\x01Model", 17, true), CFbxProperty("Mesh") });
         model.AddSubNode("Version", { CFbxProperty(232) });
-        model.AddSubNode("Properties70", {});
+        CFbxNode prop70("Properties70");
+
+        auto rot = _Mesh->ModelMatrix.GetEuler();
+        auto scale = _Mesh->ModelMatrix.GetScale();
+
+        prop70.AddP70("Lcl Translation", "Lcl Translation", "", "", _Mesh->ModelMatrix.x.w, _Mesh->ModelMatrix.y.w, _Mesh->ModelMatrix.z.w);
+        prop70.AddP70("Lcl Rotation", "Lcl Rotation", "", "", rot.x, rot.y, rot.z);
+        prop70.AddP70("Lcl Scaling", "Lcl Scaling", "", "", scale.x, scale.y, scale.z);
+
+        prop70.AddSubNode("", {});
+        model.AddSubNode(std::move(prop70));
+
         model.AddSubNode("", {});
         _Objects.AddSubNode(std::move(model));
     }
@@ -495,7 +515,9 @@ namespace VCore
         prop70.AddP70("EmissiveFactor", "Number", "", "A", _Material->Power);
         prop70.AddP70("SpecularFactor", "Number", "", "A", _Material->Specular);
         prop70.AddP70("TransparencyFactor", "Number", "", "A", _Material->Transparency);
-        
+        prop70.AddP70("ReflectionFactor", "Number", "", "A", _Material->Metallic);
+        prop70.AddP70("Shininess", "Number", "", "A", _Material->Roughness);
+
         prop70.AddSubNode("", {});
         material.AddSubNode(std::move(prop70));
 
@@ -508,6 +530,9 @@ namespace VCore
         // Connects every texture with the given material.
         for (auto &&texture : _Textures)
         {
+            if((texture.first == TextureType::EMISSION) && (_Material->Power == 0.0))
+                continue;
+
             std::string propName;
             switch (texture.first)
             {
