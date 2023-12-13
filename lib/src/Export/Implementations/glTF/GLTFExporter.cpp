@@ -44,12 +44,32 @@ namespace VCore
 
         std::vector<GLTF::CNode> nodes;
         std::vector<GLTF::CMesh> glTFMeshes;
+        std::vector<int> rootNodes;
         size_t matId = 0;
+
+        size_t animationRootIdx = -1;
 
         for (auto &&mesh : _Meshes)
         {
             GLTF::CMesh GLTFMesh;
-            nodes.push_back(GLTF::CNode(glTFMeshes.size(), m_Settings->WorldSpace ? mesh->ModelMatrix : Math::Mat4x4()));
+            if(mesh->FrameTime != 0)
+            {
+                if(animationRootIdx == ((size_t)-1))
+                {
+                    animationRootIdx = nodes.size();
+                    nodes.push_back(GLTF::CNode(mesh->Name + "_Anim"));
+                    rootNodes.push_back(animationRootIdx);
+                }
+
+                nodes[animationRootIdx].AddChild(nodes.size());
+            }
+            else
+            {
+                animationRootIdx = -1;
+                rootNodes.push_back(nodes.size());
+            }
+
+            nodes.push_back(GLTF::CNode(GetMeshName(mesh), glTFMeshes.size(), m_Settings->WorldSpace ? mesh->ModelMatrix : Math::Mat4x4()));
 
             for (auto &&surface : mesh->Surfaces)
             {
@@ -202,7 +222,7 @@ namespace VCore
         CJSON json;
         json.AddPair("asset", GLTF::CAsset());
         json.AddPair("scene", 0);
-        json.AddPair("scenes", std::vector<GLTF::CScene>() = { GLTF::CScene(nodes.size()) }); // Erweitern um nodes
+        json.AddPair("scenes", std::vector<GLTF::CScene>() = { GLTF::CScene(std::move(rootNodes)) });
         json.AddPair("nodes", nodes);
 
         json.AddPair("meshes", glTFMeshes);

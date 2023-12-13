@@ -40,7 +40,7 @@ namespace VCore
         auto objFile = m_IOHandler->Open(filePathWithoutExt + ".obj", "wb");
         auto mtlFile = m_IOHandler->Open(filePathWithoutExt + ".mtl", "wb");
 
-        objFile->Write("# Generated with VCore\n");
+        objFile->Write("# Generated with VCore (https://github.com/VOptimizer/VCore)\n");
         objFile->Write("# These comments can be removed\n");
         objFile->Write("mtllib " + filenameWithoutExt + ".mtl\n");
 
@@ -50,7 +50,7 @@ namespace VCore
 
         for (auto &&mesh : _Meshes)
         {
-            objFile->Write("o VoxelMesh" + std::to_string(meshCounter) + "\n");
+            objFile->Write("o " + GetMeshName(mesh, "VoxelModel" + std::to_string(meshCounter)) + "\n");
             meshCounter++;
 
             for (auto &&surface : mesh->Surfaces)

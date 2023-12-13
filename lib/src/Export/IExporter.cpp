@@ -100,6 +100,15 @@ namespace VCore
         WriteData(_Path, _Meshes);
     }
 
+    std::string IExporter::GetMeshName(Mesh _Mesh, const std::string & _Default)
+    {
+        auto name = _Mesh->Name.empty() ? _Default : _Mesh->Name;
+        if(_Mesh->FrameTime != 0)
+            name += "_" + std::to_string(_Mesh->FrameTime);
+
+        return name;
+    }
+
     void IExporter::SaveTexture(const Texture &_Texture, const std::string &_Path, const std::string &_Suffix)
     {
         auto path = _Path;

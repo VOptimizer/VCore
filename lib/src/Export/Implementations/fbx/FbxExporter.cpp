@@ -2,6 +2,7 @@
 #include <time.h>
 #include "../../../FileUtils.hpp"
 #include <stb_image_write.h>
+#include <stdlib.h>
 
 // Sources:
 // This post describes the ascii format of fbx
@@ -177,8 +178,21 @@ namespace VCore
             for (auto &&texture : _Meshes[0]->Textures)
                 AddTexture(_Path, objects, texture.second, texture.first);
 
+            int64_t rootId = 0;
             for (auto &&m : _Meshes)
-                AddMesh(objects, connections, m);
+            {
+                if(m->FrameTime != 0 && rootId == 0)
+                {
+                    rootId = CreateNull(objects, (m->Name.empty() ? "VoxelModel" : m->Name) + "_Anim");
+                    connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty(rootId), CFbxProperty(rootId + 1) });
+                    connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty(rootId + 1), CFbxProperty((int64_t)0) });
+                    rootId++;
+                }
+                else if(m->FrameTime == 0)
+                    rootId = 0;
+
+                AddMesh(objects, connections, rootId, m);
+            }
 
             objects.AddSubNode("", {});
             objects.Serialize(strm);
@@ -215,14 +229,14 @@ namespace VCore
 
         headerNode.AddSubNode(std::move(creationTimestamp));
 
-        headerNode.AddSubNode("Creator", { CFbxProperty("Generated with VoxelOptimizer") });
+        headerNode.AddSubNode("Creator", { CFbxProperty("Generated with VCore (https://github.com/VOptimizer/VCore)") });
         headerNode.AddSubNode("", {});   // Zero node
 
         headerNode.Serialize(_Stream);
 
         CFbxNode fileId("FileId", { CFbxProperty((char*)GENERIC_FILEID, sizeof(GENERIC_FILEID)) });
         CFbxNode creationTime("CreationTime", { CFbxProperty((char*)GENERIC_CTIME, sizeof(GENERIC_CTIME)) });
-        CFbxNode creator("Creator", { CFbxProperty("Generated with VoxelOptimizer") });
+        CFbxNode creator("Creator", { CFbxProperty("Generated with VCore (https://github.com/VOptimizer/VCore)") });
 
         fileId.Serialize(_Stream);
         creationTime.Serialize(_Stream);
@@ -331,15 +345,18 @@ namespace VCore
         SaveTexture(_Texture, GetBasename(_Path) + "/" + name + ".png", "");
     }
 
-    void CFbxExporter::AddMesh(CFbxNode &_Objects, CFbxNode &_Connections, Mesh _Mesh)
+    void CFbxExporter::AddMesh(CFbxNode &_Objects, CFbxNode &_Connections, int64_t _RootId, Mesh _Mesh)
     {
         // Each mesh consists of a geometry node and a model node.
         // The geometry node contains all informations of a model such as vertices, normals, uvs, material, blend shapes and more.
         // The model contains the transformation data and is linked via the connections with the corresponding geometry node.
 
+        auto name = GetMeshName(_Mesh);
+        auto className = BuildClassName(name, "Geometry");
+
         //                                                      | Each object needs a unique id. I'm lazy so I use the "unique id" of the ram. 
         //                                                      v
-        CFbxNode geometry("Geometry", { CFbxProperty(((int64_t)_Mesh.get())), CFbxProperty("VoxelModel\x00\x01Geometry", 20, true), CFbxProperty("Mesh") });
+        CFbxNode geometry("Geometry", { CFbxProperty(((int64_t)_Mesh.get())), CFbxProperty(className.c_str(), className.size(), true), CFbxProperty("Mesh") });
         geometry.AddSubNode("Properties70", {});
         geometry.AddSubNode("GeometryVersion", { CFbxProperty((int)0x7C) });
 
@@ -353,7 +370,7 @@ namespace VCore
         std::vector<int> materials;
 
         // Creates connections between model, geometry and the root node 0
-        _Connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty(((int64_t)_Mesh.get()) + 1), CFbxProperty((int64_t)0) });
+        _Connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty(((int64_t)_Mesh.get()) + 1), CFbxProperty(_RootId) });
         _Connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty((int64_t)_Mesh.get()), CFbxProperty(((int64_t)_Mesh.get()) + 1) });
 
         std::unordered_map<uint64_t, int> materialIndexMap;
@@ -478,9 +495,11 @@ namespace VCore
 
         // Creates the model object.
 
+        className = BuildClassName(name, "Model");
+
         //                                                      | Same as above but now I use the next address, which should be fine since it's in the mesh object.
         //                                                      v
-        CFbxNode model("Model", { CFbxProperty(((int64_t)_Mesh.get()) + 1), CFbxProperty("VoxelModel\x00\x01Model", 17, true), CFbxProperty("Mesh") });
+        CFbxNode model("Model", { CFbxProperty(((int64_t)_Mesh.get()) + 1), CFbxProperty(className.c_str(), className.size(), true), CFbxProperty("Mesh") });
         model.AddSubNode("Version", { CFbxProperty(232) });
         CFbxNode prop70("Properties70");
 
@@ -543,4 +562,26 @@ namespace VCore
             _Connections.AddSubNode("C", { CFbxProperty("OP"), CFbxProperty((int64_t)texture.second.get()), CFbxProperty((int64_t)_Material.get()), CFbxProperty(propName.c_str()) });
         }
     }
-} // namespace VoxelOptimizer
+
+    int64_t CFbxExporter::CreateNull(CFbxNode &_Objects, const std::string &_Name)
+    {
+        auto className = BuildClassName(_Name, "NodeAttribute");
+        int64_t id = ((int64_t)rand()) * className.size();
+
+        CFbxNode null("NodeAttribute", { CFbxProperty(id), CFbxProperty(className.c_str(), className.size(), true), CFbxProperty("Null") });
+        null.AddSubNode("TypeFlags", { CFbxProperty("Null") });
+        null.AddSubNode("Properties70", {});
+        null.AddSubNode("", {});
+
+        _Objects.AddSubNode(std::move(null));
+
+        className = BuildClassName(_Name, "Model");
+        CFbxNode model("Model", { CFbxProperty(id + 1), CFbxProperty(className.c_str(), className.size(), true), CFbxProperty("Null") });
+        model.AddSubNode("Version", { CFbxProperty(232) });
+        model.AddSubNode("Properties70", { });
+        model.AddSubNode("", {});
+        _Objects.AddSubNode(std::move(model));
+
+        return id;
+    }
+}

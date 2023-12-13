@@ -46,9 +46,21 @@ namespace VCore
         size_t loadStepsSize = 0;
 
         nodes << "[node name=\"root\" type=\"Spatial\"]\n" << std::endl;
+        std::string parentName;
 
         for (auto &&mesh : _Meshes)
         {
+            if(mesh->FrameTime)
+            {
+                if(parentName.empty())
+                {
+                    parentName = GetMeshName(mesh) + "_Anim";
+                    nodes << "[node name=\"" << parentName << "\" type=\"Spatial\" parent=\".\"]\n" << std::endl;
+                }
+            }
+            else
+                parentName.clear();
+
             std::stringstream arrayMesh;
             loadStepsSize += mesh->Surfaces.size();
 
@@ -149,7 +161,7 @@ namespace VCore
             os << "\n[sub_resource id=" << id << " type=\"ArrayMesh\"]\n" << std::endl;
             os << arrayMesh.str() << std::endl;
 
-            nodes << "[node name=\"Voxel" << id << "\" type=\"MeshInstance\" parent=\".\"]\n" << std::endl;
+            nodes << "[node name=\"" << GetMeshName(mesh) << "\" type=\"MeshInstance\" parent=\"" << (parentName.empty() ? "." : parentName) << "\"]\n" << std::endl;
             nodes << "mesh = SubResource(" << id << ")" << std::endl;
             nodes << "visible = true" << std::endl;
 

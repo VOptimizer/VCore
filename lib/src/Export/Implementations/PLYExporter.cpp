@@ -66,7 +66,7 @@ namespace VCore
             // Fileheader
             filestrm->Write("ply\n");
             filestrm->Write("format ascii 1.0\n");
-            filestrm->Write("comment Generated with VCore\n");
+            filestrm->Write("comment Generated with VCore (https://github.com/VOptimizer/VCore)\n");
             filestrm->Write("element vertex " + std::to_string(vertexCount) + "\n");
             filestrm->Write("property float x\n");
             filestrm->Write("property float y\n");

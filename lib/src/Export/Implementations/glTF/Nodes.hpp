@@ -47,35 +47,40 @@ namespace VCore
                 void Serialize(CJSON &json) const
                 {
                     json.AddPair("version", std::string("2.0"));
-                    json.AddPair("generator", std::string("Generated with VCore"));
+                    json.AddPair("generator", std::string("Generated with VCore (https://github.com/VOptimizer/VCore)"));
                 }        
         };
 
         class CScene
         {
             public:
-                CScene(int nodes) : m_Nodes(nodes) {}
+                CScene(std::vector<int> &&_RootNodes) : m_RootNodes(std::move(_RootNodes)) {}
 
                 void Serialize(CJSON &json) const
                 {
-                    std::vector<int> nodeIds(m_Nodes);
-                    for (int i = 0; i < m_Nodes; i++)
-                        nodeIds[i] = i;
-
-                    json.AddPair("nodes", nodeIds);
+                    json.AddPair("nodes", m_RootNodes);
                 }    
             private:
-                int m_Nodes;
+                std::vector<int> m_RootNodes;
         };
 
         class CNode
         {
             public:
-                CNode(int meshId, const Math::Mat4x4 &mat) : m_MeshId(meshId), m_Matrix(mat) {}
+                CNode(const std::string &_Name) :  m_MeshId(-1), m_Name(_Name) {}
+                CNode(const std::string &_Name, int meshId, const Math::Mat4x4 &mat) : m_MeshId(meshId), m_Matrix(mat), m_Name(_Name) {}
+                CNode(CNode&& _Other) {*this = std::move(_Other);}
 
                 void Serialize(CJSON &json) const
                 {
-                    json.AddPair("mesh", m_MeshId);
+                    if(!m_Name.empty())
+                        json.AddPair("name", m_Name);
+
+                    if(!m_Children.empty())
+                        json.AddPair("children", m_Children);
+
+                    if(m_MeshId != -1)
+                        json.AddPair("mesh", m_MeshId);
                     std::vector<float> matrix = {
                         m_Matrix.x.x, m_Matrix.y.x, m_Matrix.z.x, m_Matrix.w.x,
                         m_Matrix.x.y, m_Matrix.y.y, m_Matrix.z.y, m_Matrix.w.y,
@@ -86,9 +91,28 @@ namespace VCore
                     json.AddPair("matrix", matrix);
                 }    
 
+                inline void AddChild(int _NodeId)
+                {
+                    m_Children.push_back(_NodeId);
+                }
+
+                inline CNode &operator=(CNode&& _Other)
+                {
+                    m_MeshId = _Other.m_MeshId;
+                    m_Name = std::move(_Other.m_Name);
+                    m_Children = std::move(_Other.m_Children);
+                    m_Matrix = _Other.m_Matrix;
+
+                    _Other.m_MeshId = -1;
+                    _Other.m_Matrix = Math::Mat4x4();
+
+                    return *this;
+                }
             private:
                 int m_MeshId;
                 Math::Mat4x4 m_Matrix;
+                std::string m_Name;
+                std::vector<int> m_Children;
         };
 
         class CBuffer

@@ -114,6 +114,8 @@ namespace VCore
              */
             virtual void WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes) = 0;
 
+            std::string GetMeshName(Mesh _Mesh, const std::string & _Default = "VoxelModel");
+
             void SaveTexture(const Texture &_Texture, const std::string &_Path, const std::string &_Suffix);
 
             void DeleteFileStream();
