@@ -92,12 +92,12 @@ namespace VCore
             /**
              * @brief Insert a new voxel.
              */
-            void insert(const pair &_pair, const CBBox &_ChunkDim);
+            void insert(CVoxelSpace *_Space, const pair &_pair, const CBBox &_ChunkDim);
 
             /**
              * @brief Removes a voxel.
              */
-            ppair erase(const iterator &_it, const CBBox &_ChunkDim);
+            ppair erase(CVoxelSpace *_Space, const iterator &_it, const CBBox &_ChunkDim);
 
             /**
              * @brief Returns the next voxel or null.
@@ -138,6 +138,9 @@ namespace VCore
             ~CChunk() { clear(); }
 
         private:
+            CVoxel *GetBlock(CVoxelSpace *_Space, const CBBox &_ChunkDim, const Math::Vec3i &_v);
+            void CheckAndUpdateVisibility(CVoxelSpace *_Space, const CBBox &_ChunkDim, Voxel _ThisVoxel, const Math::Vec3i &_Pos, CVoxel::Visibility _This, CVoxel::Visibility _Other);
+
             void clear();
 
             CVoxel *m_Data;
@@ -208,6 +211,7 @@ namespace VCore
     class CVoxelSpace
     {
         friend CVoxelSpaceIterator;
+        friend CChunk;
 
         public:
             using ppair = std::pair<Math::Vec3i, Voxel>;
@@ -281,16 +285,6 @@ namespace VCore
             querylist queryChunks(const CFrustum *_Frustum) const;
 
             /**
-             * @brief Generates and updates all the visibility masks of the voxels.
-             */
-            void generateVisibilityMask();
-
-            /**
-             * @brief Updates the visibility mask of a given voxel and its neighbours.
-             */
-            void updateVisibility(const Math::Vec3i &_Position);
-
-            /**
              * @return Gets the voxel count.
              */
             inline size_t size() const
@@ -309,9 +303,9 @@ namespace VCore
             ~CVoxelSpace() { clear(); }
 
         private:
-            Math::Vec3i chunkpos(const Math::Vec3i &_Position) const;
-            void CheckVisibility(const Voxel &_v, const Voxel &_v2, uint8_t _axis);
+            CChunk *GetChunk(const Math::Vec3i &_Position);
 
+            Math::Vec3i chunkpos(const Math::Vec3i &_Position) const;
             iterator next(const Math::Vec3i &_FromPosition) const;
 
             Math::Vec3i m_ChunkSize;

@@ -87,11 +87,6 @@ namespace VCore
         return it->second;
     }
 
-    void CVoxelModel::GenerateVisibilityMask()
-    {
-        m_Voxels.generateVisibilityMask();
-    }
-
     VectoriMap<Voxel> CVoxelModel::QueryVisible(bool opaque) const
     {
         return m_Voxels.queryVisible(opaque);

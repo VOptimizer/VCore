@@ -121,8 +121,6 @@ namespace VCore
                             throw CVoxelLoaderException("Can't understand the format.");
 
                         ProcessXYZI(m);
-                        m->GenerateVisibilityMask();
-                        // auto visible = voxels.queryVisible();
                         m_Models.push_back(m);
                         auto halfSize = (m->GetSize() / 2.0);
 

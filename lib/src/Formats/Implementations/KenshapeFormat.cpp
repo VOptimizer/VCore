@@ -112,7 +112,6 @@ namespace VCore
 
         m->Textures = std::move(m_Textures);
         m->BBox = CBBox(Beg, End);
-        m->GenerateVisibilityMask();
 
         m_Models.push_back(m);
         m_ColorIdx.clear();

@@ -83,17 +83,6 @@ namespace VCore
             {
                 return m_Size;
             }
-
-            // inline void RecalcBBox()
-            // {
-            //     BBox = CBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i(0, 0, 0));
-
-            //     for (auto &&v : m_Voxels)
-            //     {
-            //         BBox.Beg = BBox.Beg.min(v.first);
-            //         BBox.End = BBox.End.max(v.first + Math::Vec3i(1, 1, 1));
-            //     }
-            // }
             
             /**
              * List of voxels. The size of the list is always the size of the voxel space.
@@ -161,12 +150,6 @@ namespace VCore
             {
                 return m_Voxels.size();
             }
-
-            /**
-             * @brief Generates the visibility mask for each voxel.
-             * @note Only dirty chunks are queried.
-             */
-            void GenerateVisibilityMask();
 
             /**
              * @brief Queries all visible voxels.

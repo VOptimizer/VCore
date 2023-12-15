@@ -205,7 +205,6 @@ namespace VCore
         free(Data);
 
         mesh->BBox = CBBox(Beg, End);
-        mesh->GenerateVisibilityMask();
         m_Models.push_back(mesh);
     }
 

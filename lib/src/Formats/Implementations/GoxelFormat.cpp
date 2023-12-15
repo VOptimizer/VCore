@@ -149,7 +149,6 @@ namespace VCore
             }
             
             m->BBox = CBBox(Beg, End);
-            m->GenerateVisibilityMask();
 
             // TODO: This is dumb! The model matrix should be created on a central point!
             auto sceneNode = std::make_shared<CSceneNode>();

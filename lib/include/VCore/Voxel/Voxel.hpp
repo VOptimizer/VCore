@@ -81,7 +81,7 @@ namespace VCore
 
     inline bool CVoxel::IsVisible() const
     {                
-        return VisibilityMask != Visibility::INVISIBLE;
+        return IsInstantiated() && (VisibilityMask != Visibility::INVISIBLE);
     }
 
     inline bool CVoxel::IsInstantiated() const

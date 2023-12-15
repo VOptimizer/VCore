@@ -172,7 +172,6 @@ namespace VCore
         free(Data);
 
         mesh->BBox = CBBox(Beg, End);
-        mesh->GenerateVisibilityMask();
         m_Models.push_back(mesh);
     }
 
@@ -239,7 +238,6 @@ namespace VCore
         free(Data);
 
         mesh->BBox = CBBox(Beg, End);
-        mesh->GenerateVisibilityMask();
         m_Models.push_back(mesh);
 
         uint32_t childCount = m_DataStream->Read<uint32_t>();

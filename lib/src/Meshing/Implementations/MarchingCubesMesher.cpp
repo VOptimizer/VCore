@@ -387,7 +387,7 @@ namespace VCore
         auto corners = Corners[edge];
         Math::Vec3i v = pos + corners.first;
         Voxel vox = nullptr;
-        if(chunkDimension.ContainsPoint(v))
+        if(_Chunk.TotalBBox.ContainsPoint(v))
             vox = _Chunk.Chunk->findVisible(v, chunkDimension);
         else
             vox = m->GetVisibleVoxel(v);
@@ -395,7 +395,7 @@ namespace VCore
         if(!vox)
         {
             v = pos + corners.second;
-            if(chunkDimension.ContainsPoint(v))
+            if(_Chunk.TotalBBox.ContainsPoint(v))
                 vox = _Chunk.Chunk->findVisible(v, chunkDimension);
             else
                 vox = m->GetVisibleVoxel(v);

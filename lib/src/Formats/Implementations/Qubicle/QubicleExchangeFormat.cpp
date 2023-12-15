@@ -50,7 +50,6 @@ namespace VCore
         m_SceneTree->AddChild(sceneNode);
 
         mesh->Textures = m_Textures;
-        mesh->GenerateVisibilityMask();
         m_Models.push_back(mesh);
     }
 

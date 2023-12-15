@@ -68,7 +68,6 @@ namespace VCore
             else
                 ReadRLECompressed(mesh);
 
-            mesh->GenerateVisibilityMask();
             m_Models.push_back(mesh);
         }
 
