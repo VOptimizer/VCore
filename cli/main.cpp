@@ -36,7 +36,7 @@ using namespace std;
 namespace fs = std::filesystem;
 
 const vector<string> SUPPORTED_EXTS({"gox", "vox", "kenshape", "qbcl", "qb", "qbt", "qef"});
-const vector<string> SUPPORTED_OUT_EXTS({"gltf", "glb", "obj", "escn", "ply", "png"});
+const vector<string> SUPPORTED_OUT_EXTS({"gltf", "glb", "obj", "escn", "ply", "png", "fbx"});
 
 struct SFile
 {
@@ -95,7 +95,8 @@ File CreateFile(const fs::path &Input, const fs::path &OutputPattern)
         {"glb", VCore::ExporterType::GLB},
         {"obj", VCore::ExporterType::OBJ},
         {"escn", VCore::ExporterType::ESCN},
-        {"ply", VCore::ExporterType::PLY}
+        {"ply", VCore::ExporterType::PLY},
+        {"fbx", VCore::ExporterType::FBX}
         // {"png", VCore::ExporterType::PNG},
     };
 

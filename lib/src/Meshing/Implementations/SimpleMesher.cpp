@@ -28,6 +28,22 @@
 
 namespace VCore
 {
+    struct SFaceInfo
+    {
+        Math::Vec3f V1, V2, V3, V4, Normal;   
+    };
+
+    const static SFaceInfo FACE_INFOS[6] = {
+        { { 0, 1, 0 }, { 1, 1, 0 }, { 0, 1, 1 }, { 1, 1, 1 }, Math::Vec3f::UP },
+        { { 0, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, { 1, 0, 1 }, Math::Vec3f::DOWN },
+
+        { { 0, 1, 0 }, { 0, 1, 1 }, { 0, 0, 0 }, { 0, 0, 1 }, Math::Vec3f::LEFT },
+        { { 1, 1, 0 }, { 1, 1, 1 }, { 1, 0, 0 }, { 1, 0, 1 }, Math::Vec3f::RIGHT },
+
+        { { 0, 1, 1 }, { 1, 1, 1 }, { 0, 0, 1 }, { 1, 0, 1 }, Math::Vec3f::FRONT },
+        { { 0, 1, 0 }, { 1, 1, 0 }, { 0, 0, 0 }, { 1, 0, 0 }, Math::Vec3f::BACK },
+    };
+
     SMeshChunk CSimpleMesher::GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque)
     {
         (void)Opaque;
@@ -62,72 +78,75 @@ namespace VCore
                             if(visiblity == CVoxel::Visibility::INVISIBLE)
                                 continue;
 
-                            Math::Vec3f v1, v2, v3, v4, Normal;                            
-                            switch (visiblity)
-                            {
-                                case CVoxel::Visibility::UP:
-                                case CVoxel::Visibility::DOWN:
-                                {
-                                    float PosY = 0;
-                                    if(visiblity == CVoxel::Visibility::UP)
-                                    {
-                                        Normal = Math::Vec3f::UP;
-                                        PosY = 1;
-                                    }
-                                    else
-                                        Normal = Math::Vec3f::DOWN;
+                            // Math::Vec3f v1, v2, v3, v4, Normal;                            
+                            // switch (visiblity)
+                            // {
+                            //     case CVoxel::Visibility::UP:
+                            //     case CVoxel::Visibility::DOWN:
+                            //     {
+                            //         float PosY = 0;
+                            //         if(visiblity == CVoxel::Visibility::UP)
+                            //         {
+                            //             Normal = Math::Vec3f::UP;
+                            //             PosY = 1;
+                            //         }
+                            //         else
+                            //             Normal = Math::Vec3f::DOWN;
 
 
-                                    v1 = Math::Vec3f(vpos.x, vpos.y + PosY, vpos.z) - boxCenter;
-                                    v2 = Math::Vec3f(vpos.x + 1.f, vpos.y + PosY, vpos.z) - boxCenter;
-                                    v3 = Math::Vec3f(vpos.x, vpos.y + PosY, vpos.z + 1.f) - boxCenter;
-                                    v4 = Math::Vec3f(vpos.x + 1.f, vpos.y + PosY, vpos.z + 1.f) - boxCenter;
-                                }break;
+                            //         v1 = Math::Vec3f(vpos.x, vpos.y + PosY, vpos.z) - boxCenter;
+                            //         v2 = Math::Vec3f(vpos.x + 1.f, vpos.y + PosY, vpos.z) - boxCenter;
+                            //         v3 = Math::Vec3f(vpos.x, vpos.y + PosY, vpos.z + 1.f) - boxCenter;
+                            //         v4 = Math::Vec3f(vpos.x + 1.f, vpos.y + PosY, vpos.z + 1.f) - boxCenter;
+                            //     }break;
 
-                                case CVoxel::Visibility::LEFT:
-                                case CVoxel::Visibility::RIGHT:
-                                {
-                                    float Posx = 0;
-                                    if(visiblity == CVoxel::Visibility::RIGHT)
-                                    {
-                                        Normal = Math::Vec3f::RIGHT;
-                                        Posx = 1;
-                                    }
-                                    else
-                                        Normal = Math::Vec3f::LEFT;
+                            //     case CVoxel::Visibility::LEFT:
+                            //     case CVoxel::Visibility::RIGHT:
+                            //     {
+                            //         float Posx = 0;
+                            //         if(visiblity == CVoxel::Visibility::RIGHT)
+                            //         {
+                            //             Normal = Math::Vec3f::RIGHT;
+                            //             Posx = 1;
+                            //         }
+                            //         else
+                            //             Normal = Math::Vec3f::LEFT;
 
-                                    v1 = Math::Vec3f(vpos.x + Posx, vpos.y + 1.f, vpos.z) - boxCenter;
-                                    v2 = Math::Vec3f(vpos.x + Posx, vpos.y + 1.f, vpos.z + 1.f) - boxCenter;
-                                    v3 = Math::Vec3f(vpos.x + Posx, vpos.y, vpos.z) - boxCenter;
-                                    v4 = Math::Vec3f(vpos.x + Posx, vpos.y, vpos.z + 1.f) - boxCenter;
-                                }break;
+                            //         v1 = Math::Vec3f(vpos.x + Posx, vpos.y + 1.f, vpos.z) - boxCenter;
+                            //         v2 = Math::Vec3f(vpos.x + Posx, vpos.y + 1.f, vpos.z + 1.f) - boxCenter;
+                            //         v3 = Math::Vec3f(vpos.x + Posx, vpos.y, vpos.z) - boxCenter;
+                            //         v4 = Math::Vec3f(vpos.x + Posx, vpos.y, vpos.z + 1.f) - boxCenter;
+                            //     }break;
 
-                                case CVoxel::Visibility::FORWARD:
-                                case CVoxel::Visibility::BACKWARD:
-                                {
-                                    float PosZ = 0;
-                                    if(visiblity == CVoxel::Visibility::FORWARD)
-                                    {
-                                        Normal = Math::Vec3f::FRONT;
-                                        PosZ = 1;
-                                    }
-                                    else
-                                        Normal = Math::Vec3f::BACK;
+                            //     case CVoxel::Visibility::FORWARD:
+                            //     case CVoxel::Visibility::BACKWARD:
+                            //     {
+                            //         float PosZ = 0;
+                            //         if(visiblity == CVoxel::Visibility::FORWARD)
+                            //         {
+                            //             Normal = Math::Vec3f::FRONT;
+                            //             PosZ = 1;
+                            //         }
+                            //         else
+                            //             Normal = Math::Vec3f::BACK;
 
-                                    v1 = Math::Vec3f(vpos.x, vpos.y + 1.f, vpos.z + PosZ) - boxCenter;
-                                    v2 = Math::Vec3f(vpos.x + 1.f, vpos.y + 1.f, vpos.z + PosZ) - boxCenter;
-                                    v3 = Math::Vec3f(vpos.x, vpos.y, vpos.z + PosZ) - boxCenter;
-                                    v4 = Math::Vec3f(vpos.x + 1.f, vpos.y, vpos.z + PosZ) - boxCenter;
-                                }break;
+                            //         v1 = Math::Vec3f(vpos.x, vpos.y + 1.f, vpos.z + PosZ) - boxCenter;
+                            //         v2 = Math::Vec3f(vpos.x + 1.f, vpos.y + 1.f, vpos.z + PosZ) - boxCenter;
+                            //         v3 = Math::Vec3f(vpos.x, vpos.y, vpos.z + PosZ) - boxCenter;
+                            //         v4 = Math::Vec3f(vpos.x + 1.f, vpos.y, vpos.z + PosZ) - boxCenter;
+                            //     }break;
 
-                                default: break;
-                            }
+                            //     default: break;
+                            // }
 
                             Material mat;
                             if(v->Material < (short)m->Materials.size())
                                 mat = m->Materials[v->Material];
 
-                            builder.AddFace(v1, v2, v3, v4, Normal, v->Color, mat);
+                            auto info = FACE_INFOS[i];
+                            builder.AddFace((info.V1 + vpos) - boxCenter, (info.V2 + vpos) - boxCenter, (info.V3 + vpos) - boxCenter, (info.V4 + vpos) - boxCenter, info.Normal, v->Color, mat);
+
+                            // builder.AddFace(v1, v2, v3, v4, Normal, v->Color, mat);
                         }
                     }
                 }
