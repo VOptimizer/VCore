@@ -27,6 +27,25 @@
 
 namespace VCore
 {
+    constexpr static int GRID_CELL_SIZE = 10;
+
+    void CGridCell::AddVertex(const SVertex &_Vertex, int _Idx)
+    {
+        m_Vertices.push_back({_Vertex, _Idx});
+    }
+
+    int CGridCell::FindVertex(const SVertex &_Vertex) const
+    {
+        auto it = std::find_if(m_Vertices.begin(), m_Vertices.end(), [_Vertex](const std::pair<SVertex, int> &_value) {
+            return _value.first.Normal == _Vertex.Normal && _value.first.UV == _Vertex.UV;
+        });
+
+        if(it != m_Vertices.end())
+            return it->second;
+
+        return -1;
+    }
+
     void CMeshBuilder::AddTextures(const std::map<TextureType, Texture> &_textures)
     {
         m_Textures = &_textures;
@@ -34,16 +53,31 @@ namespace VCore
 
     int CMeshBuilder::AddVertex(const SVertex &_Vertex, SIndexedSurface &_Surface)
     {
-        auto it = _Surface.Index.find(_Vertex);
-        if(it == _Surface.Index.end())
+        // int gridIdx = _Vertex.Pos.x + GRID_SIZE * _Vertex.Pos.y + GRID_SIZE * GRID_SIZE * _Vertex.Pos.z;
+
+        int gridIdx = (int)(_Vertex.Pos.x / GRID_CELL_SIZE) ^ (int)(_Vertex.Pos.y / GRID_CELL_SIZE) ^ (int)(_Vertex.Pos.z / GRID_CELL_SIZE);
+
+        auto &gridCell = _Surface.Index2[gridIdx];
+        int idx = gridCell.FindVertex(_Vertex);
+        if(idx == -1)
         {
-            int idx = _Surface.Surface.Size();
+            idx = _Surface.Surface.Size();
             _Surface.Surface.AddVertex(_Vertex);
-            _Surface.Index.insert({_Vertex, idx});
-            return idx;
+            gridCell.AddVertex(_Vertex, idx);
         }
 
-        return it->second;
+        return idx;
+
+        // auto it = _Surface.Index.find(_Vertex);
+        // if(it == _Surface.Index.end())
+        // {
+        //     int idx = _Surface.Surface.Size();
+        //     _Surface.Surface.AddVertex(_Vertex);
+        //     _Surface.Index.insert({_Vertex, idx});
+        //     return idx;
+        // }
+
+        // return it->second;
     }
 
     void CMeshBuilder::AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, Material _material)
@@ -55,6 +89,7 @@ namespace VCore
                 it = m_Surfaces.insert({(size_t)_material.get(), SIndexedSurface(_material)}).first;
             m_CachedSurface = &it->second;
             m_CachedSurface->Index.reserve(100);
+            m_CachedSurface->Index2.reserve(100);
         }
 
         Math::Vec3f faceNormal = (_v2 - _v1).cross(_v3 - _v1).normalize();
@@ -155,6 +190,8 @@ namespace VCore
 
     Mesh CMeshBuilder::Merge(Mesh _MergeInto, const std::vector<Mesh> &_Meshes)
     {
+        return _MergeInto;
+
         Mesh ret;
         if(_MergeInto)
         {

@@ -31,6 +31,7 @@
 #include <regex>
 #include <vector>
 #include <VCore/VCore.hpp>
+#include <chrono>
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -217,7 +218,7 @@ vector<File> ResolveFilenames(const argh::parser &cmdl, const string &OutputPatt
 int main(int argc, char const *argv[])
 {
     auto cmdl = argh::parser();
-    cmdl.add_params({"-o", "--output", "-m", "--mesher"});
+    cmdl.add_params({"-o", "--output", "-m", "--mesher", "-b"});
     cmdl.parse(argc, argv);
 
     // Shows the help dialog.
@@ -243,6 +244,21 @@ int main(int argc, char const *argv[])
         cerr << "Missing input files" << endl;
         return -1;
     }
+
+    int benchmarkCount = 0;
+    cmdl({"-b"}, 0) >> benchmarkCount;
+
+    VCore::Math::Vec3f a(1, 1, 1), b(1,1,1);
+    VCore::Math::Vec3i ai(1, 1, 1), bi(1,1,1);
+
+    float va[4] = {}, vb[4] = {};
+    memcpy(va, a.v, sizeof(float) * 3);
+    memcpy(vb, b.v, sizeof(float) * 3);
+
+    std::cout << VCore::VectorEq(va, vb) << endl;
+
+    std::cout << (a == b) << endl;
+    std::cout << (ai == bi) << endl;
 
     try
     {
@@ -297,9 +313,24 @@ int main(int argc, char const *argv[])
             else
             {
                 std::vector<VCore::Mesh> outputMeshes;
-                auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
-                outputMeshes.insert(outputMeshes.end(), meshes.begin(), meshes.end());
-                Exporter->Save(f->OutputFile, outputMeshes);
+
+                for (size_t i = 0; i < benchmarkCount + 1; i++)
+                {
+                    auto startTime = std::chrono::high_resolution_clock::now();
+                    auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
+                    auto endTime = std::chrono::high_resolution_clock::now();
+
+                    if(benchmarkCount == 0)
+                    {
+                        outputMeshes.insert(outputMeshes.end(), meshes.begin(), meshes.end());
+                        Exporter->Save(f->OutputFile, outputMeshes);
+                    }
+                    else
+                    {
+                        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+                        std::cout << "Time taken: " << duration.count() << " ms" << std::endl;
+                    }
+                }
             }
         }
     }

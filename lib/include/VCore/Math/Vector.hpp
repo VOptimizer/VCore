@@ -28,6 +28,9 @@
 #include <math.h>
 #include <unordered_map>
 
+#include "SIMD/x86/Vector-SIMD.hpp"
+#include <string.h>
+
 namespace VCore
 {
     namespace Math
@@ -138,17 +141,18 @@ namespace VCore
                         T x;
                         T y;
                         T z;
+                        T w;
                     };
                     
-                    T v[3];
+                    T v[4];
                 };
 
-                TVector3() : x(0), y(0), z(0) {}
-                TVector3(T x, T y, T z) : x(x), y(y), z(z) {}
-                TVector3(const TVector3 &v) : x(v.x), y(v.y), z(v.z) {}
+                TVector3() : x(0), y(0), z(0), w(0) {}
+                TVector3(T x, T y, T z) : x(x), y(y), z(z), w(0) {}
+                TVector3(const TVector3 &v) : x(v.x), y(v.y), z(v.z), w(0) {}
 
                 template<class O>
-                TVector3(const TVector3<O> &v) : x(v.x), y(v.y), z(v.z) {}
+                TVector3(const TVector3<O> &v) : x(v.x), y(v.y), z(v.z), w(0) {}
                 
                 inline bool IsZero() const
                 {
@@ -157,7 +161,12 @@ namespace VCore
 
                 inline bool operator==(const TVector3 &vr) const
                 {
-                    return x == vr.x && y == vr.y && z == vr.z;
+                    // T va[4] = {}, vb[4] = {};
+                    // memmove(va, v, sizeof(T) * 3);
+                    // memmove(vb, vr.v, sizeof(T) * 3);
+                    return VectorEq(v, vr.v);
+
+                    // return x == vr.x && y == vr.y && z == vr.z;
                 }
 
                 inline bool operator!=(const TVector3 &vr) const
@@ -218,12 +227,18 @@ namespace VCore
 
                 inline TVector3 operator-(const TVector3 &vr) const
                 {
-                    return TVector3(x - vr.x, y - vr.y, z - vr.z);
+                    // return TVector3(x - vr.x, y - vr.y, z - vr.z);
+                    T out[4];
+                    VectorSub(v, vr.v, out);
+                    return TVector3(out[0], out[1], out[2]);
                 }
 
                 inline TVector3 operator+(const TVector3 &vr) const
                 {
-                    return TVector3(x + vr.x, y + vr.y, z + vr.z);
+                    // return TVector3(x + vr.x, y + vr.y, z + vr.z);
+                    T out[4];
+                    VectorAdd(v, vr.v, out);
+                    return TVector3(out[0], out[1], out[2]);
                 }
 
                 inline TVector3 &operator+=(const TVector3 &vr)

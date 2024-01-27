@@ -34,6 +34,17 @@
 
 namespace VCore
 {
+    class CGridCell
+    {
+        public:
+            void AddVertex(const SVertex &_Vertex, int _Idx);
+
+            int FindVertex(const SVertex &_Vertex) const;
+
+        private:
+            std::vector<std::pair<SVertex, int>> m_Vertices;
+    };
+
     class CMeshBuilder
     {
         public:
@@ -96,6 +107,8 @@ namespace VCore
 
                 // Material FaceMaterial;
                 std::unordered_map<SVertex, int, VertexHasher> Index;
+
+                std::unordered_map<int, CGridCell> Index2;
 
                 SSurface Surface;
 
