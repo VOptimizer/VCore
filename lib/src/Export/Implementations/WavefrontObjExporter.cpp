@@ -46,7 +46,7 @@ namespace VCore
 
         size_t meshCounter = 0;
         size_t matCounter = 0;
-        int indicesOffset = 0;
+        int indexOffset = 0;
 
         for (auto &&mesh : _Meshes)
         {
@@ -133,14 +133,14 @@ namespace VCore
                     objFile->Write("f");
                     for (char j = 0; j < 3; j++)
                     {
-                        int index = surface.Indices[i + j] + indicesOffset + 1;
+                        int index = surface.Indices[i + j] + indexOffset + 1;
 
                         objFile->Write(" ");
                         objFile->Write(std::to_string(index) + "/" + std::to_string(index) + "/" + std::to_string(index));
                     }
                     objFile->Write("\n");
                 }
-                indicesOffset += surface.Indices.size();
+                indexOffset += surface.Size();
             }
         }
 

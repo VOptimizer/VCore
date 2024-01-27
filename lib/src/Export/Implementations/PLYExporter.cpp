@@ -60,7 +60,7 @@ namespace VCore
                     faceList << "3 " << surface.Indices[i] + indexOffset << " " << surface.Indices[i + 1] + indexOffset << " " << surface.Indices[i + 2] + indexOffset << std::endl;
                     faceCount++;
                 }
-                indexOffset += surface.Indices.size();
+                indexOffset += surface.Size();
             }
 
             // Fileheader

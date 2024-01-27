@@ -426,7 +426,7 @@ namespace VCore
                 indices.push_back(idx);
                 counter++;
             }
-            indexOffset += surface.Vertices.size();
+            indexOffset += surface.Size();
         }
 
         // Creates the material layer. Which is just the way to assign different materials to different polygons.
