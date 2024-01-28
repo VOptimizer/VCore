@@ -42,10 +42,6 @@ namespace VCore
 
         auto &materials = m->Materials;
 
-        auto TotalBBox = m->BBox;
-        Math::Vec3i Beg = TotalBBox.Beg;
-        Math::Vec3f BoxCenter = TotalBBox.GetSize() / 2;
-
         CSlicer Slicer(m, Opaque, _Chunk.Chunk, _Chunk.TotalBBox);
 
         // For all 3 axis (x, y, z)
@@ -134,10 +130,10 @@ namespace VCore
                             int dv[3] = {};
                             dv[Axis1] = h;
                     
-                            Math::Vec3f v1 = Math::Vec3f(x[0], x[1], x[2]) - BoxCenter;
-                            Math::Vec3f v2 = Math::Vec3f(x[0] + du[0], x[1] + du[1], x[2] + du[2]) - BoxCenter;
-                            Math::Vec3f v3 = Math::Vec3f(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2]) - BoxCenter;
-                            Math::Vec3f v4 = Math::Vec3f(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2]) - BoxCenter;
+                            Math::Vec3f v1 = Math::Vec3f(x[0], x[1], x[2]);
+                            Math::Vec3f v2 = Math::Vec3f(x[0] + du[0], x[1] + du[1], x[2] + du[2]);
+                            Math::Vec3f v3 = Math::Vec3f(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2]);
+                            Math::Vec3f v4 = Math::Vec3f(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2]);
 
                             // std::swap(Normal.y, Normal.z);
                             // if(Normal.y != 0)

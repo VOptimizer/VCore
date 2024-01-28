@@ -54,12 +54,7 @@ namespace VCore
         if(m->TexturingType == TexturingTypes::TEXTURED)
             builder.SetTextureMap(&m->TextureMapping);
 
-        auto bbox = m->BBox;
-        Math::Vec3i beg = bbox.Beg;
-        Math::Vec3f boxCenter = bbox.GetSize() / 2;
-
         const CBBox chunkBBox(_Chunk.TotalBBox.Beg, _Chunk.TotalBBox.GetSize());
-
         for(int x = _Chunk.InnerBBox.Beg.x; x <= _Chunk.InnerBBox.End.x; x++)
         {
             for(int y = _Chunk.InnerBBox.Beg.y; y <= _Chunk.InnerBBox.End.y; y++)
@@ -78,75 +73,12 @@ namespace VCore
                             if(visiblity == CVoxel::Visibility::INVISIBLE)
                                 continue;
 
-                            // Math::Vec3f v1, v2, v3, v4, Normal;                            
-                            // switch (visiblity)
-                            // {
-                            //     case CVoxel::Visibility::UP:
-                            //     case CVoxel::Visibility::DOWN:
-                            //     {
-                            //         float PosY = 0;
-                            //         if(visiblity == CVoxel::Visibility::UP)
-                            //         {
-                            //             Normal = Math::Vec3f::UP;
-                            //             PosY = 1;
-                            //         }
-                            //         else
-                            //             Normal = Math::Vec3f::DOWN;
-
-
-                            //         v1 = Math::Vec3f(vpos.x, vpos.y + PosY, vpos.z) - boxCenter;
-                            //         v2 = Math::Vec3f(vpos.x + 1.f, vpos.y + PosY, vpos.z) - boxCenter;
-                            //         v3 = Math::Vec3f(vpos.x, vpos.y + PosY, vpos.z + 1.f) - boxCenter;
-                            //         v4 = Math::Vec3f(vpos.x + 1.f, vpos.y + PosY, vpos.z + 1.f) - boxCenter;
-                            //     }break;
-
-                            //     case CVoxel::Visibility::LEFT:
-                            //     case CVoxel::Visibility::RIGHT:
-                            //     {
-                            //         float Posx = 0;
-                            //         if(visiblity == CVoxel::Visibility::RIGHT)
-                            //         {
-                            //             Normal = Math::Vec3f::RIGHT;
-                            //             Posx = 1;
-                            //         }
-                            //         else
-                            //             Normal = Math::Vec3f::LEFT;
-
-                            //         v1 = Math::Vec3f(vpos.x + Posx, vpos.y + 1.f, vpos.z) - boxCenter;
-                            //         v2 = Math::Vec3f(vpos.x + Posx, vpos.y + 1.f, vpos.z + 1.f) - boxCenter;
-                            //         v3 = Math::Vec3f(vpos.x + Posx, vpos.y, vpos.z) - boxCenter;
-                            //         v4 = Math::Vec3f(vpos.x + Posx, vpos.y, vpos.z + 1.f) - boxCenter;
-                            //     }break;
-
-                            //     case CVoxel::Visibility::FORWARD:
-                            //     case CVoxel::Visibility::BACKWARD:
-                            //     {
-                            //         float PosZ = 0;
-                            //         if(visiblity == CVoxel::Visibility::FORWARD)
-                            //         {
-                            //             Normal = Math::Vec3f::FRONT;
-                            //             PosZ = 1;
-                            //         }
-                            //         else
-                            //             Normal = Math::Vec3f::BACK;
-
-                            //         v1 = Math::Vec3f(vpos.x, vpos.y + 1.f, vpos.z + PosZ) - boxCenter;
-                            //         v2 = Math::Vec3f(vpos.x + 1.f, vpos.y + 1.f, vpos.z + PosZ) - boxCenter;
-                            //         v3 = Math::Vec3f(vpos.x, vpos.y, vpos.z + PosZ) - boxCenter;
-                            //         v4 = Math::Vec3f(vpos.x + 1.f, vpos.y, vpos.z + PosZ) - boxCenter;
-                            //     }break;
-
-                            //     default: break;
-                            // }
-
                             Material mat;
                             if(v->Material < (short)m->Materials.size())
                                 mat = m->Materials[v->Material];
 
                             auto info = FACE_INFOS[i];
-                            builder.AddFace((info.V1 + vpos) - boxCenter, (info.V2 + vpos) - boxCenter, (info.V3 + vpos) - boxCenter, (info.V4 + vpos) - boxCenter, info.Normal, v->Color, mat);
-
-                            // builder.AddFace(v1, v2, v3, v4, Normal, v->Color, mat);
+                            builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
                         }
                     }
                 }

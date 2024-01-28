@@ -132,8 +132,8 @@ namespace VCore
         mesh->SetSize(ReadVector());
 
         auto pos = ReadVector();
-        auto halfSize = (mesh->GetSize() / 2.0);
-        pos += halfSize;
+        // auto halfSize = (mesh->GetSize() / 2.0);
+        // pos += halfSize;
 
         auto sceneNode = std::make_shared<CSceneNode>();
         sceneNode->Position = pos;
@@ -204,7 +204,7 @@ namespace VCore
         }
         free(Data);
 
-        mesh->BBox = CBBox(Beg, End);
+        mesh->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
         m_Models.push_back(mesh);
     }
 

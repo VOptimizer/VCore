@@ -122,7 +122,7 @@ namespace VCore
 
                         ProcessXYZI(m);
                         m_Models.push_back(m);
-                        auto halfSize = (m->GetSize() / 2.0);
+                        Math::Vec3i halfSize = (m->GetSize() / 2.0);
 
                         auto treeNode = m_ModelSceneTreeMapping.at(m_Models.size() - 1);
 
@@ -136,19 +136,14 @@ namespace VCore
                             frame->second.Anim->AddFrame(m, frame->second.FrameTime);
                         }
 
-                        // 1. Translation is always relative to the center of the voxel space size. (Without fraction)
-                        // 2. All meshers centers the mehs in object space so we need to add the fractal part to the translation
-                        // 3. Add the distance from object center to space center and add the start position of the voxel mesh
-
-                        Math::Vec3f spaceCenter = Math::fract(halfSize) + m->BBox.Beg + (m->BBox.GetSize() / 2 - halfSize);
-                        m->Pivot = spaceCenter;
-                        std::swap(spaceCenter.y, spaceCenter.z);
-                        spaceCenter.z *= -1;
-
                         if(isAnimation && !treeNode->Animation)
                         {    
                             auto pos = treeNode->Position;
-                            treeNode->Position = pos + spaceCenter;
+
+                            // Since we are in voxelspace, which begins at 0, 0, 0 and ends at max. 255, 255, 255
+                            // it's necessary to substract the center of this space from the global world space
+                            // in order to get the correct result
+                            treeNode->Position = pos - halfSize;
 
                             treeNode->Animation = frame->second.Anim; 
                             m->Name = treeNode->Name;  
@@ -156,7 +151,11 @@ namespace VCore
                         else if(!isAnimation && !treeNode->Mesh)
                         {
                             auto pos = treeNode->Position;
-                            treeNode->Position = pos + spaceCenter;
+
+                            // Since we are in voxelspace, which begins at 0, 0, 0 and ends at max. 255, 255, 255
+                            // it's necessary to substract the center of this space from the global world space
+                            // in order to get the correct result
+                            treeNode->Position = pos - halfSize;
 
                             treeNode->Mesh = m; 
                             m->Name = treeNode->Name;  
@@ -301,7 +300,7 @@ namespace VCore
             m->SetVoxel(vec, MatIdx, Color, Transparent);
         } 
 
-        m->BBox = CBBox(Beg, End);
+        m->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
     }
 
     std::vector<std::vector<CMagicaVoxelFormat::SFrame>> CMagicaVoxelFormat::ProcessMaterialAndSceneGraph()
