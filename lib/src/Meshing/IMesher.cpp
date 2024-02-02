@@ -23,6 +23,7 @@
  */
 
 #include <stdexcept>
+#include "Implementations/GreedyChunkedMesher.hpp"
 #include "Implementations/GreedyMesher.hpp"
 #include <VCore/Meshing/IMesher.hpp>
 #include "Implementations/MarchingCubesMesher.hpp"
@@ -114,6 +115,17 @@ namespace VCore
         auto chunks = GenerateChunks(m);
         if(chunks.empty())
             return nullptr;
+        else if(chunks.size() == 1)
+        {
+            auto ret = chunks[0].MeshData;
+            if(ret)
+            {
+                ret->Name = m->Name;
+                ret->FrameTime = 0;
+            }
+
+            return ret;
+        }
 
         Mesh ret;
         size_t idx = 0;
@@ -212,6 +224,7 @@ namespace VCore
             case MesherTypes::SIMPLE: return std::make_shared<CSimpleMesher>();
             case MesherTypes::GREEDY: return std::make_shared<CGreedyMesher>();
             case MesherTypes::MARCHING_CUBES: return std::make_shared<CMarchingCubesMesher>();
+            case MesherTypes::GREEDY_CHUNKED: return std::make_shared<CGreedyChunkedMesher>();
             default:
                 throw std::runtime_error("Invalid mesher type!");
         }

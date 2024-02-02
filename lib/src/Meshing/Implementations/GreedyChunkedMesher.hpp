@@ -22,26 +22,21 @@
  * SOFTWARE.
  */
 
-#ifndef GREEDYMESHER_HPP
-#define GREEDYMESHER_HPP
+#ifndef GREEDYCHUNKEDMESHER_HPP
+#define GREEDYCHUNKEDMESHER_HPP
 
 #include <vector>
 #include <VCore/Meshing/IMesher.hpp>
-#include "Slicer/Slices.hpp"
 
 namespace VCore
 {
-    class CGreedyMesher : public IMesher
+    class CGreedyChunkedMesher : public IMesher
     {
         public:
-            CGreedyMesher() : IMesher() {}
-
-            std::vector<SMeshChunk> GenerateChunks(VoxelModel _Mesh, bool _OnlyDirty = false) override;
-
-            virtual ~CGreedyMesher() = default;
+            CGreedyChunkedMesher() : IMesher() {}
+            virtual ~CGreedyChunkedMesher() = default;
         protected:
-            CSliceCollection GenerateSlicedChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque);
-            // SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
+            SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
     };
 }
 

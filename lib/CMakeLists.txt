@@ -26,10 +26,12 @@ set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelModel.cpp"
          "${PROJECT_SOURCE_DIR}/src/Formats/IVoxelFormat.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/SimpleMesher.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/GreedyChunkedMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/GreedyMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/IMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/MarchingCubesMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/Slicer/Slicer.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/Slicer/Slices.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/MeshBuilder.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/IExporter.cpp"
 

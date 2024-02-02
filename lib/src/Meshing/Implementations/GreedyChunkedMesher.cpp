@@ -29,120 +29,20 @@
 #include <VCore/Meshing/MeshBuilder.hpp>
 #include <vector>
 
-#include "GreedyMesher.hpp"
+#include "GreedyChunkedMesher.hpp"
 
 namespace VCore
 {
-    template<typename R>
-    bool is_ready(std::future<R> const& f)
-    { return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }
-
-    std::vector<SMeshChunk> CGreedyMesher::GenerateChunks(VoxelModel _Mesh, bool _OnlyDirty)
+    SMeshChunk CGreedyChunkedMesher::GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque)
     {
-       std::vector<SMeshChunk> ret;
-
-        CVoxelSpace::querylist chunks;
-        if(m_Frustum)
-            chunks = _Mesh->QueryChunks(m_Frustum);
-        else
-        {
-            if(!_OnlyDirty)
-                chunks = _Mesh->QueryChunks();
-            else
-                chunks = _Mesh->QueryDirtyChunks();
-        }
-
-        CSliceCollection collection;
-
-        std::vector<std::future<CSliceCollection>> futures;
-        for (auto &&c : chunks)
-        {
-            _Mesh->GetVoxels().markAsProcessed(c);
-            futures.push_back(std::async(&CGreedyMesher::GenerateSlicedChunk, this, _Mesh, c, true));
-            while(futures.size() >= std::thread::hardware_concurrency())
-            {
-                auto it = futures.begin();
-                while (it != futures.end())
-                {
-                    if(is_ready(*it))
-                    {
-                        auto result = it->get();
-                        collection.Merge(result);                     
-                        it = futures.erase(it);
-                    }
-                    else
-                        it++;
-                }
-            }
-        }
-
-        auto it = futures.begin();
-        while (it != futures.end())
-        {
-            it->wait();
-            auto result = it->get();
-            collection.Merge(result);       
-            it = futures.erase(it);
-        }
-
         CMeshBuilder builder;
-        builder.AddTextures(_Mesh->Textures);
-        auto &materials = _Mesh->Materials;
+        builder.AddTextures(m->Textures);
 
-        collection.Optimize();
-
-        // Generate the mesh.
-        for (size_t i = 0; i < 3; i++)
-        {
-            auto &slices = collection.mSlices[i];
-            for (auto &&slice : slices) // std::map<int, Slice>;
-            {
-                for (auto &&height : slice.second) // std::map<int, Quads>;
-                {
-                    for (auto &&quad : height.second)
-                    {
-                        int Axis1 = (i + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
-                        int Axis2 = (i + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
-
-                        Math::Vec3f du;
-                        du.v[Axis2] = quad.mQuad.second.v[Axis2];
-
-                        Math::Vec3f dv;
-                        dv.v[Axis1] = quad.mQuad.second.v[Axis1];
-
-
-                        Math::Vec3f v1 = quad.mQuad.first;
-                        Math::Vec3f v2 = quad.mQuad.first + du;
-                        Math::Vec3f v3 = quad.mQuad.first + dv;
-                        Math::Vec3f v4 = quad.mQuad.first + quad.mQuad.second;
-
-                        Material mat;
-                        if(quad.Material < (int)materials.size())
-                            mat = materials[quad.Material];
-
-                        builder.AddFace(v1, v2, v3, v4, quad.Normal, quad.Color, mat);
-                    }
-                }
-            }
-        }
-
-        // We only have always one chunk using this technique.
-        SMeshChunk chunk;
-        chunk.UniqueId = (size_t)_Mesh.get();
-        chunk.InnerBBox = _Mesh->BBox;
-        chunk.TotalBBox = _Mesh->BBox;
-        chunk.MeshData = builder.Build();
-
-        ret.push_back(chunk);
-        
-        return ret;
-    }
-
-    CSliceCollection CGreedyMesher::GenerateSlicedChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque)
-    {
         CBBox BBox = _Chunk.InnerBBox;
+
+        auto &materials = m->Materials;
+
         CSlicer Slicer(m, Opaque, _Chunk.Chunk, _Chunk.TotalBBox);
-        CSliceCollection result;
 
         // For all 3 axis (x, y, z)
         for (size_t Axis = 0; Axis < 3; Axis++)
@@ -157,7 +57,6 @@ namespace VCore
             for (x[Axis] = BBox.Beg.v[Axis] -1; x[Axis] <= BBox.End.v[Axis];)
             {
                 ++x[Axis];
-                result.AddSlice(Axis, x[Axis]);
 
                 // Foreach slice go over a 2d plane. 
                 for (int HeightAxis = BBox.Beg.v[Axis1]; HeightAxis <= BBox.End.v[Axis1]; ++HeightAxis)
@@ -231,22 +130,21 @@ namespace VCore
                             int dv[3] = {};
                             dv[Axis1] = h;
                     
-                            // Math::Vec3f v1 = Math::Vec3f(x[0], x[1], x[2]);
-                            // Math::Vec3f v2 = Math::Vec3f(x[0] + du[0], x[1] + du[1], x[2] + du[2]);
-                            // Math::Vec3f v3 = Math::Vec3f(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2]);
-                            // Math::Vec3f v4 = Math::Vec3f(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2]);
+                            Math::Vec3f v1 = Math::Vec3f(x[0], x[1], x[2]);
+                            Math::Vec3f v2 = Math::Vec3f(x[0] + du[0], x[1] + du[1], x[2] + du[2]);
+                            Math::Vec3f v3 = Math::Vec3f(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2]);
+                            Math::Vec3f v4 = Math::Vec3f(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2]);
 
-                            // // std::swap(Normal.y, Normal.z);
-                            // // if(Normal.y != 0)
-                            // //     Normal.y *= -1;
+                            // std::swap(Normal.y, Normal.z);
+                            // if(Normal.y != 0)
+                            //     Normal.y *= -1;
 
-                            // Material mat;
-                            // if(material < (int)materials.size())
-                            //     mat = materials[material];
+                            Material mat;
+                            if(material < (int)materials.size())
+                                mat = materials[material];
 
-                            // builder.AddFace(v1, v2, v3, v4, Normal, Color, mat);
+                            builder.AddFace(v1, v2, v3, v4, Normal, Color, mat);
                             Slicer.AddProcessedQuad(Math::Vec3i(x[0], x[1], x[2]), Math::Vec3i(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2]));
-                            result.AddQuadInfo(Axis, x[Axis], x[Axis1], CQuadInfo({Math::Vec3i(x[0], x[1], x[2]), Math::Vec3i(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2])}, Normal, material, Color));
 
                             // Increment counters and continue
                             WidthAxis += w;
@@ -262,6 +160,12 @@ namespace VCore
             // break;
         }
 
-        return result;
+        SMeshChunk chunk;
+        chunk.UniqueId = _Chunk.UniqueId;
+        chunk.InnerBBox = _Chunk.InnerBBox;
+        chunk.TotalBBox = _Chunk.TotalBBox;
+        chunk.MeshData = builder.Build();
+
+        return chunk;
     }
 }
