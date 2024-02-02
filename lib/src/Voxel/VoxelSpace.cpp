@@ -38,7 +38,7 @@ namespace VCore
         // Filters until the first none filtered element is reached
         if(m_FilterFunction)
             it++;
-        else
+        else if(m_Chunks->begin() != m_Chunks->end())
         {
             CBBox bbox(it.m_Iterator->first, it.m_Iterator->first + m_ChunkSize);
             it.m_ChunkMeta = {(size_t)&it.m_Iterator->second, &it.m_Iterator->second, bbox, it.m_Iterator->second.inner_bbox(it.m_Iterator->first)};

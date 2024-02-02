@@ -25,7 +25,7 @@
 #ifndef SLICES_HPP
 #define SLICES_HPP
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <VCore/Math/Vector.hpp>
 
@@ -35,8 +35,8 @@ namespace VCore
 
     using Quad = std::pair<Math::Vec3i, Math::Vec3i>;
     using Quads = std::vector<CQuadInfo>;
-    using Slice = std::map<int, Quads>;
-    using Slices = std::map<int, Slice>;
+    using Slice = std::unordered_map<int, Quads>;
+    using Slices = std::unordered_map<int, Slice>;
 
     class CQuadInfo
     {

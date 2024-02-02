@@ -162,8 +162,11 @@ namespace VCore
         if(sceneTree->Mesh)
         {
             auto mesh = GenerateMesh(sceneTree->Mesh);
-            mesh->ModelMatrix = modelMatrix;
-            ret.push_back(mesh);
+            if(mesh)
+            {
+                mesh->ModelMatrix = modelMatrix;
+                ret.push_back(mesh);
+            }
         }
         else if(sceneTree->Animation)
         {

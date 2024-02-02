@@ -92,23 +92,23 @@ namespace VCore
         collection.Optimize();
 
         // Generate the mesh.
-        for (size_t i = 0; i < 3; i++)
+        for (size_t runAxis = 0; runAxis < 3; runAxis++)
         {
-            auto &slices = collection.mSlices[i];
+            auto &slices = collection.mSlices[runAxis];
             for (auto &&slice : slices) // std::map<int, Slice>;
             {
                 for (auto &&height : slice.second) // std::map<int, Quads>;
                 {
                     for (auto &&quad : height.second)
                     {
-                        int Axis1 = (i + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
-                        int Axis2 = (i + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
+                        int heightAxis = (runAxis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
+                        int widthAxis = (runAxis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
 
                         Math::Vec3f du;
-                        du.v[Axis2] = quad.mQuad.second.v[Axis2];
+                        du.v[widthAxis] = quad.mQuad.second.v[widthAxis];
 
                         Math::Vec3f dv;
-                        dv.v[Axis1] = quad.mQuad.second.v[Axis1];
+                        dv.v[heightAxis] = quad.mQuad.second.v[heightAxis];
 
 
                         Math::Vec3f v1 = quad.mQuad.first;

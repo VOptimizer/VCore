@@ -56,7 +56,7 @@ void HelpDialog(const argh::parser &cmdl)
 
     cout << "Usage: " << CliName << " [INPUT] [OPTIONS]\n" << endl;
     cout << "-h, --help\tThis dialog" << endl;
-    cout << "-m, --mesher\tSets the mesher to meshify the voxel mesh. Default: simple. (simple, greedy, marching_cubes)" << endl;
+    cout << "-m, --mesher\tSets the mesher to meshify the voxel mesh. Default: simple. (simple, greedy, greedy_chunked, marching_cubes)" << endl;
     cout << "-o, --output\tOutput path. If the output path doesn't exist it will be created" << endl;
     cout << "-w, --worldspace\tTransforms all vertices to worldspace\n" << endl;
     cout << "Examples:" << endl;
@@ -251,6 +251,8 @@ int main(int argc, char const *argv[])
             Mesher = VCore::IMesher::Create(VCore::MesherTypes::GREEDY);
         else if(MesherType == "marching_cubes")
             Mesher = VCore::IMesher::Create(VCore::MesherTypes::MARCHING_CUBES);
+        else if(MesherType == "greedy_chunked")
+            Mesher = VCore::IMesher::Create(VCore::MesherTypes::GREEDY_CHUNKED);
         else
             Mesher = VCore::IMesher::Create(VCore::MesherTypes::SIMPLE);
 
