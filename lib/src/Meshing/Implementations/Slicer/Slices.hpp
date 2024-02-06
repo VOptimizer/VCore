@@ -119,9 +119,9 @@ namespace VCore
              * @brief Finds the best spot to insert other quads later.
              * Uses a binary search operation to quickly find the position.
             */
-            Quads::const_iterator FindInsertionPoint(const Quads &_Haystack, const Math::Vec3i _Pos);
+            Quads::const_iterator FindInsertionPoint(const Quads &_Haystack, const Math::Vec3i &_Pos);
 
-            Quads::const_iterator FindQuad(const Quads &_Haystack, const Math::Vec3i _Pos);
+            Quads::const_iterator FindQuad(const Quads &_Haystack, const Math::Vec3i &_Pos);
     };
 } // namespace VCore
 

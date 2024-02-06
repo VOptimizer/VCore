@@ -311,7 +311,7 @@ Ref<ImageTexture> CGodotVoxelOptimizer::ConvertTextureToGodot(const VCore::Textu
             VCore::CColor c;
             c.FromRGBA(_Texture->GetPixel(VCore::Math::Vec2ui(x, y)));
 
-            img->set_pixel(x, 0, Color(c.R / 255.f, c.G / 255.f, c.B / 255.f, c.A / 255.f));
+            img->set_pixel(x, y, Color(c.R / 255.f, c.G / 255.f, c.B / 255.f, c.A / 255.f));
         }
     }
     img->unlock();

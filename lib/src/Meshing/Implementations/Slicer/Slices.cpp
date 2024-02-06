@@ -23,12 +23,15 @@
  */
 
 #include "Slices.hpp"
+#include "../../../Misc/TexturePacker.hpp"
 #include <future>
 
 namespace VCore
 {
     void CSliceCollection::Optimize(bool _GenerateTexture)
     {
+        CTexturePacker packer(Math::Vec2ui(256, 256), 1.5f);
+
         // std::vector<CQuadInfo *> texturedQuads;
         // std::vector<stbrp_rect> rects;
         // std::vector<stbrp_node> nodes;
@@ -140,6 +143,8 @@ namespace VCore
                     
                         if(_GenerateTexture)
                         {
+                            packer.AddRect(Math::Vec2ui(quad.mQuad.second.v[widthAxis], quad.mQuad.second.v[heightAxis]), &quad);
+
                             // texturedQuads.push_back(&quad);
 
                             // Prepare rect pack algorithm
@@ -166,14 +171,15 @@ namespace VCore
     
         if(_GenerateTexture)
         {
-            // MeshTexture = std::make_shared<CTexture>(Math::Vec2ui(ctx.width, ctx.height));
-            // for (auto &&rect : rects)
-            // {
-            //     auto quad = texturedQuads[rect.id];
-            //     quad->UvStart = Math::Vec2ui(rect.x, rect.y);
+            MeshTexture = std::make_shared<CTexture>(packer.GetCanvasSize());
+            auto &rects = packer.GetRects();
+            for (auto &&rect : rects)
+            {
+                auto quad = (CQuadInfo*)rect.Reference;
+                quad->UvStart = rect.Position + Math::Vec2ui(0, MeshTexture->GetSize().y);
 
-            //     MeshTexture->AddRawPixels(quad->RawTexture, quad->UvStart, Math::Vec2ui(rect.w, rect.h));
-            // }
+                MeshTexture->AddRawPixels(quad->RawTexture, rect.Position, rect.Size);
+            }
         }
     }
 
@@ -205,7 +211,7 @@ namespace VCore
             mSlices[_Axis][_Depth][_Height].push_back(_Info);
     }
 
-    Quads::const_iterator CSliceCollection::FindInsertionPoint(const Quads &_Haystack, const Math::Vec3i _Pos)
+    Quads::const_iterator CSliceCollection::FindInsertionPoint(const Quads &_Haystack, const Math::Vec3i &_Pos)
     {
         if(_Haystack.empty())
             return _Haystack.end();
@@ -226,7 +232,7 @@ namespace VCore
         return _Haystack.begin() + left;
     }
 
-    Quads::const_iterator CSliceCollection::FindQuad(const Quads &_Haystack, const Math::Vec3i _Pos)
+    Quads::const_iterator CSliceCollection::FindQuad(const Quads &_Haystack, const Math::Vec3i &_Pos)
     {
         int left = 0, right = _Haystack.size() - 1;
         while (left <= right)
