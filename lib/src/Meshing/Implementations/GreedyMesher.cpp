@@ -86,10 +86,14 @@ namespace VCore
         }
 
         CMeshBuilder builder;
-        builder.AddTextures(_Mesh->Textures);
+        auto textures = _Mesh->Textures;
         auto &materials = _Mesh->Materials;
 
-        collection.Optimize();
+        collection.Optimize(m_GenerateTexture);
+        if(m_GenerateTexture)
+            textures = {{TextureType::DIFFIUSE, collection.MeshTexture}};
+
+        builder.AddTextures(textures);
 
         // Generate the mesh.
         for (size_t runAxis = 0; runAxis < 3; runAxis++)
@@ -110,7 +114,6 @@ namespace VCore
                         Math::Vec3f dv;
                         dv.v[heightAxis] = quad.mQuad.second.v[heightAxis];
 
-
                         Math::Vec3f v1 = quad.mQuad.first;
                         Math::Vec3f v2 = quad.mQuad.first + du;
                         Math::Vec3f v3 = quad.mQuad.first + dv;
@@ -119,6 +122,8 @@ namespace VCore
                         Material mat;
                         if(quad.Material < (int)materials.size())
                             mat = materials[quad.Material];
+
+                        
 
                         builder.AddFace(v1, v2, v3, v4, quad.Normal, quad.Color, mat);
                     }
@@ -143,6 +148,8 @@ namespace VCore
         CBBox BBox = _Chunk.InnerBBox;
         CSlicer Slicer(m, Opaque, _Chunk.Chunk, _Chunk.TotalBBox);
         CSliceCollection result;
+
+        auto albedo = m->Textures[TextureType::DIFFIUSE];
 
         // For all 3 axis (x, y, z)
         for (size_t Axis = 0; Axis < 3; Axis++)
@@ -169,12 +176,17 @@ namespace VCore
                         Pos.v[Axis1] = HeightAxis;
                         Pos.v[Axis2] = WidthAxis;
 
+                        std::vector<CColor> rawTexture;
+
                         if(Slicer.IsFace(Pos))
                         {
                             int w, h;
                             Math::Vec3i Normal = Slicer.Normal();
                             int material = Slicer.Material();
                             int Color = Slicer.Color();
+
+                            if(m_GenerateTexture)
+                                rawTexture.push_back(Slicer.Color());
 
                             //Claculates the width of the rect.
                             for (w = 1; WidthAxis + w <= BBox.End.v[Axis2]; w++) 
@@ -186,11 +198,13 @@ namespace VCore
                                 if(IsFace)
                                 {
                                     Math::Vec3i FaceNormal = Slicer.Normal();
-                                    IsFace = Normal == FaceNormal && material == Slicer.Material() && Color == Slicer.Color();
+                                    IsFace = Normal == FaceNormal && material == Slicer.Material() && (m_GenerateTexture || Color == Slicer.Color());
                                 }
 
                                 if(!IsFace)
                                     break;
+                                else if(m_GenerateTexture)
+                                    rawTexture.push_back(albedo->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
                             }
 
                             bool done = false;
@@ -207,7 +221,7 @@ namespace VCore
                                     if(IsFace)
                                     {
                                         Math::Vec3i FaceNormal = Slicer.Normal();
-                                        IsFace = Normal == FaceNormal && material == Slicer.Material() && Color == Slicer.Color();
+                                        IsFace = Normal == FaceNormal && material == Slicer.Material() && (m_GenerateTexture || Color == Slicer.Color());
                                     }
 
                                     // If there's a hole in the mask, exit
@@ -216,6 +230,8 @@ namespace VCore
                                         done = true;
                                         break;
                                     }
+                                    else if(m_GenerateTexture)
+                                        rawTexture.push_back(albedo->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
                                 }
 
                                 if (done)
@@ -246,7 +262,11 @@ namespace VCore
 
                             // builder.AddFace(v1, v2, v3, v4, Normal, Color, mat);
                             Slicer.AddProcessedQuad(Math::Vec3i(x[0], x[1], x[2]), Math::Vec3i(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2]));
-                            result.AddQuadInfo(Axis, x[Axis], x[Axis1], CQuadInfo({Math::Vec3i(x[0], x[1], x[2]), Math::Vec3i(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2])}, Normal, material, Color));
+                            
+                            if(m_GenerateTexture)
+                                result.AddQuadInfo(Axis, x[Axis], x[Axis1], CQuadInfo({Math::Vec3i(x[0], x[1], x[2]), Math::Vec3i(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2])}, Normal, material, rawTexture));
+                            else
+                                result.AddQuadInfo(Axis, x[Axis], x[Axis1], CQuadInfo({Math::Vec3i(x[0], x[1], x[2]), Math::Vec3i(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2])}, Normal, material, Color));
 
                             // Increment counters and continue
                             WidthAxis += w;

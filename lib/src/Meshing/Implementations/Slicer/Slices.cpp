@@ -27,8 +27,19 @@
 
 namespace VCore
 {
-    void CSliceCollection::Optimize()
+    void CSliceCollection::Optimize(bool _GenerateTexture)
     {
+        // std::vector<CQuadInfo *> texturedQuads;
+        // std::vector<stbrp_rect> rects;
+        // std::vector<stbrp_node> nodes;
+        // stbrp_context ctx;
+
+        // if(_GenerateTexture)
+        // {
+        //     nodes.resize(256 * 256);
+        //     stbrp_init_target(&ctx, 256, 256, &nodes[0], nodes.size());
+        // }
+
         for (size_t runAxis = 0; runAxis < 3; runAxis++)
         {
             int heightAxis = (runAxis + 1) % 3;
@@ -52,8 +63,20 @@ namespace VCore
                         // Combine two quads into one, if these properties are the same.
                         if(((quad.mQuad.first.v[widthAxis] + quad.mQuad.second.v[widthAxis]) == quad2.mQuad.first.v[widthAxis]) &&
                            (quad.mQuad.second.v[heightAxis] == quad2.mQuad.second.v[heightAxis]) &&
-                           (quad.Material == quad2.Material) && (quad.Color == quad2.Color))
+                           (quad.Normal == quad2.Normal) && (quad.Material == quad2.Material) && (_GenerateTexture || (quad.Color == quad2.Color)))
+                        {
                             quad.mQuad.second.v[widthAxis] += quad2.mQuad.second.v[widthAxis];
+
+                            if(_GenerateTexture)
+                            {
+                                int stride1 = quad.mQuad.first.v[widthAxis];
+                                int stride2 = quad2.mQuad.first.v[widthAxis];
+
+                                // Merges the two raw textures into one.
+                                for (size_t i = 0; i < quad2.RawTexture.size() / stride2; i++)
+                                    quad.RawTexture.insert(quad.RawTexture.begin() + i * stride1, quad2.RawTexture.begin() + stride2 * i, quad2.RawTexture.begin() + stride2 * (i + 1));
+                            }
+                        }
                         else
                         {
                             // Put the current quad in a new list.
@@ -77,9 +100,8 @@ namespace VCore
                 {
                     for (auto &&quad : height.second)
                     {
-                        // Dangerous!!!
                         // Combines all quads in a column, which are sharing the same properties.
-                        while (true)
+                        while (true)  // Dangerous!!!
                         {
                             int heightPos = quad.mQuad.first.v[heightAxis] + quad.mQuad.second.v[heightAxis];
                             auto pos = quad.mQuad.first;
@@ -98,9 +120,13 @@ namespace VCore
                             {
                                 // Combine two quads into one.
                                 if(quad.mQuad.second.v[widthAxis] == it->mQuad.second.v[widthAxis] &&
-                                   quad.Material == it->Material && quad.Color == it->Color) 
+                                   quad.Normal == it->Normal && quad.Material == it->Material && (_GenerateTexture || (quad.Color == it->Color))) 
                                 {
                                     quad.mQuad.second.v[heightAxis] += it->mQuad.second.v[heightAxis];
+
+                                    // Merges the two raw textures into one.
+                                    if(_GenerateTexture)
+                                        quad.RawTexture.insert(quad.RawTexture.end(), it->RawTexture.begin(), it->RawTexture.end());
 
                                     // Remove the quad.
                                     quadList.erase(it);
@@ -111,9 +137,43 @@ namespace VCore
                             else
                                 break;
                         }
+                    
+                        if(_GenerateTexture)
+                        {
+                            // texturedQuads.push_back(&quad);
+
+                            // Prepare rect pack algorithm
+                            // stbrp_rect rect = {};
+                            // rect.id = texturedQuads.size() - 1;
+                            // rect.w = quad.mQuad.second.v[widthAxis];
+                            // rect.h = quad.mQuad.second.v[heightAxis];
+                            // rects.push_back(rect);
+
+                            // // Resize "canvas", if neccessary
+                            // while(stbrp_pack_rects(&ctx, &rects[0], rects.size()) == 0)
+                            // {
+                            //     int newW = ctx.width * 1.5f;
+                            //     int newH = ctx.height * 1.5f;
+                            //     nodes.resize(newW * newH);
+
+                            //     stbrp_init_target(&ctx, newW, newH, &nodes[0], nodes.size());
+                            // }
+                        }
                     }
                 }
             }
+        }
+    
+        if(_GenerateTexture)
+        {
+            // MeshTexture = std::make_shared<CTexture>(Math::Vec2ui(ctx.width, ctx.height));
+            // for (auto &&rect : rects)
+            // {
+            //     auto quad = texturedQuads[rect.id];
+            //     quad->UvStart = Math::Vec2ui(rect.x, rect.y);
+
+            //     MeshTexture->AddRawPixels(quad->RawTexture, quad->UvStart, Math::Vec2ui(rect.w, rect.h));
+            // }
         }
     }
 

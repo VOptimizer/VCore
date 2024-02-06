@@ -40,7 +40,8 @@ namespace VCore
         SIMPLE,
         GREEDY,
         MARCHING_CUBES,
-        GREEDY_CHUNKED   //!< Old legacy greedy mesher, which looks very chunky.
+        GREEDY_CHUNKED,   //!< Old legacy greedy mesher, which looks very chunky.
+        GREEDY_TEXTURED,
     };
 
     struct SMeshChunk : public SChunkMeta

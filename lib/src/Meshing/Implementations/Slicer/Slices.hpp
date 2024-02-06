@@ -25,9 +25,11 @@
 #ifndef SLICES_HPP
 #define SLICES_HPP
 
+#include <map>
 #include <unordered_map>
 #include <vector>
 #include <VCore/Math/Vector.hpp>
+#include <VCore/Meshing/Texture.hpp>
 
 namespace VCore
 {
@@ -35,7 +37,7 @@ namespace VCore
 
     using Quad = std::pair<Math::Vec3i, Math::Vec3i>;
     using Quads = std::vector<CQuadInfo>;
-    using Slice = std::unordered_map<int, Quads>;
+    using Slice = std::map<int, Quads>;
     using Slices = std::unordered_map<int, Slice>;
 
     class CQuadInfo
@@ -43,6 +45,7 @@ namespace VCore
         public:
             CQuadInfo() = default;
             CQuadInfo(const Quad &_Quad, const Math::Vec3i &_Normal, int _Material, int _Color) : mQuad(_Quad), Normal(_Normal), Material(_Material), Color(_Color) {}
+            CQuadInfo(const Quad &_Quad, const Math::Vec3i &_Normal, int _Material, const std::vector<CColor> &_RawTexture) : CQuadInfo(_Quad, _Normal, _Material, 0) { RawTexture = _RawTexture; }
             CQuadInfo(CQuadInfo &&_Other) { *this = std::move(_Other); }
             CQuadInfo(const CQuadInfo &_Other) { *this = _Other; }
 
@@ -52,6 +55,7 @@ namespace VCore
                 Normal = std::move(_Other.Normal);
                 Material = std::move(_Other.Material);
                 Color = std::move(_Other.Color);
+                RawTexture = std::move(_Other.RawTexture);
                 return *this;
             }
 
@@ -61,19 +65,23 @@ namespace VCore
                 Normal = _Other.Normal;
                 Material = _Other.Material;
                 Color = _Other.Color;
+                RawTexture = _Other.RawTexture;
                 return *this;
             }
 
             Quad mQuad;
             Math::Vec3i Normal;
             int Material;
-            int Color;   
+            int Color;
+            Math::Vec2ui UvStart;
+            std::vector<CColor> RawTexture;
     };
 
     class CSliceCollection
     {
         public:
             Slices mSlices[3];
+            Texture MeshTexture;
 
             CSliceCollection() = default;
             CSliceCollection(CSliceCollection &&_Other) { *this = std::move(_Other); }
@@ -82,13 +90,14 @@ namespace VCore
             {
                 for (size_t i = 0; i < 3; i++)
                     mSlices[i] = std::move(_Other.mSlices[i]);
+                MeshTexture = std::move(_Other.MeshTexture);
                 return *this;
             }
 
             /**
              * @brief Tries to combine as many quads into one as possible.
              */
-            void Optimize();
+            void Optimize(bool _GenerateTexture);
 
             /**
              * @brief Merges an another collection into this one.

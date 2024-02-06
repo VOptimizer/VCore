@@ -279,21 +279,16 @@ namespace VCore
             {
                 newMatIdx = IT->second;
                 Transparent = m_Materials[newMatIdx]->Transparency != 0.0;
-                if(Transparent)
-                {
-                    int k= 0;
-                    k++;
-                }
             }
 
             // Remaps the material index to the local one.
-            IT = modelMaterialMapping.find(MatIdx);
+            IT = modelMaterialMapping.find(newMatIdx);
             if(IT != modelMaterialMapping.end())
                 MatIdx = IT->second;
             else
             {
                 m->Materials.push_back(m_Materials[newMatIdx]);
-                modelMaterialMapping[MatIdx] = m->Materials.size() - 1;
+                modelMaterialMapping[newMatIdx] = m->Materials.size() - 1;
                 MatIdx = m->Materials.size() - 1;
             }
 
@@ -361,7 +356,10 @@ namespace VCore
                         }
 
                         if(MaterialType == "_diffuse" || MaterialType.empty())
+                        {
+                            m_MaterialMapping.insert({ID, 0});
                             continue;
+                        }
                         
                         m_Materials.push_back(Mat);
                         m_MaterialMapping.insert({ID, m_Materials.size() - 1});

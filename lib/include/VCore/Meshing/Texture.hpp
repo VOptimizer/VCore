@@ -51,6 +51,8 @@ namespace VCore
             void AddPixel(const CColor &_Color, const Math::Vec2ui &_Position);
             void AddPixel(const CColor &_Color);
 
+            void AddRawPixels(const std::vector<CColor> &_Pixels, const Math::Vec2ui &_Position, const Math::Vec2ui &_Size);
+
             inline Math::Vec2ui GetSize() const
             {
                 return m_Size;

@@ -228,6 +228,7 @@ namespace VCore
             case MesherTypes::GREEDY: return std::make_shared<CGreedyMesher>();
             case MesherTypes::MARCHING_CUBES: return std::make_shared<CMarchingCubesMesher>();
             case MesherTypes::GREEDY_CHUNKED: return std::make_shared<CGreedyChunkedMesher>();
+            case MesherTypes::GREEDY_TEXTURED: return std::make_shared<CGreedyMesher>(true);
             default:
                 throw std::runtime_error("Invalid mesher type!");
         }
