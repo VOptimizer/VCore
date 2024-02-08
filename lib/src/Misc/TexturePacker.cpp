@@ -45,32 +45,69 @@ namespace VCore
         else
         {
             auto it = FindClosest(_Size);
-            if(it == m_FreeRects.end())
-            {
-                // TODO: Grow
-            }
-            else
-            {
-                SRect closest = *it;
-                m_FreeRects.erase(it);
+            SRect closest = *it;
 
-                SRect rect(closest.Position, _Size, _Ref);
-                if(_Size.x < closest.Size.x)
+            while((it == m_FreeRects.end()) || (_Size > closest.Size))
+            {
+                auto newsize = m_CanvasSize * m_ScaleFactor;
+                std::vector<SRect> resized;
+
+                it = m_FreeRects.begin();
+                while (it != m_FreeRects.end())
                 {
-                    SRect left(closest.Position + Math::Vec2ui(rect.Size.x, 0), closest.Size - Math::Vec2ui(rect.Size.x, 0), nullptr);
-                    auto it = FindClosest(left.Size);
-                    m_FreeRects.insert(it, left);
+                    auto rect = *it;
+                    bool erase = false;
+
+                    if(rect.Position.x + rect.Size.x == m_CanvasSize.x)
+                    {
+                        erase = true;
+                        rect.Size.x = (newsize.x - rect.Position.x);
+                    }
+
+                    if(rect.Position.y + rect.Size.y == m_CanvasSize.y)
+                    {
+                        erase = true;
+                        rect.Size.y = (newsize.y - rect.Position.y);
+                    }  
+
+                    if(erase)
+                    {
+                        it = m_FreeRects.erase(it);
+                        resized.push_back(rect);
+                    }
+                    else
+                        it++;
                 }
 
-                if(_Size.y < closest.Size.y)
+                for (auto &&rect : resized)
                 {
-                    SRect down(closest.Position + Math::Vec2ui(0, rect.Size.y), Math::Vec2ui(rect.Size.x, closest.Size.y - rect.Size.y), nullptr);
-                    auto it = FindClosest(down.Size);
-                    m_FreeRects.insert(it, down);
+                    auto it = FindClosest(rect.Size);
+                    m_FreeRects.insert(it, rect);
                 }
 
-                m_Rects.push_back(rect);
+                m_CanvasSize = newsize;  
+                it = FindClosest(_Size);  
+                closest = *it;
             }
+
+            m_FreeRects.erase(it);
+
+            SRect rect(closest.Position, _Size, _Ref);
+            if(_Size.x < closest.Size.x)
+            {
+                SRect left(closest.Position + Math::Vec2ui(rect.Size.x, 0), closest.Size - Math::Vec2ui(rect.Size.x, 0), nullptr);
+                auto it = FindClosest(left.Size);
+                m_FreeRects.insert(it, left);
+            }
+
+            if(_Size.y < closest.Size.y)
+            {
+                SRect down(closest.Position + Math::Vec2ui(0, rect.Size.y), Math::Vec2ui(rect.Size.x, closest.Size.y - rect.Size.y), nullptr);
+                auto it = FindClosest(down.Size);
+                m_FreeRects.insert(it, down);
+            }
+
+            m_Rects.push_back(rect);
         }
     }
 

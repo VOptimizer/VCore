@@ -103,6 +103,14 @@ namespace VCore
                     return y > vr.y;
                 }
 
+                inline bool operator<(const TVector2 &vr) const
+                {
+                    if(x != vr.x)
+                        return x < vr.x;
+
+                    return y < vr.y;
+                }
+
                 inline TVector2 operator/(const TVector2 &vr) const
                 {
                     return TVector2(x / vr.x, y / vr.y);

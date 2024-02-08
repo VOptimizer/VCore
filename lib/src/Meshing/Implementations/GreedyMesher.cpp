@@ -130,29 +130,29 @@ namespace VCore
                             if(faceNormal == quad.Normal)
                             {
                                 builder.AddFace(
-                                    SVertex(v1, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v1, quad.Normal, Math::Vec2f(quad.UvStart) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
                                     mat);
 
                                 builder.AddFace(
-                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v4, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v4, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
                                     mat);
-                            }
+                            } 
                             else
                             {
                                 builder.AddFace(
-                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v1, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v1, quad.Normal, Math::Vec2f(quad.UvStart) / Math::Vec2f(collection.MeshTexture->GetSize())),
                                     mat);
 
                                 builder.AddFace(
-                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v4, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v4, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.MeshTexture->GetSize())),
                                     mat);
                             }
                         }
@@ -218,7 +218,7 @@ namespace VCore
                             int Color = Slicer.Color();
 
                             if(m_GenerateTexture)
-                                rawTexture.push_back(Slicer.Color());
+                                rawTexture.push_back(albedo->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
 
                             //Claculates the width of the rect.
                             for (w = 1; WidthAxis + w <= BBox.End.v[Axis2]; w++) 

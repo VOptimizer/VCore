@@ -317,7 +317,7 @@ Ref<ImageTexture> CGodotVoxelOptimizer::ConvertTextureToGodot(const VCore::Textu
     img->unlock();
 
     Ref<ImageTexture> tex = ImageTexture::_new();
-    tex->create_from_image(img);
+    tex->create_from_image(img, 0);
 
     return tex;
 }
@@ -331,6 +331,7 @@ Ref<SpatialMaterial> CGodotVoxelOptimizer::ConvertMaterialToGodot(const VCore::M
     material->set_specular(_Material->Specular);
     material->set_roughness(_Material->Roughness);
     material->set_cull_mode(SpatialMaterial::CULL_FRONT);
+    material->set_uv1_scale(Vector3(1, -1, 1));
 
     // if(_Material->IOR != 0.0)
     // {

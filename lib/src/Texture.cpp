@@ -72,7 +72,9 @@ namespace VCore
 
     void CTexture::AddRawPixels(const std::vector<CColor> &_Pixels, const Math::Vec2ui &_Position, const Math::Vec2ui &_Size)
     {
-        if((_Position.x >= m_Size.x || _Position.y >= m_Size.y) || ((_Position.x + _Size.x >= m_Size.x) || _Position.y + _Size.y >= m_Size.y))
+        if((_Position.x >= m_Size.x || _Position.y >= m_Size.y) ||
+           ((_Position.x + _Size.x >= m_Size.x) || _Position.y + _Size.y >= m_Size.y) ||
+           _Pixels.size() < (_Size.x * _Size.y))
             return;
 
         for (size_t y = _Position.y; y < _Position.y + _Size.y; y++)

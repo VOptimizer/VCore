@@ -68,17 +68,17 @@ namespace VCore
                            (quad.mQuad.second.v[heightAxis] == quad2.mQuad.second.v[heightAxis]) &&
                            (quad.Normal == quad2.Normal) && (quad.Material == quad2.Material) && (_GenerateTexture || (quad.Color == quad2.Color)))
                         {
-                            quad.mQuad.second.v[widthAxis] += quad2.mQuad.second.v[widthAxis];
-
                             if(_GenerateTexture)
                             {
-                                int stride1 = quad.mQuad.first.v[widthAxis];
-                                int stride2 = quad2.mQuad.first.v[widthAxis];
+                                int stride1 = quad.mQuad.second.v[widthAxis];
+                                int stride2 = quad2.mQuad.second.v[widthAxis];
 
                                 // Merges the two raw textures into one.
                                 for (size_t i = 0; i < quad2.RawTexture.size() / stride2; i++)
-                                    quad.RawTexture.insert(quad.RawTexture.begin() + i * stride1, quad2.RawTexture.begin() + stride2 * i, quad2.RawTexture.begin() + stride2 * (i + 1));
+                                    quad.RawTexture.insert(quad.RawTexture.begin() + (i * stride1), quad2.RawTexture.begin() + stride2 * i, quad2.RawTexture.begin() + (stride2 * (i + 1)));
                             }
+
+                            quad.mQuad.second.v[widthAxis] += quad2.mQuad.second.v[widthAxis];
                         }
                         else
                         {
@@ -176,7 +176,7 @@ namespace VCore
             for (auto &&rect : rects)
             {
                 auto quad = (CQuadInfo*)rect.Reference;
-                quad->UvStart = rect.Position + Math::Vec2ui(0, MeshTexture->GetSize().y);
+                quad->UvStart = Math::Vec2ui(rect.Position.x, MeshTexture->GetSize().y - rect.Position.y);
 
                 MeshTexture->AddRawPixels(quad->RawTexture, rect.Position, rect.Size);
             }
