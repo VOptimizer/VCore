@@ -30,19 +30,7 @@ namespace VCore
 {
     void CSliceCollection::Optimize(bool _GenerateTexture)
     {
-        CTexturePacker packer(Math::Vec2ui(256, 256), 1.5f);
-
-        // std::vector<CQuadInfo *> texturedQuads;
-        // std::vector<stbrp_rect> rects;
-        // std::vector<stbrp_node> nodes;
-        // stbrp_context ctx;
-
-        // if(_GenerateTexture)
-        // {
-        //     nodes.resize(256 * 256);
-        //     stbrp_init_target(&ctx, 256, 256, &nodes[0], nodes.size());
-        // }
-
+        CTexturePacker packer;
         for (size_t runAxis = 0; runAxis < 3; runAxis++)
         {
             int heightAxis = (runAxis + 1) % 3;
@@ -74,8 +62,13 @@ namespace VCore
                                 int stride2 = quad2.mQuad.second.v[widthAxis];
 
                                 // Merges the two raw textures into one.
-                                for (size_t i = 0; i < quad2.RawTexture.size() / stride2; i++)
-                                    quad.RawTexture.insert(quad.RawTexture.begin() + (i * stride1), quad2.RawTexture.begin() + stride2 * i, quad2.RawTexture.begin() + (stride2 * (i + 1)));
+                                for (size_t i = 0; i < quad2.RawTextures[TextureType::DIFFIUSE].size() / stride2; i++)
+                                {
+                                    quad.RawTextures[TextureType::DIFFIUSE].insert(quad.RawTextures[TextureType::DIFFIUSE].begin() + (i * (stride1 + stride2) + stride1), quad2.RawTextures[TextureType::DIFFIUSE].begin() + stride2 * i, quad2.RawTextures[TextureType::DIFFIUSE].begin() + (stride2 * (i + 1)));
+
+                                    if(quad.RawTextures.find(TextureType::EMISSION) != quad.RawTextures.end())
+                                        quad.RawTextures[TextureType::EMISSION].insert(quad.RawTextures[TextureType::EMISSION].begin() + (i * (stride1 + stride2) + stride1), quad2.RawTextures[TextureType::EMISSION].begin() + stride2 * i, quad2.RawTextures[TextureType::EMISSION].begin() + (stride2 * (i + 1)));
+                                }
                             }
 
                             quad.mQuad.second.v[widthAxis] += quad2.mQuad.second.v[widthAxis];
@@ -129,7 +122,11 @@ namespace VCore
 
                                     // Merges the two raw textures into one.
                                     if(_GenerateTexture)
-                                        quad.RawTexture.insert(quad.RawTexture.end(), it->RawTexture.begin(), it->RawTexture.end());
+                                    {
+                                        quad.RawTextures[TextureType::DIFFIUSE].insert(quad.RawTextures[TextureType::DIFFIUSE].end(), it->RawTextures.at(TextureType::DIFFIUSE).begin(), it->RawTextures.at(TextureType::DIFFIUSE).end());
+                                        if(quad.RawTextures.find(TextureType::EMISSION) != quad.RawTextures.end())
+                                            quad.RawTextures[TextureType::EMISSION].insert(quad.RawTextures[TextureType::EMISSION].end(), it->RawTextures.at(TextureType::EMISSION).begin(), it->RawTextures.at(TextureType::EMISSION).end());
+                                    }
 
                                     // Remove the quad.
                                     quadList.erase(it);
@@ -141,29 +138,9 @@ namespace VCore
                                 break;
                         }
                     
+                        // After the final quad is established, we can add it to the texture packer.
                         if(_GenerateTexture)
-                        {
                             packer.AddRect(Math::Vec2ui(quad.mQuad.second.v[widthAxis], quad.mQuad.second.v[heightAxis]), &quad);
-
-                            // texturedQuads.push_back(&quad);
-
-                            // Prepare rect pack algorithm
-                            // stbrp_rect rect = {};
-                            // rect.id = texturedQuads.size() - 1;
-                            // rect.w = quad.mQuad.second.v[widthAxis];
-                            // rect.h = quad.mQuad.second.v[heightAxis];
-                            // rects.push_back(rect);
-
-                            // // Resize "canvas", if neccessary
-                            // while(stbrp_pack_rects(&ctx, &rects[0], rects.size()) == 0)
-                            // {
-                            //     int newW = ctx.width * 1.5f;
-                            //     int newH = ctx.height * 1.5f;
-                            //     nodes.resize(newW * newH);
-
-                            //     stbrp_init_target(&ctx, newW, newH, &nodes[0], nodes.size());
-                            // }
-                        }
                     }
                 }
             }
@@ -171,14 +148,24 @@ namespace VCore
     
         if(_GenerateTexture)
         {
-            MeshTexture = std::make_shared<CTexture>(packer.GetCanvasSize());
-            auto &rects = packer.GetRects();
+            // Packs the rects to fit into one texture.
+            auto &rects = packer.Pack();
+
+            // Creates the texture object, which can fit all quads.
+            Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>(packer.GetCanvasSize());
             for (auto &&rect : rects)
             {
                 auto quad = (CQuadInfo*)rect.Reference;
-                quad->UvStart = Math::Vec2ui(rect.Position.x, MeshTexture->GetSize().y - rect.Position.y);
+                quad->UvStart = Math::Vec2ui(rect.Position.x, Textures[TextureType::DIFFIUSE]->GetSize().y - rect.Position.y);
 
-                MeshTexture->AddRawPixels(quad->RawTexture, rect.Position, rect.Size);
+                Textures[TextureType::DIFFIUSE]->AddRawPixels(quad->RawTextures[TextureType::DIFFIUSE], rect.Position, rect.Size);
+                if(quad->RawTextures.find(TextureType::EMISSION) != quad->RawTextures.end())
+                {
+                    if(!Textures[TextureType::EMISSION])
+                        Textures[TextureType::EMISSION] = std::make_shared<CTexture>(packer.GetCanvasSize());
+
+                    Textures[TextureType::EMISSION]->AddRawPixels(quad->RawTextures[TextureType::EMISSION], rect.Position, rect.Size);
+                }
             }
         }
     }

@@ -45,7 +45,7 @@ namespace VCore
         public:
             CQuadInfo() = default;
             CQuadInfo(const Quad &_Quad, const Math::Vec3i &_Normal, int _Material, int _Color) : mQuad(_Quad), Normal(_Normal), Material(_Material), Color(_Color) {}
-            CQuadInfo(const Quad &_Quad, const Math::Vec3i &_Normal, int _Material, const std::vector<CColor> &_RawTexture) : CQuadInfo(_Quad, _Normal, _Material, 0) { RawTexture = _RawTexture; }
+            CQuadInfo(const Quad &_Quad, const Math::Vec3i &_Normal, int _Material, const std::map<TextureType, std::vector<CColor>> &_RawTextures) : CQuadInfo(_Quad, _Normal, _Material, 0) { RawTextures = _RawTextures; }
             CQuadInfo(CQuadInfo &&_Other) { *this = std::move(_Other); }
             CQuadInfo(const CQuadInfo &_Other) { *this = _Other; }
 
@@ -55,7 +55,7 @@ namespace VCore
                 Normal = std::move(_Other.Normal);
                 Material = std::move(_Other.Material);
                 Color = std::move(_Other.Color);
-                RawTexture = std::move(_Other.RawTexture);
+                RawTextures = std::move(_Other.RawTextures);
                 return *this;
             }
 
@@ -65,7 +65,7 @@ namespace VCore
                 Normal = _Other.Normal;
                 Material = _Other.Material;
                 Color = _Other.Color;
-                RawTexture = _Other.RawTexture;
+                RawTextures = _Other.RawTextures;
                 return *this;
             }
 
@@ -74,14 +74,15 @@ namespace VCore
             int Material;
             int Color;
             Math::Vec2ui UvStart;
-            std::vector<CColor> RawTexture;
+
+            std::map<TextureType, std::vector<CColor>> RawTextures;
     };
 
     class CSliceCollection
     {
         public:
             Slices mSlices[3];
-            Texture MeshTexture;
+            std::map<TextureType, Texture> Textures;
 
             CSliceCollection() = default;
             CSliceCollection(CSliceCollection &&_Other) { *this = std::move(_Other); }
@@ -90,7 +91,7 @@ namespace VCore
             {
                 for (size_t i = 0; i < 3; i++)
                     mSlices[i] = std::move(_Other.mSlices[i]);
-                MeshTexture = std::move(_Other.MeshTexture);
+                Textures = std::move(_Other.Textures);
                 return *this;
             }
 

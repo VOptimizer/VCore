@@ -332,6 +332,7 @@ Ref<SpatialMaterial> CGodotVoxelOptimizer::ConvertMaterialToGodot(const VCore::M
     material->set_roughness(_Material->Roughness);
     material->set_cull_mode(SpatialMaterial::CULL_FRONT);
     material->set_uv1_scale(Vector3(1, -1, 1));
+    material->set_uv1_offset(Vector3(0, 1, 0));
 
     // if(_Material->IOR != 0.0)
     // {

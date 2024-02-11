@@ -91,7 +91,7 @@ namespace VCore
 
         collection.Optimize(m_GenerateTexture);
         if(m_GenerateTexture)
-            textures = {{TextureType::DIFFIUSE, collection.MeshTexture}};
+            textures = collection.Textures;
 
         builder.AddTextures(textures);
 
@@ -130,29 +130,29 @@ namespace VCore
                             if(faceNormal == quad.Normal)
                             {
                                 builder.AddFace(
-                                    SVertex(v1, quad.Normal, Math::Vec2f(quad.UvStart) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v1, quad.Normal, Math::Vec2f(quad.UvStart) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
                                     mat);
 
                                 builder.AddFace(
-                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v4, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v4, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], -dv.v[heightAxis])) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
                                     mat);
                             } 
                             else
                             {
                                 builder.AddFace(
-                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v1, quad.Normal, Math::Vec2f(quad.UvStart) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v1, quad.Normal, Math::Vec2f(quad.UvStart) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
                                     mat);
 
                                 builder.AddFace(
-                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v4, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], -dv.v[heightAxis])) / Math::Vec2f(collection.MeshTexture->GetSize())),
-                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.MeshTexture->GetSize())),
+                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v4, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], -dv.v[heightAxis])) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
                                     mat);
                             }
                         }
@@ -182,6 +182,10 @@ namespace VCore
         CSliceCollection result;
 
         auto albedo = m->Textures[TextureType::DIFFIUSE];
+        Texture emission;
+        auto textureIt = m->Textures.find(TextureType::EMISSION);
+        if(textureIt != m->Textures.end())
+            emission = textureIt->second;
 
         // For all 3 axis (x, y, z)
         for (size_t Axis = 0; Axis < 3; Axis++)
@@ -208,7 +212,7 @@ namespace VCore
                         Pos.v[Axis1] = HeightAxis;
                         Pos.v[Axis2] = WidthAxis;
 
-                        std::vector<CColor> rawTexture;
+                        std::map<TextureType, std::vector<CColor>> rawTextures;
 
                         if(Slicer.IsFace(Pos))
                         {
@@ -218,7 +222,11 @@ namespace VCore
                             int Color = Slicer.Color();
 
                             if(m_GenerateTexture)
-                                rawTexture.push_back(albedo->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
+                            {
+                                rawTextures[TextureType::DIFFIUSE].push_back(albedo->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
+                                if(emission)
+                                    rawTextures[TextureType::EMISSION].push_back(emission->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
+                            }
 
                             //Claculates the width of the rect.
                             for (w = 1; WidthAxis + w <= BBox.End.v[Axis2]; w++) 
@@ -236,7 +244,11 @@ namespace VCore
                                 if(!IsFace)
                                     break;
                                 else if(m_GenerateTexture)
-                                    rawTexture.push_back(albedo->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
+                                {
+                                    rawTextures[TextureType::DIFFIUSE].push_back(albedo->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
+                                    if(emission)
+                                        rawTextures[TextureType::EMISSION].push_back(emission->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
+                                }
                             }
 
                             bool done = false;
@@ -263,7 +275,11 @@ namespace VCore
                                         break;
                                     }
                                     else if(m_GenerateTexture)
-                                        rawTexture.push_back(albedo->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
+                                    {
+                                        rawTextures[TextureType::DIFFIUSE].push_back(albedo->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
+                                        if(emission)
+                                            rawTextures[TextureType::EMISSION].push_back(emission->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
+                                    }
                                 }
 
                                 if (done)
@@ -279,24 +295,10 @@ namespace VCore
                             int dv[3] = {};
                             dv[Axis1] = h;
                     
-                            // Math::Vec3f v1 = Math::Vec3f(x[0], x[1], x[2]);
-                            // Math::Vec3f v2 = Math::Vec3f(x[0] + du[0], x[1] + du[1], x[2] + du[2]);
-                            // Math::Vec3f v3 = Math::Vec3f(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2]);
-                            // Math::Vec3f v4 = Math::Vec3f(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2]);
-
-                            // // std::swap(Normal.y, Normal.z);
-                            // // if(Normal.y != 0)
-                            // //     Normal.y *= -1;
-
-                            // Material mat;
-                            // if(material < (int)materials.size())
-                            //     mat = materials[material];
-
-                            // builder.AddFace(v1, v2, v3, v4, Normal, Color, mat);
                             Slicer.AddProcessedQuad(Math::Vec3i(x[0], x[1], x[2]), Math::Vec3i(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2]));
                             
                             if(m_GenerateTexture)
-                                result.AddQuadInfo(Axis, x[Axis], x[Axis1], CQuadInfo({Math::Vec3i(x[0], x[1], x[2]), Math::Vec3i(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2])}, Normal, material, rawTexture));
+                                result.AddQuadInfo(Axis, x[Axis], x[Axis1], CQuadInfo({Math::Vec3i(x[0], x[1], x[2]), Math::Vec3i(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2])}, Normal, material, rawTextures));
                             else
                                 result.AddQuadInfo(Axis, x[Axis], x[Axis1], CQuadInfo({Math::Vec3i(x[0], x[1], x[2]), Math::Vec3i(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2])}, Normal, material, Color));
 

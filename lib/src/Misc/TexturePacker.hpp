@@ -62,23 +62,42 @@ namespace VCore
     
     struct SNode
     {
-        SNode() : Child(), Rect(nullptr) {}
+        SNode() : Child(), Leaf(true) {}
+        SNode(const Math::Vec2ui &_Position, const Math::Vec2ui &_Size) : SNode()
+        {
+            Position = _Position;
+            Size = _Size;
+        }
 
         SNode *Child[2];
-        SRect *Rect;
+        Math::Vec2ui Position;
+        Math::Vec2ui Size;
+        bool Leaf;
+
+        ~SNode()
+        {
+            for (size_t i = 0; i < 2; i++)
+            {
+                if(Child[i])
+                    delete Child[i];
+            }
+        }
     };
     
-
     class CTexturePacker
     {
         public:
-            /**
-             * @param _CanvasSize: Initial size of the canvas. Will be resized to contain all given rects.
-             * @param _ScaleFactor: How much should the canvas be expanded, if we need to resize it?
-            */
-            CTexturePacker(const Math::Vec2ui &_CanvasSize, float _ScaleFactor) : m_CanvasSize(_CanvasSize), m_ScaleFactor(_ScaleFactor) {}
+            CTexturePacker() = default;
 
+            /**
+             * @brief Adds a new quad to the rect list.
+             */
             void AddRect(const Math::Vec2ui &_Size, void *_Ref = nullptr);
+
+            /**
+             * @brief Packs the rects to fit into one texture.
+             */
+            const std::vector<SRect> &Pack();
 
             /**
              * @return Gets the calculated canvas size.
@@ -88,20 +107,17 @@ namespace VCore
                 return m_CanvasSize;
             }
 
-            inline const std::vector<SRect> &GetRects()
-            {
-                return m_Rects;
-            }
-
             ~CTexturePacker() {}
         private:
-            Math::Vec2ui m_CanvasSize, m_CurrentSize;
-            float m_ScaleFactor;
+            Math::Vec2ui m_CanvasSize;
+            std::vector<SRect> m_Rects;
 
-            std::vector<SRect> m_Rects, m_FreeRects;
+            SNode *FindNode(SNode *_Root, const Math::Vec2ui &_Size);
+            Math::Vec2ui SplitNode(SNode *_Root, const Math::Vec2ui &_Size);
+            SNode *ResizeCanvas(SNode *_Root, const Math::Vec2ui &_Size);
 
-            std::vector<SRect>::const_iterator FindClosest(const Math::Vec2ui &_Size);
-            // std::vector<SRect>::const_iterator FindQuad(const Math::Vec2ui &_Size);
+            SNode *ResizeCanvasRight(SNode *_Root, const Math::Vec2ui &_Size);
+            SNode *ResizeCanvasDown(SNode *_Root, const Math::Vec2ui &_Size);
     };    
 } // namespace VCore
 

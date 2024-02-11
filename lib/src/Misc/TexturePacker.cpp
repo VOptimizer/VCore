@@ -23,130 +23,143 @@
  */
 
 #include "TexturePacker.hpp"
+#include <cstdlib>
 
+// Modified version of https://codeincomplete.com/articles/bin-packing/
+// Which is also a modified version of https://blackpawn.com/texts/lightmaps/default.html
 namespace VCore
 {
     void CTexturePacker::AddRect(const Math::Vec2ui &_Size, void *_Ref)
     {
-        if(m_FreeRects.empty())
-        {
-            SRect rect(Math::Vec2ui(), _Size, _Ref);
-
-            SRect right(Math::Vec2ui(rect.Size.x, 0), Math::Vec2ui(m_CanvasSize.x - rect.Size.x, rect.Size.y), nullptr);
-            SRect down(Math::Vec2ui(0, rect.Size.y), Math::Vec2ui(m_CanvasSize.x,  m_CanvasSize.y - rect.Size.y), nullptr);
-
-            m_FreeRects.push_back(right);
-            auto it = FindClosest(down.Size);
-            m_FreeRects.insert(it, down);
-
-            m_CurrentSize = _Size;
-            m_Rects.push_back(rect);
-        }
-        else
-        {
-            auto it = FindClosest(_Size);
-            SRect closest = *it;
-
-            while((it == m_FreeRects.end()) || (_Size > closest.Size))
-            {
-                auto newsize = m_CanvasSize * m_ScaleFactor;
-                std::vector<SRect> resized;
-
-                it = m_FreeRects.begin();
-                while (it != m_FreeRects.end())
-                {
-                    auto rect = *it;
-                    bool erase = false;
-
-                    if(rect.Position.x + rect.Size.x == m_CanvasSize.x)
-                    {
-                        erase = true;
-                        rect.Size.x = (newsize.x - rect.Position.x);
-                    }
-
-                    if(rect.Position.y + rect.Size.y == m_CanvasSize.y)
-                    {
-                        erase = true;
-                        rect.Size.y = (newsize.y - rect.Position.y);
-                    }  
-
-                    if(erase)
-                    {
-                        it = m_FreeRects.erase(it);
-                        resized.push_back(rect);
-                    }
-                    else
-                        it++;
-                }
-
-                for (auto &&rect : resized)
-                {
-                    auto it = FindClosest(rect.Size);
-                    m_FreeRects.insert(it, rect);
-                }
-
-                m_CanvasSize = newsize;  
-                it = FindClosest(_Size);  
-                closest = *it;
-            }
-
-            m_FreeRects.erase(it);
-
-            SRect rect(closest.Position, _Size, _Ref);
-            if(_Size.x < closest.Size.x)
-            {
-                SRect left(closest.Position + Math::Vec2ui(rect.Size.x, 0), closest.Size - Math::Vec2ui(rect.Size.x, 0), nullptr);
-                auto it = FindClosest(left.Size);
-                m_FreeRects.insert(it, left);
-            }
-
-            if(_Size.y < closest.Size.y)
-            {
-                SRect down(closest.Position + Math::Vec2ui(0, rect.Size.y), Math::Vec2ui(rect.Size.x, closest.Size.y - rect.Size.y), nullptr);
-                auto it = FindClosest(down.Size);
-                m_FreeRects.insert(it, down);
-            }
-
-            m_Rects.push_back(rect);
-        }
+        m_Rects.emplace_back(Math::Vec2ui(), _Size, _Ref);
     }
 
-    std::vector<SRect>::const_iterator CTexturePacker::FindClosest(const Math::Vec2ui &_Size)
+    const std::vector<SRect> &CTexturePacker::Pack()
     {
-        if(m_FreeRects.empty())
-            return m_FreeRects.end();
-        
-        int left = 0, right = m_FreeRects.size() - 1;
-        while (left <= right)
-        {
-            int center = left + (right - left) / 2;
-            if(m_FreeRects[center].Size == _Size)
-                return m_FreeRects.begin() + center;
+        if(m_Rects.empty())
+            return m_Rects;
 
-            if(m_FreeRects[center].Size > _Size)
-                right = center - 1;
+        // Sorts the rects by size.
+        // Begins at the smalles one and goes bigger.
+        std::qsort
+        (
+            m_Rects.data(),
+            m_Rects.size(),
+            sizeof(decltype(m_Rects)::value_type),
+            [](const void* x, const void* y)
+            {
+                const SRect arg1 = *static_cast<const SRect*>(x);
+                const SRect arg2 = *static_cast<const SRect*>(y);
+                if (arg1.Size.length() < arg2.Size.length())
+                    return -1;
+                if (arg1.Size.length() > arg2.Size.length())
+                    return 1;
+                return 0;
+            }
+        );
+
+        m_CanvasSize = m_Rects.back().Size;
+        SNode *root = new SNode(Math::Vec2ui(), m_CanvasSize);
+
+        auto it = m_Rects.rbegin();
+        while (it != m_Rects.rend())
+        {
+            auto node = FindNode(root, it->Size);
+            if(node)
+            {
+                it->Position = SplitNode(node, it->Size);
+                it++;
+            }
             else
-                left = center + 1;
+            {
+                node = ResizeCanvas(root, it->Size);
+                if(node)
+                    root = node;
+                else
+                    break; // To prevent an endless loop.
+            }
         }
-        
-        return m_FreeRects.begin() + left;
+
+        delete root;
+        return m_Rects;
     }
 
-    // std::vector<SRect>::const_iterator CTexturePacker::FindQuad(const Math::Vec2ui &_Size)
-    // {
-    //     int left = 0, right = m_FreeRects.size() - 1;
-    //     while (left <= right)
-    //     {
-    //         int center = left + (right - left) / 2;
-    //         if(m_FreeRects[center].Size == _Size)
-    //             return m_FreeRects.begin() + center;
+    SNode *CTexturePacker::FindNode(SNode *_Root, const Math::Vec2ui &_Size)
+    {
+        if(_Root)
+        {
+            if(!_Root->Leaf)
+            {
+                auto node = FindNode(_Root->Child[0], _Size); 
+                if(!node)
+                    node = FindNode(_Root->Child[1], _Size);
 
-    //         if(m_FreeRects[center].Size > _Size)
-    //             right = center - 1;
-    //         else
-    //             left = center + 1;
-    //     }
-        
-    //     return m_FreeRects.end();
-    // }
+                return node;
+            }
+            else if((_Size.x <= _Root->Size.x) && (_Size.y <= _Root->Size.y))
+                return _Root;
+        }
+
+        return nullptr;
+    }
+
+    Math::Vec2ui CTexturePacker::SplitNode(SNode *_Root, const Math::Vec2ui &_Size)
+    {
+        _Root->Leaf = false;
+        auto size = _Root->Size - Math::Vec2ui(0, _Size.y);
+        if(size.y > 0)
+            _Root->Child[0] = new SNode(_Root->Position + Math::Vec2ui(0, _Size.y), _Root->Size - Math::Vec2ui(0, _Size.y));
+
+        size = _Root->Size - Math::Vec2ui(_Size.x, size.y);
+        if(size.x > 0)
+            _Root->Child[1] = new SNode(_Root->Position + Math::Vec2ui(_Size.x, 0), size);
+
+        return _Root->Position;
+    }
+
+    SNode *CTexturePacker::ResizeCanvas(SNode *_Root, const Math::Vec2ui &_Size)
+    {
+        bool canGrowDown  = (_Size.x <= _Root->Size.x);
+        bool canGrowRight = (_Size.y <= _Root->Size.y);
+
+        // Checks to keep a squarish texture.
+        bool shouldGrowRight = (canGrowRight && (_Root->Size.y >= (_Root->Size.x + _Size.x)));
+        bool shouldGrowDown =  (canGrowRight && (_Root->Size.x >= (_Root->Size.y + _Size.y)));
+
+        SNode *newRoot = nullptr;
+
+        if(shouldGrowRight)
+            newRoot = ResizeCanvasRight(_Root, _Size);
+        else if(shouldGrowDown)
+            newRoot = ResizeCanvasDown(_Root, _Size);
+        else if(canGrowRight)
+            newRoot = ResizeCanvasRight(_Root, _Size);
+        else if(canGrowDown)
+            newRoot = ResizeCanvasDown(_Root, _Size);
+
+        return newRoot;
+    }
+
+    SNode *CTexturePacker::ResizeCanvasRight(SNode *_Root, const Math::Vec2ui &_Size)
+    {
+        m_CanvasSize.x += _Size.x;
+        auto newRoot = new SNode(Math::Vec2ui(), m_CanvasSize);
+        newRoot->Child[0] = _Root;
+        newRoot->Child[1] = new SNode(Math::Vec2ui(_Root->Size.x, 0), Math::Vec2ui(_Size.x, m_CanvasSize.y));
+        newRoot->Leaf = false;
+
+        return newRoot;
+    }
+
+    SNode *CTexturePacker::ResizeCanvasDown(SNode *_Root, const Math::Vec2ui &_Size)
+    {
+        m_CanvasSize.y += _Size.y;
+
+        auto newRoot = new SNode(Math::Vec2ui(), m_CanvasSize);
+        newRoot->Child[1] = _Root;
+        newRoot->Child[0] = new SNode(Math::Vec2ui(0, _Root->Size.y), Math::Vec2ui(m_CanvasSize.x, _Size.y));
+        newRoot->Leaf = false;
+
+        return newRoot;
+    }
 } // namespace VCore
