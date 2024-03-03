@@ -81,6 +81,14 @@ namespace VCore
                 return m_Children.end();
             }
 
+            SceneNode operator[](size_t _Index)
+            {
+                if(_Index > m_Children.size())
+                    return nullptr;
+
+                return m_Children[_Index];
+            }
+
             void AddChild(SceneNode node)
             {
                 node->m_Parent = this;
