@@ -39,7 +39,7 @@ namespace VCore
 
     SVoxelFrame CVoxelAnimation::GetFrame(size_t _Frame) const
     {
-        SVoxelFrame result = {.Model = nullptr, .FrameTime = 0};
+        SVoxelFrame result(nullptr, 0);
         if(_Frame < m_Frames.size())
             result = m_Frames[_Frame];
 
