@@ -175,10 +175,10 @@ namespace VCore
         return ret;
     }
 
-    CSliceCollection CGreedyMesher::GenerateSlicedChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque)
+    CSliceCollection CGreedyMesher::GenerateSlicedChunk(VoxelModel m, const SChunkMeta &_Chunk, bool)
     {
         CBBox BBox = _Chunk.InnerBBox;
-        CSlicer Slicer(m, Opaque, _Chunk.Chunk, _Chunk.TotalBBox);
+        CSlicer Slicer(m, _Chunk.Chunk, _Chunk.TotalBBox);
         CSliceCollection result;
 
         auto albedo = m->Textures[TextureType::DIFFIUSE];

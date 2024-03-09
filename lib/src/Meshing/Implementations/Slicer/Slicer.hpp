@@ -36,7 +36,7 @@ namespace VCore
     class CSlicer
     {
         public:
-            CSlicer(VoxelModel Mesh, bool Opaque, const CChunk *_Chunk, const CBBox &_TotalBBox) : m_Mesh(Mesh), m_Opaque(Opaque), m_Chunk(_Chunk), m_TotalBBox(_TotalBBox), m_Size(_TotalBBox.GetSize())
+            CSlicer(VoxelModel Mesh, const CChunk *_Chunk, const CBBox &_TotalBBox) : m_Mesh(Mesh), m_Chunk(_Chunk), m_TotalBBox(_TotalBBox), m_Size(_TotalBBox.GetSize())
             {
                 // auto &voxels = m_Mesh->GetVoxels();
                 // m_Voxels = voxels.queryVisible();
@@ -87,7 +87,6 @@ namespace VCore
             Math::Vec3i m_Normal;
             int m_Material;
             int m_Color;
-            bool m_Opaque;
             bool m_HasFace;
 
             std::vector<std::pair<Math::Vec3i, Math::Vec3i>> m_ProcessedQuads;

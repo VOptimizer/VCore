@@ -33,7 +33,7 @@
 
 namespace VCore
 {
-    struct CQuadInfo;
+    class CQuadInfo;
 
     using Quad = std::pair<Math::Vec3i, Math::Vec3i>;
     using Quads = std::vector<CQuadInfo>;

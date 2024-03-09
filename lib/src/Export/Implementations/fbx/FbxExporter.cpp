@@ -473,13 +473,13 @@ namespace VCore
         layerelement.AddSubNode("", {});
         layer.AddSubNode(std::move(layerelement));
 
-        layerelement = std::move(CFbxNode("LayerElement"));
+        layerelement = CFbxNode("LayerElement");
         layerelement.AddSubNode("Type", { CFbxProperty("LayerElementUV") });
         layerelement.AddSubNode("TypedIndex", { CFbxProperty(0) });
         layerelement.AddSubNode("", {});
         layer.AddSubNode(std::move(layerelement));
 
-        layerelement = std::move(CFbxNode("LayerElement"));
+        layerelement = CFbxNode("LayerElement");
         layerelement.AddSubNode("Type", { CFbxProperty("LayerElementMaterial") });
         layerelement.AddSubNode("TypedIndex", { CFbxProperty(0) });
         layerelement.AddSubNode("", {});

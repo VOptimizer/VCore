@@ -33,7 +33,7 @@
 
 namespace VCore
 {
-    SMeshChunk CGreedyChunkedMesher::GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque)
+    SMeshChunk CGreedyChunkedMesher::GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool)
     {
         CMeshBuilder builder;
         builder.AddTextures(m->Textures);
@@ -42,7 +42,7 @@ namespace VCore
 
         auto &materials = m->Materials;
 
-        CSlicer Slicer(m, Opaque, _Chunk.Chunk, _Chunk.TotalBBox);
+        CSlicer Slicer(m, _Chunk.Chunk, _Chunk.TotalBBox);
 
         // For all 3 axis (x, y, z)
         for (size_t Axis = 0; Axis < 3; Axis++)
