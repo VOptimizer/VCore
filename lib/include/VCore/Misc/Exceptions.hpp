@@ -26,6 +26,7 @@
 #define EXCEPTIONS_HPP
 
 #include <stdexcept>
+#include <string>
 
 namespace VCore
 {
