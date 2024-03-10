@@ -26,14 +26,17 @@ set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelModel.cpp"
          "${PROJECT_SOURCE_DIR}/src/Formats/IVoxelFormat.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/SimpleMesher.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/GreedyChunkedMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/GreedyMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/IMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/MarchingCubesMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/Slicer/Slicer.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/Slicer/Slices.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/MeshBuilder.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/IExporter.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Misc/FileStream.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Misc/TexturePacker.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Export/Implementations/WavefrontObjExporter.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/Implementations/SpriteStackingExporter.cpp"
@@ -54,7 +57,7 @@ add_library(${PROJECT_NAME} STATIC ${SRCS})
 target_include_directories(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}")
 target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W4>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wunused-parameter -Wmismatched-tags -Wpessimizing-move>
 )
 
 INSTALL(

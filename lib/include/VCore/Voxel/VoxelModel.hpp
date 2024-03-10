@@ -57,7 +57,6 @@ namespace VCore
             std::string Name;
 
             CBBox BBox;
-            Math::Vec3f Pivot;
 
             // Texturing
             TexturingTypes TexturingType;

@@ -108,10 +108,9 @@ namespace VCore
         auto sceneNode = std::make_shared<CSceneNode>();
         m_SceneTree->AddChild(sceneNode);
         sceneNode->Mesh = m;
-        m->Pivot = m->GetSize() / 2;
 
         m->Textures = std::move(m_Textures);
-        m->BBox = CBBox(Beg, End);
+        m->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
 
         m_Models.push_back(m);
         m_ColorIdx.clear();

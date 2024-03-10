@@ -59,6 +59,11 @@ namespace VCore
 
                 // Upon here just math. Math is magic :D
 
+                inline float length() const
+                {
+                    return sqrt((x * x) + (y * y));
+                }
+
                 inline TVector2 operator*(const TVector2 &vr) const
                 {
                     return TVector2(x * vr.x, y * vr.y);
@@ -96,6 +101,22 @@ namespace VCore
                         return x >= vr.x;
 
                     return y >= vr.y;
+                }
+
+                inline bool operator>(const TVector2 &vr) const
+                {
+                    if(x != vr.x)
+                        return x > vr.x;
+
+                    return y > vr.y;
+                }
+
+                inline bool operator<(const TVector2 &vr) const
+                {
+                    if(x != vr.x)
+                        return x < vr.x;
+
+                    return y < vr.y;
                 }
 
                 inline TVector2 operator/(const TVector2 &vr) const

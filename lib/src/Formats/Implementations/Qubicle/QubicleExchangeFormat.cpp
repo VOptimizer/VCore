@@ -126,6 +126,6 @@ namespace VCore
             End = End.max(pos);
             mesh->SetVoxel(pos, 0, cid, false);
         }
-        mesh->BBox = CBBox(Beg, End);
+        mesh->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
     }
 }

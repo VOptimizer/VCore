@@ -38,7 +38,7 @@ namespace VCore
         // Filters until the first none filtered element is reached
         if(m_FilterFunction)
             it++;
-        else
+        else if(m_Chunks->begin() != m_Chunks->end())
         {
             CBBox bbox(it.m_Iterator->first, it.m_Iterator->first + m_ChunkSize);
             it.m_ChunkMeta = {(size_t)&it.m_Iterator->second, &it.m_Iterator->second, bbox, it.m_Iterator->second.inner_bbox(it.m_Iterator->first)};
@@ -560,6 +560,7 @@ namespace VCore
         // m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z] = CVoxel();
         CVoxel &voxel = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
         voxel = CVoxel();
+        IsDirty = true;
 
         CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::UP, ~CVoxel::Visibility::UP, ~CVoxel::Visibility::DOWN);
         CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::DOWN, ~CVoxel::Visibility::DOWN, ~CVoxel::Visibility::UP);

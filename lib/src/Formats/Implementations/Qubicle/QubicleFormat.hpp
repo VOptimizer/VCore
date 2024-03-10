@@ -23,7 +23,7 @@
  */
 
 #ifndef QUBICLEFORMAT_HPP
-#define QUBICLE_HPP
+#define QUBICLEFORMAT_HPP
 
 #include <VCore/Math/Mat4x4.hpp>
 #include <VCore/Formats/IVoxelFormat.hpp>

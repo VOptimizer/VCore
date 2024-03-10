@@ -199,7 +199,12 @@ namespace VCore
             ret = _MergeInto;
         }
         else
+        {
             ret = std::make_shared<SMesh>();
+            if(!_Meshes.empty())
+                ret->Textures = _Meshes[0]->Textures;
+            // m_Textures = &ret->Textures;
+        }
 
         for (auto &&m : _Meshes)       
             MergeIntoThis(m);
@@ -224,6 +229,8 @@ namespace VCore
 
     void CMeshBuilder::GenerateCache(Mesh _MergeInto)
     {
+        m_Textures = &_MergeInto->Textures;
+
         for (auto &&surface : _MergeInto->Surfaces)
         {
             auto it = m_Surfaces.find((size_t)surface.FaceMaterial.get());
@@ -234,10 +241,10 @@ namespace VCore
             // it->second.Indices = surface.Indices;
             // it->second.Vertices = surface.Vertices;
 
-            for (auto &&i : surface.Indices)
+            for (auto &&i : it->second.Surface.Indices)
             {
-                if(i < (int)surface.Size())
-                    it->second.Index.insert({surface[i], i});
+                if(i < (int)it->second.Surface.Size())
+                    it->second.Index.insert({it->second.Surface[i], i});
             }
         }       
     }

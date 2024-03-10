@@ -52,11 +52,11 @@ namespace VCore
             mesh->SetSize(ReadVector());
             auto pos = ReadVector();
 
-            auto halfSize = (mesh->GetSize() / 2.0);
+            // auto halfSize = (mesh->GetSize() / 2.0);
 
-            pos += halfSize;
-            if(m_Header.ZAxisOrientation == 1)
-                pos.z *= -1;
+            // pos += halfSize;
+            // if(m_Header.ZAxisOrientation == 1)
+            //     pos.z *= -1;
 
             auto sceneNode = std::make_shared<CSceneNode>();
             sceneNode->Position = pos;
@@ -103,8 +103,8 @@ namespace VCore
 
                     auto pos = Math::Vec3f(x, y, z);
 
-                    if(m_Header.ZAxisOrientation == 1)
-                        pos.z = (uint32_t)(mesh->GetSize().z) - pos.z;
+                    // if(m_Header.ZAxisOrientation == 1)
+                    //     pos.z = (uint32_t)(mesh->GetSize().z) - pos.z;
 
                     Beg = Beg.min(pos);
                     End = End.max(pos);
@@ -114,7 +114,7 @@ namespace VCore
             }
         }
 
-        mesh->BBox = CBBox(Beg, End);
+        mesh->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
     }
 
     void CQubicleBinaryFormat::ReadRLECompressed(VoxelModel mesh)
@@ -144,8 +144,8 @@ namespace VCore
                         pos.y = (uint32_t)(index / (uint32_t)mesh->GetSize().x);
                         pos.z = z;
 
-                        if(m_Header.ZAxisOrientation == 1)
-                            pos.z = ((uint32_t)mesh->GetSize().z) - pos.z;
+                        // if(m_Header.ZAxisOrientation == 1)
+                        //     pos.z = ((uint32_t)mesh->GetSize().z) - pos.z;
                             
                         index++;
                         cid = GetColorIdx(data);
@@ -166,8 +166,8 @@ namespace VCore
                     pos.y = (uint32_t)(index / (uint32_t)mesh->GetSize().x);
                     pos.z = z;
 
-                    if(m_Header.ZAxisOrientation == 1)
-                        pos.z = ((uint32_t)mesh->GetSize().z) - pos.z;
+                    // if(m_Header.ZAxisOrientation == 1)
+                    //     pos.z = ((uint32_t)mesh->GetSize().z) - pos.z;
 
 
                     index++;
@@ -181,7 +181,7 @@ namespace VCore
                 }
             }
         }
-        mesh->BBox = CBBox(Beg, End);
+        mesh->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
     }
 
     int CQubicleBinaryFormat::GetColorIdx(int color)

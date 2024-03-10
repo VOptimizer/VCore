@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Christian Tost
+ * Copyright (c) 2021 Christian Tost
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,27 +22,22 @@
  * SOFTWARE.
  */
 
-#include <VCore/Voxel/VoxelAnimation.hpp>
+#ifndef GREEDYCHUNKEDMESHER_HPP
+#define GREEDYCHUNKEDMESHER_HPP
+
+#include <vector>
+#include <VCore/Meshing/IMesher.hpp>
 
 namespace VCore
 {
-    void CVoxelAnimation::AddFrame(VoxelModel _Model, unsigned int _FrameTime)
+    class CGreedyChunkedMesher : public IMesher
     {
-        m_Frames.push_back({_Model, _FrameTime});
-    }
+        public:
+            CGreedyChunkedMesher() : IMesher() {}
+            virtual ~CGreedyChunkedMesher() = default;
+        protected:
+            SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
+    };
+}
 
-    void CVoxelAnimation::RemoveFrame(size_t _Frame)
-    {
-        if(_Frame < m_Frames.size())
-            m_Frames.erase(m_Frames.begin() + _Frame);
-    }
-
-    SVoxelFrame CVoxelAnimation::GetFrame(size_t _Frame) const
-    {
-        SVoxelFrame result(nullptr, 0);
-        if(_Frame < m_Frames.size())
-            result = m_Frames[_Frame];
-
-        return result;
-    }
-} // namespace VCore
+#endif

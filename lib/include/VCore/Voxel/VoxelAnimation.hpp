@@ -32,6 +32,8 @@ namespace VCore
 {
     struct SVoxelFrame
     {
+        SVoxelFrame(const VoxelModel &_Model, unsigned int _FrameTime) : Model(_Model), FrameTime(_FrameTime) {}
+
         VoxelModel Model;
         unsigned int FrameTime; //!< How long this frame should be last, in ms.
     };

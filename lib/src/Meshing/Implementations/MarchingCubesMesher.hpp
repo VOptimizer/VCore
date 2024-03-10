@@ -40,7 +40,7 @@ namespace VCore
             SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
 
         private:
-            void CreateFaces(CMeshBuilder &builder, VoxelModel m, const SChunkMeta &_Chunk, Math::Vec3f pos, Math::Vec3f center, short *edges);
+            void CreateFaces(CMeshBuilder &builder, VoxelModel m, const SChunkMeta &_Chunk, Math::Vec3f pos, short *edges);
             Voxel GetVoxel(VoxelModel m, const SChunkMeta &_Chunk, Math::Vec3f pos, int edge);
     };
 }

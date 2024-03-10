@@ -23,6 +23,7 @@
  */
 
 #include <stdexcept>
+#include "Implementations/GreedyChunkedMesher.hpp"
 #include "Implementations/GreedyMesher.hpp"
 #include <VCore/Meshing/IMesher.hpp>
 #include "Implementations/MarchingCubesMesher.hpp"
@@ -114,6 +115,17 @@ namespace VCore
         auto chunks = GenerateChunks(m);
         if(chunks.empty())
             return nullptr;
+        else if(chunks.size() == 1)
+        {
+            auto ret = chunks[0].MeshData;
+            if(ret)
+            {
+                ret->Name = m->Name;
+                ret->FrameTime = 0;
+            }
+
+            return ret;
+        }
 
         Mesh ret;
         size_t idx = 0;
@@ -150,8 +162,11 @@ namespace VCore
         if(sceneTree->Mesh)
         {
             auto mesh = GenerateMesh(sceneTree->Mesh);
-            mesh->ModelMatrix = modelMatrix;
-            ret.push_back(mesh);
+            if(mesh)
+            {
+                mesh->ModelMatrix = modelMatrix;
+                ret.push_back(mesh);
+            }
         }
         else if(sceneTree->Animation)
         {
@@ -167,7 +182,7 @@ namespace VCore
         {
             auto res = GenerateScene(node, modelMatrix, mergeChilds);
 
-            if(!mergeChilds || !sceneTree->Mesh)
+            if(!mergeChilds /*|| !sceneTree->Mesh*/)
                 ret.insert(ret.end(), res.begin(), res.end());
             else
             {
@@ -177,8 +192,10 @@ namespace VCore
                 for (auto &&m : res)
                     meshes.push_back(m);
 
-                builder.Merge(ret.back(), meshes);
-                ret.back() = builder.Build();
+                if(ret.empty())
+                    ret.push_back(builder.Merge(nullptr, meshes));
+                else
+                    ret.back() = builder.Merge(ret.back(), meshes);
             }
         }
 
@@ -212,6 +229,8 @@ namespace VCore
             case MesherTypes::SIMPLE: return std::make_shared<CSimpleMesher>();
             case MesherTypes::GREEDY: return std::make_shared<CGreedyMesher>();
             case MesherTypes::MARCHING_CUBES: return std::make_shared<CMarchingCubesMesher>();
+            case MesherTypes::GREEDY_CHUNKED: return std::make_shared<CGreedyChunkedMesher>();
+            case MesherTypes::GREEDY_TEXTURED: return std::make_shared<CGreedyMesher>(true);
             default:
                 throw std::runtime_error("Invalid mesher type!");
         }

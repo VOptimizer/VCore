@@ -356,9 +356,6 @@ namespace VCore
         CMeshBuilder builder;
         builder.AddTextures(m->Textures);
 
-        auto totalBBox = m->BBox;
-        Math::Vec3f boxCenter = totalBBox.GetSize() / 2;
-
         for(int x = _Chunk.InnerBBox.Beg.x - 1; x <= _Chunk.InnerBBox.End.x + 1; x++)
         {
             for(int y = _Chunk.InnerBBox.Beg.y - 1; y <= _Chunk.InnerBBox.End.y + 1; y++)
@@ -368,7 +365,7 @@ namespace VCore
                     uint8_t idx = GetTableIndex(m, Math::Vec3f(x, y, z));
                     auto edges = triangleConnectionTable[idx];
 
-                    CreateFaces(builder, m, _Chunk, Math::Vec3f(x, y, z), boxCenter, edges);
+                    CreateFaces(builder, m, _Chunk, Math::Vec3f(x, y, z), edges);
                 }
             }
         }
@@ -439,7 +436,7 @@ namespace VCore
         return idxs;     
     }
 
-    void CMarchingCubesMesher::CreateFaces(CMeshBuilder &builder, VoxelModel m, const SChunkMeta &_Chunk, Math::Vec3f pos, Math::Vec3f center, short *edges)
+    void CMarchingCubesMesher::CreateFaces(CMeshBuilder &builder, VoxelModel m, const SChunkMeta &_Chunk, Math::Vec3f pos, short *edges)
     {
         int cidxtmp = -1;
 
@@ -458,9 +455,9 @@ namespace VCore
             v2.Pos = pos + positionTable[e2] + Math::Vec3f(1, 1, 1);
             v3.Pos = pos + positionTable[e3] + Math::Vec3f(1, 1, 1);
 
-            v1.Pos = v1.Pos * Math::Vec3f(1, 1, 1) - center;
-            v2.Pos = v2.Pos * Math::Vec3f(1, 1, 1) - center;
-            v3.Pos = v3.Pos * Math::Vec3f(1, 1, 1) - center;
+            v1.Pos = v1.Pos * Math::Vec3f(1, 1, 1);
+            v2.Pos = v2.Pos * Math::Vec3f(1, 1, 1);
+            v3.Pos = v3.Pos * Math::Vec3f(1, 1, 1);
 
             auto voxel1 = GetVoxel(m, _Chunk, pos, e1);
             auto voxel2 = GetVoxel(m, _Chunk, pos, e2);
