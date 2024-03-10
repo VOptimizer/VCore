@@ -182,7 +182,7 @@ namespace VCore
         {
             auto res = GenerateScene(node, modelMatrix, mergeChilds);
 
-            if(!mergeChilds || !sceneTree->Mesh)
+            if(!mergeChilds /*|| !sceneTree->Mesh*/)
                 ret.insert(ret.end(), res.begin(), res.end());
             else
             {
@@ -192,8 +192,10 @@ namespace VCore
                 for (auto &&m : res)
                     meshes.push_back(m);
 
-                builder.Merge(ret.back(), meshes);
-                ret.back() = builder.Build();
+                if(ret.empty())
+                    ret.push_back(builder.Merge(nullptr, meshes));
+                else
+                    ret.back() = builder.Merge(ret.back(), meshes);
             }
         }
 
