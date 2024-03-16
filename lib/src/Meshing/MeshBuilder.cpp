@@ -82,15 +82,17 @@ namespace VCore
 
     void CMeshBuilder::AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, Material _material)
     {
-        if(!m_CachedSurface || m_CachedSurface->Surface.FaceMaterial != _material)
-        {
-            auto it = m_Surfaces.find((size_t)_material.get());
-            if(it == m_Surfaces.end())
-                it = m_Surfaces.insert({(size_t)_material.get(), SIndexedSurface(_material)}).first;
-            m_CachedSurface = &it->second;
-            m_CachedSurface->Index.reserve(100);
-            m_CachedSurface->Index2.reserve(100);
-        }
+        FaceMaterial = _material;
+
+        // if(!m_CachedSurface || m_CachedSurface->Surface.FaceMaterial != _material)
+        // {
+        //     auto it = m_Surfaces.find((size_t)_material.get());
+        //     if(it == m_Surfaces.end())
+        //         it = m_Surfaces.insert({(size_t)_material.get(), SIndexedSurface(_material)}).first;
+        //     m_CachedSurface = &it->second;
+        //     m_CachedSurface->Index.reserve(100);
+        //     m_CachedSurface->Index2.reserve(100);
+        // }
 
         Math::Vec3f faceNormal = (_v2 - _v1).cross(_v3 - _v1).normalize();
 
@@ -119,71 +121,84 @@ namespace VCore
             uv4 = Math::Vec2f(_color, 3);
         }
 
-        int i1, i2, i3, i4;
-        i1 = AddVertex(SVertex(_v1, _normal, uv1), *m_CachedSurface);
-        i2 = AddVertex(SVertex(_v2, _normal, uv2), *m_CachedSurface);
-        i3 = AddVertex(SVertex(_v3, _normal, uv3), *m_CachedSurface);
-        i4 = AddVertex(SVertex(_v4, _normal, uv4), *m_CachedSurface);
+        // int i1, i2, i3, i4;
+        // i1 = AddVertex(SVertex(_v1, _normal, uv1), *m_CachedSurface);
+        // i2 = AddVertex(SVertex(_v2, _normal, uv2), *m_CachedSurface);
+        // i3 = AddVertex(SVertex(_v3, _normal, uv3), *m_CachedSurface);
+        // i4 = AddVertex(SVertex(_v4, _normal, uv4), *m_CachedSurface);
+
+        auto v1 = SVertex(_v1, _normal, uv1);
+        auto v2 = SVertex(_v2, _normal, uv2);
+        auto v3 = SVertex(_v3, _normal, uv3);
+        auto v4 = SVertex(_v4, _normal, uv4);
 
         // Checks the direction of the face.
         if(faceNormal == _normal)
         {
-            m_CachedSurface->Surface.Indices.push_back(i1);
-            m_CachedSurface->Surface.Indices.push_back(i2);
-            m_CachedSurface->Surface.Indices.push_back(i3);
+            m_Mesh.AddFace(v1, v2, v3);
+            m_Mesh.AddFace(v2, v4, v3);
 
-            m_CachedSurface->Surface.Indices.push_back(i2);
-            m_CachedSurface->Surface.Indices.push_back(i4);
-            m_CachedSurface->Surface.Indices.push_back(i3);
+            // m_CachedSurface->Surface.Indices.push_back(i1);
+            // m_CachedSurface->Surface.Indices.push_back(i2);
+            // m_CachedSurface->Surface.Indices.push_back(i3);
+
+            // m_CachedSurface->Surface.Indices.push_back(i2);
+            // m_CachedSurface->Surface.Indices.push_back(i4);
+            // m_CachedSurface->Surface.Indices.push_back(i3);
         }
         else
         {
-            m_CachedSurface->Surface.Indices.push_back(i3);
-            m_CachedSurface->Surface.Indices.push_back(i2);
-            m_CachedSurface->Surface.Indices.push_back(i1);
+            m_Mesh.AddFace(v3, v2, v1);
+            m_Mesh.AddFace(v3, v4, v2);
 
-            m_CachedSurface->Surface.Indices.push_back(i3);
-            m_CachedSurface->Surface.Indices.push_back(i4);
-            m_CachedSurface->Surface.Indices.push_back(i2);
+            // m_CachedSurface->Surface.Indices.push_back(i3);
+            // m_CachedSurface->Surface.Indices.push_back(i2);
+            // m_CachedSurface->Surface.Indices.push_back(i1);
+
+            // m_CachedSurface->Surface.Indices.push_back(i3);
+            // m_CachedSurface->Surface.Indices.push_back(i4);
+            // m_CachedSurface->Surface.Indices.push_back(i2);
         }
     }
    
     void CMeshBuilder::AddFace(SVertex v1, SVertex v2, SVertex v3, Material _material)
     {        
-        auto it = m_Surfaces.find((size_t)_material.get());
-        if(it == m_Surfaces.end())
-            it = m_Surfaces.insert({(size_t)_material.get(), SIndexedSurface(_material)}).first;
+        // auto it = m_Surfaces.find((size_t)_material.get());
+        // if(it == m_Surfaces.end())
+        //     it = m_Surfaces.insert({(size_t)_material.get(), SIndexedSurface(_material)}).first;
 
-        int i1, i2, i3;
-        i1 = AddVertex(v1, it->second);
-        i2 = AddVertex(v2, it->second);
-        i3 = AddVertex(v3, it->second);
+        // int i1, i2, i3;
+        // i1 = AddVertex(v1, it->second);
+        // i2 = AddVertex(v2, it->second);
+        // i3 = AddVertex(v3, it->second);
 
-        it->second.Surface.Indices.push_back(i1);
-        it->second.Surface.Indices.push_back(i2);
-        it->second.Surface.Indices.push_back(i3);
+        // it->second.Surface.Indices.push_back(i1);
+        // it->second.Surface.Indices.push_back(i2);
+        // it->second.Surface.Indices.push_back(i3);
     }
 
     Mesh CMeshBuilder::Build()
     {
-        auto ret = std::make_shared<SMesh>();
-        for (auto &&surface : m_Surfaces)
-        {
-            ret->Surfaces.emplace_back(std::move(surface.second.Surface));
-
-            // ret->Surfaces.emplace_back();
-            // 
-            // currentSurface->FaceMaterial = surface.second.Surface.FaceMaterial;
-
-            // currentSurface->Vertices = std::move(surface.second.Vertices);
-            // currentSurface->Indices = std::move(surface.second.Indices);
-        }
-
+        auto ret = m_Mesh.Build(); //std::make_shared<SMesh>();
+        ret->Surfaces[0].FaceMaterial = FaceMaterial;
         ret->Textures = *m_Textures;
+        // for (auto &&surface : m_Surfaces)
+        // {
+        //     ret->Surfaces.emplace_back(std::move(surface.second.Surface));
+
+        //     // ret->Surfaces.emplace_back();
+        //     // 
+        //     // currentSurface->FaceMaterial = surface.second.Surface.FaceMaterial;
+
+        //     // currentSurface->Vertices = std::move(surface.second.Vertices);
+        //     // currentSurface->Indices = std::move(surface.second.Indices);
+        // }
+
+        // ret->Textures = *m_Textures;
         m_Textures = nullptr;
         
-        // Clears the cache.
-        m_Surfaces.clear();
+        // // Clears the cache.
+        // m_Surfaces.clear();
 
         return ret;
     }

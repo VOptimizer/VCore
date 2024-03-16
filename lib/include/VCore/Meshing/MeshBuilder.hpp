@@ -31,6 +31,8 @@
 #include <VCore/Formats/IVoxelFormat.hpp>
 #include <VCore/Meshing/Mesh.hpp>
 #include <VCore/Voxel/VoxelTextureMap.hpp>
+#include <VCore/Meshing/HalfEdge.hpp>
+
 
 namespace VCore
 {
@@ -98,6 +100,9 @@ namespace VCore
 
             ~CMeshBuilder() = default;
         private:
+            CHalfMesh m_Mesh;
+            Material FaceMaterial;
+
             struct SIndexedSurface
             {
                 SIndexedSurface(const Material &_Material) 
