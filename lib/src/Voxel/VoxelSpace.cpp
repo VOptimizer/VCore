@@ -37,7 +37,7 @@ namespace VCore
 
         // Filters until the first none filtered element is reached
         if(m_FilterFunction)
-            it++;
+            it.InitFilter();
         else if(m_Chunks->begin() != m_Chunks->end())
         {
             CBBox bbox(it.m_Iterator->first, it.m_Iterator->first + m_ChunkSize);
@@ -58,7 +58,7 @@ namespace VCore
 
         // Filters until the first none filtered element is reached
         if(m_FilterFunction)
-            it++;
+            it.InitFilter();
         else
         {
             CBBox bbox(it.m_Iterator->first, it.m_Iterator->first + m_ChunkSize);
@@ -111,6 +111,19 @@ namespace VCore
         return *this;
     }
 
+    bool CChunkQueryList::ApplyFilter(std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator &_Iterator, SChunkMeta &_ChunkMeta) const
+    {
+        CBBox bbox(_Iterator->first, _Iterator->first + m_ChunkSize);
+        bool filtered = !m_FilterFunction;
+        if(m_FilterFunction)
+            filtered = m_FilterFunction(bbox, _Iterator->second, m_Userdata);
+
+        if(filtered)
+            _ChunkMeta = {(size_t)&_Iterator->second, &_Iterator->second, bbox, _Iterator->second.inner_bbox(_Iterator->first)};
+
+        return filtered;
+    }
+
     SChunkMeta CChunkQueryList::FilterNext(std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator &_Iterator) const
     {
         while (true)
@@ -119,13 +132,9 @@ namespace VCore
             if(_Iterator == m_Chunks->end())
                 return SChunkMeta();
 
-            CBBox bbox(_Iterator->first, _Iterator->first + m_ChunkSize);
-            bool filtered = !m_FilterFunction;
-            if(m_FilterFunction)
-                filtered = m_FilterFunction(bbox, _Iterator->second, m_Userdata);
-
-            if(filtered)
-                return {(size_t)&_Iterator->second, &_Iterator->second, bbox, _Iterator->second.inner_bbox(_Iterator->first)};
+            SChunkMeta result;
+            if(ApplyFilter(_Iterator, result))
+                return result;
         }
     }
 
@@ -141,6 +150,12 @@ namespace VCore
     CChunkQueryList::CChunkQueryIterator::pointer CChunkQueryList::CChunkQueryIterator::operator->() const
     {
         return &m_ChunkMeta;
+    }
+
+    void CChunkQueryList::CChunkQueryIterator::InitFilter()
+    {
+        if(!m_Parent->ApplyFilter(m_Iterator, m_ChunkMeta))
+            m_ChunkMeta = m_Parent->FilterNext(m_Iterator);
     }
 
     CChunkQueryList::CChunkQueryIterator& CChunkQueryList::CChunkQueryIterator::operator++()
@@ -521,6 +536,7 @@ namespace VCore
             auto chunk = _Space->GetChunk(globalPos);
             if(chunk)
             {
+                chunk->IsDirty = true;
                 auto chunkpos = _Space->chunkpos(globalPos);
                 return chunk->GetBlock(_Space, CBBox(chunkpos, _ChunkDim.End), globalPos - chunkpos);
             }
