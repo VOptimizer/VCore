@@ -515,6 +515,7 @@ namespace VCore
 
                     // Scenetree always in OpenGL Y-UP Space
                     tmp >> frameTransform.Translation.x >> frameTransform.Translation.z >> frameTransform.Translation.y;
+                    frameTransform.Translation.x *= -1;
                 }
                 else if(Key == "_r")
                 {
