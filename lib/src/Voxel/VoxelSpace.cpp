@@ -564,7 +564,7 @@ namespace VCore
         CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::BACK, ~CVoxel::Visibility::BACKWARD, ~CVoxel::Visibility::FORWARD);
         
         // Checks if the bbox must be resized
-        for (char i = 0; i < 3; i++)
+        for (size_t i = 0; i < 3; i++)
         {
             if(relPos.v[i] == (_ChunkDim.End.v[i] - 1))
                 m_InnerBBox.End.v[i] -= 1;

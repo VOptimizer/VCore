@@ -133,16 +133,7 @@ namespace VCore
     {
         auto ret = std::make_shared<SMesh>();
         for (auto &&surface : m_Surfaces)
-        {
             ret->Surfaces.emplace_back(std::move(surface.second.Surface));
-
-            // ret->Surfaces.emplace_back();
-            // 
-            // currentSurface->FaceMaterial = surface.second.Surface.FaceMaterial;
-
-            // currentSurface->Vertices = std::move(surface.second.Vertices);
-            // currentSurface->Indices = std::move(surface.second.Indices);
-        }
 
         ret->Textures = *m_Textures;
         m_Textures = nullptr;
@@ -153,7 +144,7 @@ namespace VCore
         return ret;
     }
 
-    Mesh CMeshBuilder::Merge(Mesh _MergeInto, const std::vector<Mesh> &_Meshes)
+    Mesh CMeshBuilder::Merge(Mesh _MergeInto, const std::vector<Mesh> &_Meshes, bool _ApplyModelMatrix)
     {
         Mesh ret;
         if(_MergeInto)
@@ -166,28 +157,45 @@ namespace VCore
             ret = std::make_shared<SMesh>();
             if(!_Meshes.empty())
                 ret->Textures = _Meshes[0]->Textures;
-            // m_Textures = &ret->Textures;
+        }
+
+        for (auto &&m : _Meshes)
+        {
+            for(auto &&surface : m->Surfaces)
+            {
+                auto it = m_Surfaces.find((size_t)surface.FaceMaterial.get());
+                if(it == m_Surfaces.end())
+                    it = m_Surfaces.insert({(size_t)surface.FaceMaterial.get(), SIndexedSurface(surface.FaceMaterial)}).first;
+
+                it->second.Surface.Vertices.reserve(it->second.Surface.Vertices.capacity() + surface.Vertices.size());
+                it->second.Surface.Indices.reserve(it->second.Surface.Indices.capacity() + surface.Indices.size());
+            }
+
         }
 
         for (auto &&m : _Meshes)       
-            MergeIntoThis(m);
+            MergeIntoThis(m, _ApplyModelMatrix);
 
         ret->Surfaces.clear();
         for (auto &&surface : m_Surfaces)
-        {
             ret->Surfaces.emplace_back(std::move(surface.second.Surface));
-            // ret->Surfaces.emplace_back();
-            // SSurface *currentSurface = &ret->Surfaces.back();
-            // currentSurface->FaceMaterial = surface.second.FaceMaterial;
-
-            // currentSurface->Vertices = std::move(surface.second.Vertices);
-            // currentSurface->Indices = std::move(surface.second.Indices);
-        }
 
         // Clears the cache.
         m_Surfaces.clear();
 
         return ret;
+    }
+
+    bool CMeshBuilder::IsOnBorder(const Math::Vec3f &_Pos)
+    {
+        for (size_t i = 0; i < 3; i++)
+        {
+            // TODO: Should I ever make the chunk size dynamically, than must this be also dynamic.
+            if(_Pos.v[i] == 0 || _Pos.v[i] == 15)
+                return true;
+        }
+
+        return false;
     }
 
     void CMeshBuilder::GenerateCache(Mesh _MergeInto)
@@ -201,25 +209,45 @@ namespace VCore
                 it = m_Surfaces.insert({(size_t)surface.FaceMaterial.get(), SIndexedSurface(surface.FaceMaterial)}).first;
 
             it->second.Surface = std::move(surface);
-            // it->second.Indices = surface.Indices;
-            // it->second.Vertices = surface.Vertices;
-
             for (auto &&i : it->second.Surface.Indices)
             {
                 if(i < (int)it->second.Surface.Size())
-                    it->second.Index.insert({it->second.Surface[i], i});
+                {
+                    auto v = it->second.Surface[i];
+                    if(IsOnBorder(v.Pos))
+                        AddVertex(v, it->second);
+                    else
+                        it->second.Surface.AddVertex(v);
+                }
             }
         }       
     }
 
-    void CMeshBuilder::MergeIntoThis(Mesh m)
+    void CMeshBuilder::AddMergeVertex(const SVertex &_Vertex, SIndexedSurface &_Surface)
     {
-        auto euler = m->ModelMatrix.GetEuler();
+        int idx;
+        if(IsOnBorder(_Vertex.Pos))
+            idx = AddVertex(_Vertex, _Surface);
+        else
+        {
+            idx = _Surface.Surface.Size();
+            _Surface.Surface.AddVertex(_Vertex);
+        }
+
+        _Surface.Surface.Indices.push_back(idx);
+    }
+
+    void CMeshBuilder::MergeIntoThis(Mesh m, bool _ApplyModelMatrix)
+    {
         Math::Mat4x4 rotation;
-        rotation
-            .Rotate(Math::Vec3f(0, 0, 1), euler.z)
-            .Rotate(Math::Vec3f(1, 0, 0), euler.x)
-            .Rotate(Math::Vec3f(0, 1, 0), euler.y);
+        if(_ApplyModelMatrix)
+        {
+            auto euler = m->ModelMatrix.GetEuler();
+            rotation
+                .Rotate(Math::Vec3f(0, 0, 1), euler.z)
+                .Rotate(Math::Vec3f(1, 0, 0), euler.x)
+                .Rotate(Math::Vec3f(0, 1, 0), euler.y);
+        }
 
         for (auto &&surface : m->Surfaces)
         {
@@ -233,22 +261,20 @@ namespace VCore
                 SVertex v2 = surface[surface.Indices[i + 1]];
                 SVertex v3 = surface[surface.Indices[i + 2]];
 
-                v1.Pos = m->ModelMatrix * v1.Pos;
-                v1.Normal = rotation * v1.Normal;
+                if(_ApplyModelMatrix)
+                {
+                    v1.Pos = m->ModelMatrix * v1.Pos;
+                    v1.Normal = rotation * v1.Normal;
 
-                v2.Pos = m->ModelMatrix * v2.Pos;
-                v2.Normal = rotation * v2.Normal;
+                    v2.Pos = m->ModelMatrix * v2.Pos;
+                    v2.Normal = rotation * v2.Normal;
 
-                v3.Pos = m->ModelMatrix * v3.Pos;
-                v3.Normal = rotation * v3.Normal;
-
-                int i1 = AddVertex(v1, it->second);
-                int i2 = AddVertex(v2, it->second);
-                int i3 = AddVertex(v3, it->second);
-
-                it->second.Surface.Indices.push_back(i1);
-                it->second.Surface.Indices.push_back(i2);
-                it->second.Surface.Indices.push_back(i3);
+                    v3.Pos = m->ModelMatrix * v3.Pos;
+                    v3.Normal = rotation * v3.Normal;
+                }
+                AddMergeVertex(v1, it->second);
+                AddMergeVertex(v2, it->second);
+                AddMergeVertex(v3, it->second);
             }
         }
     }

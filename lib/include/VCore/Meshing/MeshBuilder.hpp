@@ -78,7 +78,7 @@ namespace VCore
              * @brief Merges a list of meshes into one.
              * @return Returns the _MergeInto mesh or a new one, if _MergeInto is null. 
              */
-            Mesh Merge(Mesh _MergeInto, const std::vector<Mesh> &_Meshes);
+            Mesh Merge(Mesh _MergeInto, const std::vector<Mesh> &_Meshes, bool _ApplyModelMatrix = false);
 
             /**
              * @brief Generates the new mesh.
@@ -94,18 +94,17 @@ namespace VCore
                     Surface.FaceMaterial = _Material;
                 }
 
-                // Material FaceMaterial;
                 std::unordered_map<SVertex, int, VertexHasher> Index;
 
                 SSurface Surface;
-
-                // std::vector<int> Indices;
-                // std::vector<SVertex> Vertices;
             };
 
             int AddVertex(const SVertex &_Vertex, SIndexedSurface &_Surface);
+            void AddMergeVertex(const SVertex &_Vertex, SIndexedSurface &_Surface);
 
-            void MergeIntoThis(Mesh m);
+            bool IsOnBorder(const Math::Vec3f &_Pos);
+
+            void MergeIntoThis(Mesh m, bool _ApplyModelMatrix);
             void GenerateCache(Mesh _MergeInto);
 
             const std::map<TextureType, Texture> *m_Textures;

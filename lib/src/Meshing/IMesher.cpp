@@ -193,9 +193,9 @@ namespace VCore
                     meshes.push_back(m);
 
                 if(ret.empty())
-                    ret.push_back(builder.Merge(nullptr, meshes));
+                    ret.push_back(builder.Merge(nullptr, meshes, true));
                 else
-                    ret.back() = builder.Merge(ret.back(), meshes);
+                    ret.back() = builder.Merge(ret.back(), meshes, true);
             }
         }
 
