@@ -173,6 +173,8 @@ namespace VCore
                 CChunkQueryIterator& operator=(const CChunkQueryIterator &_Other);
                 CChunkQueryIterator& operator=(CChunkQueryIterator &&_Other);
             private:
+                void InitFilter();
+
                 const CChunkQueryList *m_Parent; 
                 mutable SChunkMeta m_ChunkMeta;
 
@@ -200,6 +202,7 @@ namespace VCore
             CChunkQueryList &operator=(CChunkQueryList &&_Other);
 
         private:
+            bool ApplyFilter(std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator &_Iterator, SChunkMeta &_ChunkMeta) const;
             SChunkMeta FilterNext(std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator &_Iterator) const;
 
             FilterFunction m_FilterFunction;
