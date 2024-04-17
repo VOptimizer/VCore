@@ -190,8 +190,10 @@ namespace VCore
     {
         for (size_t i = 0; i < 3; i++)
         {
+            int pos = _Pos.v[i] - ((int)(_Pos.v[i] / 16.f) * 16);
+
             // TODO: Should I ever make the chunk size dynamically, than must this be also dynamic.
-            if(_Pos.v[i] == 0 || _Pos.v[i] == 15)
+            if(pos == 0 || pos == 15)
                 return true;
         }
 
@@ -211,27 +213,32 @@ namespace VCore
             it->second.Surface = std::move(surface);
             for (auto &&i : it->second.Surface.Indices)
             {
-                if(i < (int)it->second.Surface.Size())
-                {
-                    auto v = it->second.Surface[i];
-                    if(IsOnBorder(v.Pos))
-                        AddVertex(v, it->second);
-                    else
-                        it->second.Surface.AddVertex(v);
-                }
+                auto v = it->second.Surface[i];
+                if(IsOnBorder(v.Pos))
+                    it->second.Index.insert({v, i});
+                //     AddVertex(v, it->second);
+                // else
+                //     it->second.Surface.AddVertex(v);
             }
         }       
     }
 
-    void CMeshBuilder::AddMergeVertex(const SVertex &_Vertex, SIndexedSurface &_Surface)
+    void CMeshBuilder::AddMergeVertex(const SVertex &_Vertex, SIndexedSurface &_Surface, std::unordered_map<SVertex, int, VertexHasher> &_Index)
     {
         int idx;
         if(IsOnBorder(_Vertex.Pos))
             idx = AddVertex(_Vertex, _Surface);
         else
         {
-            idx = _Surface.Surface.Size();
-            _Surface.Surface.AddVertex(_Vertex);
+            auto it = _Index.find(_Vertex);
+            if(it != _Index.end())
+                idx = it->second;
+            else
+            {
+                idx = _Surface.Surface.Size();
+                _Surface.Surface.AddVertex(_Vertex);
+                _Index.insert({_Vertex, idx});
+            }
         }
 
         _Surface.Surface.Indices.push_back(idx);
@@ -240,6 +247,8 @@ namespace VCore
     void CMeshBuilder::MergeIntoThis(Mesh m, bool _ApplyModelMatrix)
     {
         Math::Mat4x4 rotation;
+        static std::unordered_map<SVertex, int, VertexHasher> localIndex;
+
         if(_ApplyModelMatrix)
         {
             auto euler = m->ModelMatrix.GetEuler();
@@ -272,10 +281,12 @@ namespace VCore
                     v3.Pos = m->ModelMatrix * v3.Pos;
                     v3.Normal = rotation * v3.Normal;
                 }
-                AddMergeVertex(v1, it->second);
-                AddMergeVertex(v2, it->second);
-                AddMergeVertex(v3, it->second);
+                AddMergeVertex(v1, it->second, localIndex);
+                AddMergeVertex(v2, it->second, localIndex);
+                AddMergeVertex(v3, it->second, localIndex);
             }
         }
+
+        localIndex.clear();
     }
 }

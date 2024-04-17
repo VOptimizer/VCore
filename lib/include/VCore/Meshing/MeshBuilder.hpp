@@ -95,12 +95,11 @@ namespace VCore
                 }
 
                 std::unordered_map<SVertex, int, VertexHasher> Index;
-
                 SSurface Surface;
             };
 
             int AddVertex(const SVertex &_Vertex, SIndexedSurface &_Surface);
-            void AddMergeVertex(const SVertex &_Vertex, SIndexedSurface &_Surface);
+            void AddMergeVertex(const SVertex &_Vertex, SIndexedSurface &_Surface, std::unordered_map<SVertex, int, VertexHasher> &_Index);
 
             bool IsOnBorder(const Math::Vec3f &_Pos);
 

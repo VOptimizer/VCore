@@ -310,6 +310,7 @@ int main(int argc, char const *argv[])
                 // {
                 //     auto startTime = std::chrono::high_resolution_clock::now();
                 //     auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
+                //     // Mesher->GenerateChunks(Loader->GetModels()[0]);
                 //     auto endTime = std::chrono::high_resolution_clock::now();
 
                 //     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
