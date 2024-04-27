@@ -41,7 +41,7 @@ namespace VCore
 
     std::vector<char> CSpriteStackingExporter::Generate(VoxelModel m)
     {
-        Math::Vec3f Size = m->GetSize();
+        Math::Vec3f Size = m->GetBBox().GetSize();
         std::vector<uint32_t> Pixels(Size.x * Size.y * Size.z, 0);
 
         auto diffuse = m->Textures.at(TextureType::DIFFIUSE);

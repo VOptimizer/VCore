@@ -41,7 +41,7 @@ namespace VCore
         VoxelModel mesh = std::make_shared<CVoxelModel>();
         m_Materials.push_back(std::make_shared<CMaterial>());
         mesh->Materials = m_Materials;
-        mesh->SetSize(ReadVector());
+        ReadVector();
         ReadColors();
         ReadVoxels(mesh);
 
@@ -108,7 +108,6 @@ namespace VCore
 
     void CQubicleExchangeFormat::ReadVoxels(VoxelModel mesh)
     {
-        Math::Vec3i Beg(1000, 1000, 1000), End;
         while (!m_DataStream->Eof())
         {
             std::stringstream strm;
@@ -122,10 +121,7 @@ namespace VCore
             if(mask == 0)
                 continue;
 
-            Beg = Beg.min(pos);
-            End = End.max(pos);
             mesh->SetVoxel(pos, 0, cid, false);
         }
-        mesh->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
     }
 }

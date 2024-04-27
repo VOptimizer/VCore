@@ -49,7 +49,7 @@ namespace VCore
             m_DataStream->Read(&name[0], nameLen);
 
             mesh->Name = name;
-            mesh->SetSize(ReadVector());
+            auto size = ReadVector();
             auto pos = ReadVector();
 
             // auto halfSize = (mesh->GetSize() / 2.0);
@@ -64,9 +64,9 @@ namespace VCore
             m_SceneTree->AddChild(sceneNode);
 
             if(m_Header.Compression == 0)
-                ReadUncompressed(mesh);
+                ReadUncompressed(mesh, size);
             else
-                ReadRLECompressed(mesh);
+                ReadRLECompressed(mesh, size);
 
             m_Models.push_back(mesh);
         }
@@ -87,14 +87,13 @@ namespace VCore
         return ret;
     }
 
-    void CQubicleBinaryFormat::ReadUncompressed(VoxelModel mesh)
+    void CQubicleBinaryFormat::ReadUncompressed(VoxelModel mesh, const Math::Vec3i &_Size)
     {
-        Math::Vec3i Beg(1000, 1000, 1000), End;
-        for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().z; z++)
+        for (uint32_t z = 0; z < (uint32_t)_Size.z; z++)
         {
-            for (uint32_t y = 0; y < (uint32_t)mesh->GetSize().y; y++)
+            for (uint32_t y = 0; y < (uint32_t)_Size.y; y++)
             {
-                for (uint32_t x = 0; x < (uint32_t)mesh->GetSize().x; x++)
+                for (uint32_t x = 0; x < (uint32_t)_Size.x; x++)
                 {
                     int color = m_DataStream->Read<int>();
                     int cid = GetColorIdx(color);
@@ -102,25 +101,15 @@ namespace VCore
                         continue;
 
                     auto pos = Math::Vec3f(x, y, z);
-
-                    // if(m_Header.ZAxisOrientation == 1)
-                    //     pos.z = (uint32_t)(mesh->GetSize().z) - pos.z;
-
-                    Beg = Beg.min(pos);
-                    End = End.max(pos);
-
                     mesh->SetVoxel(pos, 0, cid, false);
                 }
             }
         }
-
-        mesh->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
     }
 
-    void CQubicleBinaryFormat::ReadRLECompressed(VoxelModel mesh)
+    void CQubicleBinaryFormat::ReadRLECompressed(VoxelModel mesh, const Math::Vec3i &_Size)
     {
-        Math::Vec3i Beg(1000, 1000, 1000), End;
-        for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().z; z++)
+        for (uint32_t z = 0; z < (uint32_t)_Size.z; z++)
         {
             uint32_t index = 0;
 
@@ -140,20 +129,15 @@ namespace VCore
                     {
                         Math::Vec3i pos;
 
-                        pos.x = index % (uint32_t)mesh->GetSize().x;
-                        pos.y = (uint32_t)(index / (uint32_t)mesh->GetSize().x);
+                        pos.x = index % (uint32_t)_Size.x;
+                        pos.y = (uint32_t)(index / (uint32_t)_Size.x);
                         pos.z = z;
 
-                        // if(m_Header.ZAxisOrientation == 1)
-                        //     pos.z = ((uint32_t)mesh->GetSize().z) - pos.z;
-                            
                         index++;
                         cid = GetColorIdx(data);
                         if(cid == -1)
                             continue;
 
-                        Beg = Beg.min(pos);
-                        End = End.max(pos);
                         mesh->SetVoxel(pos, 0, cid, false);
                     }
                     
@@ -162,26 +146,19 @@ namespace VCore
                 {
                     Math::Vec3i pos;
 
-                    pos.x = index % (uint32_t)mesh->GetSize().x;
-                    pos.y = (uint32_t)(index / (uint32_t)mesh->GetSize().x);
+                    pos.x = index % (uint32_t)_Size.x;
+                    pos.y = (uint32_t)(index / (uint32_t)_Size.x);
                     pos.z = z;
-
-                    // if(m_Header.ZAxisOrientation == 1)
-                    //     pos.z = ((uint32_t)mesh->GetSize().z) - pos.z;
-
 
                     index++;
                     cid = GetColorIdx(data);
                     if(cid == -1)
                         continue;
 
-                    Beg = Beg.min(pos);
-                    End = End.max(pos);
                     mesh->SetVoxel(pos, 0, cid, false);
                 }
             }
         }
-        mesh->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
     }
 
     int CQubicleBinaryFormat::GetColorIdx(int color)

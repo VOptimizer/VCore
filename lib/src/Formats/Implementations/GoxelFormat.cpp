@@ -47,10 +47,9 @@ namespace VCore
             if(!l.Visible)
                 continue;
 
-            Math::Vec3f Beg(INFINITY, INFINITY, INFINITY), End, TranslationBeg(INFINITY, INFINITY, INFINITY);
             VoxelModel m = std::make_shared<CVoxelModel>();
             m->Name = l.Name;
-            m->SetSize(m_BBox.End + m_BBox.Beg.abs());
+            auto size = m_BBox.End + m_BBox.Beg.abs();
             std::map<int, int> meshMaterialMapping;
 
             for (auto &&b : l.Blocks)
@@ -66,7 +65,7 @@ namespace VCore
                         {
                             // Makes y the up axis, as needed.
                             // Also Goxel uses a left handed coordinate system, VCore uses a right handed one. So we need to convert the coordinates.
-                            Math::Vec3i vi(m->GetSize().x - (x + m_BBox.Beg.abs().x) - m_BBox.Beg.abs().x, z, y);
+                            Math::Vec3i vi(size.x - (x + m_BBox.Beg.abs().x) - m_BBox.Beg.abs().x, z, y);
                             // vi += m_BBox.Beg.abs();
                             // vi *= Math::Vec3i(1, 1, -1);
 
@@ -136,27 +135,16 @@ namespace VCore
                                         IdxC = ColorIdx[p];
                                 }
                                 
-                                TranslationBeg = TranslationBeg.min(Math::Vec3f(x, y, z));
-                                Beg = Beg.min(vi);
-                                End = End.max(vi);
-
                                 m->SetVoxel(vi, matIdx, IdxC, false);
                             }
                         }
                     }
                 }
             }
-            
-            m->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
 
-            // TODO: This is dumb! The model matrix should be created on a central point!
             auto sceneNode = std::make_shared<CSceneNode>();
-            // Math::Vec3f translation = TranslationBeg +  m->BBox.GetSize() / 2;
-            // std::swap(translation.y, translation.z);
-            // translation.z *= -1;
 
             sceneNode->Mesh = m;
-            // sceneNode->Position = translation;
             m_SceneTree->AddChild(sceneNode);
             m_SceneTree->Visible = l.Visible;
 

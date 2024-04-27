@@ -166,9 +166,11 @@ namespace VCore
         // We only have always one chunk using this technique.
         SMeshChunk chunk;
         Math::Vec3iHasher hasher;
-        chunk.UniqueId = hasher(_Mesh->BBox.Beg);
-        chunk.InnerBBox = _Mesh->BBox;
-        chunk.TotalBBox = _Mesh->BBox;
+        auto bbox = _Mesh->GetBBox();
+
+        chunk.UniqueId = hasher(bbox.Beg);
+        chunk.InnerBBox = bbox;
+        chunk.TotalBBox = bbox;
         chunk.MeshData = builder.Build();
 
         ret.push_back(chunk);

@@ -70,7 +70,7 @@ namespace VCore
                         Math::Vec3f pos = v.Pos;
                         Math::Vec3f normal = v.Normal;
 
-                        if(m_Settings->WorldSpace)
+                        if(Settings->WorldSpace)
                         {
                             pos = mesh->ModelMatrix * pos;
                             normal = rotMat * normal;

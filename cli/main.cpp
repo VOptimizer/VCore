@@ -269,7 +269,7 @@ int main(int argc, char const *argv[])
             if(!f->IsPNG)
             {
                 Exporter = VCore::IExporter::Create(f->OutType);
-                Exporter->Settings()->WorldSpace = cmdl[{"-w", "--worldspace"}];
+                Exporter->Settings->WorldSpace = cmdl[{"-w", "--worldspace"}];
             }
 
             std::filesystem::path parent = fs::path(f->OutputFile).parent_path();

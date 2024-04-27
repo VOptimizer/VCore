@@ -35,6 +35,7 @@ namespace VCore
     {
         public:
             CMaterial() : Name(), Metallic(0), Specular(0), Roughness(1), IOR(0), Power(0), Transparency(0) {}
+            CMaterial(const CMaterial &_Material) { *this = _Material; }
 
             std::string Name;
             float Metallic;
@@ -43,6 +44,19 @@ namespace VCore
             float IOR;
             float Power;    //!< For emissive.
             float Transparency;
+
+            inline CMaterial& operator=(const CMaterial &_Material)
+            {
+                Name = _Material.Name;
+                Metallic = _Material.Metallic;
+                Specular = _Material.Specular;
+                Roughness = _Material.Roughness;
+                IOR = _Material.IOR;
+                Power = _Material.Power;
+                Transparency = _Material.Transparency;
+
+                return *this;
+            }
 
             inline bool operator==(const CMaterial &other)
             {
@@ -58,7 +72,12 @@ namespace VCore
                 return equal;
             }
 
-            ~CMaterial() {}
+            inline bool operator!=(const CMaterial &other)
+            {
+                return !operator==(other);
+            }
+
+            ~CMaterial() = default;
     };
 
     using Material = std::shared_ptr<CMaterial>;

@@ -91,7 +91,7 @@ godot_error CGodotVoxelOptimizer::Save(String Path, bool exportWorldspace)
     VCore::Exporter exporter;
 
     exporter = VCore::IExporter::Create(VCore::IExporter::GetType(Path.utf8().get_data()));
-    exporter->Settings()->WorldSpace = exportWorldspace;
+    exporter->Settings->WorldSpace = exportWorldspace;
 
     // Path = Path.get_basename();
     exporter->Save<CGodotIOHandler>(Path.utf8().get_data(), m_Meshes);

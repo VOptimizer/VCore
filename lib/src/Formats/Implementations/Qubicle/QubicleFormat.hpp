@@ -45,7 +45,7 @@ namespace VCore
             void LoadCompound();
 
             int GetColorIdx(int color);
-            void AddVoxel(VoxelModel mesh, int color, Math::Vec3i pos, Math::Vec3i &Beg, Math::Vec3i &End);
+            void AddVoxel(VoxelModel mesh, int color, Math::Vec3i pos);
 
             Math::Vec3i ReadVector();
     };
