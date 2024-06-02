@@ -25,7 +25,7 @@
 #ifndef VOXELINFO_HPP
 #define VOXELINFO_HPP
 
-#include <unordered_map>
+#include <VCore/Misc/unordered_dense.h>
 #include <VCore/Math/Vector.hpp>
 
 namespace VCore
@@ -95,7 +95,7 @@ namespace VCore
 
             ~CVoxelTextureMap() = default;
         private:
-            std::unordered_map<int, CVoxelInfo> m_VoxelInfos;
+            ankerl::unordered_dense::map<int, CVoxelInfo> m_VoxelInfos;
     };
 }
 

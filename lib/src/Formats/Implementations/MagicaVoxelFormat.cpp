@@ -82,7 +82,7 @@ namespace VCore
         if(Version < 150)
             throw CVoxelLoaderException("Version: " + std::to_string(Version) + " is not supported");
 
-        std::unordered_map<int, SFrameSpeed> animations;
+        ankerl::unordered_dense::map<int, SFrameSpeed> animations;
 
         // First processes the materials that are at the end of the file. 
         auto anims = ProcessMaterialAndSceneGraph();

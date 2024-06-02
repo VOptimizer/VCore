@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5.0)
 project(VCore VERSION 0.1.0 LANGUAGES CXX C)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -49,8 +49,8 @@ set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelModel.cpp"
 #set(LIBS "")
 
 include_directories(
-  "${PROJECT_SOURCE_DIR}/include"
-  "${PROJECT_SOURCE_DIR}/third_party")
+  "${PROJECT_SOURCE_DIR}/third_party"
+  "${PROJECT_SOURCE_DIR}/include")
 
 add_library(${PROJECT_NAME} STATIC ${SRCS})
 

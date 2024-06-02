@@ -223,7 +223,7 @@ namespace VCore
         }       
     }
 
-    void CMeshBuilder::AddMergeVertex(const SVertex &_Vertex, SIndexedSurface &_Surface, std::unordered_map<SVertex, int, VertexHasher> &_Index)
+    void CMeshBuilder::AddMergeVertex(const SVertex &_Vertex, SIndexedSurface &_Surface, ankerl::unordered_dense::map<SVertex, int, VertexHasher> &_Index)
     {
         int idx;
         if(IsOnBorder(_Vertex.Pos))
@@ -247,7 +247,7 @@ namespace VCore
     void CMeshBuilder::MergeIntoThis(Mesh m, bool _ApplyModelMatrix)
     {
         Math::Mat4x4 rotation;
-        static std::unordered_map<SVertex, int, VertexHasher> localIndex;
+        static ankerl::unordered_dense::map<SVertex, int, VertexHasher> localIndex;
 
         if(_ApplyModelMatrix)
         {

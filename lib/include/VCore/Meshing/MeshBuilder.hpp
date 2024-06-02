@@ -94,12 +94,12 @@ namespace VCore
                     Surface.FaceMaterial = _Material;
                 }
 
-                std::unordered_map<SVertex, int, VertexHasher> Index;
+                ankerl::unordered_dense::map<SVertex, int, VertexHasher> Index;
                 SSurface Surface;
             };
 
             int AddVertex(const SVertex &_Vertex, SIndexedSurface &_Surface);
-            void AddMergeVertex(const SVertex &_Vertex, SIndexedSurface &_Surface, std::unordered_map<SVertex, int, VertexHasher> &_Index);
+            void AddMergeVertex(const SVertex &_Vertex, SIndexedSurface &_Surface, ankerl::unordered_dense::map<SVertex, int, VertexHasher> &_Index);
 
             bool IsOnBorder(const Math::Vec3f &_Pos);
 
@@ -107,7 +107,7 @@ namespace VCore
             void GenerateCache(Mesh _MergeInto);
 
             const std::map<TextureType, Texture> *m_Textures;
-            std::unordered_map<size_t, SIndexedSurface> m_Surfaces;
+            ankerl::unordered_dense::map<size_t, SIndexedSurface> m_Surfaces;
             Mesh m_MergerMesh;
 
             CVoxelTextureMap *m_TextureMap;

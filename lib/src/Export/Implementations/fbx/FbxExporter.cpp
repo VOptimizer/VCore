@@ -373,7 +373,7 @@ namespace VCore
         _Connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty(((int64_t)_Mesh.get()) + 1), CFbxProperty(_RootId) });
         _Connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty((int64_t)_Mesh.get()), CFbxProperty(((int64_t)_Mesh.get()) + 1) });
 
-        std::unordered_map<uint64_t, int> materialIndexMap;
+        ankerl::unordered_dense::map<uint64_t, int> materialIndexMap;
         int materialIndex = 0;
 
         for (auto &&surface : _Mesh->Surfaces)

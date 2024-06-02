@@ -114,7 +114,7 @@ namespace VCore
         return *this;
     }
 
-    bool CChunkQueryList::ApplyFilter(std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator &_Iterator, SChunkMeta &_ChunkMeta) const
+    bool CChunkQueryList::ApplyFilter(ankerl::unordered_dense::map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator &_Iterator, SChunkMeta &_ChunkMeta) const
     {
         CBBox bbox(_Iterator->first, _Iterator->first + m_ChunkSize);
         bool filtered = !m_FilterFunction;
@@ -130,7 +130,7 @@ namespace VCore
         return filtered;
     }
 
-    SChunkMeta CChunkQueryList::FilterNext(std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator &_Iterator) const
+    SChunkMeta CChunkQueryList::FilterNext(ankerl::unordered_dense::map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator &_Iterator) const
     {
         while (true)
         {
