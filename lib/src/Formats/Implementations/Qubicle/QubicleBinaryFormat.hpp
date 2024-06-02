@@ -50,8 +50,8 @@ namespace VCore
             std::map<int, int> m_ColorIdx;
             
             void ParseFormat() override;
-            void ReadUncompressed(VoxelModel mesh);
-            void ReadRLECompressed(VoxelModel mesh);
+            void ReadUncompressed(VoxelModel mesh, const Math::Vec3i &_Size);
+            void ReadRLECompressed(VoxelModel mesh, const Math::Vec3i &_Size);
             int GetColorIdx(int color);
 
             Math::Vec3i ReadVector();

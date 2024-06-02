@@ -64,10 +64,8 @@ namespace VCore
         auto mat = std::make_shared<CMaterial>();
         m_Materials.push_back(mat);
         m->Materials.push_back(mat);
-        m->SetSize(Content->Size);
 
         Math::Vec3f Pos;
-        Math::Vec3f Beg, End;
 
         Pos.y = Content->Size.y - 1;
         Pos.z = (int)(Content->Size.z / 2.f);
@@ -87,12 +85,6 @@ namespace VCore
                 for (; z <= Pos.z + blocks; z++)
                 {
                     Math::Vec3f v(Pos.x, Pos.y, z);
-                    if(Beg.IsZero())
-                        Beg = v;
-
-                    Beg = Beg.min(v);
-                    End = End.max(v);
-
                     m->SetVoxel(v, 0, (z < Pos.z) ? backIdx : idx, false);
                 }
             }
@@ -110,7 +102,6 @@ namespace VCore
         sceneNode->Mesh = m;
 
         m->Textures = std::move(m_Textures);
-        m->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
 
         m_Models.push_back(m);
         m_ColorIdx.clear();

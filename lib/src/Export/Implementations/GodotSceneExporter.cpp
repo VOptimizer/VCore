@@ -165,7 +165,7 @@ namespace VCore
             nodes << "mesh = SubResource(" << id << ")" << std::endl;
             nodes << "visible = true" << std::endl;
 
-            if(m_Settings->WorldSpace)
+            if(Settings->WorldSpace)
             {
                 auto matrix = mesh->ModelMatrix;
 

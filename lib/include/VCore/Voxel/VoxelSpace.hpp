@@ -139,6 +139,7 @@ namespace VCore
 
         private:
             CVoxel *GetBlock(CVoxelSpace *_Space, const CBBox &_ChunkDim, const Math::Vec3i &_v);
+            bool HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos, const Math::Vec3i &_ChunkSize);
             void CheckAndUpdateVisibility(CVoxelSpace *_Space, const CBBox &_ChunkDim, Voxel _ThisVoxel, const Math::Vec3i &_Pos, CVoxel::Visibility _This, CVoxel::Visibility _Other);
 
             void clear();
@@ -298,9 +299,11 @@ namespace VCore
             iterator begin();
             iterator end() const;
 
+            CBBox calculateBBox() const;
+
             void clear();
 
-            CVoxelSpace &operator=(const CVoxelSpace &_Other) = delete;;
+            CVoxelSpace &operator=(const CVoxelSpace &_Other) = delete;
             CVoxelSpace &operator=(CVoxelSpace &&_Other);
 
             ~CVoxelSpace() { clear(); }

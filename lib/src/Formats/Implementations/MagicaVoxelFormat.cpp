@@ -115,14 +115,16 @@ namespace VCore
 
                     if(strncmp(Tmp.ID, "SIZE", sizeof(Tmp.ID)) == 0)
                     {
-                        VoxelModel m = ProcessSize();
+                        VoxelModel m = std::make_shared<CVoxelModel>();
+                        auto size = ProcessSize();
+
                         Tmp = m_DataStream->Read<SChunkHeader>();
                         if(strncmp(Tmp.ID, "XYZI", sizeof(Tmp.ID)) != 0)
                             throw CVoxelLoaderException("Can't understand the format.");
 
-                        ProcessXYZI(m);
+                        ProcessXYZI(m, size);
                         m_Models.push_back(m);
-                        Math::Vec3i halfSize = (m->GetSize() / 2.0);
+                        Math::Vec3i halfSize = (size / 2.0);
 
                         auto treeNode = m_ModelSceneTreeMapping.at(m_Models.size() - 1);
 
@@ -214,10 +216,8 @@ namespace VCore
         }
     }
 
-    VoxelModel CMagicaVoxelFormat::ProcessSize()
+    Math::Vec3i CMagicaVoxelFormat::ProcessSize()
     {
-        VoxelModel Ret = std::make_shared<CVoxelModel>();
-
         Math::Vec3i Size;
 
         // Since in MagicaVoxel the z axis is the gravity axis (Up axis), we need to read the vector in the following order xzy.
@@ -226,16 +226,12 @@ namespace VCore
         Size.z = m_DataStream->Read<int>();
         Size.y = m_DataStream->Read<int>();
 
-        Ret->SetSize(Size);
-
-        return Ret;
+        return Size;
     }
 
-    void CMagicaVoxelFormat::ProcessXYZI(VoxelModel m)
+    void CMagicaVoxelFormat::ProcessXYZI(VoxelModel m, const Math::Vec3i &_Size)
     {
         int VoxelCount = m_DataStream->Read<int>();
-
-        Math::Vec3i Beg(INT32_MAX, INT32_MAX, INT32_MAX), End;
 
         // Each model has it's used material attached, so we need to map the MagicaVoxel ID to the local one of the mesh.
         std::map<int, int> modelMaterialMapping;
@@ -251,13 +247,10 @@ namespace VCore
             // Since in MagicaVoxel the z axis is the gravity axis (Up axis), we need to read the vector in the following order xzy.
             // So the gravity axis will be the y axis.
             // Also Magicavoxel uses a left handed coordinate system, VCore uses a right handed one. So we need to convert the coordinates.
-            vec.x = m->GetSize().x - data[0];
+            vec.x = _Size.x - data[0];
             vec.y = data[2];
             vec.z = data[1];
             int MatIdx = data[3];
-
-            Beg = Beg.min(vec);
-            End = End.max(vec);
 
             int Color = 0;
             bool Transparent = false;
@@ -293,9 +286,7 @@ namespace VCore
             }
 
             m->SetVoxel(vec, MatIdx, Color, Transparent);
-        } 
-
-        m->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
+        }
     }
 
     std::vector<std::vector<CMagicaVoxelFormat::SFrame>> CMagicaVoxelFormat::ProcessMaterialAndSceneGraph()

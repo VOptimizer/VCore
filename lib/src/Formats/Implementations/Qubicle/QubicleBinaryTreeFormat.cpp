@@ -120,8 +120,7 @@ namespace VCore
         auto pos = ReadVector();
 
         m_DataStream->Seek(6 * sizeof(int));
-        mesh->SetSize(ReadVector());
-
+        auto size = ReadVector();
         // auto halfSize = (mesh->GetSize() / 2.0);
         // pos += halfSize;
 
@@ -139,12 +138,11 @@ namespace VCore
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         int strmPos = 0;
 
-        Math::Vec3i Beg(1000, 1000, 1000), End;
-        for (uint32_t x = 0; x < (uint32_t)mesh->GetSize().x; x++)
+        for (uint32_t x = 0; x < (uint32_t)size.x; x++)
         {
-            for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().z; z++)
+            for (uint32_t z = 0; z < (uint32_t)size.z; z++)
             {
-                for (uint32_t y = 0; y < (uint32_t)mesh->GetSize().y; y++)
+                for (uint32_t y = 0; y < (uint32_t)size.y; y++)
                 {
                     int color;
                     memcpy(&color, Data + strmPos, sizeof(int));
@@ -161,17 +159,12 @@ namespace VCore
                         continue;
 
                     auto pos = Math::Vec3i(x, y, z);
-
-                    Beg = Beg.min(pos);
-                    End = End.max(pos);
-
                     mesh->SetVoxel(pos, 0, cid, false);
                 }
             }
         }
         free(Data);
 
-        mesh->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
         m_Models.push_back(mesh);
     }
 
@@ -187,7 +180,7 @@ namespace VCore
         auto pos = ReadVector();
 
         m_DataStream->Seek(6 * sizeof(int));
-        mesh->SetSize(ReadVector());
+        auto size = ReadVector();
 
         // auto halfSize = (mesh->GetSize() / 2.0);
         // pos += halfSize;
@@ -205,12 +198,11 @@ namespace VCore
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         int strmPos = 0;
 
-        Math::Vec3i Beg(1000, 1000, 1000), End;
-        for (uint32_t x = 0; x < (uint32_t)mesh->GetSize().x; x++)
+        for (uint32_t x = 0; x < (uint32_t)size.x; x++)
         {
-            for (uint32_t z = 0; z < (uint32_t)mesh->GetSize().z; z++)
+            for (uint32_t z = 0; z < (uint32_t)size.z; z++)
             {
-                for (uint32_t y = 0; y < (uint32_t)mesh->GetSize().y; y++)
+                for (uint32_t y = 0; y < (uint32_t)size.y; y++)
                 {
                     int color;
                     memcpy(&color, Data + strmPos, sizeof(int));
@@ -227,17 +219,12 @@ namespace VCore
                         continue;
 
                     auto pos = Math::Vec3f(x, y, z);
-
-                    Beg = Beg.min(pos);
-                    End = End.max(pos);
-
                     mesh->SetVoxel(pos, 0, cid, false);
                 }
             }
         }
         free(Data);
 
-        mesh->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
         m_Models.push_back(mesh);
 
         uint32_t childCount = m_DataStream->Read<uint32_t>();

@@ -159,19 +159,19 @@ namespace VCore
                 ret->Textures = _Meshes[0]->Textures;
         }
 
-        for (auto &&m : _Meshes)
-        {
-            for(auto &&surface : m->Surfaces)
-            {
-                auto it = m_Surfaces.find((size_t)surface.FaceMaterial.get());
-                if(it == m_Surfaces.end())
-                    it = m_Surfaces.insert({(size_t)surface.FaceMaterial.get(), SIndexedSurface(surface.FaceMaterial)}).first;
+        // for (auto &&m : _Meshes)
+        // {
+        //     for(auto &&surface : m->Surfaces)
+        //     {
+        //         auto it = m_Surfaces.find((size_t)surface.FaceMaterial.get());
+        //         if(it == m_Surfaces.end())
+        //             it = m_Surfaces.insert({(size_t)surface.FaceMaterial.get(), SIndexedSurface(surface.FaceMaterial)}).first;
 
-                it->second.Surface.Vertices.reserve(it->second.Surface.Vertices.capacity() + surface.Vertices.size());
-                it->second.Surface.Indices.reserve(it->second.Surface.Indices.capacity() + surface.Indices.size());
-            }
+        //         it->second.Surface.Vertices.reserve(it->second.Surface.Vertices.capacity() + surface.Vertices.size());
+        //         it->second.Surface.Indices.reserve(it->second.Surface.Indices.capacity() + surface.Indices.size());
+        //     }
 
-        }
+        // }
 
         for (auto &&m : _Meshes)       
             MergeIntoThis(m, _ApplyModelMatrix);

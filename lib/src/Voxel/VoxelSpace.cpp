@@ -241,18 +241,25 @@ namespace VCore
         auto res = it->second.erase(this, _it, CBBox(position, m_ChunkSize));
         m_VoxelsCount--;
 
-        // Searches for the next voxel inside of any chunk.
-        while (!res.second)
-        {
-            it++;
-            if(it == m_Chunks.end())
-                return end();
+        // Removes the empty chunk.
+        if(it->second.inner_bbox(position).GetSize() == Math::Vec3i::ZERO)
+            it = m_Chunks.erase(it);
 
-            res = it->second.next(it->second.inner_bbox(it->first).Beg, CBBox(it->first, m_ChunkSize));
+        if(it != m_Chunks.end())
+        {
+            // Searches for the next voxel inside of any chunk.
+            while (!res.second)
+            {
+                it++;
+                if(it == m_Chunks.end())
+                    return end();
+
+                res = it->second.next(it->second.inner_bbox(it->first).Beg, CBBox(it->first, m_ChunkSize));
+            }
+            
+            if(res.second)
+                return CVoxelSpaceIterator(this, it->second.inner_bbox(it->first), res);
         }
-        
-        if(res.second)
-            return CVoxelSpaceIterator(this, it->second.inner_bbox(it->first), res);
 
         return end();
     }
@@ -417,6 +424,19 @@ namespace VCore
         return CVoxelSpaceIterator(this, CBBox(), {Math::Vec3i(), nullptr});
     }
 
+    CBBox CVoxelSpace::calculateBBox() const
+    {
+        CBBox bbox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i());
+        for (auto &&c : m_Chunks)
+        {
+            auto innerBBox = c.second.inner_bbox(c.first);
+            bbox.Beg = innerBBox.Beg.min(bbox.Beg);
+            bbox.End = innerBBox.End.max(bbox.End);
+        }
+
+        return bbox;
+    }
+
     void CVoxelSpace::clear()
     {
         m_Chunks.clear();
@@ -546,6 +566,26 @@ namespace VCore
         IsDirty = true;
     }
 
+    bool CChunk::HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos, const Math::Vec3i &_ChunkSize)
+    {
+        Math::Vec3i pos = _Pos;
+        int heightAxis = (_Axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
+        int widthAxis = (_Axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
+
+        pos.v[widthAxis] = m_InnerBBox.Beg.v[widthAxis];
+        for (; pos.v[widthAxis] <= m_InnerBBox.End.v[widthAxis]; pos.v[widthAxis]++)
+        {
+            pos.v[heightAxis] = m_InnerBBox.Beg.v[heightAxis];
+            for (; pos.v[heightAxis] <= m_InnerBBox.End.v[heightAxis]; pos.v[heightAxis]++)
+            {
+                if(m_Data[pos.x + _ChunkSize.x * pos.y + _ChunkSize.x * _ChunkSize.y * pos.z].IsInstantiated())
+                    return true;
+            }
+        }
+        
+        return false;
+    }
+
     CVoxelSpace::ppair CChunk::erase(CVoxelSpace *_Space, const iterator &_it, const CBBox &_ChunkDim)
     {
         Math::Vec3i relPos = (_it->first - _ChunkDim.Beg).abs();
@@ -566,9 +606,9 @@ namespace VCore
         // Checks if the bbox must be resized
         for (size_t i = 0; i < 3; i++)
         {
-            if(relPos.v[i] == (_ChunkDim.End.v[i] - 1))
+            if((relPos.v[i] == m_InnerBBox.End.v[i]) && !HasVoxelOnPlane(i, relPos, _ChunkDim.End))
                 m_InnerBBox.End.v[i] -= 1;
-            else if(relPos.v[i] == 0)
+            else if((relPos.v[i] == m_InnerBBox.Beg.v[i]) && !HasVoxelOnPlane(i, relPos, _ChunkDim.End))
                 m_InnerBBox.Beg.v[i] += 1;
         }
         

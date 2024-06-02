@@ -118,8 +118,8 @@ namespace VCore
 
             void LoadDefaultPalette();
 
-            VoxelModel ProcessSize();
-            void ProcessXYZI(VoxelModel m);
+            Math::Vec3i ProcessSize();
+            void ProcessXYZI(VoxelModel m, const Math::Vec3i &_Size);
             std::vector<std::vector<SFrame>> ProcessMaterialAndSceneGraph();
 
             TransformNode ProcessTransformNode();
