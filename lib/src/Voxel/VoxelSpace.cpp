@@ -227,8 +227,8 @@ namespace VCore
         if(it == m_Chunks.end())
             it = m_Chunks.insert({position, CChunk(m_ChunkSize)}).first;
 
-        it->second.insert(this, _pair, CBBox(position, m_ChunkSize));
-        m_VoxelsCount++;
+        if(it->second.insert(this, _pair, CBBox(position, m_ChunkSize)))
+            m_VoxelsCount++;
     }
 
     CVoxelSpace::iterator CVoxelSpace::erase(const iterator &_it)
@@ -239,26 +239,31 @@ namespace VCore
             return end();
 
         auto res = it->second.erase(this, _it, CBBox(position, m_ChunkSize));
-        m_VoxelsCount--;
+        if(res.first)
+            m_VoxelsCount--;
+
+        auto bbox = it->second.inner_bbox(position);
 
         // Removes the empty chunk.
-        if(it->second.inner_bbox(position).GetSize() == Math::Vec3i::ZERO)
+        if(bbox.End < bbox.Beg)
             it = m_Chunks.erase(it);
 
         if(it != m_Chunks.end())
         {
+            auto result = res.second;
+
             // Searches for the next voxel inside of any chunk.
-            while (!res.second)
+            while (!result.second)
             {
                 it++;
                 if(it == m_Chunks.end())
                     return end();
 
-                res = it->second.next(it->second.inner_bbox(it->first).Beg, CBBox(it->first, m_ChunkSize));
+                result = it->second.next(it->second.inner_bbox(it->first).Beg, CBBox(it->first, m_ChunkSize));
             }
             
-            if(res.second)
-                return CVoxelSpaceIterator(this, it->second.inner_bbox(it->first), res);
+            if(result.second)
+                return CVoxelSpaceIterator(this, it->second.inner_bbox(it->first), result);
         }
 
         return end();
@@ -541,10 +546,14 @@ namespace VCore
         return nullptr;
     }
 
-    void CChunk::insert(CVoxelSpace *_Space, const pair &_pair, const CBBox &_ChunkDim)
+    bool CChunk::insert(CVoxelSpace *_Space, const pair &_pair, const CBBox &_ChunkDim)
     {
+        bool result = true;
         Math::Vec3i relPos = (_pair.first - _ChunkDim.Beg).abs();
         CVoxel &voxel = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z]; //= _pair.second;
+        if(voxel.IsInstantiated())
+            result = false;
+
         voxel.Color = _pair.second.Color;
         voxel.Material = _pair.second.Material;
         voxel.Transparent = _pair.second.Transparent;
@@ -564,6 +573,8 @@ namespace VCore
         m_InnerBBox.Beg = m_InnerBBox.Beg.min(relPos);
         m_InnerBBox.End = m_InnerBBox.End.max(relPos);
         IsDirty = true;
+
+        return result;
     }
 
     bool CChunk::HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos, const Math::Vec3i &_ChunkSize)
@@ -586,33 +597,39 @@ namespace VCore
         return false;
     }
 
-    CVoxelSpace::ppair CChunk::erase(CVoxelSpace *_Space, const iterator &_it, const CBBox &_ChunkDim)
+    std::pair<bool, CVoxelSpace::ppair> CChunk::erase(CVoxelSpace *_Space, const iterator &_it, const CBBox &_ChunkDim)
     {
+        bool result = true;
         Math::Vec3i relPos = (_it->first - _ChunkDim.Beg).abs();
         // m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z] = CVoxel();
         CVoxel &voxel = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
-        voxel = CVoxel();
-        IsDirty = true;
-
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::UP, ~CVoxel::Visibility::UP, ~CVoxel::Visibility::DOWN);
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::DOWN, ~CVoxel::Visibility::DOWN, ~CVoxel::Visibility::UP);
-
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::LEFT, ~CVoxel::Visibility::LEFT, ~CVoxel::Visibility::RIGHT);
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::RIGHT, ~CVoxel::Visibility::RIGHT, ~CVoxel::Visibility::LEFT);
-
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::FRONT, ~CVoxel::Visibility::FORWARD, ~CVoxel::Visibility::BACKWARD);
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::BACK, ~CVoxel::Visibility::BACKWARD, ~CVoxel::Visibility::FORWARD);
-        
-        // Checks if the bbox must be resized
-        for (size_t i = 0; i < 3; i++)
+        if(voxel.IsInstantiated())
         {
-            if((relPos.v[i] == m_InnerBBox.End.v[i]) && !HasVoxelOnPlane(i, relPos, _ChunkDim.End))
-                m_InnerBBox.End.v[i] -= 1;
-            else if((relPos.v[i] == m_InnerBBox.Beg.v[i]) && !HasVoxelOnPlane(i, relPos, _ChunkDim.End))
-                m_InnerBBox.Beg.v[i] += 1;
+            voxel = CVoxel();
+            IsDirty = true;
+
+            CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::UP, ~CVoxel::Visibility::UP, ~CVoxel::Visibility::DOWN);
+            CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::DOWN, ~CVoxel::Visibility::DOWN, ~CVoxel::Visibility::UP);
+
+            CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::LEFT, ~CVoxel::Visibility::LEFT, ~CVoxel::Visibility::RIGHT);
+            CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::RIGHT, ~CVoxel::Visibility::RIGHT, ~CVoxel::Visibility::LEFT);
+
+            CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::FRONT, ~CVoxel::Visibility::FORWARD, ~CVoxel::Visibility::BACKWARD);
+            CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::BACK, ~CVoxel::Visibility::BACKWARD, ~CVoxel::Visibility::FORWARD);
+            
+            // Checks if the bbox must be resized
+            for (size_t i = 0; i < 3; i++)
+            {
+                if((relPos.v[i] == m_InnerBBox.End.v[i]) && !HasVoxelOnPlane(i, relPos, _ChunkDim.End))
+                    m_InnerBBox.End.v[i] -= 1;
+                else if((relPos.v[i] == m_InnerBBox.Beg.v[i]) && !HasVoxelOnPlane(i, relPos, _ChunkDim.End))
+                    m_InnerBBox.Beg.v[i] += 1;
+            }
         }
+        else
+            result = false;
         
-        return next(_it->first, _ChunkDim);
+        return {result, next(_it->first, _ChunkDim)};
     }
 
     CVoxelSpace::ppair CChunk::next(const Math::Vec3i &_Position, const CBBox &_ChunkDim) const

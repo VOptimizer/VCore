@@ -91,13 +91,16 @@ namespace VCore
 
             /**
              * @brief Insert a new voxel.
+             * @return Returns true if a new voxel was created
              */
-            void insert(CVoxelSpace *_Space, const pair &_pair, const CBBox &_ChunkDim);
+            bool insert(CVoxelSpace *_Space, const pair &_pair, const CBBox &_ChunkDim);
 
             /**
              * @brief Removes a voxel.
+             * 
+             * @return Returns a pair, which contains the information, if a voxel was removed and the next voxel in the chunk.
              */
-            ppair erase(CVoxelSpace *_Space, const iterator &_it, const CBBox &_ChunkDim);
+            std::pair<bool, ppair> erase(CVoxelSpace *_Space, const iterator &_it, const CBBox &_ChunkDim);
 
             /**
              * @brief Returns the next voxel or null.
