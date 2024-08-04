@@ -60,7 +60,7 @@ namespace VCore
         {
             _Mesh->GetVoxels().markAsProcessed(c);
             futures.push_back(std::async(&CGreedyMesher::GenerateSlicedChunk, this, _Mesh, c, true));
-            while(futures.size() >= 1) //std::thread::hardware_concurrency())
+            while(futures.size() >= std::thread::hardware_concurrency())
             {
                 auto it = futures.begin();
                 while (it != futures.end())
