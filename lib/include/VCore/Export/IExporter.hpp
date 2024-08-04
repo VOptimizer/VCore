@@ -52,6 +52,8 @@ namespace VCore
     class IExporter
     {
         public:
+            ExportSettings Settings;
+
             IExporter();
 
             /**
@@ -94,16 +96,6 @@ namespace VCore
              */
             virtual void Save(IIOHandler *_Handler, const std::string &_Path, const std::vector<Mesh> &_Meshes);
 
-            inline ExportSettings Settings() const
-            {
-                return m_Settings;
-            }
-            
-            inline void Settings(ExportSettings _Settings)
-            {
-                m_Settings = _Settings;
-            }
-
             virtual ~IExporter() { DeleteFileStream(); }
         
         protected:
@@ -121,7 +113,6 @@ namespace VCore
             void DeleteFileStream();
 
             IIOHandler *m_IOHandler;
-            ExportSettings m_Settings;
     };
 }
 

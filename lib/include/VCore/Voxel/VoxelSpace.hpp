@@ -139,6 +139,7 @@ namespace VCore
 
         private:
             CVoxel *GetBlock(CVoxelSpace *_Space, const CBBox &_ChunkDim, const Math::Vec3i &_v);
+            bool HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos, const Math::Vec3i &_ChunkSize);
             void CheckAndUpdateVisibility(CVoxelSpace *_Space, const CBBox &_ChunkDim, Voxel _ThisVoxel, const Math::Vec3i &_Pos, CVoxel::Visibility _This, CVoxel::Visibility _Other);
 
             void clear();
@@ -157,7 +158,7 @@ namespace VCore
                 using pointer = SChunkMeta*;
 
                 CChunkQueryIterator() : m_Parent(nullptr) {}
-                CChunkQueryIterator(const CChunkQueryList *_Parent, std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator _Iterator) : m_Parent(_Parent), m_Iterator(_Iterator) {}
+                CChunkQueryIterator(const CChunkQueryList *_Parent, ankerl::unordered_dense::map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator _Iterator) : m_Parent(_Parent), m_Iterator(_Iterator) {}
                 CChunkQueryIterator(CChunkQueryIterator &&_Other) { *this = std::move(_Other); }
                 CChunkQueryIterator(const CChunkQueryIterator &_Other) { *this = _Other; }
 
@@ -173,10 +174,12 @@ namespace VCore
                 CChunkQueryIterator& operator=(const CChunkQueryIterator &_Other);
                 CChunkQueryIterator& operator=(CChunkQueryIterator &&_Other);
             private:
+                void InitFilter();
+
                 const CChunkQueryList *m_Parent; 
                 mutable SChunkMeta m_ChunkMeta;
 
-                std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator m_Iterator;
+                ankerl::unordered_dense::map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator m_Iterator;
         };
 
         public:
@@ -184,7 +187,7 @@ namespace VCore
             using FilterFunction = bool (*)(const CBBox &_BBox, const CChunk &_Chunk, void *_Userdata);
 
             CChunkQueryList() : m_FilterFunction(nullptr), m_Chunks(nullptr) {}
-            CChunkQueryList(const std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher> &_Chunks, const Math::Vec3i &_ChunkSize, FilterFunction _FilterFn = nullptr, void *_Userdata = nullptr) : m_FilterFunction(_FilterFn), m_ChunkSize(_ChunkSize), m_Chunks(&_Chunks), m_Userdata(_Userdata) {}
+            CChunkQueryList(const ankerl::unordered_dense::map<Math::Vec3i, CChunk, Math::Vec3iHasher> &_Chunks, const Math::Vec3i &_ChunkSize, FilterFunction _FilterFn = nullptr, void *_Userdata = nullptr) : m_FilterFunction(_FilterFn), m_ChunkSize(_ChunkSize), m_Chunks(&_Chunks), m_Userdata(_Userdata) {}
             CChunkQueryList(const CChunkQueryList &_Other) { *this = _Other; }
             CChunkQueryList(CChunkQueryList &&_Other) { *this = std::move(_Other); }
 
@@ -200,11 +203,12 @@ namespace VCore
             CChunkQueryList &operator=(CChunkQueryList &&_Other);
 
         private:
-            SChunkMeta FilterNext(std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator &_Iterator) const;
+            bool ApplyFilter(ankerl::unordered_dense::map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator &_Iterator, SChunkMeta &_ChunkMeta) const;
+            SChunkMeta FilterNext(ankerl::unordered_dense::map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator &_Iterator) const;
 
             FilterFunction m_FilterFunction;
             Math::Vec3i m_ChunkSize;
-            const std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher> *m_Chunks;
+            const ankerl::unordered_dense::map<Math::Vec3i, CChunk, Math::Vec3iHasher> *m_Chunks;
             void *m_Userdata;
     };
 
@@ -295,9 +299,11 @@ namespace VCore
             iterator begin();
             iterator end() const;
 
+            CBBox calculateBBox() const;
+
             void clear();
 
-            CVoxelSpace &operator=(const CVoxelSpace &_Other) = delete;;
+            CVoxelSpace &operator=(const CVoxelSpace &_Other) = delete;
             CVoxelSpace &operator=(CVoxelSpace &&_Other);
 
             ~CVoxelSpace() { clear(); }
@@ -310,7 +316,7 @@ namespace VCore
 
             Math::Vec3i m_ChunkSize;
             size_t m_VoxelsCount;
-            std::unordered_map<Math::Vec3i, CChunk, Math::Vec3iHasher> m_Chunks;
+            ankerl::unordered_dense::map<Math::Vec3i, CChunk, Math::Vec3iHasher> m_Chunks;
     };
 }
 

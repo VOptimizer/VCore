@@ -34,8 +34,8 @@ namespace VCore
 
     void CPlanesVoxelizer::SetVoxelSpaceSize(const Math::Vec3i &_size)
     {
-        m_Mesh->SetSize(_size);
-        m_Mesh->BBox = CBBox(Math::Vec3i(), m_Mesh->GetSize());
+        // m_Mesh->SetSize(_size);
+        // m_Mesh->BBox = CBBox(Math::Vec3i(), m_Mesh->GetSize());
     }
 
     VoxelModel CPlanesVoxelizer::GetMesh()
@@ -81,38 +81,38 @@ namespace VCore
         Math::Vec3i sizeFront = _info.Front.GetSize() - Math::Vec3i(1, 1, 1);
         Math::Vec3i sizeLeft = _info.Left.GetSize() - Math::Vec3i(1, 1, 1);
 
-        for (int z = 0; z < m_Mesh->GetSize().z; z++)
-        {
-            for (int y = 0; y < sizeTop.y; y++)
-            {
-                for (int x = 0; x < sizeTop.x; x++)
-                {
-                    // Checks if the current voxel needs to be added.
-                    CColor c = GetColor(_planes, Math::Vec2ui(_info.Top.Beg.x + x, _info.Top.Beg.y + y));
-                    if(c.A == 0) // Can't add an invisible pixel  
-                        continue;
+        // for (int z = 0; z < m_Mesh->GetSize().z; z++)
+        // {
+        //     for (int y = 0; y < sizeTop.y; y++)
+        //     {
+        //         for (int x = 0; x < sizeTop.x; x++)
+        //         {
+        //             // Checks if the current voxel needs to be added.
+        //             CColor c = GetColor(_planes, Math::Vec2ui(_info.Top.Beg.x + x, _info.Top.Beg.y + y));
+        //             if(c.A == 0) // Can't add an invisible pixel  
+        //                 continue;
 
-                    if(!sizeFront.IsZero())
-                    {
-                        CColor cf = GetColor(_planes, Math::Vec2ui(_info.Front.Beg.x + x, _info.Front.Beg.y + (m_Mesh->GetSize().z - z - 1)));
-                        if(cf.A == 0) // Can't add an invisible pixel  
-                            continue;
-                    }
+        //             if(!sizeFront.IsZero())
+        //             {
+        //                 CColor cf = GetColor(_planes, Math::Vec2ui(_info.Front.Beg.x + x, _info.Front.Beg.y + (m_Mesh->GetSize().z - z - 1)));
+        //                 if(cf.A == 0) // Can't add an invisible pixel  
+        //                     continue;
+        //             }
 
-                    if(!sizeLeft.IsZero())
-                    {
-                        CColor cl = GetColor(_planes, Math::Vec2ui(_info.Left.Beg.x + y, _info.Left.Beg.y + (m_Mesh->GetSize().z - z - 1)));
-                        if(cl.A == 0) // Can't add an invisible pixel  
-                            continue;
-                    }
+        //             if(!sizeLeft.IsZero())
+        //             {
+        //                 CColor cl = GetColor(_planes, Math::Vec2ui(_info.Left.Beg.x + y, _info.Left.Beg.y + (m_Mesh->GetSize().z - z - 1)));
+        //                 if(cl.A == 0) // Can't add an invisible pixel  
+        //                     continue;
+        //             }
 
-                    int colorIdx = AddOrGetColor(c.AsRGBA());
-                    Math::Vec3i pos(x, sizeTop.y - y - 1, z);
+        //             int colorIdx = AddOrGetColor(c.AsRGBA());
+        //             Math::Vec3i pos(x, sizeTop.y - y - 1, z);
 
-                    m_Mesh->SetVoxel(pos, 0, colorIdx, false);
-                }
-            }
-        }
+        //             m_Mesh->SetVoxel(pos, 0, colorIdx, false);
+        //         }
+        //     }
+        // }
     }
 
     void CPlanesVoxelizer::ProjectTexture(Texture _planes, const CBBox &_bbox, uint8_t _axis, bool _otherSide)
@@ -134,44 +134,44 @@ namespace VCore
                 int colorIdx = AddOrGetColor(p);
 
                 // Projects the color onto the mesh.
-                for (int z = 0; z < m_Mesh->GetSize().v[_axis]; z++)
-                {
-                    // TODO: UGLY, but functional :(
-                    Math::Vec3f pos;
-                    if(_axis == 1)
-                    {
-                        if(_otherSide)
-                            pos.v[axis2] = size.x - x - 1;
-                        else
-                            pos.v[axis2] = x;
+            //     for (int z = 0; z < m_Mesh->GetSize().v[_axis]; z++)
+            //     {
+            //         // TODO: UGLY, but functional :(
+            //         Math::Vec3f pos;
+            //         if(_axis == 1)
+            //         {
+            //             if(_otherSide)
+            //                 pos.v[axis2] = size.x - x - 1;
+            //             else
+            //                 pos.v[axis2] = x;
 
-                        pos.v[axis1] = y;
-                    }
-                    else
-                    {
-                        if((_otherSide && _axis != 0) || (!_otherSide && _axis == 0))
-                            pos.v[axis1] = size.x - x - 1;
-                        else
-                            pos.v[axis1] = x;
+            //             pos.v[axis1] = y;
+            //         }
+            //         else
+            //         {
+            //             if((_otherSide && _axis != 0) || (!_otherSide && _axis == 0))
+            //                 pos.v[axis1] = size.x - x - 1;
+            //             else
+            //                 pos.v[axis1] = x;
 
-                        if(_axis == 2)
-                            pos.v[axis2] = size.y - y - 1;
-                        else
-                            pos.v[axis2] = y;
-                    }
+            //             if(_axis == 2)
+            //                 pos.v[axis2] = size.y - y - 1;
+            //             else
+            //                 pos.v[axis2] = y;
+            //         }
 
-                    if(!_otherSide)
-                        pos.v[_axis] = z;
-                    else
-                        pos.v[_axis] = m_Mesh->GetSize().v[_axis] - z - 1;
+            //         if(!_otherSide)
+            //             pos.v[_axis] = z;
+            //         else
+            //             pos.v[_axis] = m_Mesh->GetSize().v[_axis] - z - 1;
 
-                    auto voxel = m_Mesh->GetVoxel(pos);
-                    if(voxel)
-                    {
-                        voxel->Color = colorIdx;
-                        break;
-                    }
-                }
+            //         auto voxel = m_Mesh->GetVoxel(pos);
+            //         if(voxel)
+            //         {
+            //             voxel->Color = colorIdx;
+            //             break;
+            //         }
+            //     }
             }
         } 
     }

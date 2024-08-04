@@ -56,8 +56,6 @@ namespace VCore
             // For the gui
             std::string Name;
 
-            CBBox BBox;
-
             // Texturing
             TexturingTypes TexturingType;
             CVoxelTextureMap TextureMapping;           //!< Contains information about the texture atlas mapping.
@@ -66,22 +64,6 @@ namespace VCore
             std::map<TextureType, Texture> Textures;   //!< Used colors / texture atlas
 
             CVoxelModel() : TexturingType(TexturingTypes::INDEXED) {}
-
-            /**
-             * @brief Sets the size of the voxel model.
-             */
-            inline void SetSize(const Math::Vec3i &Size)
-            {
-                m_Size = Size;
-            }
-
-            /**
-             * @return Returns the voxel space size of a voxel mesh.
-             */
-            inline Math::Vec3i GetSize() const
-            {
-                return m_Size;
-            }
             
             /**
              * List of voxels. The size of the list is always the size of the voxel space.
@@ -120,6 +102,14 @@ namespace VCore
              * @return Gets a voxel on a given position.
              */
             Voxel GetVoxel(const Math::Vec3i &Pos);
+
+            /**
+             * @return Returns the bbox of the voxel model.
+             */
+            CBBox GetBBox() const
+            {
+                return m_Voxels.calculateBBox();
+            }
 
             /**
              * @brief Gets a voxel on a given position.
@@ -173,8 +163,7 @@ namespace VCore
             VoxelData::querylist QueryChunks(const CFrustum *_Frustum) const;
             
             ~CVoxelModel() = default;
-        private:   
-            Math::Vec3i m_Size;            
+        private:             
             VoxelData m_Voxels;
     };
 

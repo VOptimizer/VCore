@@ -285,7 +285,7 @@ int main(int argc, char const *argv[])
             if(!f->IsPNG)
             {
                 Exporter = VCore::IExporter::Create(f->OutType);
-                Exporter->Settings()->WorldSpace = cmdl[{"-w", "--worldspace"}];
+                Exporter->Settings->WorldSpace = cmdl[{"-w", "--worldspace"}];
             }
 
             std::filesystem::path parent = fs::path(f->OutputFile).parent_path();
@@ -320,11 +320,12 @@ int main(int argc, char const *argv[])
             {
                 std::vector<VCore::Mesh> outputMeshes;
 
-                for (size_t i = 0; i < benchmarkCount + 1; i++)
-                {
-                    auto startTime = std::chrono::high_resolution_clock::now();
-                    auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
-                    auto endTime = std::chrono::high_resolution_clock::now();
+                // for (size_t i = 0; i < MAX_COUNT + 1; i++)
+                // {
+                //     auto startTime = std::chrono::high_resolution_clock::now();
+                //     auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
+                //     // Mesher->GenerateChunks(Loader->GetModels()[0]);
+                //     auto endTime = std::chrono::high_resolution_clock::now();
 
                     if(benchmarkCount == 0)
                     {

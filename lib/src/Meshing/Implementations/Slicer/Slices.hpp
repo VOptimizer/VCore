@@ -26,7 +26,7 @@
 #define SLICES_HPP
 
 #include <map>
-#include <unordered_map>
+#include <VCore/Misc/unordered_dense.h>
 #include <vector>
 #include <VCore/Math/Vector.hpp>
 #include <VCore/Meshing/Texture.hpp>
@@ -38,7 +38,7 @@ namespace VCore
     using Quad = std::pair<Math::Vec3i, Math::Vec3i>;
     using Quads = std::vector<CQuadInfo>;
     using Slice = std::map<int, Quads>;
-    using Slices = std::unordered_map<int, Slice>;
+    using Slices = ankerl::unordered_dense::map<int, Slice>;
 
     class CQuadInfo
     {

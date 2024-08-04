@@ -26,7 +26,7 @@
 #define VECTOR_HPP
 
 #include <math.h>
-#include <unordered_map>
+#include <VCore/Misc/unordered_dense.h>
 
 #include "SIMD/x86/Vector-SIMD.hpp"
 #include <string.h>
@@ -550,10 +550,10 @@ namespace VCore
     }
 
     template<class T, class KeyEqual = std::equal_to<Math::Vec3f>>
-    using VectorMap = std::unordered_map<Math::Vec3f, T, Math::Vec3fHasher, KeyEqual>;
+    using VectorMap = ankerl::unordered_dense::map<Math::Vec3f, T, Math::Vec3fHasher, KeyEqual>;
 
     template<class T, class KeyEqual = std::equal_to<Math::Vec3i>>
-    using VectoriMap = std::unordered_map<Math::Vec3i, T, Math::Vec3iHasher, KeyEqual>;
+    using VectoriMap = ankerl::unordered_dense::map<Math::Vec3i, T, Math::Vec3iHasher, KeyEqual>;
 }
 
 #endif //VECTOR_HPP

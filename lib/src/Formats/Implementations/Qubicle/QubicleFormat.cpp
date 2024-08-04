@@ -129,10 +129,10 @@ namespace VCore
         VoxelModel mesh = std::make_shared<CVoxelModel>();
         mesh->Materials = m_Materials;
         mesh->Name = name;
-        mesh->SetSize(ReadVector());
+        auto size = ReadVector();
 
         auto pos = ReadVector();
-        // auto halfSize = (mesh->GetSize() / 2.0);
+        // auto halfSize = (size / 2.0);
         // pos += halfSize;
 
         auto sceneNode = std::make_shared<CSceneNode>();
@@ -149,9 +149,7 @@ namespace VCore
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         int strmPos = 0;
 
-        Math::Vec3i Beg(1000, 1000, 1000), End;
         uint32_t index = 0;
-
         while(strmPos < OutSize)
         {
             uint32_t y = 0; 
@@ -177,11 +175,11 @@ namespace VCore
                     {
                         Math::Vec3i pos;
 
-                        pos.z = index % (uint32_t)mesh->GetSize().z;
-                        pos.x = (uint32_t)(index / (uint32_t)mesh->GetSize().z);
+                        pos.z = index % (uint32_t)size.z;
+                        pos.x = (uint32_t)(index / (uint32_t)size.z);
                         pos.y = y;
                         
-                        AddVoxel(mesh, data, pos, Beg, End);
+                        AddVoxel(mesh, data, pos);
                         y++;
                     }
                     
@@ -191,11 +189,11 @@ namespace VCore
                 {
                     Math::Vec3i pos;
 
-                    pos.z = index % (uint32_t)mesh->GetSize().z;
-                    pos.x = (uint32_t)(index / (uint32_t)mesh->GetSize().z);
+                    pos.z = index % (uint32_t)size.z;
+                    pos.x = (uint32_t)(index / (uint32_t)size.z);
                     pos.y = y;
                     
-                    AddVoxel(mesh, data, pos, Beg, End);
+                    AddVoxel(mesh, data, pos);
                     y++;
                 }
             }
@@ -204,7 +202,6 @@ namespace VCore
         }
         free(Data);
 
-        mesh->BBox = CBBox(Beg, End + Math::Vec3i::ONE);
         m_Models.push_back(mesh);
     }
 
@@ -254,14 +251,11 @@ namespace VCore
         return ret;
     }
 
-    void CQubicleFormat::AddVoxel(VoxelModel mesh, int color, Math::Vec3i pos, Math::Vec3i &Beg, Math::Vec3i &End)
+    void CQubicleFormat::AddVoxel(VoxelModel mesh, int color, Math::Vec3i pos)
     {
         int cid = GetColorIdx(color);
         if(cid == -1)
             return;
-
-        Beg = Beg.min(pos);
-        End = End.max(pos);
 
         mesh->SetVoxel(pos, 0, cid, false);
     }

@@ -69,7 +69,7 @@ namespace VCore
                 rootNodes.push_back(nodes.size());
             }
 
-            nodes.push_back(GLTF::CNode(GetMeshName(mesh), glTFMeshes.size(), m_Settings->WorldSpace ? mesh->ModelMatrix : Math::Mat4x4()));
+            nodes.push_back(GLTF::CNode(GetMeshName(mesh), glTFMeshes.size(), Settings->WorldSpace ? mesh->ModelMatrix : Math::Mat4x4()));
 
             for (auto &&surface : mesh->Surfaces)
             {
@@ -164,7 +164,7 @@ namespace VCore
         auto textures = _Meshes[0]->Textures;
 
         // For glb add padding to satisfy the 4 Byte boundary.
-        if(m_Settings->Binary)
+        if(Settings->Binary)
         {          
             std::vector<char> diffuse, emission;
             diffuse = textures[TextureType::DIFFIUSE]->AsPNG();
@@ -240,7 +240,7 @@ namespace VCore
         json.AddPair("buffers", std::vector<GLTF::CBuffer>() = { Buffer });
         
         std::string JS = json.Serialize();
-        if(!m_Settings->Binary)
+        if(!Settings->Binary)
         {
             auto strm = m_IOHandler->Open(_Path, "wb");
             strm->Write(JS);

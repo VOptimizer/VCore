@@ -46,7 +46,7 @@ namespace VCore
             case ExporterType::GLB:
             {
                 auto tmp = Exporter(new CGLTFExporter());
-                tmp->Settings()->Binary = _Type == ExporterType::GLB;
+                tmp->Settings->Binary = _Type == ExporterType::GLB;
 
                 return tmp;
             } 
@@ -80,7 +80,7 @@ namespace VCore
         return type;
     }
 
-    IExporter::IExporter() : m_Settings(new CExportSettings())
+    IExporter::IExporter() : Settings(new CExportSettings())
     {
 
     }
