@@ -53,28 +53,13 @@ namespace VCore
 
     int CMeshBuilder::AddVertex(const SVertex &_Vertex, SIndexedSurface &_Surface)
     {
-        // int gridIdx = _Vertex.Pos.x + GRID_SIZE * _Vertex.Pos.y + GRID_SIZE * GRID_SIZE * _Vertex.Pos.z;
-
-        int gridIdx = (int)(_Vertex.Pos.x / GRID_CELL_SIZE) ^ (int)(_Vertex.Pos.y / GRID_CELL_SIZE) ^ (int)(_Vertex.Pos.z / GRID_CELL_SIZE);
-
-        auto &gridCell = _Surface.Index2[gridIdx];
-        int idx = gridCell.FindVertex(_Vertex);
-        if(idx == -1)
-        {
-            idx = _Surface.Surface.Size();
-            _Surface.Surface.AddVertex(_Vertex);
-            gridCell.AddVertex(_Vertex, idx);
-        }
-
-        return idx;
-
         // auto it = _Surface.Index.find(_Vertex);
         // if(it == _Surface.Index.end())
         // {
-        //     int idx = _Surface.Surface.Size();
-        //     _Surface.Surface.AddVertex(_Vertex);
-        //     _Surface.Index.insert({_Vertex, idx});
-        //     return idx;
+            int idx = _Surface.Surface.Size();
+            _Surface.Surface.AddVertex(_Vertex);
+            // _Surface.Index.insert({_Vertex, idx});
+            return idx;
         // }
 
         // return it->second;
@@ -253,10 +238,10 @@ namespace VCore
     {
         for (size_t i = 0; i < 3; i++)
         {
-            int pos = _Pos.v[i] - ((int)(_Pos.v[i] / 16.f) * 16);
+            int pos = _Pos.v[i] - ((int)(_Pos.v[i] / (float)CHUNK_SIZE) * CHUNK_SIZE);
 
             // TODO: Should I ever make the chunk size dynamically, than must this be also dynamic.
-            if(pos == 0 || pos == 15)
+            if(pos == 0 || pos == (CHUNK_SIZE - 1))
                 return true;
         }
 

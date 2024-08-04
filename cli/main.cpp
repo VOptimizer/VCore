@@ -319,25 +319,27 @@ int main(int argc, char const *argv[])
             else
             {
                 std::vector<VCore::Mesh> outputMeshes;
+                const int MAX_COUNT = 10;
+                int64_t average = 0;
 
-                // for (size_t i = 0; i < MAX_COUNT + 1; i++)
-                // {
-                //     auto startTime = std::chrono::high_resolution_clock::now();
-                //     auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
-                //     // Mesher->GenerateChunks(Loader->GetModels()[0]);
-                //     auto endTime = std::chrono::high_resolution_clock::now();
+                for (size_t i = 0; i < MAX_COUNT + 1; i++)
+                {
+                    auto startTime = std::chrono::high_resolution_clock::now();
+                    auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
+                    // Mesher->GenerateChunks(Loader->GetModels()[0]);
+                    auto endTime = std::chrono::high_resolution_clock::now();
 
-                    if(benchmarkCount == 0)
-                    {
-                        outputMeshes.insert(outputMeshes.end(), meshes.begin(), meshes.end());
-                        Exporter->Save(f->OutputFile, outputMeshes);
-                    }
-                    else
-                    {
-                        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-                        std::cout << "Time taken: " << duration.count() << " ms" << std::endl;
-                    }
+                    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+                    std::cout << "Time taken: " << duration.count() << " ms" << std::endl;
+
+                    average += duration.count();
                 }
+
+                std::cout << "Average " << (average / (float)MAX_COUNT) << " ms" << std::endl;
+
+                auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
+                outputMeshes.insert(outputMeshes.end(), meshes.begin(), meshes.end());
+                Exporter->Save(f->OutputFile, outputMeshes);
             }
         }
     }

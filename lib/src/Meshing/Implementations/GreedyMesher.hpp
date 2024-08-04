@@ -40,8 +40,15 @@ namespace VCore
 
             virtual ~CGreedyMesher() = default;
         protected:
+            struct Mask
+            {
+                uint32_t Bits[CHUNK_SIZE * 2];
+            };
+
             bool m_GenerateTexture;
             CSliceCollection GenerateSlicedChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque);
+
+            void GenerateQuad(CSliceCollection &result, uint32_t faces, Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const std::vector<std::string> &parts);
             // SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
     };
 }

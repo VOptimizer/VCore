@@ -24,6 +24,7 @@
 
 #include <VCore/Voxel/VoxelSpace.hpp>
 #include <VCore/Voxel/VoxelModel.hpp>
+#include <VCore/VConfig.hpp>
 
 namespace VCore
 {
@@ -145,6 +146,59 @@ namespace VCore
     }
 
     //////////////////////////////////////////////////
+    // CBitMaskChunk functions
+    //////////////////////////////////////////////////
+
+    CBitMaskChunk::CBitMaskChunk(const Math::Vec3i &_ChunkSize)
+    {
+        if(_ChunkSize != Math::Vec3i::ZERO)
+            m_Grid.resize(_ChunkSize.x * _ChunkSize.y * 3, 0);
+
+        // m_Front.resize(_ChunkSize.x * _ChunkSize.y);
+        // m_Left.resize(_ChunkSize.x * _ChunkSize.y);
+        // m_Top.resize(_ChunkSize.x * _ChunkSize.y);
+    }
+
+    void CBitMaskChunk::SetAxis(const Math::Vec3i &_Position, bool _Value, char _Axis)
+    {
+        switch (_Axis)
+        {
+            case 0: m_Grid[_Position.z + CHUNK_SIZE * _Position.y] |= ((uint32_t)_Value << (_Position.x + 1)); break;
+            case 1: m_Grid[_Position.x + CHUNK_SIZE * _Position.z + (CHUNK_SIZE * CHUNK_SIZE)] |= ((uint32_t)_Value << (_Position.y + 1)); break;
+            case 2: m_Grid[_Position.x + CHUNK_SIZE * _Position.y + (CHUNK_SIZE * CHUNK_SIZE * 2)] |= ((uint32_t)_Value << (_Position.z + 1)); break;
+        }
+    }
+
+    void CBitMaskChunk::Set(const Math::Vec3i &_Position, bool _Value)
+    {
+        // TODO: Fix to unset a voxel.
+        if(!_Value)
+            _Value = true;
+
+        m_Grid[_Position.z + CHUNK_SIZE * _Position.y] |= ((uint32_t)_Value << (_Position.x + 1));
+        m_Grid[_Position.x + CHUNK_SIZE * _Position.z + (CHUNK_SIZE * CHUNK_SIZE)] |= ((uint32_t)_Value << (_Position.y + 1));
+        m_Grid[_Position.x + CHUNK_SIZE * _Position.y + (CHUNK_SIZE * CHUNK_SIZE * 2)] |= ((uint32_t)_Value << (_Position.z + 1));
+    }
+
+    uint32_t CBitMaskChunk::GetRowFaces(const Math::Vec3i &_Position, char _Axis) const
+    {
+        switch (_Axis)
+        {
+            case 0: return m_Grid[_Position.z + CHUNK_SIZE * _Position.y];
+            case 1: return m_Grid[_Position.x + CHUNK_SIZE * _Position.z + (CHUNK_SIZE * CHUNK_SIZE)];
+            case 2: return m_Grid[_Position.x + CHUNK_SIZE * _Position.y + (CHUNK_SIZE * CHUNK_SIZE * 2)];
+        }
+
+        return 0;
+    }
+
+    CBitMaskChunk &CBitMaskChunk::operator=(CBitMaskChunk &&_Other)
+    {
+        m_Grid = std::move(_Other.m_Grid);
+        return *this;
+    }
+
+    //////////////////////////////////////////////////
     // CChunkQueryList::CChunkQueryIterator functions
     //////////////////////////////////////////////////
 
@@ -207,7 +261,7 @@ namespace VCore
     // CVoxelSpace functions
     //////////////////////////////////////////////////
 
-    CVoxelSpace::CVoxelSpace() : m_ChunkSize(16, 16, 16), m_VoxelsCount(0) {}
+    CVoxelSpace::CVoxelSpace() : m_ChunkSize(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE), m_VoxelsCount(0) {}
     CVoxelSpace::CVoxelSpace(const Math::Vec3i &_ChunkSize) : CVoxelSpace()
     {
         m_ChunkSize = _ChunkSize;
@@ -473,12 +527,12 @@ namespace VCore
     // CVoxelSpace::CChunk functions
     //////////////////////////////////////////////////
 
-    CChunk::CChunk(const Math::Vec3i &_ChunkSize) : IsDirty(false), m_InnerBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i())
+    CChunk::CChunk(const Math::Vec3i &_ChunkSize) : IsDirty(false), m_InnerBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i()), m_Mask(_ChunkSize)
     {
         m_Data = new CVoxel[_ChunkSize.x * _ChunkSize.y * _ChunkSize.z];   
     }
 
-    CChunk::CChunk(CChunk &&_Other) : m_Data(nullptr)
+    CChunk::CChunk(CChunk &&_Other) : m_Data(nullptr), m_Mask(Math::Vec3i())
     {
         *this = std::move(_Other);
     }
@@ -552,6 +606,8 @@ namespace VCore
         if(!voxel.IsVisible())
             voxel.VisibilityMask = CVoxel::Visibility::VISIBLE;
 
+        m_Mask.Set(relPos, true);
+
         CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::UP, ~CVoxel::Visibility::UP, ~CVoxel::Visibility::DOWN);
         CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::DOWN, ~CVoxel::Visibility::DOWN, ~CVoxel::Visibility::UP);
 
@@ -560,6 +616,80 @@ namespace VCore
 
         CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::FRONT, ~CVoxel::Visibility::FORWARD, ~CVoxel::Visibility::BACKWARD);
         CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::BACK, ~CVoxel::Visibility::BACKWARD, ~CVoxel::Visibility::FORWARD);
+
+        for (size_t i = 0; i < 3; i++)
+        {
+            if(relPos.v[i] == (_ChunkDim.End.v[i] - 1))
+            {
+                auto globalPos = _pair.first; //_ChunkDim.Beg + _v;
+                globalPos.v[i]++;
+                auto chunk = _Space->GetChunk(globalPos);
+                if(chunk == this)
+                {
+                    int i = 0;
+                    i++;
+                }
+
+                if(chunk)
+                {
+                    chunk->IsDirty = true;
+                    auto chunkpos = _Space->chunkpos(globalPos);
+
+                    auto faces = chunk->m_Mask.GetRowFaces(globalPos - chunkpos, i);
+                    if(faces & 0x2)
+                    {
+                        auto tmp = relPos;
+                        tmp.v[i]++;
+                        m_Mask.SetAxis(tmp, true, i);
+                    }
+
+                    globalPos.v[i]--;
+                    chunk->m_Mask.SetAxis(globalPos - chunkpos, true, i);
+
+                    // return chunk->GetBlock(_Space, CBBox(chunkpos, _ChunkDim.End), globalPos - chunkpos);
+                }
+                else {
+                    int i = 0;
+                    i++;
+                }
+            }
+                // m_InnerBBox.End.v[i] -= 1;
+            else if(relPos.v[i] == 0)
+            {
+                auto globalPos = _pair.first; //_ChunkDim.Beg + _v;
+                globalPos.v[i]--;
+                auto chunk = _Space->GetChunk(globalPos);
+                if(chunk == this)
+                {
+                    int i = 0;
+                    i++;
+                }
+
+                if(chunk)
+                {
+                    chunk->IsDirty = true;
+                    auto chunkpos = _Space->chunkpos(globalPos);
+
+                    auto faces = chunk->m_Mask.GetRowFaces(globalPos - chunkpos, i);
+                    if(faces & 0x10000)
+                    {
+                        auto tmp = relPos;
+                        tmp.v[i]--;
+                        m_Mask.SetAxis(tmp, true, i);
+                    }
+
+                    globalPos.v[i]++;
+                    chunk->m_Mask.SetAxis(globalPos - chunkpos, true, i);
+
+                    // return chunk->GetBlock(_Space, CBBox(chunkpos, _ChunkDim.End), globalPos - chunkpos);
+                }
+                else {
+                    int i = 0;
+                    i++;
+                }
+            }
+                // m_InnerBBox.Beg.v[i] += 1;
+        }
 
         m_InnerBBox.Beg = m_InnerBBox.Beg.min(relPos);
         m_InnerBBox.End = m_InnerBBox.End.max(relPos);
@@ -593,6 +723,8 @@ namespace VCore
         CVoxel &voxel = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
         voxel = CVoxel();
         IsDirty = true;
+
+        m_Mask.Set(relPos, false);
 
         CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::UP, ~CVoxel::Visibility::UP, ~CVoxel::Visibility::DOWN);
         CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::DOWN, ~CVoxel::Visibility::DOWN, ~CVoxel::Visibility::UP);
@@ -658,7 +790,7 @@ namespace VCore
     {
         Math::Vec3i relPos = (_v - _ChunkDim.Beg).abs();
         CVoxel &vox = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
-        if(vox.IsInstantiated() && vox.IsVisible())
+        if(vox.IsInstantiated()) //&& vox.IsVisible())
             return &vox;
 
         return nullptr;
@@ -691,6 +823,7 @@ namespace VCore
         m_InnerBBox = _Other.m_InnerBBox;
         m_Data = _Other.m_Data;
         IsDirty = _Other.IsDirty;
+        m_Mask = std::move(_Other.m_Mask);
 
         _Other.m_Data = nullptr;
         _Other.m_InnerBBox = CBBox();

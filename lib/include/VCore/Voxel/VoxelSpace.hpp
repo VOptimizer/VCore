@@ -75,6 +75,24 @@ namespace VCore
             mutable pair m_Pair;
     };
 
+    class CBitMaskChunk
+    {
+        public:
+            CBitMaskChunk(const Math::Vec3i &_ChunkSize);
+            CBitMaskChunk(CBitMaskChunk &&_Other) { *this = std::move(_Other); }
+
+            void Set(const Math::Vec3i &_Position, bool _Value);
+            void SetAxis(const Math::Vec3i &_Position, bool _Value, char _Axis);
+
+            uint32_t GetRowFaces(const Math::Vec3i &_Position, char _Axis) const;
+
+            CBitMaskChunk &operator=(CBitMaskChunk &&_Other);
+            CBitMaskChunk &operator=(const CBitMaskChunk &_Other) = delete;
+
+        private:
+            std::vector<uint32_t> m_Grid;
+    };
+
     class CChunk
     {
         public:
@@ -136,6 +154,9 @@ namespace VCore
             CChunk &operator=(const CChunk &_Other) = delete;
 
             ~CChunk() { clear(); }
+
+
+            CBitMaskChunk m_Mask;
 
         private:
             CVoxel *GetBlock(CVoxelSpace *_Space, const CBBox &_ChunkDim, const Math::Vec3i &_v);

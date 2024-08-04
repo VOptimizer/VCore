@@ -25,13 +25,19 @@
 #ifndef VCONFIG_HPP
 #define VCONFIG_HPP
 
+#include <VCore/Misc/fast_vector.hpp>
+
 // The following macros allow you to use your engine or framework's mesh data structures instead of the V-Core's.
+
+#ifndef CHUNK_SIZE
+#define CHUNK_SIZE 16
+#endif
 
 /**
  * @brief Defines how data of a vertex should be stored.
  */
 #ifndef VERTEX_DATA
-#define VERTEX_DATA std::vector<SVertex> Vertices;
+#define VERTEX_DATA fast_vector<SVertex> Vertices;
 #endif
 
 /**
@@ -79,9 +85,9 @@
  */
 #ifndef GET_VERTEX_STREAM_METHOD
 #define GET_VERTEX_STREAM_METHOD                        \
-    const std::vector<SVertex> &GetVertices() const     \
+    const fast_vector<SVertex> &GetVertices() const     \
     {                                                   \
-        return Vertices;                                \
+        return Vertices;                                      \
     }
 #endif
 #endif

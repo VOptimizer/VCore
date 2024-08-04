@@ -55,35 +55,156 @@ namespace VCore
             builder.SetTextureMap(&m->TextureMapping);
 
         const CBBox chunkBBox(_Chunk.TotalBBox.Beg, _Chunk.TotalBBox.GetSize());
-        for(int x = _Chunk.InnerBBox.Beg.x; x <= _Chunk.InnerBBox.End.x; x++)
+
+        // Left Axis
+        for(int y = _Chunk.InnerBBox.Beg.y; y <= _Chunk.InnerBBox.End.y; y++)
         {
-            for(int y = _Chunk.InnerBBox.Beg.y; y <= _Chunk.InnerBBox.End.y; y++)
+            for(int z = _Chunk.InnerBBox.Beg.z; z <= _Chunk.InnerBBox.End.z; z++)
             {
-                for(int z = _Chunk.InnerBBox.Beg.z; z <= _Chunk.InnerBBox.End.z; z++)
+                uint32_t voxels = _Chunk.Chunk->m_Mask.GetRowFaces(Math::Vec3i(0, y - _Chunk.TotalBBox.Beg.y, z - _Chunk.TotalBBox.Beg.z), 0);
+                uint32_t leftFaces = (voxels & (uint32_t)~(voxels << 1)) >> 1;
+                uint32_t rightFaces = ((voxels & (uint32_t)~(voxels >> 1)) & 0x1FFFF) >> 1;
+
+                for(int x = _Chunk.InnerBBox.Beg.x; x <= _Chunk.InnerBBox.End.x; x++)
                 {
-                    Math::Vec3i vpos(x, y, z);
-                    Voxel v = _Chunk.Chunk->findVisible(vpos, chunkBBox);
-                    if(v)
+                    int shiftBit = x - _Chunk.TotalBBox.Beg.x;
+
+                    if(leftFaces & (1 << shiftBit) || rightFaces & (1 << shiftBit))
                     {
-                        for (uint8_t i = 0; i < 6; i++)
+                        Math::Vec3i vpos(x, y, z);
+                        Voxel v = _Chunk.Chunk->findVisible(vpos, chunkBBox);
+
+                        // if(v)
                         {
-                            CVoxel::Visibility visiblity = (CVoxel::Visibility )((uint8_t)v->VisibilityMask & (uint8_t)(1 << i));
-
-                            // Invisible
-                            if(visiblity == CVoxel::Visibility::INVISIBLE)
-                                continue;
-
                             Material mat;
                             if(v->Material < (short)m->Materials.size())
                                 mat = m->Materials[v->Material];
 
-                            auto info = FACE_INFOS[i];
-                            builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
+                            if(leftFaces & (1 << shiftBit))
+                            {
+                                auto info = FACE_INFOS[2];
+                                builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
+                            }
+                            if(rightFaces & (1 << shiftBit))
+                            {
+                                auto info = FACE_INFOS[3];
+                                builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
+                            }
                         }
                     }
                 }
             }
         }
+
+        // Up Axis
+        for(int z = _Chunk.InnerBBox.Beg.z; z <= _Chunk.InnerBBox.End.z; z++)
+        {
+            for(int x = _Chunk.InnerBBox.Beg.x; x <= _Chunk.InnerBBox.End.x; x++)
+            {
+                uint32_t voxels = _Chunk.Chunk->m_Mask.GetRowFaces(Math::Vec3i(x - _Chunk.TotalBBox.Beg.x, 0, z - _Chunk.TotalBBox.Beg.z), 1);
+                uint32_t topFaces = (voxels & (uint32_t)~(voxels >> 1)) >> 1;
+                uint32_t bottomFaces = ((voxels & (uint32_t)~(voxels << 1)) & 0x1FFFF) >> 1;
+
+                for(int y = _Chunk.InnerBBox.Beg.y; y <= _Chunk.InnerBBox.End.y; y++)
+                {
+                    int shiftBit = y - _Chunk.TotalBBox.Beg.y;
+
+                    if(topFaces & (1 << shiftBit) || bottomFaces & (1 << shiftBit))
+                    {
+                        Math::Vec3i vpos(x, y, z);
+                        Voxel v = _Chunk.Chunk->findVisible(vpos, chunkBBox);
+
+                        // if(v)
+                        {
+                            Material mat;
+                            if(v->Material < (short)m->Materials.size())
+                                mat = m->Materials[v->Material];
+
+                            if(topFaces & (1 << shiftBit))
+                            {
+                                auto info = FACE_INFOS[0];
+                                builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
+                            }
+                            if(bottomFaces & (1 << shiftBit))
+                            {
+                                auto info = FACE_INFOS[1];
+                                builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Front Axis
+        for(int y = _Chunk.InnerBBox.Beg.y; y <= _Chunk.InnerBBox.End.y; y++)
+        {
+            for(int x = _Chunk.InnerBBox.Beg.x; x <= _Chunk.InnerBBox.End.x; x++)
+            {
+                uint32_t voxels = _Chunk.Chunk->m_Mask.GetRowFaces(Math::Vec3i(x - _Chunk.TotalBBox.Beg.x, y - _Chunk.TotalBBox.Beg.y, 0), 2);
+                uint32_t frontFaces = (voxels & (uint32_t)~(voxels >> 1)) >> 1;
+                uint32_t backFaces = ((voxels & (uint32_t)~(voxels << 1)) & 0x1FFFF) >> 1;
+
+                for(int z = _Chunk.InnerBBox.Beg.z; z <= _Chunk.InnerBBox.End.z; z++)
+                {
+                    int shiftBit = z - _Chunk.TotalBBox.Beg.z;
+
+                    if(frontFaces & (1 << shiftBit) || backFaces & (1 << shiftBit))
+                    {
+                        Math::Vec3i vpos(x, y, z);
+                        Voxel v = _Chunk.Chunk->findVisible(vpos, chunkBBox);
+
+                        // if(v)
+                        {
+                            Material mat;
+                            if(v->Material < (short)m->Materials.size())
+                                mat = m->Materials[v->Material];
+
+                            if(frontFaces & (1 << shiftBit))
+                            {
+                                auto info = FACE_INFOS[4];
+                                builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
+                            }
+                            if(backFaces & (1 << shiftBit))
+                            {
+                                auto info = FACE_INFOS[5];
+                                builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // for(int x = _Chunk.InnerBBox.Beg.x; x <= _Chunk.InnerBBox.End.x; x++)
+        // {
+        //     for(int y = _Chunk.InnerBBox.Beg.y; y <= _Chunk.InnerBBox.End.y; y++)
+        //     {
+        //         for(int z = _Chunk.InnerBBox.Beg.z; z <= _Chunk.InnerBBox.End.z; z++)
+        //         {
+        //             Math::Vec3i vpos(x, y, z);
+        //             Voxel v = _Chunk.Chunk->findVisible(vpos, chunkBBox);
+        //             if(v)
+        //             {
+        //                 for (uint8_t i = 0; i < 6; i++)
+        //                 {
+        //                     CVoxel::Visibility visiblity = (CVoxel::Visibility )((uint8_t)v->VisibilityMask & (uint8_t)(1 << i));
+
+        //                     // Invisible
+        //                     if(visiblity == CVoxel::Visibility::INVISIBLE)
+        //                         continue;
+
+        //                     Material mat;
+        //                     if(v->Material < (short)m->Materials.size())
+        //                         mat = m->Materials[v->Material];
+
+        //                     auto info = FACE_INFOS[i];
+        //                     builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
         SMeshChunk chunk;
         chunk.UniqueId = _Chunk.UniqueId;

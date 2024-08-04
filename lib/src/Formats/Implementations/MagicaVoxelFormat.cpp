@@ -247,7 +247,7 @@ namespace VCore
             // Since in MagicaVoxel the z axis is the gravity axis (Up axis), we need to read the vector in the following order xzy.
             // So the gravity axis will be the y axis.
             // Also Magicavoxel uses a left handed coordinate system, VCore uses a right handed one. So we need to convert the coordinates.
-            vec.x = _Size.x - data[0];
+            vec.x = (_Size.x - 1) - data[0];
             vec.y = data[2];
             vec.z = data[1];
             int MatIdx = data[3];
