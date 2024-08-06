@@ -48,6 +48,8 @@ namespace VCore
             bool m_GenerateTexture;
             CSliceCollection GenerateSlicedChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque);
 
+            void GenerateMask(uint32_t faces, bool backFace, ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<std::string, Mask>> &mask, Math::Vec3i position, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk);
+
             void GenerateQuad(CSliceCollection &result, uint32_t faces, Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const std::vector<std::string> &parts);
             // SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
     };

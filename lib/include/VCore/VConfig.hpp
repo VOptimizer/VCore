@@ -30,8 +30,10 @@
 // The following macros allow you to use your engine or framework's mesh data structures instead of the V-Core's.
 
 #ifndef CHUNK_SIZE
-#define CHUNK_SIZE 16
+#define CHUNK_SIZE 30
 #endif
+
+#define FACE_MASK ((1 << CHUNK_SIZE) - 1)
 
 /**
  * @brief Defines how data of a vertex should be stored.

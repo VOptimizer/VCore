@@ -63,7 +63,7 @@ namespace VCore
             {
                 uint32_t voxels = _Chunk.Chunk->m_Mask.GetRowFaces(Math::Vec3i(0, y - _Chunk.TotalBBox.Beg.y, z - _Chunk.TotalBBox.Beg.z), 0);
                 uint32_t leftFaces = (voxels & (uint32_t)~(voxels << 1)) >> 1;
-                uint32_t rightFaces = ((voxels & (uint32_t)~(voxels >> 1)) & 0x1FFFF) >> 1;
+                uint32_t rightFaces = ((voxels & (uint32_t)~(voxels >> 1)) >> 1) & FACE_MASK;
 
                 for(int x = _Chunk.InnerBBox.Beg.x; x <= _Chunk.InnerBBox.End.x; x++)
                 {
@@ -103,7 +103,7 @@ namespace VCore
             {
                 uint32_t voxels = _Chunk.Chunk->m_Mask.GetRowFaces(Math::Vec3i(x - _Chunk.TotalBBox.Beg.x, 0, z - _Chunk.TotalBBox.Beg.z), 1);
                 uint32_t topFaces = (voxels & (uint32_t)~(voxels >> 1)) >> 1;
-                uint32_t bottomFaces = ((voxels & (uint32_t)~(voxels << 1)) & 0x1FFFF) >> 1;
+                uint32_t bottomFaces = ((voxels & (uint32_t)~(voxels << 1)) >> 1) & FACE_MASK;
 
                 for(int y = _Chunk.InnerBBox.Beg.y; y <= _Chunk.InnerBBox.End.y; y++)
                 {
@@ -143,7 +143,7 @@ namespace VCore
             {
                 uint32_t voxels = _Chunk.Chunk->m_Mask.GetRowFaces(Math::Vec3i(x - _Chunk.TotalBBox.Beg.x, y - _Chunk.TotalBBox.Beg.y, 0), 2);
                 uint32_t frontFaces = (voxels & (uint32_t)~(voxels >> 1)) >> 1;
-                uint32_t backFaces = ((voxels & (uint32_t)~(voxels << 1)) & 0x1FFFF) >> 1;
+                uint32_t backFaces = ((voxels & (uint32_t)~(voxels << 1)) >> 1) & FACE_MASK;
 
                 for(int z = _Chunk.InnerBBox.Beg.z; z <= _Chunk.InnerBBox.End.z; z++)
                 {

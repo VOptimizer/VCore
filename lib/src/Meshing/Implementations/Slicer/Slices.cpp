@@ -53,6 +53,7 @@ namespace VCore
 
                         // Combine two quads into one, if these properties are the same.
                         if(((quad.mQuad.first.v[widthAxis] + quad.mQuad.second.v[widthAxis]) == quad2.mQuad.first.v[widthAxis]) &&
+                           (quad.mQuad.first.v[runAxis] == quad2.mQuad.first.v[runAxis]) &&
                            (quad.mQuad.second.v[heightAxis] == quad2.mQuad.second.v[heightAxis]) &&
                            (quad.Normal == quad2.Normal) && (quad.Material == quad2.Material) && (_GenerateTexture || (quad.Color == quad2.Color)))
                         {

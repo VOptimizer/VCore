@@ -671,7 +671,7 @@ namespace VCore
                     auto chunkpos = _Space->chunkpos(globalPos);
 
                     auto faces = chunk->m_Mask.GetRowFaces(globalPos - chunkpos, i);
-                    if(faces & 0x10000)
+                    if(faces & (FACE_MASK + 1))
                     {
                         auto tmp = relPos;
                         tmp.v[i]--;

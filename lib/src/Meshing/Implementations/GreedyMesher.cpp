@@ -179,6 +179,31 @@ namespace VCore
         return ret;
     }
 
+    void CGreedyMesher::GenerateMask(uint32_t faces, bool backFace, ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<std::string, Mask>> &masks, Math::Vec3i position, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk)
+    {
+        int pos = 0;
+        while (faces >> pos)
+        {
+            pos += CountTrailingZeroBits(faces >> pos);
+            if(pos >= CHUNK_SIZE)
+                break;
+
+            position.v[_Axis.x] = pos + _Chunk.TotalBBox.Beg.v[_Axis.x];
+            auto voxel = _Chunk.Chunk->find(position, CBBox(_Chunk.TotalBBox.Beg, Math::Vec3i(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE))); // ->GetVoxel(position);
+            if(!voxel)
+            {
+                pos++;
+                continue;
+            }
+
+            std::string key = std::to_string(voxel->Material) + "_" + std::to_string(voxel->Color);
+            auto &mask = masks[pos][key];
+
+            mask.Bits[position.v[_Axis.z] - _Chunk.TotalBBox.Beg.v[_Axis.z] + CHUNK_SIZE * (int)backFace] |= 1 << (position.v[_Axis.y] - _Chunk.TotalBBox.Beg.v[_Axis.y]);
+            pos++;
+        }
+    }
+
     CSliceCollection CGreedyMesher::GenerateSlicedChunk(VoxelModel m, const SChunkMeta &_Chunk, bool)
     {
         CBBox BBox = _Chunk.InnerBBox;
@@ -214,33 +239,36 @@ namespace VCore
 
                     uint32_t voxels = _Chunk.Chunk->m_Mask.GetRowFaces(position - subpos, axis);
                     uint32_t leftFaces = (voxels & (uint32_t)~(voxels << 1)) >> 1;
-                    uint32_t rightFaces = ((voxels & (uint32_t)~(voxels >> 1)) & 0x1FFFF) >> 1;
+                    uint32_t rightFaces = ((voxels & (uint32_t)~(voxels >> 1)) >> 1) & FACE_MASK;
 
-                    for (int depth = BBox.Beg.v[axis]; depth <= BBox.End.v[axis]; depth++)
-                    {
-                        int shiftBit = depth - _Chunk.TotalBBox.Beg.v[axis];
+                    GenerateMask(leftFaces, false, masks, position, Math::Vec3i(axis, axis1, axis2), _Chunk);
+                    GenerateMask(rightFaces, true, masks, position, Math::Vec3i(axis, axis1, axis2), _Chunk);
 
-                        if(leftFaces & (1 << shiftBit) || rightFaces & (1 << shiftBit))
-                        {
-                            position.v[axis] = depth;
-                            auto voxel = m->GetVoxel(position);
-                            if(!voxel)
-                                continue;
+                    // for (int depth = BBox.Beg.v[axis]; depth <= BBox.End.v[axis]; depth++)
+                    // {
+                    //     int shiftBit = depth - _Chunk.TotalBBox.Beg.v[axis];
 
-                            std::string key = std::to_string(voxel->Material) + "_" + std::to_string(voxel->Color);
-                            auto &mask = masks[shiftBit][key];
+                    //     if(leftFaces & (1 << shiftBit) || rightFaces & (1 << shiftBit))
+                    //     {
+                    //         position.v[axis] = depth;
+                    //         auto voxel = m->GetVoxel(position);
+                    //         if(!voxel)
+                    //             continue;
 
-                            if(leftFaces & (1 << shiftBit))
-                            {
-                                mask.Bits[position.v[axis2] - _Chunk.TotalBBox.Beg.v[axis2]] |= 1 << (position.v[axis1] - _Chunk.TotalBBox.Beg.v[axis1]);
-                            }
+                    //         std::string key = std::to_string(voxel->Material) + "_" + std::to_string(voxel->Color);
+                    //         auto &mask = masks[shiftBit][key];
 
-                            if(rightFaces & (1 << shiftBit))
-                            {
-                               mask.Bits[position.v[axis2] - _Chunk.TotalBBox.Beg.v[axis2] + CHUNK_SIZE] |= 1 << (position.v[axis1] - _Chunk.TotalBBox.Beg.v[axis1]);
-                            }
-                        }
-                    }
+                    //         if(leftFaces & (1 << shiftBit))
+                    //         {
+                    //             mask.Bits[position.v[axis2] - _Chunk.TotalBBox.Beg.v[axis2]] |= 1 << (position.v[axis1] - _Chunk.TotalBBox.Beg.v[axis1]);
+                    //         }
+
+                    //         if(rightFaces & (1 << shiftBit))
+                    //         {
+                    //            mask.Bits[position.v[axis2] - _Chunk.TotalBBox.Beg.v[axis2] + CHUNK_SIZE] |= 1 << (position.v[axis1] - _Chunk.TotalBBox.Beg.v[axis1]);
+                    //         }
+                    //     }
+                    // }
                 }
             }
 
