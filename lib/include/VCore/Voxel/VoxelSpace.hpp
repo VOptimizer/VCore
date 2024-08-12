@@ -29,6 +29,7 @@
 #include <VCore/Voxel/BBox.hpp>
 #include <VCore/Voxel/Voxel.hpp>
 #include <VCore/Voxel/Frustum.hpp>
+#include <VCore/VConfig.hpp>
 
 #include <vector>
 
@@ -79,18 +80,18 @@ namespace VCore
     {
         public:
             CBitMaskChunk(const Math::Vec3i &_ChunkSize);
-            CBitMaskChunk(CBitMaskChunk &&_Other) { *this = std::move(_Other); }
+            CBitMaskChunk(CBitMaskChunk &&_Other) = default;
 
             void Set(const Math::Vec3i &_Position, bool _Value);
             void SetAxis(const Math::Vec3i &_Position, bool _Value, char _Axis);
 
-            uint32_t GetRowFaces(const Math::Vec3i &_Position, char _Axis) const;
+            BITMASK_TYPE GetRowFaces(const Math::Vec3i &_Position, char _Axis) const;
 
-            CBitMaskChunk &operator=(CBitMaskChunk &&_Other);
+            CBitMaskChunk &operator=(CBitMaskChunk &&_Other) = default;
             CBitMaskChunk &operator=(const CBitMaskChunk &_Other) = delete;
 
         private:
-            std::vector<uint32_t> m_Grid;
+            std::vector<BITMASK_TYPE> m_Grid;
     };
 
     class CChunk

@@ -28,30 +28,26 @@
 #include <vector>
 #include <VCore/Meshing/IMesher.hpp>
 #include "Slicer/Slices.hpp"
+#include "../FaceMask.hpp"
 
 namespace VCore
 {
     class CGreedyMesher : public IMesher
     {
         public:
-            CGreedyMesher(bool _GenerateTexture = false) : IMesher(), m_GenerateTexture(_GenerateTexture) {}
+            CGreedyMesher(bool _GenerateTexture = false, bool _GenerateSingleChunks = false) : IMesher(), m_GenerateTexture(_GenerateTexture), m_GenerateSingleChunks(_GenerateSingleChunks) {}
 
             std::vector<SMeshChunk> GenerateChunks(VoxelModel _Mesh, bool _OnlyDirty = false) override;
 
             virtual ~CGreedyMesher() = default;
         protected:
-            struct Mask
-            {
-                uint32_t Bits[CHUNK_SIZE * 2];
-            };
-
             bool m_GenerateTexture;
-            CSliceCollection GenerateSlicedChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque);
+            bool m_GenerateSingleChunks;
+            std::pair<const SChunkMeta&, CSliceCollection> GenerateSlicedChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque);
 
-            void GenerateMask(uint32_t faces, bool backFace, ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<std::string, Mask>> &mask, Math::Vec3i position, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk);
+            SMeshChunk GenerateMeshChunk(VoxelModel _Mesh, CSliceCollection &_Collection, const SChunkMeta *_Chunk = nullptr);
 
-            void GenerateQuad(CSliceCollection &result, uint32_t faces, Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const std::vector<std::string> &parts);
-            // SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
+            void GenerateQuad(CSliceCollection &result, BITMASK_TYPE faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const std::vector<std::string> &parts);
     };
 }
 

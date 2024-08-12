@@ -320,7 +320,7 @@ namespace VCore
       {Math::Vec3f(0, 1, 1), Math::Vec3f(0, 1, 0)}
     };
 
-    uint8_t GetTableIndex(VoxelModel m, Math::Vec3f pos)
+    uint8_t GetTableIndex(const VoxelModel &m, const SChunkMeta &_Chunk, Math::Vec3f pos)
     {
         uint8_t ret = 0;
         int bitPos = 0;
@@ -339,7 +339,16 @@ namespace VCore
 
         for (auto &&c : cube)
         {
-            auto voxel = m->GetVoxel(pos + c);
+            Voxel voxel = nullptr;
+            auto lookupPos = pos + c;
+            // if((lookupPos.x >= _Chunk.TotalBBox.End.x || lookupPos.y >= _Chunk.TotalBBox.End.y || lookupPos.z >= _Chunk.TotalBBox.End.z) ||
+            //    (lookupPos.x < _Chunk.TotalBBox.Beg.x || lookupPos.y < _Chunk.TotalBBox.Beg.y || lookupPos.z < _Chunk.TotalBBox.Beg.z))
+            if(!_Chunk.TotalBBox.ContainsPoint(lookupPos))
+                voxel = m->GetVoxel(lookupPos);
+            else
+                voxel = _Chunk.Chunk->find(lookupPos, CBBox(_Chunk.TotalBBox.Beg, Math::Vec3i(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE)));
+
+            // auto voxel = m->GetVoxel(pos + c);
             if(!voxel)
                 ret |= 1 << bitPos;
 
@@ -362,7 +371,7 @@ namespace VCore
             {
                 for(int z = _Chunk.InnerBBox.Beg.z - 1; z <= _Chunk.InnerBBox.End.z + 1; z++)
                 {
-                    uint8_t idx = GetTableIndex(m, Math::Vec3f(x, y, z));
+                    uint8_t idx = GetTableIndex(m, _Chunk, Math::Vec3f(x, y, z));
                     auto edges = triangleConnectionTable[idx];
 
                     CreateFaces(builder, m, _Chunk, Math::Vec3f(x, y, z), edges);

@@ -26,7 +26,6 @@
 #include <future>
 
 #include "../../Misc/Helper.hpp"
-#include "Slicer/Slicer.hpp"
 #include <VCore/Meshing/MeshBuilder.hpp>
 #include <vector>
 
@@ -55,7 +54,7 @@ namespace VCore
 
         CSliceCollection collection;
 
-        std::vector<std::future<CSliceCollection>> futures;
+        std::vector<std::future<std::pair<const SChunkMeta&, CSliceCollection>>> futures;
         for (auto &&c : chunks)
         {
             _Mesh->GetVoxels().markAsProcessed(c);
@@ -68,7 +67,10 @@ namespace VCore
                     if(is_ready(*it))
                     {
                         auto result = it->get();
-                        collection.Merge(result);                     
+                        if(m_GenerateSingleChunks)
+                            ret.push_back(GenerateMeshChunk(_Mesh, result.second, &result.first));
+                        else
+                            collection.Merge(result.second);                     
                         it = futures.erase(it);
                     }
                     else
@@ -82,24 +84,35 @@ namespace VCore
         {
             it->wait();
             auto result = it->get();
-            collection.Merge(result);       
+            if(m_GenerateSingleChunks)
+                ret.push_back(GenerateMeshChunk(_Mesh, result.second, &result.first));
+            else
+                collection.Merge(result.second);         
             it = futures.erase(it);
         }
 
+        if(!m_GenerateSingleChunks)
+            ret.push_back(GenerateMeshChunk(_Mesh, collection));
+        
+        return ret;
+    }
+
+    SMeshChunk CGreedyMesher::GenerateMeshChunk(VoxelModel _Mesh, CSliceCollection &_Collection, const SChunkMeta *_Chunk)
+    {
         CMeshBuilder builder;
         auto textures = _Mesh->Textures;
         auto &materials = _Mesh->Materials;
 
-        collection.Optimize(m_GenerateTexture);
+        _Collection.Optimize(m_GenerateTexture);
         if(m_GenerateTexture)
-            textures = collection.Textures;
+            textures = _Collection.Textures;
 
         builder.AddTextures(textures);
 
         // Generate the mesh.
         for (size_t runAxis = 0; runAxis < 3; runAxis++)
         {
-            auto &slices = collection.mSlices[runAxis];
+            auto &slices = _Collection.mSlices[runAxis];
             for (auto &&slice : slices) // std::map<int, Slice>;
             {
                 for (auto &&height : slice.second) // std::map<int, Quads>;
@@ -131,29 +144,29 @@ namespace VCore
                             if(faceNormal == quad.Normal)
                             {
                                 builder.AddFace(
-                                    SVertex(v1, quad.Normal, Math::Vec2f(quad.UvStart) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
-                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
-                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v1, quad.Normal, Math::Vec2f(quad.UvStart) / Math::Vec2f(_Collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(_Collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(_Collection.Textures[TextureType::DIFFIUSE]->GetSize())),
                                     mat);
 
                                 builder.AddFace(
-                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
-                                    SVertex(v4, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], -dv.v[heightAxis])) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
-                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(_Collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v4, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], -dv.v[heightAxis])) / Math::Vec2f(_Collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(_Collection.Textures[TextureType::DIFFIUSE]->GetSize())),
                                     mat);
                             } 
                             else
                             {
                                 builder.AddFace(
-                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
-                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
-                                    SVertex(v1, quad.Normal, Math::Vec2f(quad.UvStart) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(_Collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(_Collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v1, quad.Normal, Math::Vec2f(quad.UvStart) / Math::Vec2f(_Collection.Textures[TextureType::DIFFIUSE]->GetSize())),
                                     mat);
 
                                 builder.AddFace(
-                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
-                                    SVertex(v4, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], -dv.v[heightAxis])) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
-                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v3, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(0, -dv.v[heightAxis])) / Math::Vec2f(_Collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v4, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], -dv.v[heightAxis])) / Math::Vec2f(_Collection.Textures[TextureType::DIFFIUSE]->GetSize())),
+                                    SVertex(v2, quad.Normal, Math::Vec2f(quad.UvStart + Math::Vec2ui(du.v[widthAxis], 0)) / Math::Vec2f(_Collection.Textures[TextureType::DIFFIUSE]->GetSize())),
                                     mat);
                             }
                         }
@@ -164,50 +177,30 @@ namespace VCore
             }
         }
 
-        // We only have always one chunk using this technique.
         SMeshChunk chunk;
-        Math::Vec3iHasher hasher;
-        auto bbox = _Mesh->GetBBox();
-
-        chunk.UniqueId = hasher(bbox.Beg);
-        chunk.InnerBBox = bbox;
-        chunk.TotalBBox = bbox;
-        chunk.MeshData = builder.Build();
-
-        ret.push_back(chunk);
-        
-        return ret;
-    }
-
-    void CGreedyMesher::GenerateMask(uint32_t faces, bool backFace, ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<std::string, Mask>> &masks, Math::Vec3i position, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk)
-    {
-        int pos = 0;
-        while (faces >> pos)
+        if(_Chunk)
         {
-            pos += CountTrailingZeroBits(faces >> pos);
-            if(pos >= CHUNK_SIZE)
-                break;
-
-            position.v[_Axis.x] = pos + _Chunk.TotalBBox.Beg.v[_Axis.x];
-            auto voxel = _Chunk.Chunk->find(position, CBBox(_Chunk.TotalBBox.Beg, Math::Vec3i(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE))); // ->GetVoxel(position);
-            if(!voxel)
-            {
-                pos++;
-                continue;
-            }
-
-            std::string key = std::to_string(voxel->Material) + "_" + std::to_string(voxel->Color);
-            auto &mask = masks[pos][key];
-
-            mask.Bits[position.v[_Axis.z] - _Chunk.TotalBBox.Beg.v[_Axis.z] + CHUNK_SIZE * (int)backFace] |= 1 << (position.v[_Axis.y] - _Chunk.TotalBBox.Beg.v[_Axis.y]);
-            pos++;
+            chunk.UniqueId = _Chunk->UniqueId;
+            chunk.InnerBBox = _Chunk->InnerBBox;
+            chunk.TotalBBox = _Chunk->TotalBBox;
         }
+        else
+        {
+            Math::Vec3iHasher hasher;
+            auto bbox = _Mesh->GetBBox();
+
+            chunk.UniqueId = hasher(bbox.Beg);
+            chunk.InnerBBox = bbox;
+            chunk.TotalBBox = bbox;
+        }
+
+        chunk.MeshData = builder.Build();
+        return chunk;
     }
 
-    CSliceCollection CGreedyMesher::GenerateSlicedChunk(VoxelModel m, const SChunkMeta &_Chunk, bool)
+    std::pair<const SChunkMeta&, CSliceCollection> CGreedyMesher::GenerateSlicedChunk(VoxelModel m, const SChunkMeta &_Chunk, bool)
     {
         CBBox BBox = _Chunk.InnerBBox;
-        // CSlicer Slicer(m, _Chunk.Chunk, _Chunk.TotalBBox);
         CSliceCollection result;
 
         auto albedo = m->Textures[TextureType::DIFFIUSE];
@@ -219,58 +212,12 @@ namespace VCore
         // For all 3 axis (x, y, z)
         for (size_t axis = 0; axis < 3; axis++)
         {
+            // This logic calculates the index of one of the three other axis.
             int axis1 = (axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
             int axis2 = (axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
-            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<std::string, Mask>> masks;
 
-            for (int heightAxis = BBox.Beg.v[axis1]; heightAxis <= BBox.End.v[axis1]; heightAxis++)
-            {
-                for (int widthAxis = BBox.Beg.v[axis2]; widthAxis <= BBox.End.v[axis2]; widthAxis++)
-                {
-                    Math::Vec3i position;
-                    position.v[axis] = 0;
-                    position.v[axis1] = heightAxis; //- BBox.Beg.v[axis1];
-                    position.v[axis2] = widthAxis; //- BBox.Beg.v[axis2];
-
-                    Math::Vec3i subpos;
-                    subpos.v[axis] = 0;
-                    subpos.v[axis1] = _Chunk.TotalBBox.Beg.v[axis1];
-                    subpos.v[axis2] = _Chunk.TotalBBox.Beg.v[axis2];
-
-                    uint32_t voxels = _Chunk.Chunk->m_Mask.GetRowFaces(position - subpos, axis);
-                    uint32_t leftFaces = (voxels & (uint32_t)~(voxels << 1)) >> 1;
-                    uint32_t rightFaces = ((voxels & (uint32_t)~(voxels >> 1)) >> 1) & FACE_MASK;
-
-                    GenerateMask(leftFaces, false, masks, position, Math::Vec3i(axis, axis1, axis2), _Chunk);
-                    GenerateMask(rightFaces, true, masks, position, Math::Vec3i(axis, axis1, axis2), _Chunk);
-
-                    // for (int depth = BBox.Beg.v[axis]; depth <= BBox.End.v[axis]; depth++)
-                    // {
-                    //     int shiftBit = depth - _Chunk.TotalBBox.Beg.v[axis];
-
-                    //     if(leftFaces & (1 << shiftBit) || rightFaces & (1 << shiftBit))
-                    //     {
-                    //         position.v[axis] = depth;
-                    //         auto voxel = m->GetVoxel(position);
-                    //         if(!voxel)
-                    //             continue;
-
-                    //         std::string key = std::to_string(voxel->Material) + "_" + std::to_string(voxel->Color);
-                    //         auto &mask = masks[shiftBit][key];
-
-                    //         if(leftFaces & (1 << shiftBit))
-                    //         {
-                    //             mask.Bits[position.v[axis2] - _Chunk.TotalBBox.Beg.v[axis2]] |= 1 << (position.v[axis1] - _Chunk.TotalBBox.Beg.v[axis1]);
-                    //         }
-
-                    //         if(rightFaces & (1 << shiftBit))
-                    //         {
-                    //            mask.Bits[position.v[axis2] - _Chunk.TotalBBox.Beg.v[axis2] + CHUNK_SIZE] |= 1 << (position.v[axis1] - _Chunk.TotalBBox.Beg.v[axis1]);
-                    //         }
-                    //     }
-                    // }
-                }
-            }
+            CFaceMask mask;
+            auto masks = mask.Generate(_Chunk, axis);
 
             for (auto &&depth : masks)
             {
@@ -287,154 +234,22 @@ namespace VCore
                         faces = key.second.Bits[widthAxis + CHUNK_SIZE];
                         GenerateQuad(result, faces, key.second, widthAxis, depth.first + 1, false, Math::Vec3i(axis, axis1, axis2), _Chunk, parts);
                     }
-
-                    // break;
                 }
-                // break;
             }
-            // break;
         }
 
-        // For all 3 axis (x, y, z)
-        // for (size_t Axis = 0; Axis < 3; Axis++)
-        // {
-        //     Slicer.SetActiveAxis(Axis);
-
-        //     int Axis1 = (Axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
-        //     int Axis2 = (Axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
-        //     int x[3] = {};
-
-        //     // Iterate over each slice of the 3d model.
-        //     for (x[Axis] = BBox.Beg.v[Axis] -1; x[Axis] <= BBox.End.v[Axis];)
-        //     {
-        //         ++x[Axis];
-        //         result.AddSlice(Axis, x[Axis]);
-
-        //         // Foreach slice go over a 2d plane. 
-        //         for (int HeightAxis = BBox.Beg.v[Axis1]; HeightAxis <= BBox.End.v[Axis1]; ++HeightAxis)
-        //         {
-        //             for (int WidthAxis = BBox.Beg.v[Axis2]; WidthAxis <= BBox.End.v[Axis2];)
-        //             {
-        //                 Math::Vec3i Pos;
-        //                 Pos.v[Axis] = x[Axis] - 1;
-        //                 Pos.v[Axis1] = HeightAxis;
-        //                 Pos.v[Axis2] = WidthAxis;
-
-        //                 std::map<TextureType, std::vector<CColor>> rawTextures;
-
-        //                 if(Slicer.IsFace(Pos))
-        //                 {
-        //                     int w, h;
-        //                     Math::Vec3i Normal = Slicer.Normal();
-        //                     int material = Slicer.Material();
-        //                     int Color = Slicer.Color();
-
-        //                     if(m_GenerateTexture)
-        //                     {
-        //                         rawTextures[TextureType::DIFFIUSE].push_back(albedo->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
-        //                         if(emission)
-        //                             rawTextures[TextureType::EMISSION].push_back(emission->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
-        //                     }
-
-        //                     //Claculates the width of the rect.
-        //                     for (w = 1; WidthAxis + w <= BBox.End.v[Axis2]; w++) 
-        //                     {
-        //                         Math::Vec3i WPos;
-        //                         WPos.v[Axis2] = w;
-
-        //                         bool IsFace = Slicer.IsFace(Pos + WPos);
-        //                         if(IsFace)
-        //                         {
-        //                             Math::Vec3i FaceNormal = Slicer.Normal();
-        //                             IsFace = Normal == FaceNormal && material == Slicer.Material() && (m_GenerateTexture || Color == Slicer.Color());
-        //                         }
-
-        //                         if(!IsFace)
-        //                             break;
-        //                         else if(m_GenerateTexture)
-        //                         {
-        //                             rawTextures[TextureType::DIFFIUSE].push_back(albedo->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
-        //                             if(emission)
-        //                                 rawTextures[TextureType::EMISSION].push_back(emission->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
-        //                         }
-        //                     }
-
-        //                     bool done = false;
-        //                     for (h = 1; HeightAxis + h <= BBox.End.v[Axis1]; h++)
-        //                     {
-        //                         // Check each block next to this quad
-        //                         for (int k = 0; k < w; ++k)
-        //                         {
-        //                             Math::Vec3i QuadPos = Pos;
-        //                             QuadPos.v[Axis2] += k;
-        //                             QuadPos.v[Axis1] += h;
-
-        //                             bool IsFace = Slicer.IsFace(QuadPos);
-        //                             if(IsFace)
-        //                             {
-        //                                 Math::Vec3i FaceNormal = Slicer.Normal();
-        //                                 IsFace = Normal == FaceNormal && material == Slicer.Material() && (m_GenerateTexture || Color == Slicer.Color());
-        //                             }
-
-        //                             // If there's a hole in the mask, exit
-        //                             if (!IsFace)
-        //                             {
-        //                                 done = true;
-        //                                 break;
-        //                             }
-        //                             else if(m_GenerateTexture)
-        //                             {
-        //                                 rawTextures[TextureType::DIFFIUSE].push_back(albedo->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
-        //                                 if(emission)
-        //                                     rawTextures[TextureType::EMISSION].push_back(emission->GetPixel(Math::Vec2ui(Slicer.Color(), 0)));
-        //                             }
-        //                         }
-
-        //                         if (done)
-        //                             break;
-        //                     }
-
-        //                     x[Axis1] = HeightAxis;
-        //                     x[Axis2] = WidthAxis;
-
-        //                     int du[3] = {};
-        //                     du[Axis2] = w;
-
-        //                     int dv[3] = {};
-        //                     dv[Axis1] = h;
-                    
-        //                     Slicer.AddProcessedQuad(Math::Vec3i(x[0], x[1], x[2]), Math::Vec3i(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2]));
-                            
-        //                     if(m_GenerateTexture)
-        //                         result.AddQuadInfo(Axis, x[Axis], x[Axis1], CQuadInfo({Math::Vec3i(x[0], x[1], x[2]), Math::Vec3i(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2])}, Normal, material, rawTextures));
-        //                     else
-        //                         result.AddQuadInfo(Axis, x[Axis], x[Axis1], CQuadInfo({Math::Vec3i(x[0], x[1], x[2]), Math::Vec3i(du[0] + dv[0], du[1] + dv[1], du[2] + dv[2])}, Normal, material, Color));
-
-        //                     // Increment counters and continue
-        //                     WidthAxis += w;
-        //                 }
-        //                 else
-        //                     WidthAxis++;
-        //             }
-        //         }
-
-        //         Slicer.ClearQuads();
-        //     }
-
-        //     // break;
-        // }
-
-        return result;
+        return std::pair<const SChunkMeta&, CSliceCollection>(std::move(_Chunk), std::move(result));
     }
 
-    void CGreedyMesher::GenerateQuad(CSliceCollection &result, uint32_t faces, Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const std::vector<std::string> &parts)
+    void CGreedyMesher::GenerateQuad(CSliceCollection &result, BITMASK_TYPE faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const std::vector<std::string> &parts)
     {
         unsigned heightPos = 0;
-        while ((faces >> heightPos))
+        // Shift werid = hang
+        while ((heightPos <= (CHUNK_SIZE + 2)) && (faces >> heightPos))
         {
             heightPos += CountTrailingZeroBits(faces >> heightPos);
             auto faceCount = CountTrailingOneBits(faces >> heightPos);
-            unsigned mask = ((1 << faceCount) - 1) << heightPos;
+            BITMASK_TYPE mask = ((1 << faceCount) - 1) << heightPos;
 
             unsigned w = 1;
             for (int tmpWidth = width + 1; tmpWidth < CHUNK_SIZE; tmpWidth++)

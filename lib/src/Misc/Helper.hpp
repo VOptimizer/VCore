@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include <climits>
+#include <VCore/VConfig.hpp>
 
 #if defined(__GNUC__) || defined(__clang__)
     #if defined(__has_builtin)
@@ -72,7 +73,7 @@ namespace VCore
     /**
      * @brief Counts the number of trailing zeros and returns their count.
      */
-    inline unsigned int CountTrailingZeroBits(unsigned int _Bits)
+    inline unsigned int CountTrailingZeroBits(BITMASK_TYPE _Bits)
     {
         if (_Bits == 0) 
             return sizeof(_Bits) * CHAR_BIT;
@@ -100,7 +101,7 @@ namespace VCore
     /**
      * @brief Counts the number of trailing ones and returns their count.
      */
-    inline unsigned int CountTrailingOneBits(unsigned int _Bits)
+    inline unsigned int CountTrailingOneBits(BITMASK_TYPE _Bits)
     {
         return CountTrailingZeroBits(~_Bits);
     }

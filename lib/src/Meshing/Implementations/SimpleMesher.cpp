@@ -176,36 +176,6 @@ namespace VCore
             }
         }
 
-        // for(int x = _Chunk.InnerBBox.Beg.x; x <= _Chunk.InnerBBox.End.x; x++)
-        // {
-        //     for(int y = _Chunk.InnerBBox.Beg.y; y <= _Chunk.InnerBBox.End.y; y++)
-        //     {
-        //         for(int z = _Chunk.InnerBBox.Beg.z; z <= _Chunk.InnerBBox.End.z; z++)
-        //         {
-        //             Math::Vec3i vpos(x, y, z);
-        //             Voxel v = _Chunk.Chunk->findVisible(vpos, chunkBBox);
-        //             if(v)
-        //             {
-        //                 for (uint8_t i = 0; i < 6; i++)
-        //                 {
-        //                     CVoxel::Visibility visiblity = (CVoxel::Visibility )((uint8_t)v->VisibilityMask & (uint8_t)(1 << i));
-
-        //                     // Invisible
-        //                     if(visiblity == CVoxel::Visibility::INVISIBLE)
-        //                         continue;
-
-        //                     Material mat;
-        //                     if(v->Material < (short)m->Materials.size())
-        //                         mat = m->Materials[v->Material];
-
-        //                     auto info = FACE_INFOS[i];
-        //                     builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-
         SMeshChunk chunk;
         chunk.UniqueId = _Chunk.UniqueId;
         chunk.InnerBBox = _Chunk.InnerBBox;

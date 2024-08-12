@@ -23,7 +23,6 @@
  */
 
 #include <stdexcept>
-#include "Implementations/GreedyChunkedMesher.hpp"
 #include "Implementations/GreedyMesher.hpp"
 #include <VCore/Meshing/IMesher.hpp>
 #include "Implementations/MarchingCubesMesher.hpp"
@@ -229,7 +228,7 @@ namespace VCore
             case MesherTypes::SIMPLE: return std::make_shared<CSimpleMesher>();
             case MesherTypes::GREEDY: return std::make_shared<CGreedyMesher>();
             case MesherTypes::MARCHING_CUBES: return std::make_shared<CMarchingCubesMesher>();
-            case MesherTypes::GREEDY_CHUNKED: return std::make_shared<CGreedyChunkedMesher>();
+            case MesherTypes::GREEDY_CHUNKED: return std::make_shared<CGreedyMesher>(false, true);
             case MesherTypes::GREEDY_TEXTURED: return std::make_shared<CGreedyMesher>(true);
             default:
                 throw std::runtime_error("Invalid mesher type!");

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021 Christian Tost
+ * Copyright (c) 2024 Christian Tost
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,22 +22,36 @@
  * SOFTWARE.
  */
 
-#ifndef GREEDYCHUNKEDMESHER_HPP
-#define GREEDYCHUNKEDMESHER_HPP
+#ifndef FACEMASK_HPP
+#define FACEMASK_HPP
 
-#include <vector>
-#include <VCore/Meshing/IMesher.hpp>
+#include <VCore/Voxel/VoxelModel.hpp>
+#include <map>
 
 namespace VCore
 {
-    class CGreedyChunkedMesher : public IMesher
+    class CFaceMask
     {
         public:
-            CGreedyChunkedMesher() : IMesher() {}
-            virtual ~CGreedyChunkedMesher() = default;
-        protected:
-            SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
+            struct Mask
+            {
+                BITMASK_TYPE Bits[CHUNK_SIZE * 2];
+            };
+
+            CFaceMask() = default;
+
+            /**
+             * @brief Generates the face bit mask for the given chunk on the axis.
+             */
+            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<std::string, Mask>> Generate(const SChunkMeta &_Chunk, uint8_t _Axis);
+
+            ~CFaceMask() = default;
+
+        private:
+            void GenerateMask(BITMASK_TYPE faces, bool backFace, Math::Vec3i position, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk);
+            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<std::string, Mask>> m_FacesMasks;
     };
-}
+} // namespace VCore
+
 
 #endif

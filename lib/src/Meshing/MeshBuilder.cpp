@@ -35,16 +35,17 @@ namespace VCore
     int CMeshBuilder::AddVertex(const SVertex &_Vertex, SIndexedSurface &_Surface)
     {
         // TODO: How to index for simple mesher. Greedy not neccessary because of "random" distribution
-        // auto it = _Surface.Index.find(_Vertex);
-        // if(it == _Surface.Index.end())
-        // {
+        // FIXME: The old me is stupid.
+        auto it = _Surface.Index.find(_Vertex);
+        if(it == _Surface.Index.end())
+        {
             int idx = _Surface.Surface.Size();
             _Surface.Surface.AddVertex(_Vertex);
-            // _Surface.Index.insert({_Vertex, idx});
+            _Surface.Index.insert({_Vertex, idx});
             return idx;
-        // }
+        }
 
-        // return it->second;
+        return it->second;
     }
 
     void CMeshBuilder::AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, Material _material)

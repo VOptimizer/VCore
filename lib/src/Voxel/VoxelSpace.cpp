@@ -153,34 +153,47 @@ namespace VCore
     {
         if(_ChunkSize != Math::Vec3i::ZERO)
             m_Grid.resize(_ChunkSize.x * _ChunkSize.y * 3, 0);
-
-        // m_Front.resize(_ChunkSize.x * _ChunkSize.y);
-        // m_Left.resize(_ChunkSize.x * _ChunkSize.y);
-        // m_Top.resize(_ChunkSize.x * _ChunkSize.y);
     }
 
     void CBitMaskChunk::SetAxis(const Math::Vec3i &_Position, bool _Value, char _Axis)
     {
-        switch (_Axis)
+        if(_Value)
         {
-            case 0: m_Grid[_Position.z + CHUNK_SIZE * _Position.y] |= ((uint32_t)_Value << (_Position.x + 1)); break;
-            case 1: m_Grid[_Position.x + CHUNK_SIZE * _Position.z + (CHUNK_SIZE * CHUNK_SIZE)] |= ((uint32_t)_Value << (_Position.y + 1)); break;
-            case 2: m_Grid[_Position.x + CHUNK_SIZE * _Position.y + (CHUNK_SIZE * CHUNK_SIZE * 2)] |= ((uint32_t)_Value << (_Position.z + 1)); break;
+            switch (_Axis)
+            {
+                case 0: m_Grid[_Position.z + CHUNK_SIZE * _Position.y] |= (1 << (_Position.x + 1)); break;
+                case 1: m_Grid[_Position.x + CHUNK_SIZE * _Position.z + (CHUNK_SIZE * CHUNK_SIZE)] |= (1 << (_Position.y + 1)); break;
+                case 2: m_Grid[_Position.x + CHUNK_SIZE * _Position.y + (CHUNK_SIZE * CHUNK_SIZE * 2)] |= (1 << (_Position.z + 1)); break;
+            }
+        }
+        else
+        {
+            switch (_Axis)
+            {
+                case 0: m_Grid[_Position.z + CHUNK_SIZE * _Position.y] &= ~(1 << (_Position.x + 1)); break;
+                case 1: m_Grid[_Position.x + CHUNK_SIZE * _Position.z + (CHUNK_SIZE * CHUNK_SIZE)] &= ~(1 << (_Position.y + 1)); break;
+                case 2: m_Grid[_Position.x + CHUNK_SIZE * _Position.y + (CHUNK_SIZE * CHUNK_SIZE * 2)] &= ~(1 << (_Position.z + 1)); break;
+            }
         }
     }
 
     void CBitMaskChunk::Set(const Math::Vec3i &_Position, bool _Value)
     {
-        // TODO: Fix to unset a voxel.
-        if(!_Value)
-            _Value = true;
-
-        m_Grid[_Position.z + CHUNK_SIZE * _Position.y] |= ((uint32_t)_Value << (_Position.x + 1));
-        m_Grid[_Position.x + CHUNK_SIZE * _Position.z + (CHUNK_SIZE * CHUNK_SIZE)] |= ((uint32_t)_Value << (_Position.y + 1));
-        m_Grid[_Position.x + CHUNK_SIZE * _Position.y + (CHUNK_SIZE * CHUNK_SIZE * 2)] |= ((uint32_t)_Value << (_Position.z + 1));
+        if(_Value)
+        {
+            m_Grid[_Position.z + CHUNK_SIZE * _Position.y] |= (1 << (_Position.x + 1));
+            m_Grid[_Position.x + CHUNK_SIZE * _Position.z + (CHUNK_SIZE * CHUNK_SIZE)] |= (1 << (_Position.y + 1));
+            m_Grid[_Position.x + CHUNK_SIZE * _Position.y + (CHUNK_SIZE * CHUNK_SIZE * 2)] |= (1 << (_Position.z + 1));
+        }
+        else
+        {
+            m_Grid[_Position.z + CHUNK_SIZE * _Position.y] &= ~(1 << (_Position.x + 1));
+            m_Grid[_Position.x + CHUNK_SIZE * _Position.z + (CHUNK_SIZE * CHUNK_SIZE)] &= ~(1 << (_Position.y + 1));
+            m_Grid[_Position.x + CHUNK_SIZE * _Position.y + (CHUNK_SIZE * CHUNK_SIZE * 2)] &= ~(1 << (_Position.z + 1));
+        }
     }
 
-    uint32_t CBitMaskChunk::GetRowFaces(const Math::Vec3i &_Position, char _Axis) const
+    BITMASK_TYPE CBitMaskChunk::GetRowFaces(const Math::Vec3i &_Position, char _Axis) const
     {
         switch (_Axis)
         {
@@ -190,12 +203,6 @@ namespace VCore
         }
 
         return 0;
-    }
-
-    CBitMaskChunk &CBitMaskChunk::operator=(CBitMaskChunk &&_Other)
-    {
-        m_Grid = std::move(_Other.m_Grid);
-        return *this;
     }
 
     //////////////////////////////////////////////////
@@ -608,14 +615,14 @@ namespace VCore
 
         m_Mask.Set(relPos, true);
 
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::UP, ~CVoxel::Visibility::UP, ~CVoxel::Visibility::DOWN);
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::DOWN, ~CVoxel::Visibility::DOWN, ~CVoxel::Visibility::UP);
+        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::UP, ~CVoxel::Visibility::UP, ~CVoxel::Visibility::DOWN);
+        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::DOWN, ~CVoxel::Visibility::DOWN, ~CVoxel::Visibility::UP);
 
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::LEFT, ~CVoxel::Visibility::LEFT, ~CVoxel::Visibility::RIGHT);
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::RIGHT, ~CVoxel::Visibility::RIGHT, ~CVoxel::Visibility::LEFT);
+        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::LEFT, ~CVoxel::Visibility::LEFT, ~CVoxel::Visibility::RIGHT);
+        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::RIGHT, ~CVoxel::Visibility::RIGHT, ~CVoxel::Visibility::LEFT);
 
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::FRONT, ~CVoxel::Visibility::FORWARD, ~CVoxel::Visibility::BACKWARD);
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::BACK, ~CVoxel::Visibility::BACKWARD, ~CVoxel::Visibility::FORWARD);
+        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::FRONT, ~CVoxel::Visibility::FORWARD, ~CVoxel::Visibility::BACKWARD);
+        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::BACK, ~CVoxel::Visibility::BACKWARD, ~CVoxel::Visibility::FORWARD);
 
         for (size_t i = 0; i < 3; i++)
         {
