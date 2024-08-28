@@ -37,7 +37,7 @@ namespace VCore
             ~CQubicleBinaryTreeFormat() = default;
 
         protected:
-            std::map<int, int> m_ColorIdx;
+            std::map<uint32_t, uint32_t> m_ColorIdx;
             bool m_HasColormap;
 
             void ParseFormat() override;
@@ -48,7 +48,7 @@ namespace VCore
             void LoadMatrix();
             void LoadCompound();
 
-            int GetColorIdx(int color);
+            uint32_t GetColorIdx(uint32_t color);
 
             Math::Vec3i ReadVector();
     };

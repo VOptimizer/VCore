@@ -95,13 +95,13 @@ namespace VCore
             {
                 for (uint32_t x = 0; x < (uint32_t)_Size.x; x++)
                 {
-                    int color = m_DataStream->Read<int>();
-                    int cid = GetColorIdx(color);
+                    uint32_t color = m_DataStream->Read<int>();
+                    uint32_t cid = GetColorIdx(color);
                     if(cid == -1)
                         continue;
 
                     auto pos = Math::Vec3f(x, y, z);
-                    mesh->SetVoxel(pos, 0, cid, false);
+                    mesh->SetVoxel(pos, 0, cid);
                 }
             }
         }
@@ -116,7 +116,7 @@ namespace VCore
             while (true)
             {
                 uint32_t data = m_DataStream->Read<uint32_t>();
-                int cid = 0;
+                uint32_t cid = 0;
 
                 if(data == NEXTSLICEFLAG)
                     break;
@@ -138,7 +138,7 @@ namespace VCore
                         if(cid == -1)
                             continue;
 
-                        mesh->SetVoxel(pos, 0, cid, false);
+                        mesh->SetVoxel(pos, 0, cid);
                     }
                     
                 }
@@ -155,13 +155,13 @@ namespace VCore
                     if(cid == -1)
                         continue;
 
-                    mesh->SetVoxel(pos, 0, cid, false);
+                    mesh->SetVoxel(pos, 0, cid);
                 }
             }
         }
     }
 
-    int CQubicleBinaryFormat::GetColorIdx(int color)
+    uint32_t CQubicleBinaryFormat::GetColorIdx(uint32_t color)
     {
         int ret = 0;
         CColor c;

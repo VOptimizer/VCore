@@ -27,14 +27,12 @@
 
 namespace VCore
 {
-    void CVoxelModel::SetVoxel(const Math::Vec3i &Pos, int Material, int Color, bool Transparent)
+    void CVoxelModel::SetVoxel(const Math::Vec3i &Pos, uint8_t Material, uint32_t Color)
     {      
         CVoxel Tmp;
         
         Tmp.Material = Material;
         Tmp.Color = Color;
-        Tmp.Transparent = Transparent;
-        Tmp.VisibilityMask = CVoxel::Visibility::VISIBLE;
 
         m_Voxels.insert({Pos, Tmp});
     }
@@ -58,38 +56,6 @@ namespace VCore
             return nullptr;
 
         return it->second;
-    }
-
-    Voxel CVoxelModel::GetVoxel(const Math::Vec3i &Pos, bool OpaqueOnly)
-    {
-        auto it = m_Voxels.find(Pos, OpaqueOnly);
-        if(it == m_Voxels.end())
-            return nullptr;
-
-        return it->second;
-    }
-
-    Voxel CVoxelModel::GetVisibleVoxel(const Math::Vec3i &Pos)
-    {
-        auto it = m_Voxels.findVisible(Pos);
-        if(it == m_Voxels.end())
-            return nullptr;
-
-        return it->second;
-    }
-
-    Voxel CVoxelModel::GetVisibleVoxel(const Math::Vec3i &Pos, bool OpaqueOnly)
-    {
-        auto it = m_Voxels.findVisible(Pos, OpaqueOnly);
-        if(it == m_Voxels.end())
-            return nullptr;
-
-        return it->second;
-    }
-
-    VectoriMap<Voxel> CVoxelModel::QueryVisible(bool opaque) const
-    {
-        return m_Voxels.queryVisible(opaque);
     }
 
     CVoxelModel::VoxelData::querylist CVoxelModel::QueryDirtyChunks()

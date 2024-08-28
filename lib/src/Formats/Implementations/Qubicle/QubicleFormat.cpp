@@ -221,9 +221,9 @@ namespace VCore
         return ret;
     }
 
-    int CQubicleFormat::GetColorIdx(int color)
+    uint32_t CQubicleFormat::GetColorIdx(uint32_t color)
     {
-        int ret = 0;
+        uint32_t ret = 0;
         CColor c;
         c.FromRGBA(color);
 
@@ -251,12 +251,12 @@ namespace VCore
         return ret;
     }
 
-    void CQubicleFormat::AddVoxel(VoxelModel mesh, int color, Math::Vec3i pos)
+    void CQubicleFormat::AddVoxel(VoxelModel mesh, uint32_t color, Math::Vec3i pos)
     {
-        int cid = GetColorIdx(color);
+        uint32_t cid = GetColorIdx(color);
         if(cid == -1)
             return;
 
-        mesh->SetVoxel(pos, 0, cid, false);
+        mesh->SetVoxel(pos, 0, cid);
     }
 }

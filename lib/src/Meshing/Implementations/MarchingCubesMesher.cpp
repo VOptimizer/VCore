@@ -387,6 +387,16 @@ namespace VCore
         return chunk;
     }
 
+    bool IsVoxelVisible(const CBitMaskChunk &_Mask, const Math::Vec3i &_LocalPosition, unsigned char _Axis)
+    {
+        auto axis = _Mask.GetRowFaces(_LocalPosition, _Axis);
+
+        BITMASK_TYPE frontFaces = (axis & (BITMASK_TYPE)~(axis << 1)) >> 1;
+        BITMASK_TYPE backFaces = ((axis & (BITMASK_TYPE)~(axis >> 1)) >> 1) & FACE_MASK;
+
+        return (frontFaces & (1 << _LocalPosition.v[_Axis])) || (backFaces & (1 << _LocalPosition.v[_Axis]));
+    }
+
     Voxel CMarchingCubesMesher::GetVoxel(VoxelModel m, const SChunkMeta &_Chunk, Math::Vec3f pos, int edge)
     {
         auto chunkDimension = CBBox(_Chunk.TotalBBox.Beg, _Chunk.TotalBBox.GetSize());
@@ -394,17 +404,53 @@ namespace VCore
         Math::Vec3i v = pos + corners.first;
         Voxel vox = nullptr;
         if(_Chunk.TotalBBox.ContainsPoint(v))
-            vox = _Chunk.Chunk->findVisible(v, chunkDimension);
+        {
+            auto localPosition = v - _Chunk.TotalBBox.Beg;
+            if(IsVoxelVisible(_Chunk.Chunk->m_Mask, localPosition, 0) || IsVoxelVisible(_Chunk.Chunk->m_Mask, localPosition, 1) || IsVoxelVisible(_Chunk.Chunk->m_Mask, localPosition, 2))
+                vox = _Chunk.Chunk->find(v, chunkDimension);
+
+            // auto xaxis = _Chunk.Chunk->m_Mask.GetRowFaces(v - _Chunk.TotalBBox.Beg, 0);
+            // auto yaxis = _Chunk.Chunk->m_Mask.GetRowFaces(v - _Chunk.TotalBBox.Beg, 1);
+            // auto zaxis = _Chunk.Chunk->m_Mask.GetRowFaces(v - _Chunk.TotalBBox.Beg, 2);
+
+            // TODO: Check if any face is visible
+        }
+            // vox = _Chunk.Chunk->findVisible(v, chunkDimension);
         else
-            vox = m->GetVisibleVoxel(v);
+        {
+            auto chunkIt = m->GetVoxels().getChunk(v);
+            if(chunkIt != m->GetVoxels().endIt())
+            {
+                auto localPosition = v - chunkIt->first;
+                if(IsVoxelVisible(chunkIt->second.m_Mask, localPosition, 0) || IsVoxelVisible(chunkIt->second.m_Mask, localPosition, 1) || IsVoxelVisible(chunkIt->second.m_Mask, localPosition, 2))
+                    vox = chunkIt->second.find(v, CBBox(chunkIt->first, _Chunk.TotalBBox.GetSize()));
+            }
+
+            // m->GetVoxels().find()
+        }
+        //     vox = m->GetVisibleVoxel(v);
         
         if(!vox)
         {
             v = pos + corners.second;
             if(_Chunk.TotalBBox.ContainsPoint(v))
-                vox = _Chunk.Chunk->findVisible(v, chunkDimension);
+            {
+                auto localPosition = v - _Chunk.TotalBBox.Beg;
+                if(IsVoxelVisible(_Chunk.Chunk->m_Mask, localPosition, 0) || IsVoxelVisible(_Chunk.Chunk->m_Mask, localPosition, 1) || IsVoxelVisible(_Chunk.Chunk->m_Mask, localPosition, 2))
+                    vox = _Chunk.Chunk->find(v, chunkDimension);
+            }
+                // vox = _Chunk.Chunk->findVisible(v, chunkDimension);
             else
-                vox = m->GetVisibleVoxel(v);
+            {
+                auto chunkIt = m->GetVoxels().getChunk(v);
+                if(chunkIt != m->GetVoxels().endIt())
+                {
+                    auto localPosition = v - chunkIt->first;
+                    if(IsVoxelVisible(chunkIt->second.m_Mask, localPosition, 0) || IsVoxelVisible(chunkIt->second.m_Mask, localPosition, 1) || IsVoxelVisible(chunkIt->second.m_Mask, localPosition, 2))
+                        vox = chunkIt->second.find(v, CBBox(chunkIt->first, _Chunk.TotalBBox.GetSize()));
+                }
+            }
+                // vox = m->GetVisibleVoxel(v);
         }
 
         return vox;

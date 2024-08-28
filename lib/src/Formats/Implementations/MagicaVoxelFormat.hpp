@@ -128,8 +128,8 @@ namespace VCore
 
             void SkipDict();
 
-            std::map<int, int> m_ColorMapping;
-            std::map<int, int> m_MaterialMapping;
+            std::map<uint32_t, uint32_t> m_ColorMapping;
+            std::map<uint32_t, uint32_t> m_MaterialMapping;
 
             std::map<int, SceneNode> m_ModelSceneTreeMapping;
 

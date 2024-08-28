@@ -113,7 +113,7 @@ namespace VCore
             std::stringstream strm;
             strm << ReadLine();
 
-            int mask, cid;
+            uint32_t mask, cid;
 
             Math::Vec3i pos;
             strm >> pos.x >> pos.y >> pos.z >> cid >> mask;
@@ -121,7 +121,7 @@ namespace VCore
             if(mask == 0)
                 continue;
 
-            mesh->SetVoxel(pos, 0, cid, false);
+            mesh->SetVoxel(pos, 0, cid);
         }
     }
 }

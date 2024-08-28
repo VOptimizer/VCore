@@ -144,11 +144,11 @@ namespace VCore
             {
                 for (uint32_t y = 0; y < (uint32_t)size.y; y++)
                 {
-                    int color;
-                    memcpy(&color, Data + strmPos, sizeof(int));
-                    strmPos += sizeof(int);
+                    uint32_t color;
+                    memcpy(&color, Data + strmPos, sizeof(uint32_t));
+                    strmPos += sizeof(uint32_t);
 
-                    int cid;
+                    uint32_t cid;
 
                     if(m_HasColormap)
                         cid = color & 0xFF;
@@ -159,7 +159,7 @@ namespace VCore
                         continue;
 
                     auto pos = Math::Vec3i(x, y, z);
-                    mesh->SetVoxel(pos, 0, cid, false);
+                    mesh->SetVoxel(pos, 0, cid);
                 }
             }
         }
@@ -204,11 +204,11 @@ namespace VCore
             {
                 for (uint32_t y = 0; y < (uint32_t)size.y; y++)
                 {
-                    int color;
-                    memcpy(&color, Data + strmPos, sizeof(int));
-                    strmPos += sizeof(int);
+                    uint32_t color;
+                    memcpy(&color, Data + strmPos, sizeof(uint32_t));
+                    strmPos += sizeof(uint32_t);
 
-                    int cid;
+                    uint32_t cid;
 
                     if(m_HasColormap)
                         cid = color & 0xFF;
@@ -219,7 +219,7 @@ namespace VCore
                         continue;
 
                     auto pos = Math::Vec3f(x, y, z);
-                    mesh->SetVoxel(pos, 0, cid, false);
+                    mesh->SetVoxel(pos, 0, cid);
                 }
             }
         }
@@ -243,7 +243,7 @@ namespace VCore
         return ret;
     }
 
-    int CQubicleBinaryTreeFormat::GetColorIdx(int color)
+    uint32_t CQubicleBinaryTreeFormat::GetColorIdx(uint32_t color)
     {
         int ret = 0;
         CColor c;

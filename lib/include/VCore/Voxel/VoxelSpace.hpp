@@ -129,23 +129,6 @@ namespace VCore
              */
             Voxel find(const Math::Vec3i &_v, const CBBox &_ChunkDim) const;
 
-            /**
-             * @brief Tries to find a voxel.
-             * @param _Opaque: If true only opaque voxels are returned, otherwise only none opaque voxels are returned.
-             * @brief Returns a reference to the voxel.
-             */
-            Voxel find(const Math::Vec3i &_v, const CBBox &_ChunkDim, bool _Opaque) const;
-
-            /**
-             * @brief Same as find. but only for visible voxels.
-             */
-            Voxel findVisible(const Math::Vec3i &_v, const CBBox &_ChunkDim) const;
-
-            /**
-             * @brief Same as find. but only for visible voxels.
-             */
-            Voxel findVisible(const Math::Vec3i &_v, const CBBox &_ChunkDim, bool _Opaque) const;
-
             inline CBBox inner_bbox(const Math::Vec3i &_Position) const
             {
                 return CBBox(m_InnerBBox.Beg + _Position, m_InnerBBox.End + _Position);
@@ -162,7 +145,6 @@ namespace VCore
         private:
             CVoxel *GetBlock(CVoxelSpace *_Space, const CBBox &_ChunkDim, const Math::Vec3i &_v);
             bool HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos, const Math::Vec3i &_ChunkSize);
-            void CheckAndUpdateVisibility(CVoxelSpace *_Space, const CBBox &_ChunkDim, Voxel _ThisVoxel, const Math::Vec3i &_Pos, CVoxel::Visibility _This, CVoxel::Visibility _Other);
 
             void clear();
 
@@ -267,29 +249,6 @@ namespace VCore
             iterator find(const Math::Vec3i &_v) const;
 
             /**
-             * @brief Tries to find a voxel.
-             * @param _Opaque: If true only opaque voxels are returned, otherwise only none opaque voxels are returned.
-             * @return Returns an iterator to the voxel or ::end()
-             */
-            iterator find(const Math::Vec3i &_v, bool _Opaque) const;
-
-            /**
-             * @brief Same as find. but only for visible voxels.
-             */
-            iterator findVisible(const Math::Vec3i &_v) const;
-
-            /**
-             * @brief Same as find. but only for visible voxels.
-             */
-            iterator findVisible(const Math::Vec3i &_v, bool _Opaque) const;
-
-            /**
-             * @brief Queries all visible voxels.
-             * @param opaque: If true only opaque voxels are returned, otherwise only none opaque voxels are returned.
-             */
-            VectoriMap<Voxel> queryVisible(bool opaque) const;
-
-            /**
              * @return Gets a list of all chunks which has been modified.
              * @note Marks all chunks as processed.
              */
@@ -309,6 +268,21 @@ namespace VCore
              * @return Returns a list of all chunks which are falling inside the given frustum.
              */
             querylist queryChunks(const CFrustum *_Frustum) const;
+
+            ankerl::unordered_dense::map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator getChunk(const Math::Vec3i &_v) const
+            {
+                auto position = chunkpos(_v);
+                auto it = m_Chunks.find(position);
+                if(it == m_Chunks.end())
+                    return m_Chunks.end();
+
+                return it;
+            }
+
+            ankerl::unordered_dense::map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator endIt()
+            {
+                return m_Chunks.end();
+            }
 
             /**
              * @return Gets the voxel count.

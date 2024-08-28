@@ -72,9 +72,9 @@ namespace VCore
                             uint32_t p = tmp.GetVoxel(Math::Vec3i(x - v.x, y - v.y, z - v.z));
                             if((p & 0xFF000000) != 0)
                             {
-                                int IdxC = 0;
+                                uint32_t IdxC = 0;
                                 bool found = false;
-                                int matIdx = 0;
+                                uint32_t matIdx = 0;
 
                                 auto it = meshMaterialMapping.find(l.MatIdx);
                                 if(it != meshMaterialMapping.end())
@@ -135,7 +135,7 @@ namespace VCore
                                         IdxC = ColorIdx[p];
                                 }
                                 
-                                m->SetVoxel(vi, matIdx, IdxC, false);
+                                m->SetVoxel(vi, matIdx, IdxC);
                             }
                         }
                     }

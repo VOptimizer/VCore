@@ -34,86 +34,23 @@ namespace VCore
     class CVoxel
     {
         public:
-            enum Visibility : uint8_t
-            {
-                INVISIBLE = 0,
-                UP = 1,
-                DOWN = 2,
-                LEFT = 4,
-                RIGHT = 8,
-                FORWARD = 16,
-                BACKWARD = 32,
+            CVoxel() : Color(0xFFFFFF), Material(0xFF) { }
 
-                VISIBLE = (UP | DOWN | LEFT | RIGHT | FORWARD | BACKWARD)
-            };
-
-            CVoxel();
-
-            int Color;      //!< Index of the color.
-            short Material;   //!< Index of the material.
-            
-            Visibility VisibilityMask;
-            bool Transparent;
-
-            /**
-             * @return Returns true if at least one side is visible.
-             */
-            bool IsVisible() const;
+            uint32_t Color      : 24;           //!< Index of the color.
+            uint8_t Material    : 8;            //!< Index of the material.
 
             /**
              * @return Returns true if this voxel is instantiated.
              */
-            bool IsInstantiated() const;
+            inline bool IsInstantiated() const
+            {
+                return (Color != 0xFFFFFF) && (Material != 0xFF);
+            }
 
             ~CVoxel() = default;
     };
 
     using Voxel = CVoxel*;
-
-    //////////////////////////////////////////////////
-    // CVoxel functions
-    //////////////////////////////////////////////////
-
-    inline CVoxel::CVoxel() : Color(-1), Material(-1), Transparent(false)
-    {
-        VisibilityMask = Visibility::INVISIBLE;
-    }
-
-    inline bool CVoxel::IsVisible() const
-    {                
-        return IsInstantiated() && (VisibilityMask != Visibility::INVISIBLE);
-    }
-
-    inline bool CVoxel::IsInstantiated() const
-    {
-        return (Color != -1) && (Material != -1);
-    }
-
-    //////////////////////////////////////////////////
-    // CVoxel::Visibility functions
-    //////////////////////////////////////////////////
-
-    inline CVoxel::Visibility operator&(CVoxel::Visibility lhs, CVoxel::Visibility rhs)
-    {
-        return static_cast<CVoxel::Visibility>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
-    }
-
-    inline CVoxel::Visibility operator&=(CVoxel::Visibility &lhs, const CVoxel::Visibility rhs)
-    {
-        lhs = static_cast<CVoxel::Visibility>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
-        return lhs;
-    }
-
-    inline CVoxel::Visibility operator|=(CVoxel::Visibility &lhs, const CVoxel::Visibility rhs)
-    {
-        lhs = static_cast<CVoxel::Visibility>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
-        return lhs;
-    }
-
-    inline CVoxel::Visibility operator~(CVoxel::Visibility lhs)
-    {
-        return static_cast<CVoxel::Visibility>(~static_cast<uint8_t>(lhs));
-    }
 }
 
 #endif

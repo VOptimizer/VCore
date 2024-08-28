@@ -250,17 +250,17 @@ int main(int argc, char const *argv[])
     int benchmarkCount = 0;
     cmdl({"-b"}, 0) >> benchmarkCount;
 
-    VCore::Math::Vec3f a(1, 1, 1), b(1,1,1);
-    VCore::Math::Vec3i ai(1, 1, 1), bi(1,1,1);
+    // VCore::Math::Vec3f a(1, 1, 1), b(1,1,1);
+    // VCore::Math::Vec3i ai(1, 1, 1), bi(1,1,1);
 
-    float va[4] = {}, vb[4] = {};
-    memcpy(va, a.v, sizeof(float) * 3);
-    memcpy(vb, b.v, sizeof(float) * 3);
+    // float va[4] = {}, vb[4] = {};
+    // memcpy(va, a.v, sizeof(float) * 3);
+    // memcpy(vb, b.v, sizeof(float) * 3);
 
-    std::cout << VCore::VectorEq(va, vb) << endl;
+    // // std::cout << VCore::VectorEq(va, vb) << endl;
 
-    std::cout << (a == b) << endl;
-    std::cout << (ai == bi) << endl;
+    // std::cout << (a == b) << endl;
+    // std::cout << (ai == bi) << endl;
 
     try
     {

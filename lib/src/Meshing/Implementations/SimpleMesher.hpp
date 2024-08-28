@@ -26,6 +26,7 @@
 #define SIMPLEMESHER_HPP
 
 #include <VCore/Meshing/IMesher.hpp>
+#include <VCore/Meshing/MeshBuilder.hpp>
 
 namespace VCore
 {
@@ -36,6 +37,8 @@ namespace VCore
             virtual ~CSimpleMesher() = default;
 
         protected:
+            void GenerateQuads(CMeshBuilder &_Builder, BITMASK_TYPE _Faces, int depth, int width, bool isFront, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, const VoxelModel &_Model, const std::vector<std::string> &_Parts);
+
             SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
     };
 }

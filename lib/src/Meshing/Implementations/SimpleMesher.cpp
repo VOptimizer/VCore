@@ -24,7 +24,9 @@
 
 #include "SimpleMesher.hpp"
 #include <algorithm>
-#include <VCore/Meshing/MeshBuilder.hpp>
+
+#include "../../Misc/Helper.hpp"
+#include "../FaceMask.hpp"
 
 namespace VCore
 {
@@ -34,14 +36,14 @@ namespace VCore
     };
 
     const static SFaceInfo FACE_INFOS[6] = {
-        { { 0, 1, 0 }, { 1, 1, 0 }, { 0, 1, 1 }, { 1, 1, 1 }, Math::Vec3f::UP },
-        { { 0, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, { 1, 0, 1 }, Math::Vec3f::DOWN },
-
         { { 0, 1, 0 }, { 0, 1, 1 }, { 0, 0, 0 }, { 0, 0, 1 }, Math::Vec3f::LEFT },
-        { { 1, 1, 0 }, { 1, 1, 1 }, { 1, 0, 0 }, { 1, 0, 1 }, Math::Vec3f::RIGHT },
+        { { 0, 1, 0 }, { 0, 1, 1 }, { 0, 0, 0 }, { 0, 0, 1 }, Math::Vec3f::RIGHT },
 
-        { { 0, 1, 1 }, { 1, 1, 1 }, { 0, 0, 1 }, { 1, 0, 1 }, Math::Vec3f::FRONT },
+        { { 0, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, { 1, 0, 1 }, Math::Vec3f::DOWN },
+        { { 0, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, { 1, 0, 1 }, Math::Vec3f::UP },
+
         { { 0, 1, 0 }, { 1, 1, 0 }, { 0, 0, 0 }, { 1, 0, 0 }, Math::Vec3f::BACK },
+        { { 0, 1, 0 }, { 1, 1, 0 }, { 0, 0, 0 }, { 1, 0, 0 }, Math::Vec3f::FRONT },
     };
 
     SMeshChunk CSimpleMesher::GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque)
@@ -56,121 +58,29 @@ namespace VCore
 
         const CBBox chunkBBox(_Chunk.TotalBBox.Beg, _Chunk.TotalBBox.GetSize());
 
-        // Left Axis
-        for(int y = _Chunk.InnerBBox.Beg.y; y <= _Chunk.InnerBBox.End.y; y++)
+        // For all 3 axis (x, y, z)
+        for (size_t axis = 0; axis < 3; axis++)
         {
-            for(int z = _Chunk.InnerBBox.Beg.z; z <= _Chunk.InnerBBox.End.z; z++)
+            // This logic calculates the index of one of the three other axis.
+            int axis1 = (axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
+            int axis2 = (axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
+
+            CFaceMask mask;
+            auto masks = mask.Generate(m, _Chunk, axis);
+
+            for (auto &&depth : masks)
             {
-                uint32_t voxels = _Chunk.Chunk->m_Mask.GetRowFaces(Math::Vec3i(0, y - _Chunk.TotalBBox.Beg.y, z - _Chunk.TotalBBox.Beg.z), 0);
-                uint32_t leftFaces = (voxels & (uint32_t)~(voxels << 1)) >> 1;
-                uint32_t rightFaces = ((voxels & (uint32_t)~(voxels >> 1)) >> 1) & FACE_MASK;
-
-                for(int x = _Chunk.InnerBBox.Beg.x; x <= _Chunk.InnerBBox.End.x; x++)
+                for (auto &&key : depth.second)
                 {
-                    int shiftBit = x - _Chunk.TotalBBox.Beg.x;
+                    auto parts = split(key.first, "_");
 
-                    if(leftFaces & (1 << shiftBit) || rightFaces & (1 << shiftBit))
+                    for (int widthAxis = 0; widthAxis < CHUNK_SIZE; widthAxis++)
                     {
-                        Math::Vec3i vpos(x, y, z);
-                        Voxel v = _Chunk.Chunk->findVisible(vpos, chunkBBox);
+                        auto faces = key.second.Bits[widthAxis];
+                        GenerateQuads(builder, faces, depth.first, widthAxis, true, Math::Vec3i(axis, axis1, axis2), _Chunk, m, parts);
 
-                        // if(v)
-                        {
-                            Material mat;
-                            if(v->Material < (short)m->Materials.size())
-                                mat = m->Materials[v->Material];
-
-                            if(leftFaces & (1 << shiftBit))
-                            {
-                                auto info = FACE_INFOS[2];
-                                builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
-                            }
-                            if(rightFaces & (1 << shiftBit))
-                            {
-                                auto info = FACE_INFOS[3];
-                                builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Up Axis
-        for(int z = _Chunk.InnerBBox.Beg.z; z <= _Chunk.InnerBBox.End.z; z++)
-        {
-            for(int x = _Chunk.InnerBBox.Beg.x; x <= _Chunk.InnerBBox.End.x; x++)
-            {
-                uint32_t voxels = _Chunk.Chunk->m_Mask.GetRowFaces(Math::Vec3i(x - _Chunk.TotalBBox.Beg.x, 0, z - _Chunk.TotalBBox.Beg.z), 1);
-                uint32_t topFaces = (voxels & (uint32_t)~(voxels >> 1)) >> 1;
-                uint32_t bottomFaces = ((voxels & (uint32_t)~(voxels << 1)) >> 1) & FACE_MASK;
-
-                for(int y = _Chunk.InnerBBox.Beg.y; y <= _Chunk.InnerBBox.End.y; y++)
-                {
-                    int shiftBit = y - _Chunk.TotalBBox.Beg.y;
-
-                    if(topFaces & (1 << shiftBit) || bottomFaces & (1 << shiftBit))
-                    {
-                        Math::Vec3i vpos(x, y, z);
-                        Voxel v = _Chunk.Chunk->findVisible(vpos, chunkBBox);
-
-                        // if(v)
-                        {
-                            Material mat;
-                            if(v->Material < (short)m->Materials.size())
-                                mat = m->Materials[v->Material];
-
-                            if(topFaces & (1 << shiftBit))
-                            {
-                                auto info = FACE_INFOS[0];
-                                builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
-                            }
-                            if(bottomFaces & (1 << shiftBit))
-                            {
-                                auto info = FACE_INFOS[1];
-                                builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Front Axis
-        for(int y = _Chunk.InnerBBox.Beg.y; y <= _Chunk.InnerBBox.End.y; y++)
-        {
-            for(int x = _Chunk.InnerBBox.Beg.x; x <= _Chunk.InnerBBox.End.x; x++)
-            {
-                uint32_t voxels = _Chunk.Chunk->m_Mask.GetRowFaces(Math::Vec3i(x - _Chunk.TotalBBox.Beg.x, y - _Chunk.TotalBBox.Beg.y, 0), 2);
-                uint32_t frontFaces = (voxels & (uint32_t)~(voxels >> 1)) >> 1;
-                uint32_t backFaces = ((voxels & (uint32_t)~(voxels << 1)) >> 1) & FACE_MASK;
-
-                for(int z = _Chunk.InnerBBox.Beg.z; z <= _Chunk.InnerBBox.End.z; z++)
-                {
-                    int shiftBit = z - _Chunk.TotalBBox.Beg.z;
-
-                    if(frontFaces & (1 << shiftBit) || backFaces & (1 << shiftBit))
-                    {
-                        Math::Vec3i vpos(x, y, z);
-                        Voxel v = _Chunk.Chunk->findVisible(vpos, chunkBBox);
-
-                        // if(v)
-                        {
-                            Material mat;
-                            if(v->Material < (short)m->Materials.size())
-                                mat = m->Materials[v->Material];
-
-                            if(frontFaces & (1 << shiftBit))
-                            {
-                                auto info = FACE_INFOS[4];
-                                builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
-                            }
-                            if(backFaces & (1 << shiftBit))
-                            {
-                                auto info = FACE_INFOS[5];
-                                builder.AddFace((info.V1 + vpos), (info.V2 + vpos), (info.V3 + vpos), (info.V4 + vpos), info.Normal, v->Color, mat);
-                            }
-                        }
+                        faces = key.second.Bits[widthAxis + CHUNK_SIZE];
+                        GenerateQuads(builder, faces, depth.first + 1, widthAxis, false, Math::Vec3i(axis, axis1, axis2), _Chunk, m, parts);
                     }
                 }
             }
@@ -183,5 +93,32 @@ namespace VCore
         chunk.MeshData = builder.Build();
 
         return chunk;
+    }
+
+    void CSimpleMesher::GenerateQuads(CMeshBuilder &_Builder, BITMASK_TYPE _Faces, int depth, int width, bool isFront, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, const VoxelModel &_Model, const std::vector<std::string> &_Parts)
+    {
+        unsigned heightPos = 0;
+        while ((heightPos <= (CHUNK_SIZE + 2)) && (_Faces >> heightPos))
+        {
+            heightPos += CountTrailingZeroBits(_Faces >> heightPos);
+            auto &faceInfo = FACE_INFOS[_Axis.x * 2 + (isFront ? 0 : 1)];
+
+            Material mat;
+            if(std::stoi(_Parts[0]) < _Model->Materials.size())
+                mat = _Model->Materials[std::stoi(_Parts[0])];
+
+            for (; heightPos <= (CHUNK_SIZE + 2); heightPos++)
+            {
+                if(((_Faces >> heightPos) & 0x1) == 0)
+                    break;
+
+                Math::Vec3i position;
+                position.v[_Axis.x] = _Chunk.TotalBBox.Beg.v[_Axis.x] + depth;
+                position.v[_Axis.y] = _Chunk.TotalBBox.Beg.v[_Axis.y] + heightPos;
+                position.v[_Axis.z] = _Chunk.TotalBBox.Beg.v[_Axis.z] + width;
+
+                _Builder.AddFace((faceInfo.V1 + position), (faceInfo.V2 + position), (faceInfo.V3 + position), (faceInfo.V4 + position), faceInfo.Normal, std::stoi(_Parts[1]), mat);
+            }
+        }
     }
 }

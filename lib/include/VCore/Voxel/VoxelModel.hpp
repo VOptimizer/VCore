@@ -71,7 +71,7 @@ namespace VCore
              * 
              * @return Returns the list of voxels.
              */
-            inline VoxelData &GetVoxels() //const
+            inline VoxelData &GetVoxels()
             {
                 return m_Voxels;
             }
@@ -82,9 +82,8 @@ namespace VCore
              * @param Pos: The position of the voxel inside the voxel space.
              * @param Material: Material index of the voxels material.
              * @param Color: Color index.
-             * @param Transparent: Is the block transparent?
              */
-            void SetVoxel(const Math::Vec3i &Pos, int Material, int Color, bool Transparent);
+            void SetVoxel(const Math::Vec3i &Pos, uint8_t Material, uint32_t Color);
 
             /**
              * @brief Removes a voxel on a given position
@@ -112,39 +111,12 @@ namespace VCore
             }
 
             /**
-             * @brief Gets a voxel on a given position.
-             * 
-             * @param pos: Position of the voxel
-             * @param OpaqueOnly: If true than only opaque voxels are returned, otherwise all transparent one.
-             */
-            Voxel GetVoxel(const Math::Vec3i &Pos, bool OpaqueOnly);
-
-            /**
-             * @return Gets a visible voxel on a given position.
-             */
-            Voxel GetVisibleVoxel(const Math::Vec3i &Pos);
-
-            /**
-             * @brief Gets a visible voxel on a given position.
-             * 
-             * @param pos: Position of the voxel
-             * @param OpaqueOnly: If true than only opaque voxels are returned, otherwise all transparent one.
-             */
-            Voxel GetVisibleVoxel(const Math::Vec3i &Pos, bool OpaqueOnly);
-
-            /**
              * @brief Gets the count of all setted blocks.
              */
             inline size_t GetBlockCount() const
             {
                 return m_Voxels.size();
             }
-
-            /**
-             * @brief Queries all visible voxels.
-             * @param opaque: If true only opaque voxels are returned, otherwise only none opaque voxels are returned.
-             */
-            VectoriMap<Voxel> QueryVisible(bool opaque) const;
 
             /**
              * @return Gets a list of all chunks which has been modified.

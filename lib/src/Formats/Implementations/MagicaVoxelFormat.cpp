@@ -234,7 +234,7 @@ namespace VCore
         int VoxelCount = m_DataStream->Read<int>();
 
         // Each model has it's used material attached, so we need to map the MagicaVoxel ID to the local one of the mesh.
-        std::map<int, int> modelMaterialMapping;
+        std::map<uint32_t, uint32_t> modelMaterialMapping;
 
         for (int i = 0; i < VoxelCount; i++)
         {
@@ -250,10 +250,9 @@ namespace VCore
             vec.x = (_Size.x - 1) - data[0];
             vec.y = data[2];
             vec.z = data[1];
-            int MatIdx = data[3];
+            uint32_t MatIdx = data[3];
 
-            int Color = 0;
-            bool Transparent = false;
+            uint32_t Color = 0;
 
             // Remaps the indices.
             auto IT = m_ColorMapping.find(MatIdx);
@@ -266,13 +265,10 @@ namespace VCore
             else
                 Color = IT->second;
 
-            int newMatIdx = 0;
+            uint32_t newMatIdx = 0;
             IT = m_MaterialMapping.find(MatIdx);
             if(IT != m_MaterialMapping.end())
-            {
                 newMatIdx = IT->second;
-                Transparent = m_Materials[newMatIdx]->Transparency != 0.0;
-            }
 
             // Remaps the material index to the local one.
             IT = modelMaterialMapping.find(newMatIdx);
@@ -285,7 +281,7 @@ namespace VCore
                 MatIdx = m->Materials.size() - 1;
             }
 
-            m->SetVoxel(vec, MatIdx, Color, Transparent);
+            m->SetVoxel(vec, MatIdx, Color);
         }
     }
 

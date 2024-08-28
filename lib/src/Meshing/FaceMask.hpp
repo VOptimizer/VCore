@@ -43,12 +43,20 @@ namespace VCore
             /**
              * @brief Generates the face bit mask for the given chunk on the axis.
              */
-            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<std::string, Mask>> Generate(const SChunkMeta &_Chunk, uint8_t _Axis);
+            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<std::string, Mask>> Generate(const VoxelModel &_Model, const SChunkMeta &_Chunk, uint8_t _Axis);
 
             ~CFaceMask() = default;
 
         private:
+            struct OpaqueMask
+            {
+                BITMASK_TYPE Opaque = 0;
+                BITMASK_TYPE Transparent = 0;
+            };
+
             void GenerateMask(BITMASK_TYPE faces, bool backFace, Math::Vec3i position, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk);
+            OpaqueMask GenerateOpaqueMask(const VoxelModel &_Model, const SChunkMeta &_Chunk, BITMASK_TYPE _Voxels, Math::Vec3i position, uint8_t _Axis);
+            
             ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<std::string, Mask>> m_FacesMasks;
     };
 } // namespace VCore

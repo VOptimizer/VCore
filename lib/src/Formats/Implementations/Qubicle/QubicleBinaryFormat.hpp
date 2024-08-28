@@ -47,12 +47,12 @@ namespace VCore
                 int MatrixCount;        // Number of matrices(Models) inside this file.
             };
             SQubicleBinaryHeader m_Header;
-            std::map<int, int> m_ColorIdx;
+            std::map<uint32_t, uint32_t> m_ColorIdx;
             
             void ParseFormat() override;
             void ReadUncompressed(VoxelModel mesh, const Math::Vec3i &_Size);
             void ReadRLECompressed(VoxelModel mesh, const Math::Vec3i &_Size);
-            int GetColorIdx(int color);
+            uint32_t GetColorIdx(uint32_t color);
 
             Math::Vec3i ReadVector();
     };

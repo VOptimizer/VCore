@@ -36,7 +36,7 @@ namespace VCore
             CQubicleFormat() = default;
             ~CQubicleFormat() = default;
         private:
-            std::map<int, int> m_ColorIdx;
+            std::map<uint32_t, uint32_t> m_ColorIdx;
             void ParseFormat() override;
 
             void LoadNode();
@@ -44,8 +44,8 @@ namespace VCore
             void LoadMatrix();
             void LoadCompound();
 
-            int GetColorIdx(int color);
-            void AddVoxel(VoxelModel mesh, int color, Math::Vec3i pos);
+            uint32_t GetColorIdx(uint32_t color);
+            void AddVoxel(VoxelModel mesh, uint32_t color, Math::Vec3i pos);
 
             Math::Vec3i ReadVector();
     };

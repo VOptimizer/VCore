@@ -74,8 +74,8 @@ namespace VCore
         {
             if(tile->ColorIdx != -1)
             {
-                int idx = GetColorIdx(Content, tile->ColorIdx);
-                int backIdx = idx;
+                uint32_t idx = GetColorIdx(Content, tile->ColorIdx);
+                uint32_t backIdx = idx;
                 if(tile->ColorBack != -1)
                     backIdx = GetColorIdx(Content, tile->ColorBack);
 
@@ -85,7 +85,7 @@ namespace VCore
                 for (; z <= Pos.z + blocks; z++)
                 {
                     Math::Vec3f v(Pos.x, Pos.y, z);
-                    m->SetVoxel(v, 0, (z < Pos.z) ? backIdx : idx, false);
+                    m->SetVoxel(v, 0, (z < Pos.z) ? backIdx : idx);
                 }
             }
 
@@ -107,9 +107,9 @@ namespace VCore
         m_ColorIdx.clear();
     }
 
-    int CKenshapeFormat::GetColorIdx(Kenshape _Content, int _ColorIdx)
+    uint32_t CKenshapeFormat::GetColorIdx(Kenshape _Content, int _ColorIdx)
     {
-        int idx;
+        uint32_t idx;
         if(m_ColorIdx.find(_ColorIdx) == m_ColorIdx.end())
         {
             auto texIT = m_Textures.find(TextureType::DIFFIUSE);

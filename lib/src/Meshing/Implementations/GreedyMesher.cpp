@@ -217,7 +217,7 @@ namespace VCore
             int axis2 = (axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
 
             CFaceMask mask;
-            auto masks = mask.Generate(_Chunk, axis);
+            auto masks = mask.Generate(m, _Chunk, axis);
 
             for (auto &&depth : masks)
             {

@@ -152,54 +152,57 @@ namespace VCore
     CBitMaskChunk::CBitMaskChunk(const Math::Vec3i &_ChunkSize)
     {
         if(_ChunkSize != Math::Vec3i::ZERO)
-            m_Grid.resize(_ChunkSize.x * _ChunkSize.y * 3, 0);
+            m_Grid.resize((_ChunkSize.x + 2) * (_ChunkSize.y + 2) * 3, 0);
     }
 
     void CBitMaskChunk::SetAxis(const Math::Vec3i &_Position, bool _Value, char _Axis)
     {
+        const static unsigned int CHUNK_SIZE_P = CHUNK_SIZE + 2;
         if(_Value)
         {
             switch (_Axis)
             {
-                case 0: m_Grid[_Position.z + CHUNK_SIZE * _Position.y] |= (1 << (_Position.x + 1)); break;
-                case 1: m_Grid[_Position.x + CHUNK_SIZE * _Position.z + (CHUNK_SIZE * CHUNK_SIZE)] |= (1 << (_Position.y + 1)); break;
-                case 2: m_Grid[_Position.x + CHUNK_SIZE * _Position.y + (CHUNK_SIZE * CHUNK_SIZE * 2)] |= (1 << (_Position.z + 1)); break;
+                case 0: m_Grid[(_Position.z + 1) + CHUNK_SIZE_P * (_Position.y + 1)] |= (1 << (_Position.x + 1)); break;
+                case 1: m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.z + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P)] |= (1 << (_Position.y + 1)); break;
+                case 2: m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.y + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)] |= (1 << (_Position.z + 1)); break;
             }
         }
         else
         {
             switch (_Axis)
             {
-                case 0: m_Grid[_Position.z + CHUNK_SIZE * _Position.y] &= ~(1 << (_Position.x + 1)); break;
-                case 1: m_Grid[_Position.x + CHUNK_SIZE * _Position.z + (CHUNK_SIZE * CHUNK_SIZE)] &= ~(1 << (_Position.y + 1)); break;
-                case 2: m_Grid[_Position.x + CHUNK_SIZE * _Position.y + (CHUNK_SIZE * CHUNK_SIZE * 2)] &= ~(1 << (_Position.z + 1)); break;
+                case 0: m_Grid[(_Position.z + 1) + CHUNK_SIZE_P * (_Position.y + 1)] &= ~(1 << (_Position.x + 1)); break;
+                case 1: m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.z + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P)] &= ~(1 << (_Position.y + 1)); break;
+                case 2: m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.y + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)] &= ~(1 << (_Position.z + 1)); break;
             }
         }
     }
 
     void CBitMaskChunk::Set(const Math::Vec3i &_Position, bool _Value)
     {
+        const static unsigned int CHUNK_SIZE_P = CHUNK_SIZE + 2;
         if(_Value)
         {
-            m_Grid[_Position.z + CHUNK_SIZE * _Position.y] |= (1 << (_Position.x + 1));
-            m_Grid[_Position.x + CHUNK_SIZE * _Position.z + (CHUNK_SIZE * CHUNK_SIZE)] |= (1 << (_Position.y + 1));
-            m_Grid[_Position.x + CHUNK_SIZE * _Position.y + (CHUNK_SIZE * CHUNK_SIZE * 2)] |= (1 << (_Position.z + 1));
+            m_Grid[(_Position.z + 1) + CHUNK_SIZE_P * (_Position.y + 1)] |= (1 << (_Position.x + 1));
+            m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.z + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P)] |= (1 << (_Position.y + 1));
+            m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.y + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)] |= (1 << (_Position.z + 1));
         }
         else
         {
-            m_Grid[_Position.z + CHUNK_SIZE * _Position.y] &= ~(1 << (_Position.x + 1));
-            m_Grid[_Position.x + CHUNK_SIZE * _Position.z + (CHUNK_SIZE * CHUNK_SIZE)] &= ~(1 << (_Position.y + 1));
-            m_Grid[_Position.x + CHUNK_SIZE * _Position.y + (CHUNK_SIZE * CHUNK_SIZE * 2)] &= ~(1 << (_Position.z + 1));
+            m_Grid[(_Position.z + 1) + CHUNK_SIZE_P * (_Position.y + 1)] &= ~(1 << (_Position.x + 1));
+            m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.z + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P)] &= ~(1 << (_Position.y + 1));
+            m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.y + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)] &= ~(1 << (_Position.z + 1));
         }
     }
 
     BITMASK_TYPE CBitMaskChunk::GetRowFaces(const Math::Vec3i &_Position, char _Axis) const
     {
+        const static unsigned int CHUNK_SIZE_P = CHUNK_SIZE + 2;
         switch (_Axis)
         {
-            case 0: return m_Grid[_Position.z + CHUNK_SIZE * _Position.y];
-            case 1: return m_Grid[_Position.x + CHUNK_SIZE * _Position.z + (CHUNK_SIZE * CHUNK_SIZE)];
-            case 2: return m_Grid[_Position.x + CHUNK_SIZE * _Position.y + (CHUNK_SIZE * CHUNK_SIZE * 2)];
+            case 0: return m_Grid[(_Position.z + 1) + CHUNK_SIZE_P * (_Position.y + 1)];
+            case 1: return m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.z + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P)];
+            case 2: return m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.y + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)];
         }
 
         return 0;
@@ -339,81 +342,6 @@ namespace VCore
         return CVoxelSpaceIterator(this, it->second.inner_bbox(it->first), {_v, vox});
     }
 
-    CVoxelSpace::iterator CVoxelSpace::find(const Math::Vec3i &_v, bool _Opaque) const
-    {
-        Math::Vec3i position = chunkpos(_v);
-        auto it = m_Chunks.find(position);
-        if(it == m_Chunks.end())
-            return end();
-
-        CVoxel *vox = it->second.find(_v, CBBox(position, m_ChunkSize), _Opaque);
-        if(!vox)
-            return end();
-
-        return CVoxelSpaceIterator(this, it->second.inner_bbox(it->first), {_v, vox});
-    }
-
-    CVoxelSpace::iterator CVoxelSpace::findVisible(const Math::Vec3i &_v) const
-    {
-        Math::Vec3i position = chunkpos(_v);
-        auto it = m_Chunks.find(position);
-        if(it == m_Chunks.end())
-            return end();
-
-        CVoxel *vox = it->second.findVisible(_v, CBBox(position, m_ChunkSize));
-        if(!vox)
-            return end();
-
-        return CVoxelSpaceIterator(this, it->second.inner_bbox(it->first), {_v, vox});
-    }
-
-    CVoxelSpace::iterator CVoxelSpace::findVisible(const Math::Vec3i &_v, bool _Opaque) const
-    {
-        static std::pair<Math::Vec3i, const CChunk *> last(Math::Vec3i(), nullptr);
-
-        Math::Vec3i position = chunkpos(_v);
-
-        if(!(last.first == position && last.second))
-        {
-            auto it = m_Chunks.find(position);
-            if(it == m_Chunks.end())
-                return end();
-
-            last.first = position;
-            last.second = &it->second;
-        }
-
-        CVoxel *vox = last.second->findVisible(_v, CBBox(position, m_ChunkSize), _Opaque);
-        if(!vox)
-            return end();
-
-        return CVoxelSpaceIterator(this, last.second->inner_bbox(last.first), {_v, vox});
-    }
-
-
-    VectoriMap<Voxel> CVoxelSpace::queryVisible(bool opaque) const
-    {
-        VectoriMap<Voxel> ret;
-        for (auto &&c : m_Chunks)
-        {
-            auto bbox = CBBox(c.first, m_ChunkSize);
-            auto inner = c.second.inner_bbox(bbox.Beg);
-            for (int z = inner.Beg.z; z < inner.End.z; z++)
-            {
-                for (int y = inner.Beg.y; y < inner.End.y; y++)
-                {
-                    for (int x = inner.Beg.x; x < inner.End.x; x++)
-                    {
-                        auto res = c.second.find(Math::Vec3i(x, y, z), bbox);
-                        if(res && res->IsVisible() && res->Transparent == !opaque)
-                            ret.insert({Math::Vec3i(x, y, z), res});
-                    }
-                }
-            }     
-        }
-        return ret;
-    }
-
     CVoxelSpace::querylist CVoxelSpace::queryDirtyChunks() const
     {
         return CChunkQueryList(m_Chunks, m_ChunkSize, [](const CBBox &_BBox, const CChunk &_Chunk, void *_Userdata)
@@ -544,45 +472,6 @@ namespace VCore
         *this = std::move(_Other);
     }
 
-    void CChunk::CheckAndUpdateVisibility(CVoxelSpace *_Space, const CBBox &_ChunkDim, Voxel _ThisVoxel, const Math::Vec3i &_Pos, CVoxel::Visibility _This, CVoxel::Visibility _Other)
-    {
-        // 1. Both opaque touching faces invisible
-        // 2. One transparent touching faces visible
-        // 3. Both transparent different transparency touching faces invisible
-
-        Voxel other = GetBlock(_Space, _ChunkDim, _Pos);
-        if(other && other->IsInstantiated())
-        {
-            if(!_ThisVoxel->IsInstantiated())
-            {
-                other->VisibilityMask |= ~_Other;
-                _ThisVoxel->VisibilityMask &= _This;
-                return;
-            }
-
-            // 1. + 3.
-            if(other->Transparent == _ThisVoxel->Transparent)
-            {
-                other->VisibilityMask &= _Other;
-                _ThisVoxel->VisibilityMask &= _This;
-            }
-            else if(!other->Transparent && _ThisVoxel->Transparent)    // 2.
-            {
-                other->VisibilityMask |= ~_Other;
-                _ThisVoxel->VisibilityMask &= _This;
-            }
-            else if(other->Transparent && !_ThisVoxel->Transparent)    // 2.
-            {
-                other->VisibilityMask &= _Other;
-                _ThisVoxel->VisibilityMask |= ~_This;
-            }
-        }
-        else if(!_ThisVoxel->IsInstantiated())
-            _ThisVoxel->VisibilityMask &= _This;
-        else
-            _ThisVoxel->VisibilityMask |= ~_This;
-    }
-
     CVoxel *CChunk::GetBlock(CVoxelSpace *_Space, const CBBox &_ChunkDim, const Math::Vec3i &_v)
     {
         if((_v.x >= 0 && _v.y >= 0 && _v.z >= 0) && (_v.x < _ChunkDim.End.x && _v.y < _ChunkDim.End.y && _v.z < _ChunkDim.End.z))
@@ -608,21 +497,8 @@ namespace VCore
         CVoxel &voxel = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z]; //= _pair.second;
         voxel.Color = _pair.second.Color;
         voxel.Material = _pair.second.Material;
-        voxel.Transparent = _pair.second.Transparent;
-
-        if(!voxel.IsVisible())
-            voxel.VisibilityMask = CVoxel::Visibility::VISIBLE;
 
         m_Mask.Set(relPos, true);
-
-        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::UP, ~CVoxel::Visibility::UP, ~CVoxel::Visibility::DOWN);
-        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::DOWN, ~CVoxel::Visibility::DOWN, ~CVoxel::Visibility::UP);
-
-        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::LEFT, ~CVoxel::Visibility::LEFT, ~CVoxel::Visibility::RIGHT);
-        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::RIGHT, ~CVoxel::Visibility::RIGHT, ~CVoxel::Visibility::LEFT);
-
-        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::FRONT, ~CVoxel::Visibility::FORWARD, ~CVoxel::Visibility::BACKWARD);
-        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::BACK, ~CVoxel::Visibility::BACKWARD, ~CVoxel::Visibility::FORWARD);
 
         for (size_t i = 0; i < 3; i++)
         {
@@ -733,14 +609,14 @@ namespace VCore
 
         m_Mask.Set(relPos, false);
 
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::UP, ~CVoxel::Visibility::UP, ~CVoxel::Visibility::DOWN);
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::DOWN, ~CVoxel::Visibility::DOWN, ~CVoxel::Visibility::UP);
+        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::UP, ~CVoxel::Visibility::UP, ~CVoxel::Visibility::DOWN);
+        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::DOWN, ~CVoxel::Visibility::DOWN, ~CVoxel::Visibility::UP);
 
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::LEFT, ~CVoxel::Visibility::LEFT, ~CVoxel::Visibility::RIGHT);
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::RIGHT, ~CVoxel::Visibility::RIGHT, ~CVoxel::Visibility::LEFT);
+        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::LEFT, ~CVoxel::Visibility::LEFT, ~CVoxel::Visibility::RIGHT);
+        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::RIGHT, ~CVoxel::Visibility::RIGHT, ~CVoxel::Visibility::LEFT);
 
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::FRONT, ~CVoxel::Visibility::FORWARD, ~CVoxel::Visibility::BACKWARD);
-        CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::BACK, ~CVoxel::Visibility::BACKWARD, ~CVoxel::Visibility::FORWARD);
+        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::FRONT, ~CVoxel::Visibility::FORWARD, ~CVoxel::Visibility::BACKWARD);
+        // CheckAndUpdateVisibility(_Space, _ChunkDim, &voxel, relPos + Math::Vec3i::BACK, ~CVoxel::Visibility::BACKWARD, ~CVoxel::Visibility::FORWARD);
         
         // Checks if the bbox must be resized
         for (size_t i = 0; i < 3; i++)
@@ -764,7 +640,7 @@ namespace VCore
                 for (int x = relPos.x; x < m_InnerBBox.End.x; x++)
                 {
                     CVoxel &vox = m_Data[x + _ChunkDim.End.x * y + _ChunkDim.End.x * _ChunkDim.End.y * z];
-                    if(vox.IsVisible())
+                    if(vox.IsInstantiated())
                         return {_ChunkDim.Beg + Math::Vec3i(x, y, z), &vox};
                 }
             }
@@ -778,36 +654,6 @@ namespace VCore
         Math::Vec3i relPos = (_v - _ChunkDim.Beg).abs();
         CVoxel &vox = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
         if(vox.IsInstantiated())
-            return &vox;
-
-        return nullptr;
-    }
-
-    Voxel CChunk::find(const Math::Vec3i &_v, const CBBox &_ChunkDim, bool _Opaque) const
-    {
-        Math::Vec3i relPos = (_v - _ChunkDim.Beg).abs();
-        CVoxel &vox = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
-        if(vox.IsInstantiated() && (vox.Transparent != _Opaque))
-            return &vox;
-
-        return nullptr;
-    }
-
-    Voxel CChunk::findVisible(const Math::Vec3i &_v, const CBBox &_ChunkDim) const
-    {
-        Math::Vec3i relPos = (_v - _ChunkDim.Beg).abs();
-        CVoxel &vox = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
-        if(vox.IsInstantiated()) //&& vox.IsVisible())
-            return &vox;
-
-        return nullptr;
-    }
-
-    Voxel CChunk::findVisible(const Math::Vec3i &_v, const CBBox &_ChunkDim, bool _Opaque) const
-    {
-        Math::Vec3i relPos = (_v - _ChunkDim.Beg).abs();
-        CVoxel &vox = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
-        if(vox.IsInstantiated() && vox.IsVisible() && (vox.Transparent != _Opaque))
             return &vox;
 
         return nullptr;
