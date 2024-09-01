@@ -48,19 +48,19 @@ namespace VCore
 
             for (auto &&surface : mesh->Surfaces)
             {
-                for(int i = 0; i < surface.Size(); i++)
+                for(int i = 0; i < surface->GetVertexCount(); i++)
                 {
-                    auto v = surface[i];
+                    auto v = surface->GetVertex(i);
                     vertexList << v.Pos.x << " " << v.Pos.z << " " << v.Pos.y << " " << v.Normal.x << " " << v.Normal.z << " " << v.Normal.y << " " << v.UV.x << " " << v.UV.y << std::endl;
                     vertexCount++;
                 }
                 
-                for (size_t i = 0; i < surface.Indices.size(); i += 3)
+                for (uint64_t i = 0; i < surface->GetFaceCount(); i++)
                 {
-                    faceList << "3 " << surface.Indices[i] + indexOffset << " " << surface.Indices[i + 1] + indexOffset << " " << surface.Indices[i + 2] + indexOffset << std::endl;
+                    faceList << "3 " << surface->GetIndex(i * 3) + indexOffset << " " << surface->GetIndex(i * 3 + 1) + indexOffset << " " << surface->GetIndex(i * 3 + 2) + indexOffset << std::endl;
                     faceCount++;
                 }
-                indexOffset += surface.Size();
+                indexOffset += surface->GetVertexCount();
             }
 
             // Fileheader

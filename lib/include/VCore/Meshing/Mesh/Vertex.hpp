@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021 Christian Tost
+ * Copyright (c) 2024 Christian Tost
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,71 +22,27 @@
  * SOFTWARE.
  */
 
-#ifndef MESH_HPP
-#define MESH_HPP
+#ifndef VERTEX_HPP
+#define VERTEX_HPP
 
-#include <VCore/Math/Mat4x4.hpp>
-#include <VCore/Meshing/Material.hpp>
-#include <VCore/Formats/IVoxelFormat.hpp>
-#include <memory>
-#include <vector>
 #include <VCore/Math/Vector.hpp>
-#include <VCore/VConfig.hpp>
 
 namespace VCore
 {
     struct SVertex
     {
         SVertex() = default;
-        SVertex(Math::Vec3f _Pos, Math::Vec3f _Normal, Math::Vec2f _UV) : Pos(_Pos), Normal(_Normal), UV(_UV) {}
+        SVertex(const Math::Vec3f &_Pos, const Math::Vec3f &_Normal, const Math::Vec2f &_UV, const Math::Vec2f &_UV2 = Math::Vec2f()) : Pos(_Pos), Normal(_Normal), UV(_UV), UV2(_UV2) {}
 
         Math::Vec3f Pos;
         Math::Vec3f Normal;
-        Math::Vec2f UV;
+        Math::Vec2f UV, UV2;
 
         inline bool operator==(const SVertex &_Vertex) const
         {
             return _Vertex.Pos == Pos && _Vertex.Normal == Normal && _Vertex.UV == UV;
         }
     };
-
-    struct SSurface
-    {
-        SSurface() {}
-        SSurface(SSurface &&_Other) { *this = std::move(_Other); }
-
-        Material FaceMaterial;          //!< Material used for this group.
-
-        // std::vector<SVertex> Vertices;  //!< Vertices of this surface
-
-        VERTEX_DATA                     //!< Vertices of this surface
-        ADD_VERTEX_DATA_METHOD
-        GET_VERTEX_DATA_METHOD
-        GET_VERTEX_STREAM_METHOD
-        GET_VERTEX_DATA_SIZE_METHOD
-
-        SSurface &operator=(SSurface &&_Other)
-        {
-            FaceMaterial = std::move(_Other.FaceMaterial);
-            Indices = std::move(_Other.Indices);
-            MOVE_VERTEX_DATA
-
-            return *this;
-        }
-
-        std::vector<int> Indices;       //!< Indices for vertices used by this surface.
-    };
-
-    struct SMesh
-    {
-        std::vector<SSurface> Surfaces;                 //!< All surfaces of this mesh.
-        std::map<TextureType, Texture> Textures;        //!< Texture used by this mesh.
-        Math::Mat4x4 ModelMatrix;                       //!< Modelmatrix according to the voxel file.
-
-        std::string Name;       //!< Same as of the voxel model.
-        unsigned int FrameTime; //!< How long this frame should be last, in ms.
-    };
-    using Mesh = std::shared_ptr<SMesh>;
 
     struct VertexHasher
     {
@@ -102,7 +58,7 @@ namespace VCore
             return ((ph * 73856093) ^ (nh * 19349663) ^ (uvh * 83492791));
         }
     };
-}
+} // namespace VCore
 
 
-#endif //MESH_HPP
+#endif

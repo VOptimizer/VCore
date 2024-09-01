@@ -77,27 +77,26 @@ namespace VCore
 
                 GLTF::CMaterial Mat;
                 Mat.Name = "Mat" + std::to_string(matId + 1);
-                Mat.Metallic = surface.FaceMaterial->Metallic;
-                Mat.Roughness = surface.FaceMaterial->Roughness;
-                Mat.Emissive = surface.FaceMaterial->Power;
-                Mat.Transparency = surface.FaceMaterial->Transparency;
+                Mat.Metallic = surface->FaceMaterial->Metallic;
+                Mat.Roughness = surface->FaceMaterial->Roughness;
+                Mat.Emissive = surface->FaceMaterial->Power;
+                Mat.Transparency = surface->FaceMaterial->Transparency;
                 materials.push_back(Mat);
 
                 GLTF::CBufferView surfaceVerticesView, indexView;
 
-                auto vertices = surface.GetVertices();
-
-                surfaceVerticesView.Size = vertices.size() * sizeof(SVertex);
+                surfaceVerticesView.Size = surface->GetVertexCount() * sizeof(SVertex);
                 surfaceVerticesView.Target = GLTF::BufferTarget::ARRAY_BUFFER;
                 surfaceVerticesView.ByteStride = sizeof(SVertex);
                 surfaceVerticesView.Offset = binary.size();
 
                 indexView.Offset = surfaceVerticesView.Offset + surfaceVerticesView.Size;//uv.Size;
-                indexView.Size = surface.Indices.size() * sizeof(int);
+                indexView.Size = (surface->GetFaceCount() * 3) * sizeof(int);
                 indexView.Target = GLTF::BufferTarget::ELEMENT_ARRAY_BUFFER;
 
-                for (auto &&v : vertices)
+                for(uint64_t i = 0; i < surface->GetVertexCount(); i++)
                 {
+                    auto v = surface->GetVertex(i);
                     max = v.Pos.max(max);
                     min = v.Pos.min(min);
                 }
@@ -105,26 +104,26 @@ namespace VCore
                 GLTF::CAccessor positionAccessor, normalAccessor, uvAccessor, indexAccessor;
                 positionAccessor.BufferView = bufferViews.size();
                 positionAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
-                positionAccessor.Count = vertices.size();
+                positionAccessor.Count = surface->GetVertexCount();
                 positionAccessor.Type = "VEC3";
                 positionAccessor.SetMin(min);
                 positionAccessor.SetMax(max);
 
                 normalAccessor.BufferView = bufferViews.size();
                 normalAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
-                normalAccessor.Count = vertices.size();
+                normalAccessor.Count = surface->GetVertexCount();
                 normalAccessor.Type = "VEC3";
                 normalAccessor.Offset = sizeof(Math::Vec3f);
 
                 uvAccessor.BufferView = bufferViews.size();
                 uvAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
-                uvAccessor.Count = vertices.size();
+                uvAccessor.Count = surface->GetVertexCount();
                 uvAccessor.Type = "VEC2";
                 uvAccessor.Offset = normalAccessor.Offset + sizeof(Math::Vec3f);
 
                 indexAccessor.BufferView = bufferViews.size() + 1;
                 indexAccessor.ComponentType = GLTF::GLTFTypes::INT;
-                indexAccessor.Count = surface.Indices.size();
+                indexAccessor.Count = (surface->GetFaceCount() * 3);
                 indexAccessor.Type = "SCALAR";
 
                 GLTF::CPrimitive Primitive;
@@ -149,10 +148,10 @@ namespace VCore
 
                 binary.resize(binary.size() + surfaceVerticesView.Size + indexView.Size);
 
-                memcpy(binary.data() + pos, vertices.data(), surfaceVerticesView.Size);
+                memcpy(binary.data() + pos, surface->GetRawVertexPointer(), surfaceVerticesView.Size);
                 pos += surfaceVerticesView.Size;
 
-                memcpy(binary.data() + pos, surface.Indices.data(), indexView.Size);
+                memcpy(binary.data() + pos, surface->GetRawIndexPointer(), indexView.Size);
             }
         
             glTFMeshes.push_back(GLTFMesh);

@@ -28,7 +28,8 @@
 #include <VCore/Meshing/Material.hpp>
 #include <VCore/Voxel/VoxelModel.hpp>
 #include <VCore/Voxel/VoxelAnimation.hpp>
-#include <VCore/Meshing/Mesh.hpp>
+#include <VCore/Meshing/Mesh/Mesh.hpp>
+#include <VCore/Formats/SceneNode.hpp>
 
 namespace VCore
 {
@@ -52,12 +53,21 @@ namespace VCore
     class IMesher
     {
         public:
-            IMesher() : m_Frustum(nullptr) {}
+            IMesher() : m_Frustum(nullptr), m_SurfaceFactory(nullptr) {}
 
             /**
              * @brief Creates a new mesher instance.
              */
-            static Mesher Create(MesherTypes type);
+            template<class SurfaceType>
+            static Mesher Create(MesherTypes type)
+            {
+                auto result = Create(type);
+                result->SetSurfaceFactory([]() -> ISurface* {
+                    return new SurfaceType();
+                });
+
+                return result;
+            }
 
             /**
              * @brief Generates the scene
@@ -80,6 +90,11 @@ namespace VCore
             void SetFrustum(const CFrustum *_Frustum);
 
             /**
+             * @brief Sets a function for surface instantiation.
+             */
+            inline void SetSurfaceFactory(SurfaceFactory _Factory) { m_SurfaceFactory = _Factory; }
+
+            /**
              * @brief Generates list of meshed chunks.
              * 
              * @param _Mesh: Voxel mesh to meshify.
@@ -90,6 +105,11 @@ namespace VCore
 
             virtual ~IMesher();
         protected:
+            /**
+             * @brief Creates a new mesher instance.
+             */
+            static Mesher Create(MesherTypes type);
+
             /// @brief Called inside ::GenerateChunks for every chunk using multiple threads.
             /// @param _Model: The VoxelModel which is currently processed.
             /// @param _Chunk: Assigned chunk data which needs to be meshed.
@@ -99,6 +119,8 @@ namespace VCore
 
             std::vector<Mesh> GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds = false);
             CFrustum *m_Frustum;
+
+            SurfaceFactory m_SurfaceFactory;
     };
 }
 

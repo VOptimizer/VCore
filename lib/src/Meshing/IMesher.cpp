@@ -26,7 +26,7 @@
 #include "Implementations/GreedyMesher.hpp"
 #include <VCore/Meshing/IMesher.hpp>
 #include "Implementations/MarchingCubesMesher.hpp"
-#include <VCore/Meshing/MeshBuilder.hpp>
+#include <VCore/Meshing/Mesh/MeshBuilder.hpp>
 #include "Implementations/SimpleMesher.hpp"
 #include <future>
 
@@ -141,7 +141,7 @@ namespace VCore
             }
         }
 
-        CMeshBuilder builder;
+        CMeshBuilder builder(m_SurfaceFactory);
         ret = builder.Merge(ret, meshes);
         ret->Name = m->Name;
         ret->FrameTime = 0;
@@ -185,7 +185,7 @@ namespace VCore
                 ret.insert(ret.end(), res.begin(), res.end());
             else
             {
-                CMeshBuilder builder;
+                CMeshBuilder builder(m_SurfaceFactory);
 
                 std::vector<Mesh> meshes;
                 for (auto &&m : res)

@@ -26,7 +26,7 @@
 #define SIMPLEMESHER_HPP
 
 #include <VCore/Meshing/IMesher.hpp>
-#include <VCore/Meshing/MeshBuilder.hpp>
+#include <VCore/Meshing/Mesh/MeshBuilder.hpp>
 
 namespace VCore
 {

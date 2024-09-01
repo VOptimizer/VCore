@@ -82,7 +82,7 @@ namespace VCore
     {
         public:
             Slices mSlices[3];
-            std::map<TextureType, Texture> Textures;
+            ankerl::unordered_dense::map<TextureType, Texture> Textures;
 
             CSliceCollection() = default;
             CSliceCollection(CSliceCollection &&_Other) { *this = std::move(_Other); }

@@ -378,9 +378,9 @@ namespace VCore
 
         for (auto &&surface : _Mesh->Surfaces)
         {
-            for (int i = 0; i < surface.Size(); i++)
+            for (uint64_t i = 0; i < surface->GetVertexCount(); i++)
             {
-                auto vertex = surface[i];
+                auto vertex = surface->GetVertex(i);
                 vertices.push_back(vertex.Pos.x);
                 vertices.push_back(vertex.Pos.y);
                 vertices.push_back(vertex.Pos.z);
@@ -394,26 +394,27 @@ namespace VCore
             }
 
             int currentMatIdx = 0;
-            auto it = materialIndexMap.find((uint64_t)surface.FaceMaterial.get());
+            auto it = materialIndexMap.find((uint64_t)surface->FaceMaterial.get());
             if(it == materialIndexMap.end())
             {
-                AddMaterial(_Objects, surface.FaceMaterial);
+                AddMaterial(_Objects, surface->FaceMaterial);
 
                 // Connects the material with the mesh.
-                _Connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty((int64_t)surface.FaceMaterial.get()), CFbxProperty(((int64_t)_Mesh.get()) + 1) });
+                _Connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty((int64_t)surface->FaceMaterial.get()), CFbxProperty(((int64_t)_Mesh.get()) + 1) });
             
                 currentMatIdx = materialIndex;
-                materialIndexMap[(uint64_t)surface.FaceMaterial.get()] = materialIndex++;
+                materialIndexMap[(uint64_t)surface->FaceMaterial.get()] = materialIndex++;
 
-                ConnectTextures(_Connections, surface.FaceMaterial, _Mesh->Textures);
+                ConnectTextures(_Connections, surface->FaceMaterial, _Mesh->Textures);
             }
             else
                 currentMatIdx = it->second;
             
             int counter = 1;
-            for(auto &&i: surface.Indices)
+            // for(auto &&i: surface.Indices)
+            for (uint64_t i = 0; i < surface->GetFaceCount() * 3; i++)            
             {
-                int idx = indexOffset + i;
+                int idx = indexOffset + surface->GetIndex(i);
 
                 // The last index need to be xored by -1. Since we use triangles instead of quads its every third index.
                 if(counter % 3 == 0)
@@ -426,7 +427,7 @@ namespace VCore
                 indices.push_back(idx);
                 counter++;
             }
-            indexOffset += surface.Size();
+            indexOffset += surface->GetVertexCount();
         }
 
         // Creates the material layer. Which is just the way to assign different materials to different polygons.
@@ -544,7 +545,7 @@ namespace VCore
         _Objects.AddSubNode(std::move(material));
     }
 
-    void CFbxExporter::ConnectTextures(CFbxNode &_Connections, Material _Material, const std::map<TextureType, Texture> &_Textures)
+    void CFbxExporter::ConnectTextures(CFbxNode &_Connections, Material _Material, const ankerl::unordered_dense::map<TextureType, Texture> &_Textures)
     {
         // Connects every texture with the given material.
         for (auto &&texture : _Textures)

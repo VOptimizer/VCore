@@ -64,9 +64,9 @@ namespace VCore
                 // Lazy memory management.
                 {
                     std::stringstream vertexList, uvList, normalList;
-                    for(int i = 0; i < surface.Size(); i++)
+                    for(int i = 0; i < surface->GetVertexCount(); i++)
                     {
-                        auto v = surface[i];
+                        auto v = surface->GetVertex(i);
                         Math::Vec3f pos = v.Pos;
                         Math::Vec3f normal = v.Normal;
 
@@ -94,33 +94,33 @@ namespace VCore
                 float transparency = 0;
                 float alpha = 1.0;
 
-                if(surface.FaceMaterial->Metallic != 0.0)
+                if(surface->FaceMaterial->Metallic != 0.0)
                 {
-                    ambient = surface.FaceMaterial->Metallic;
+                    ambient = surface->FaceMaterial->Metallic;
                     illum = 3;
                 }
-                else if(surface.FaceMaterial->Transparency != 0.0) // Glass
+                else if(surface->FaceMaterial->Transparency != 0.0) // Glass
                 {
                     illum = 4;
-                    transparency = surface.FaceMaterial->Transparency;
-                    alpha = 1 - surface.FaceMaterial->Transparency;
+                    transparency = surface->FaceMaterial->Transparency;
+                    alpha = 1 - surface->FaceMaterial->Transparency;
                 }
 
                 mtlFile->Write("newmtl Mat" + std::to_string(matCounter) + "\n");
-                mtlFile->Write("Ns " + std::to_string(surface.FaceMaterial->Roughness * 1000.f) + "\n");
+                mtlFile->Write("Ns " + std::to_string(surface->FaceMaterial->Roughness * 1000.f) + "\n");
                 mtlFile->Write("Ka " + std::to_string(ambient) + " " + std::to_string(ambient) + " " + std::to_string(ambient) + "\n");
                 mtlFile->Write("Kd 1.0 1.0 1.0\n");
-                mtlFile->Write("Ks " + std::to_string(surface.FaceMaterial->Specular) + " " + std::to_string(surface.FaceMaterial->Specular) + " "  + std::to_string(surface.FaceMaterial->Specular) + "\n");
+                mtlFile->Write("Ks " + std::to_string(surface->FaceMaterial->Specular) + " " + std::to_string(surface->FaceMaterial->Specular) + " "  + std::to_string(surface->FaceMaterial->Specular) + "\n");
                 
-                if(surface.FaceMaterial->Power != 0.0)
+                if(surface->FaceMaterial->Power != 0.0)
                 {
-                    mtlFile->Write("Ke " + std::to_string(surface.FaceMaterial->Power) + " " + std::to_string(surface.FaceMaterial->Power) + " " + std::to_string(surface.FaceMaterial->Power) + "\n");
+                    mtlFile->Write("Ke " + std::to_string(surface->FaceMaterial->Power) + " " + std::to_string(surface->FaceMaterial->Power) + " " + std::to_string(surface->FaceMaterial->Power) + "\n");
                     mtlFile->Write("map_Ke " + filenameWithoutExt + ".emission.png\n");
                 }
 
                 mtlFile->Write("Tr " + std::to_string(transparency) + "\n");
                 mtlFile->Write("d " + std::to_string(alpha) + "\n");
-                mtlFile->Write("Ni " + std::to_string(surface.FaceMaterial->IOR) + "\n");
+                mtlFile->Write("Ni " + std::to_string(surface->FaceMaterial->IOR) + "\n");
                 mtlFile->Write("illum " + std::to_string(illum) + "\n");
                 mtlFile->Write("map_Kd " + filenameWithoutExt + ".albedo.png\n");
 
@@ -128,19 +128,19 @@ namespace VCore
                 
                 objFile->Write("usemtl Mat" + std::to_string(matID) + "\n");
 
-                for (size_t i = 0; i < surface.Indices.size(); i += 3)
+                for (uint64_t i = 0; i < surface->GetFaceCount(); i++)
                 {
                     objFile->Write("f");
                     for (char j = 0; j < 3; j++)
                     {
-                        int index = surface.Indices[i + j] + indexOffset + 1;
+                        int index = surface->GetIndex(i * 3 + j) + indexOffset + 1;
 
                         objFile->Write(" ");
                         objFile->Write(std::to_string(index) + "/" + std::to_string(index) + "/" + std::to_string(index));
                     }
                     objFile->Write("\n");
                 }
-                indexOffset += surface.Size();
+                indexOffset += surface->GetVertexCount();
             }
         }
 

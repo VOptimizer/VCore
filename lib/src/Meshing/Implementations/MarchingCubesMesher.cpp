@@ -362,7 +362,7 @@ namespace VCore
     {
         (void)Opaque;
 
-        CMeshBuilder builder;
+        CMeshBuilder builder(m_SurfaceFactory);
         builder.AddTextures(m->Textures);
 
         for(int x = _Chunk.InnerBBox.Beg.x - 1; x <= _Chunk.InnerBBox.End.x + 1; x++)

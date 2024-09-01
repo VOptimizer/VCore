@@ -28,7 +28,7 @@
 #include <VCore/Export/ExportSettings.hpp>
 #include <map>
 #include <memory>
-#include <VCore/Meshing/Mesh.hpp>
+#include <VCore/Meshing/Mesh/Mesh.hpp>
 #include <VCore/Misc/FileStream.hpp>
 #include <string>
 #include <vector>
@@ -46,7 +46,10 @@ namespace VCore
         GLB,
         ESCN,
         PLY,
-        FBX
+        FBX,
+        USDC,
+        USDA,
+        USDZ
     };
 
     class IExporter

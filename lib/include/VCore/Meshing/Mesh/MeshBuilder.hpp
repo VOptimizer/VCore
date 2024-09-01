@@ -29,28 +29,15 @@
 #include <memory>
 #include <vector>
 #include <VCore/Formats/IVoxelFormat.hpp>
-#include <VCore/Meshing/Mesh.hpp>
+#include <VCore/Meshing/Mesh/Mesh.hpp>
 #include <VCore/Voxel/VoxelTextureMap.hpp>
-#include <VCore/Meshing/HalfEdge.hpp>
-
 
 namespace VCore
 {
-    class CGridCell
-    {
-        public:
-            void AddVertex(const SVertex &_Vertex, int _Idx);
-
-            int FindVertex(const SVertex &_Vertex) const;
-
-        private:
-            std::vector<std::pair<SVertex, int>> m_Vertices;
-    };
-
     class CMeshBuilder
     {
         public:
-            CMeshBuilder() : m_TextureMap(nullptr), m_CachedSurface(nullptr) {}
+            CMeshBuilder(SurfaceFactory _Factory) : m_TextureMap(nullptr), m_SurfaceFactory(_Factory) {}
 
             /**
              * @brief Sets the texturing map.
@@ -65,7 +52,7 @@ namespace VCore
              * 
              * @param _textures: Textures of the mesh.
              */
-            void AddTextures(const std::map<TextureType, Texture> &_textures);
+            void AddTextures(const ankerl::unordered_dense::map<TextureType, Texture> &_textures);
 
             /**
              * @brief Adds a new quad to the mesh.
@@ -100,34 +87,37 @@ namespace VCore
 
             ~CMeshBuilder() = default;
         private:
-            CHalfMesh m_Mesh;
             Material FaceMaterial;
 
             struct SIndexedSurface
             {
-                SIndexedSurface(const Material &_Material) 
-                {
-                    Surface.FaceMaterial = _Material;
-                }
+                SIndexedSurface(ISurface *_Surface) : Surface(_Surface)
+                { }
+
+                SIndexedSurface(const SIndexedSurface&) = default;
+                SIndexedSurface(SIndexedSurface &&) = default;
+
+                SIndexedSurface &operator=(const SIndexedSurface&) = default;
+                SIndexedSurface &operator=(SIndexedSurface &&) = default;
 
                 ankerl::unordered_dense::map<SVertex, int, VertexHasher> Index;
-                SSurface Surface;
+                ISurface *Surface;
             };
 
             int AddVertex(const SVertex &_Vertex, SIndexedSurface &_Surface);
-            void AddMergeVertex(const SVertex &_Vertex, SIndexedSurface &_Surface, ankerl::unordered_dense::map<SVertex, int, VertexHasher> &_Index);
+            uint32_t AddMergeVertex(const SVertex &_Vertex, SIndexedSurface &_Surface, ankerl::unordered_dense::map<SVertex, int, VertexHasher> &_Index);
 
             bool IsOnBorder(const Math::Vec3f &_Pos);
 
             void MergeIntoThis(Mesh m, bool _ApplyModelMatrix);
             void GenerateCache(Mesh _MergeInto);
 
-            const std::map<TextureType, Texture> *m_Textures;
-            ankerl::unordered_dense::map<size_t, SIndexedSurface> m_Surfaces;
+            const ankerl::unordered_dense::map<TextureType, Texture> *m_Textures;
+            ankerl::unordered_dense::map<uintptr_t, SIndexedSurface> m_Surfaces;
             Mesh m_MergerMesh;
 
             CVoxelTextureMap *m_TextureMap;
-            SIndexedSurface *m_CachedSurface;
+            SurfaceFactory m_SurfaceFactory;
     };
 }
 

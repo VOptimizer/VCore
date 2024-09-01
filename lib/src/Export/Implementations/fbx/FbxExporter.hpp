@@ -110,7 +110,7 @@ namespace VCore
             void AddTexture(const std::string &_Path, CFbxNode &_Objects, Texture _Texture, TextureType _Type);
             void AddMesh(CFbxNode &_Objects, CFbxNode &_Connections, int64_t _RootId, Mesh _Mesh);
             void AddMaterial(CFbxNode &_Objects, Material _Material);
-            void ConnectTextures(CFbxNode &_Connections, Material _Material, const std::map<TextureType, Texture> &_Textures);
+            void ConnectTextures(CFbxNode &_Connections, Material _Material, const ankerl::unordered_dense::map<TextureType, Texture> &_Textures);
             int64_t CreateNull(CFbxNode &_Objects, const std::string &_Name);
     };
 }

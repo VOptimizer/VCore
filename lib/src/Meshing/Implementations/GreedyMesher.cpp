@@ -26,7 +26,7 @@
 #include <future>
 
 #include "../../Misc/Helper.hpp"
-#include <VCore/Meshing/MeshBuilder.hpp>
+#include <VCore/Meshing/Mesh/MeshBuilder.hpp>
 #include <vector>
 
 #include "GreedyMesher.hpp"
@@ -99,7 +99,7 @@ namespace VCore
 
     SMeshChunk CGreedyMesher::GenerateMeshChunk(VoxelModel _Mesh, CSliceCollection &_Collection, const SChunkMeta *_Chunk)
     {
-        CMeshBuilder builder;
+        CMeshBuilder builder(m_SurfaceFactory);
         auto textures = _Mesh->Textures;
         auto &materials = _Mesh->Materials;
 

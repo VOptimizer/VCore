@@ -50,7 +50,7 @@ namespace VCore
     {
         (void)Opaque;
 
-        CMeshBuilder builder;
+        CMeshBuilder builder(m_SurfaceFactory);
         builder.AddTextures(m->Textures);
 
         if(m->TexturingType == TexturingTypes::TEXTURED)

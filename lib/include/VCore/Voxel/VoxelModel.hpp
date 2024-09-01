@@ -61,7 +61,7 @@ namespace VCore
             CVoxelTextureMap TextureMapping;           //!< Contains information about the texture atlas mapping.
 
             std::vector<Material> Materials;           //!< Used materials
-            std::map<TextureType, Texture> Textures;   //!< Used colors / texture atlas
+            ankerl::unordered_dense::map<TextureType, Texture> Textures;   //!< Used colors / texture atlas
 
             CVoxelModel() : TexturingType(TexturingTypes::INDEXED) {}
             

@@ -32,7 +32,6 @@ set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelModel.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/Slicer/Slices.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/MeshBuilder.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/FaceMask.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Meshing/HalfEdge.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/IExporter.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Misc/FileStream.cpp"

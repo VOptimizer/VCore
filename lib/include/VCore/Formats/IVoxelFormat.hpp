@@ -114,7 +114,7 @@ namespace VCore
                 return m_Animations;
             }
 
-            inline std::map<TextureType, Texture> GetTextures() const
+            inline ankerl::unordered_dense::map<TextureType, Texture> GetTextures() const
             {
                 return m_Textures;
             }
@@ -162,7 +162,7 @@ namespace VCore
             std::vector<VoxelModel> m_Models;
             std::vector<VoxelAnimation> m_Animations;
             std::vector<Material> m_Materials;
-            std::map<TextureType, Texture> m_Textures;
+            ankerl::unordered_dense::map<TextureType, Texture> m_Textures;
 
             virtual void ParseFormat() = 0;
 

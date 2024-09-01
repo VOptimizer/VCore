@@ -37,6 +37,20 @@ namespace VCore
             inline uint64_t size() const { return m_Size; }
             inline uint64_t capacity() const { return m_Capacity; }
 
+            inline void insert(T* _Position, T* _Begin, T*_End)
+            {
+                auto size = (uintptr_t)(_End - _Begin);
+                auto from = (uintptr_t)(_Position - begin());
+                if((from + size) >= m_Capacity)
+                {
+                    m_Capacity += ((from + size) - m_Capacity);
+                    m_Data = static_cast<T*>(realloc(static_cast<void*>(m_Data), m_Capacity * sizeof(T)));
+                }
+
+                memcpy(m_Data + from, _Begin, size * sizeof(T));
+                m_Size += size;
+            }
+
             inline T &operator[](uint64_t _idx)
             {
                 return m_Data[_idx];
@@ -48,6 +62,15 @@ namespace VCore
             }
 
             inline T *data() const { return m_Data; }
+
+            inline void reserve(size_t _Size)
+            {
+                if(_Size < m_Capacity)
+                    return;
+
+                m_Capacity += (_Size - m_Capacity) + 1;
+                m_Data = static_cast<T*>(realloc(static_cast<void*>(m_Data), m_Capacity * sizeof(T)));
+            }
 
             inline fast_vector &operator=(fast_vector &&_Other)
             {

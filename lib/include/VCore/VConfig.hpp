@@ -25,72 +25,30 @@
 #ifndef VCONFIG_HPP
 #define VCONFIG_HPP
 
-#include <VCore/Misc/fast_vector.hpp>
+// Checks if rtti is enabled, and sets an helper flag.
+#if defined(__clang__)
+  #if __has_feature(cxx_rtti)
+    #define VCORE_RTTI_ENABLED
+  #endif
+#elif defined(__GNUC__)
+  #if defined(__GXX_RTTI)
+    #define VCORE_RTTI_ENABLED
+  #endif
+#elif defined(_MSC_VER)
+  #if defined(_CPPRTTI)
+    #define VCORE_RTTI_ENABLED
+  #endif
+#endif
 
-// The following macros allow you to use your engine or framework's mesh data structures instead of the V-Core's.
-
+// This will influence the size of the chunks.
 #ifndef BITMASK_TYPE
 #define BITMASK_TYPE uint32_t
 #endif
 
+// Chunksize if always maximum bits of BITMASK_TYPE minus 2
 #define CHUNK_SIZE (sizeof(BITMASK_TYPE) * 8 - 2)
+
+// Precomputed mask for later face determination.
 #define FACE_MASK (((BITMASK_TYPE)1 << CHUNK_SIZE) - 1)
 
-/**
- * @brief Defines how data of a vertex should be stored.
- */
-#ifndef VERTEX_DATA
-#define VERTEX_DATA fast_vector<SVertex> Vertices;
-#endif
-
-/**
- * @brief Defines how to move vertex data.
- */
-#ifndef VERTEX_MOVE_VERTEX_DATADATA
-#define MOVE_VERTEX_DATA Vertices = std::move(_Other.Vertices);
-#endif
-
-/**
- * @brief Defines how to get the total size of the vertex buffer.
- */
-#ifndef GET_VERTEX_DATA_SIZE_METHOD
-#define GET_VERTEX_DATA_SIZE_METHOD \
-    int Size() const            \
-    {                           \
-        return Vertices.size(); \
-    }
-#endif
-
-/**
- * @brief Defines how a vertex is added to the vertex list.
- */
-#ifndef ADD_VERTEX_DATA_METHOD
-#define ADD_VERTEX_DATA_METHOD              \
-    void AddVertex(const SVertex &_Vertex)  \
-    {                                       \
-        Vertices.push_back(_Vertex);        \
-    }
-#endif
-
-/**
- * @brief Defines how to access a vertex by its index.
- */
-#ifndef GET_VERTEX_DATA_METHOD
-#define GET_VERTEX_DATA_METHOD              \
-    SVertex operator[](size_t _idx) const  \
-    {                                       \
-        return Vertices[_idx];              \
-    }
-#endif
-
-/**
- * @brief Allows certain exporters to get a stream of all the vertices.
- */
-#ifndef GET_VERTEX_STREAM_METHOD
-#define GET_VERTEX_STREAM_METHOD                        \
-    const fast_vector<SVertex> &GetVertices() const     \
-    {                                                   \
-        return Vertices;                                      \
-    }
-#endif
 #endif

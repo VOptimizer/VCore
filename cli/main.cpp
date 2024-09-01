@@ -266,15 +266,15 @@ int main(int argc, char const *argv[])
     {
         VCore::Mesher Mesher;
         if(MesherType == "greedy")
-            Mesher = VCore::IMesher::Create(VCore::MesherTypes::GREEDY);
+            Mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::GREEDY);
         else if(MesherType == "marching_cubes")
-            Mesher = VCore::IMesher::Create(VCore::MesherTypes::MARCHING_CUBES);
+            Mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::MARCHING_CUBES);
         else if(MesherType == "greedy_chunked")
-            Mesher = VCore::IMesher::Create(VCore::MesherTypes::GREEDY_CHUNKED);
+            Mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::GREEDY_CHUNKED);
         else if(MesherType == "greedy_textured")
-            Mesher = VCore::IMesher::Create(VCore::MesherTypes::GREEDY_TEXTURED);
+            Mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::GREEDY_TEXTURED);
         else
-            Mesher = VCore::IMesher::Create(VCore::MesherTypes::SIMPLE);
+            Mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::SIMPLE);
 
         auto Files = ResolveFilenames(cmdl, OutputPattern);
         for (auto &&f : Files)
@@ -326,6 +326,7 @@ int main(int argc, char const *argv[])
                 {
                     auto startTime = std::chrono::high_resolution_clock::now();
                     auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
+                    // (void)Mesher->GenerateChunks(Loader->GetModels()[0]);
                     // Mesher->GenerateChunks(Loader->GetModels()[0]);
                     auto endTime = std::chrono::high_resolution_clock::now();
 

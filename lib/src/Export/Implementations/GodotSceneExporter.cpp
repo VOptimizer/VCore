@@ -69,27 +69,27 @@ namespace VCore
             {
                 os << "[sub_resource type=\"SpatialMaterial\" id=" << id << "]" << std::endl;
                 os << "albedo_texture = ExtResource( 1 )" << std::endl;
-                os << "metallic = " << surface.FaceMaterial->Metallic << std::endl;
-                os << "metallic_specular = " << surface.FaceMaterial->Specular << std::endl;
-                os << "roughness = " << surface.FaceMaterial->Roughness << std::endl;
+                os << "metallic = " << surface->FaceMaterial->Metallic << std::endl;
+                os << "metallic_specular = " << surface->FaceMaterial->Specular << std::endl;
+                os << "roughness = " << surface->FaceMaterial->Roughness << std::endl;
 
-                if(surface.FaceMaterial->Power != 0)
+                if(surface->FaceMaterial->Power != 0)
                 {
                     os << "emission_enabled = true" << std::endl;
-                    os << "emission_energy = " << surface.FaceMaterial->Power << std::endl;
+                    os << "emission_energy = " << surface->FaceMaterial->Power << std::endl;
                     os << "emission_texture = ExtResource( 2 )" << std::endl;
                 }
 
-                if(surface.FaceMaterial->IOR != 0)
+                if(surface->FaceMaterial->IOR != 0)
                 {
                     os << "refraction_enabled = true" << std::endl;
-                    os << "refraction_energy = " << surface.FaceMaterial->IOR << std::endl;
+                    os << "refraction_energy = " << surface->FaceMaterial->IOR << std::endl;
                 }
 
-                if(surface.FaceMaterial->Transparency != 0.0)
+                if(surface->FaceMaterial->Transparency != 0.0)
                 {
                     os << "flags_transparent = true" << std::endl;
-                    os << "albedo_color = Color( 1, 1, 1, " << 1.f - surface.FaceMaterial->Transparency << ")" << std::endl;
+                    os << "albedo_color = Color( 1, 1, 1, " << 1.f - surface->FaceMaterial->Transparency << ")" << std::endl;
                 }
 
                 arrayMesh << "surfaces/" << surfaceIdx << "= {" << std::endl;
@@ -105,9 +105,9 @@ namespace VCore
                     normalList << "\t\tVector3Array(";
                     uvList << "\t\tVector2Array(";
                     bool first = true;
-                    for(int i = 0; i < surface.Size(); i++)
+                    for(int i = 0; i < surface->GetVertexCount(); i++)
                     {
-                        auto v = surface[i];
+                        auto v = surface->GetVertex(i);
 
                         if(!first)
                         {
@@ -141,12 +141,12 @@ namespace VCore
                 bool first = true;
                 
                 // Godot uses Clockwise Winding Order for culling.
-                for (size_t i = 0; i < surface.Indices.size(); i += 3)                
+                for (uint64_t i = 0; i < surface->GetFaceCount(); i++)                
                 {
                     if(!first)
                         arrayMesh << ", ";
 
-                    arrayMesh << surface.Indices[i] << ", " << surface.Indices[i + 2] << ", " << surface.Indices[i + 1];
+                    arrayMesh << surface->GetIndex(i * 3) << ", " << surface->GetIndex(i * 3 + 2) << ", " << surface->GetIndex(i * 3 + 1);
                     first = false;
                 }
                 arrayMesh << ")" << std::endl;
