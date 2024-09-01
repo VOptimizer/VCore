@@ -77,8 +77,13 @@ class CMyIOHandler : public IIOHandler
 
 ## Customize output Mesh
 
-You can define your data types for the `Mesh` class, making it easier to convert to a mesh instance in your engine or framework. Currently, this change of data types is only possible via the [VConfig.hpp](../../lib/include/VCore/VConfig.hpp) file at compile time.
+For less type conversions during runtime, V-Core offers an API to directly use the data structures of your engine / framework. There are two ways to let V-Core use your data structures, either by inheriting `ISurface` or even easier by using the template class `TSurface` (your arrays must be STL compliant).
 
-For proper functionality, it is important that all methods do not change their signature, with the exception of the information if it is a reference.
+Example
+```c++
+using MyEngineSurface = TSurface<std::vector<SVertex>, std::vector<uint32_t>, UINT32_MAX>;
 
-There are two ways to overwrite this file: either by replacing the original one with yours or by adding it to the include list before all other files. Refer to [gdnative](../../gdnative/CMakeLists.txt) for an example
+// Usage
+
+auto Mesher = VCore::IMesher::Create<MyEngineSurface>(VCore::MesherTypes::SIMPLE);
+```
