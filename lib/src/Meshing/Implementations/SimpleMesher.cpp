@@ -97,10 +97,13 @@ namespace VCore
 
     void CSimpleMesher::GenerateQuads(CMeshBuilder &_Builder, BITMASK_TYPE _Faces, int depth, int width, bool isFront, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, const VoxelModel &_Model, const std::vector<std::string> &_Parts)
     {
-        unsigned heightPos = 0;
+        BITMASK_TYPE heightPos = 0;
         while ((heightPos <= (CHUNK_SIZE + 2)) && (_Faces >> heightPos))
         {
             heightPos += CountTrailingZeroBits(_Faces >> heightPos);
+            if(heightPos >= CHUNK_SIZE)
+                break;
+
             auto &faceInfo = FACE_INFOS[_Axis.x * 2 + (isFront ? 0 : 1)];
 
             Material mat;

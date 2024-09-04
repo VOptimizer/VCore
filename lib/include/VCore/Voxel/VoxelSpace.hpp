@@ -269,21 +269,6 @@ namespace VCore
              */
             querylist queryChunks(const CFrustum *_Frustum) const;
 
-            ankerl::unordered_dense::map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator getChunk(const Math::Vec3i &_v) const
-            {
-                auto position = chunkpos(_v);
-                auto it = m_Chunks.find(position);
-                if(it == m_Chunks.end())
-                    return m_Chunks.end();
-
-                return it;
-            }
-
-            ankerl::unordered_dense::map<Math::Vec3i, CChunk, Math::Vec3iHasher>::const_iterator endIt()
-            {
-                return m_Chunks.end();
-            }
-
             /**
              * @return Gets the voxel count.
              */

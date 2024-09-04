@@ -59,7 +59,7 @@ void HelpDialog(const argh::parser &cmdl)
 
     cout << "Usage: " << CliName << " [INPUT] [OPTIONS]\n" << endl;
     cout << "-h, --help\tThis dialog" << endl;
-    cout << "-m, --mesher\tSets the mesher to meshify the voxel mesh. Default: simple. (simple, greedy, greedy_chunked, greedy_textured, marching_cubes)" << endl;
+    cout << "-m, --mesher\tSets the mesher to meshify the voxel mesh. Default: simple. (simple, greedy, greedy_chunked, greedy_textured)" << endl;
     cout << "-o, --output\tOutput path. If the output path doesn't exist it will be created" << endl;
     cout << "-w, --worldspace\tTransforms all vertices to worldspace\n" << endl;
     cout << "Examples:" << endl;
@@ -267,8 +267,6 @@ int main(int argc, char const *argv[])
         VCore::Mesher Mesher;
         if(MesherType == "greedy")
             Mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::GREEDY);
-        else if(MesherType == "marching_cubes")
-            Mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::MARCHING_CUBES);
         else if(MesherType == "greedy_chunked")
             Mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::GREEDY_CHUNKED);
         else if(MesherType == "greedy_textured")

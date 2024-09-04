@@ -81,7 +81,7 @@ namespace VCore
     {
         OpaqueMask mask;
 
-        int pos = CountTrailingZeroBits(_Voxels);
+        BITMASK_TYPE pos = CountTrailingZeroBits(_Voxels);
         while ((pos <= (CHUNK_SIZE + 2)) && (_Voxels >> pos))
         {
             position.v[_Axis] = _Chunk.TotalBBox.Beg.v[_Axis] + (pos - 1);
@@ -103,9 +103,9 @@ namespace VCore
             }
 
             if(!transparent)
-                mask.Opaque |= (1 << pos);
+                mask.Opaque |= ((BITMASK_TYPE)1 << pos);
             else
-                mask.Transparent |= (1 << pos);
+                mask.Transparent |= ((BITMASK_TYPE)1 << pos);
 
             pos++;
             pos += CountTrailingZeroBits(_Voxels >> pos);
@@ -116,7 +116,7 @@ namespace VCore
 
     void CFaceMask::GenerateMask(BITMASK_TYPE faces, bool backFace, Math::Vec3i position, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk)
     {
-        int pos = 0;
+        BITMASK_TYPE pos = 0;
         while ((pos <= (CHUNK_SIZE + 2)) && (faces >> pos))
         {
             pos += CountTrailingZeroBits(faces >> pos);
@@ -134,7 +134,7 @@ namespace VCore
             std::string key = std::to_string(voxel->Material) + "_" + std::to_string(voxel->Color);
             auto &mask = m_FacesMasks[pos][key];
 
-            mask.Bits[position.v[_Axis.z] - _Chunk.TotalBBox.Beg.v[_Axis.z] + CHUNK_SIZE * (int)backFace] |= 1 << (position.v[_Axis.y] - _Chunk.TotalBBox.Beg.v[_Axis.y]);
+            mask.Bits[position.v[_Axis.z] - _Chunk.TotalBBox.Beg.v[_Axis.z] + CHUNK_SIZE * (int)backFace] |= (BITMASK_TYPE)1 << (position.v[_Axis.y] - _Chunk.TotalBBox.Beg.v[_Axis.y]);
             pos++;
         }
     }

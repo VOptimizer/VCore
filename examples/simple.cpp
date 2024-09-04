@@ -40,7 +40,8 @@ int main(int argc, char const *argv[])
     IVoxelFormat format = IVoxelFormat::CreateAndLoad("windmill.vox");
 
     // Create a new mesher instance of type Simple.
-    IMesher mesher = IMesher::Create(MesherTypes::SIMPLE);
+    // Use the default surface for meshing.
+    IMesher mesher = IMesher::Create<DefaultSurface>(MesherTypes::SIMPLE);
 
     // Mesh all voxel models in the scene.
     std::vector<Mesh> meshes = mesher->GenerateScene(format->GetModels());

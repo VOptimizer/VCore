@@ -152,57 +152,57 @@ namespace VCore
     CBitMaskChunk::CBitMaskChunk(const Math::Vec3i &_ChunkSize)
     {
         if(_ChunkSize != Math::Vec3i::ZERO)
-            m_Grid.resize((_ChunkSize.x + 2) * (_ChunkSize.y + 2) * 3, 0);
+            m_Grid.resize(_ChunkSize.x * _ChunkSize.y * 3, 0);
     }
 
     void CBitMaskChunk::SetAxis(const Math::Vec3i &_Position, bool _Value, char _Axis)
     {
-        const static unsigned int CHUNK_SIZE_P = CHUNK_SIZE + 2;
+        const static unsigned int CHUNK_SIZE_P = CHUNK_SIZE;
         if(_Value)
         {
             switch (_Axis)
             {
-                case 0: m_Grid[(_Position.z + 1) + CHUNK_SIZE_P * (_Position.y + 1)] |= (1 << (_Position.x + 1)); break;
-                case 1: m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.z + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P)] |= (1 << (_Position.y + 1)); break;
-                case 2: m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.y + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)] |= (1 << (_Position.z + 1)); break;
+                case 0: m_Grid[(_Position.z) + CHUNK_SIZE_P * (_Position.y)] |= ((BITMASK_TYPE)1 << (_Position.x + 1)); break;
+                case 1: m_Grid[(_Position.x) + CHUNK_SIZE_P * (_Position.z) + (CHUNK_SIZE_P * CHUNK_SIZE_P)] |= ((BITMASK_TYPE)1 << (_Position.y + 1)); break;
+                case 2: m_Grid[(_Position.x) + CHUNK_SIZE_P * (_Position.y) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)] |= ((BITMASK_TYPE)1 << (_Position.z + 1)); break;
             }
         }
         else
         {
             switch (_Axis)
             {
-                case 0: m_Grid[(_Position.z + 1) + CHUNK_SIZE_P * (_Position.y + 1)] &= ~(1 << (_Position.x + 1)); break;
-                case 1: m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.z + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P)] &= ~(1 << (_Position.y + 1)); break;
-                case 2: m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.y + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)] &= ~(1 << (_Position.z + 1)); break;
+                case 0: m_Grid[(_Position.z) + CHUNK_SIZE_P * (_Position.y)] &= ~((BITMASK_TYPE)1 << (_Position.x + 1)); break;
+                case 1: m_Grid[(_Position.x) + CHUNK_SIZE_P * (_Position.z) + (CHUNK_SIZE_P * CHUNK_SIZE_P)] &= ~((BITMASK_TYPE)1 << (_Position.y + 1)); break;
+                case 2: m_Grid[(_Position.x) + CHUNK_SIZE_P * (_Position.y) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)] &= ~((BITMASK_TYPE)1 << (_Position.z + 1)); break;
             }
         }
     }
 
     void CBitMaskChunk::Set(const Math::Vec3i &_Position, bool _Value)
     {
-        const static unsigned int CHUNK_SIZE_P = CHUNK_SIZE + 2;
+        const static unsigned int CHUNK_SIZE_P = CHUNK_SIZE;
         if(_Value)
         {
-            m_Grid[(_Position.z + 1) + CHUNK_SIZE_P * (_Position.y + 1)] |= (1 << (_Position.x + 1));
-            m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.z + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P)] |= (1 << (_Position.y + 1));
-            m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.y + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)] |= (1 << (_Position.z + 1));
+            m_Grid[(_Position.z) + CHUNK_SIZE_P * (_Position.y)] |= ((BITMASK_TYPE)1 << (_Position.x + 1));
+            m_Grid[(_Position.x) + CHUNK_SIZE_P * (_Position.z) + (CHUNK_SIZE_P * CHUNK_SIZE_P)] |= ((BITMASK_TYPE)1 << (_Position.y + 1));
+            m_Grid[(_Position.x) + CHUNK_SIZE_P * (_Position.y) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)] |= ((BITMASK_TYPE)1 << (_Position.z + 1));
         }
         else
         {
-            m_Grid[(_Position.z + 1) + CHUNK_SIZE_P * (_Position.y + 1)] &= ~(1 << (_Position.x + 1));
-            m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.z + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P)] &= ~(1 << (_Position.y + 1));
-            m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.y + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)] &= ~(1 << (_Position.z + 1));
+            m_Grid[(_Position.z) + CHUNK_SIZE_P * (_Position.y)] &= ~((BITMASK_TYPE)1 << (_Position.x + 1));
+            m_Grid[(_Position.x) + CHUNK_SIZE_P * (_Position.z) + (CHUNK_SIZE_P * CHUNK_SIZE_P)] &= ~((BITMASK_TYPE)1 << (_Position.y + 1));
+            m_Grid[(_Position.x) + CHUNK_SIZE_P * (_Position.y) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)] &= ~((BITMASK_TYPE)1 << (_Position.z + 1));
         }
     }
 
     BITMASK_TYPE CBitMaskChunk::GetRowFaces(const Math::Vec3i &_Position, char _Axis) const
     {
-        const static unsigned int CHUNK_SIZE_P = CHUNK_SIZE + 2;
+        const static unsigned int CHUNK_SIZE_P = CHUNK_SIZE;
         switch (_Axis)
         {
-            case 0: return m_Grid[(_Position.z + 1) + CHUNK_SIZE_P * (_Position.y + 1)];
-            case 1: return m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.z + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P)];
-            case 2: return m_Grid[(_Position.x + 1) + CHUNK_SIZE_P * (_Position.y + 1) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)];
+            case 0: return m_Grid[(_Position.z) + CHUNK_SIZE_P * (_Position.y)];
+            case 1: return m_Grid[(_Position.x) + CHUNK_SIZE_P * (_Position.z) + (CHUNK_SIZE_P * CHUNK_SIZE_P)];
+            case 2: return m_Grid[(_Position.x) + CHUNK_SIZE_P * (_Position.y) + (CHUNK_SIZE_P * CHUNK_SIZE_P * 2)];
         }
 
         return 0;
@@ -452,10 +452,10 @@ namespace VCore
 
     Math::Vec3i CVoxelSpace::chunkpos(const Math::Vec3i &_Position) const
     {
-        // const static uint32_t mask = 0xFFFFFFF0;
-        // Math::Vec3i(_Position.x & mask, _Position.y & mask, _Position.z & mask);
+        const static uint32_t mask = ~(CHUNK_SIZE - 1); //0xFFFFFFF0;
+        return Math::Vec3i(_Position.x & mask, _Position.y & mask, _Position.z & mask);
 
-        return Math::floor(Math::Vec3f(_Position) / m_ChunkSize) * m_ChunkSize;
+        // return Math::floor(Math::Vec3f(_Position) / m_ChunkSize) * m_ChunkSize;
     }
 
     //////////////////////////////////////////////////
@@ -632,7 +632,13 @@ namespace VCore
 
     CVoxelSpace::ppair CChunk::next(const Math::Vec3i &_Position, const CBBox &_ChunkDim) const
     {
-        Math::Vec3i relPos = (_Position - _ChunkDim.Beg).abs();
+        // Math::Vec3i relPos = (_Position - _ChunkDim.Beg).abs();
+        Math::Vec3i relPos = _Position.abs(); //(_v - _ChunkDim.Beg).abs();
+        const static uint32_t mask = (CHUNK_SIZE - 1);
+        relPos.x &= mask;
+        relPos.y &= mask;
+        relPos.z &= mask;
+
         for (int z = relPos.z; z < m_InnerBBox.End.z; z++)
         {
             for (int y = relPos.y; y < m_InnerBBox.End.y; y++)
@@ -651,7 +657,11 @@ namespace VCore
 
     Voxel CChunk::find(const Math::Vec3i &_v, const CBBox &_ChunkDim) const
     {
-        Math::Vec3i relPos = (_v - _ChunkDim.Beg).abs();
+        Math::Vec3i relPos = _v.abs(); //(_v - _ChunkDim.Beg).abs();
+        const static uint32_t mask = (CHUNK_SIZE - 1);
+        relPos.x &= mask;
+        relPos.y &= mask;
+        relPos.z &= mask;
         CVoxel &vox = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
         if(vox.IsInstantiated())
             return &vox;

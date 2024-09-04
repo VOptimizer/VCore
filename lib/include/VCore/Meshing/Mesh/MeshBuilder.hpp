@@ -101,6 +101,7 @@ namespace VCore
                 SIndexedSurface &operator=(SIndexedSurface &&) = default;
 
                 ankerl::unordered_dense::map<SVertex, int, VertexHasher> Index;
+                ankerl::unordered_dense::map<Math::Vec3i, ankerl::unordered_dense::map<SVertex, int, VertexHasher>, Math::Vec3iHasher> Index2;
                 ISurface *Surface;
             };
 

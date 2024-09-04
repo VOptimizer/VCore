@@ -243,13 +243,16 @@ namespace VCore
 
     void CGreedyMesher::GenerateQuad(CSliceCollection &result, BITMASK_TYPE faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const std::vector<std::string> &parts)
     {
-        unsigned heightPos = 0;
+        BITMASK_TYPE heightPos = 0;
         // Shift werid = hang
         while ((heightPos <= (CHUNK_SIZE + 2)) && (faces >> heightPos))
         {
             heightPos += CountTrailingZeroBits(faces >> heightPos);
-            auto faceCount = CountTrailingOneBits(faces >> heightPos);
-            BITMASK_TYPE mask = ((1 << faceCount) - 1) << heightPos;
+            if(heightPos >= CHUNK_SIZE)
+                break;
+
+            BITMASK_TYPE faceCount = CountTrailingOneBits(faces >> heightPos);
+            BITMASK_TYPE mask = (((BITMASK_TYPE)1 << faceCount) - 1) << heightPos;
 
             unsigned w = 1;
             for (int tmpWidth = width + 1; tmpWidth < CHUNK_SIZE; tmpWidth++)
