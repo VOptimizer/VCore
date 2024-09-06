@@ -323,8 +323,8 @@ int main(int argc, char const *argv[])
                 for (size_t i = 0; i < MAX_COUNT + 1; i++)
                 {
                     auto startTime = std::chrono::high_resolution_clock::now();
-                    auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
-                    // (void)Mesher->GenerateChunks(Loader->GetModels()[0]);
+                    // auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
+                    (void)Mesher->GenerateChunks(Loader->GetModels()[0]);
                     // Mesher->GenerateChunks(Loader->GetModels()[0]);
                     auto endTime = std::chrono::high_resolution_clock::now();
 

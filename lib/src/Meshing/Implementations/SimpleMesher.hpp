@@ -37,7 +37,22 @@ namespace VCore
             virtual ~CSimpleMesher() = default;
 
         protected:
-            void GenerateQuads(CMeshBuilder &_Builder, BITMASK_TYPE _Faces, int depth, int width, bool isFront, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, const VoxelModel &_Model, const std::vector<std::string> &_Parts);
+            struct IndexPair
+            {
+                IndexPair() : Idx2(0), Idx4(0), Instantiated(false) {}
+                IndexPair(uint32_t _Idx2, uint32_t _Idx4) : Idx2(_Idx2), Idx4(_Idx4), Instantiated(true) {}
+                IndexPair(IndexPair &&) = default;
+                IndexPair(const IndexPair &) = default;
+
+                IndexPair& operator=(IndexPair &&) = default;
+                IndexPair& operator=(const IndexPair &) = default;
+
+                uint32_t Idx2;
+                uint32_t Idx4;
+                bool Instantiated;
+            };
+
+            void GenerateQuads(CMeshBuilder &_Builder, BITMASK_TYPE _Faces, int depth, int width, bool isFront, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, const VoxelModel &_Model, const Voxel _Voxel, IndexPair *_Cache);
 
             SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
     };

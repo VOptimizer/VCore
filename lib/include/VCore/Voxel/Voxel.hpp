@@ -37,7 +37,7 @@ namespace VCore
             CVoxel() : Color(0xFFFFFF), Material(0xFF) { }
 
             uint32_t Color      : 24;           //!< Index of the color.
-            uint8_t Material    : 8;            //!< Index of the material.
+            uint32_t Material    : 8;            //!< Index of the material.
 
             /**
              * @return Returns true if this voxel is instantiated.

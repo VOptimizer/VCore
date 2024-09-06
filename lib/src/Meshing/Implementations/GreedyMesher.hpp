@@ -47,7 +47,7 @@ namespace VCore
 
             SMeshChunk GenerateMeshChunk(VoxelModel _Mesh, CSliceCollection &_Collection, const SChunkMeta *_Chunk = nullptr);
 
-            void GenerateQuad(CSliceCollection &result, BITMASK_TYPE faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const std::vector<std::string> &parts);
+            void GenerateQuad(CSliceCollection &result, BITMASK_TYPE faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const Voxel _Voxel);
     };
 }
 

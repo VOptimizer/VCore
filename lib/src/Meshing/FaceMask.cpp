@@ -27,13 +27,15 @@
 
 namespace VCore
 {
-    ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<std::string, CFaceMask::Mask>> CFaceMask::Generate(const VoxelModel &_Model, const SChunkMeta &_Chunk, uint8_t _Axis)
+    ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>> CFaceMask::Generate(const VoxelModel &_Model, const SChunkMeta &_Chunk, uint8_t _Axis)
     {
         const CBBox &BBox = _Chunk.InnerBBox;
 
         // This logic calculates the index of one of the three other axis.
         int axis1 = (_Axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
         int axis2 = (_Axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
+
+        const static uint32_t lowerBoundsMask = (CHUNK_SIZE - 1);
 
         for (int heightAxis = BBox.Beg.v[axis1]; heightAxis <= BBox.End.v[axis1]; heightAxis++)
         {
@@ -44,13 +46,18 @@ namespace VCore
                 position.v[axis1] = heightAxis; //- BBox.Beg.v[axis1];
                 position.v[axis2] = widthAxis; //- BBox.Beg.v[axis2];
 
-                Math::Vec3i subpos;
-                subpos.v[_Axis] = 0;
-                subpos.v[axis1] = _Chunk.TotalBBox.Beg.v[axis1];
-                subpos.v[axis2] = _Chunk.TotalBBox.Beg.v[axis2];
+                Math::Vec3i subpos = position;
+                subpos.x &= lowerBoundsMask;
+                subpos.y &= lowerBoundsMask;
+                subpos.z &= lowerBoundsMask;
+
+                // Math::Vec3i subpos;
+                // subpos.v[_Axis] = 0;
+                // subpos.v[axis1] = _Chunk.TotalBBox.Beg.v[axis1];
+                // subpos.v[axis2] = _Chunk.TotalBBox.Beg.v[axis2];
 
                 // Gets the current "ray" of bits.
-                auto voxels = _Chunk.Chunk->m_Mask.GetRowFaces(position - subpos, _Axis);
+                auto voxels = _Chunk.Chunk->m_Mask.GetRowFaces(subpos, _Axis);
 
                 auto mask = GenerateOpaqueMask(_Model, _Chunk, voxels, position, _Axis);
 
@@ -97,7 +104,7 @@ namespace VCore
             {
                 if(voxel->Material < _Model->Materials.size())
                 {
-                    auto material = _Model->Materials[voxel->Material];
+                    const auto &material = _Model->Materials[voxel->Material];
                     transparent = material->Transparency != 0.0;
                 }
             }
@@ -131,8 +138,8 @@ namespace VCore
                 continue;
             }
 
-            std::string key = std::to_string(voxel->Material) + "_" + std::to_string(voxel->Color);
-            auto &mask = m_FacesMasks[pos][key];
+            // std::string key = std::to_string(voxel->Material) + "_" + std::to_string(voxel->Color);
+            auto &mask = m_FacesMasks[pos][*((uint32_t*)voxel)];
 
             mask.Bits[position.v[_Axis.z] - _Chunk.TotalBBox.Beg.v[_Axis.z] + CHUNK_SIZE * (int)backFace] |= (BITMASK_TYPE)1 << (position.v[_Axis.y] - _Chunk.TotalBBox.Beg.v[_Axis.y]);
             pos++;

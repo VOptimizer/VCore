@@ -224,15 +224,15 @@ namespace VCore
                 result.AddSlice(axis, depth.first);
                 for (auto &&key : depth.second)
                 {
-                    auto parts = split(key.first, "_");
+                    auto voxel = (Voxel)&key.first;
 
                     for (int widthAxis = 0; widthAxis < CHUNK_SIZE; widthAxis++)
                     {
                         auto faces = key.second.Bits[widthAxis];
-                        GenerateQuad(result, faces, key.second, widthAxis, depth.first, true, Math::Vec3i(axis, axis1, axis2), _Chunk, parts);
+                        GenerateQuad(result, faces, key.second, widthAxis, depth.first, true, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
 
                         faces = key.second.Bits[widthAxis + CHUNK_SIZE];
-                        GenerateQuad(result, faces, key.second, widthAxis, depth.first + 1, false, Math::Vec3i(axis, axis1, axis2), _Chunk, parts);
+                        GenerateQuad(result, faces, key.second, widthAxis, depth.first + 1, false, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
                     }
                 }
             }
@@ -241,7 +241,7 @@ namespace VCore
         return std::pair<const SChunkMeta&, CSliceCollection>(std::move(_Chunk), std::move(result));
     }
 
-    void CGreedyMesher::GenerateQuad(CSliceCollection &result, BITMASK_TYPE faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const std::vector<std::string> &parts)
+    void CGreedyMesher::GenerateQuad(CSliceCollection &result, BITMASK_TYPE faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const Voxel _Voxel)
     {
         BITMASK_TYPE heightPos = 0;
         // Shift werid = hang
@@ -278,7 +278,7 @@ namespace VCore
             size.v[axis.y] = faceCount;
             size.v[axis.z] = w;
 
-            result.AddQuadInfo(axis.x, depth, position.v[axis.y], CQuadInfo({position, size}, normal, std::stoi(parts[0]), std::stoi(parts[1])));
+            result.AddQuadInfo(axis.x, depth, position.v[axis.y], CQuadInfo({position, size}, normal, _Voxel->Material, _Voxel->Color));
             heightPos += faceCount;
         }
     }

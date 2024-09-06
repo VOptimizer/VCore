@@ -34,38 +34,44 @@ namespace VCore
 
     int CMeshBuilder::AddVertex(const SVertex &_Vertex, SIndexedSurface &_Surface)
     {
-        auto cell = Math::Vec3i(_Vertex.Pos / (CHUNK_SIZE + 1));
-        auto it = _Surface.Index2.find(cell);
-        if(it == _Surface.Index2.end())
-            it = _Surface.Index2.insert({cell, {}}).first;
+        // const static unsigned int mask = ~((CHUNK_SIZE >> 1) - 1);
 
-        auto it2 = it->second.find(_Vertex);
-        if(it2 == it->second.end())
-        {
-            int idx = _Surface.Surface->GetVertexCount();
-            _Surface.Surface->AddVertex(_Vertex);
-            it->second.insert({_Vertex, idx});
-            // _Surface.Index.insert({_Vertex, idx});
-            return idx;
-        }
+        // auto cell = Math::Vec3i(_Vertex.Pos); //Math::Vec3i(_Vertex.Pos / (CHUNK_SIZE + 1));
+        // cell.x &= mask;
+        // cell.y &= mask;
+        // cell.z &= mask;
 
-        return it2->second;
+        // auto it = _Surface.Index2.find(cell);
+        // if(it == _Surface.Index2.end())
+        //     it = _Surface.Index2.insert({cell, {}}).first;
 
-        // // TODO: How to index for simple mesher. Greedy not neccessary because of "random" distribution
-        // // FIXME: The old me is stupid.
-        // auto it = _Surface.Index.find(_Vertex);
-        // if(it == _Surface.Index.end())
+        // auto it2 = it->second.find(_Vertex);
+        // if(it2 == it->second.end())
         // {
         //     int idx = _Surface.Surface->GetVertexCount();
         //     _Surface.Surface->AddVertex(_Vertex);
-        //     _Surface.Index.insert({_Vertex, idx});
+        //     it->second.insert({_Vertex, idx});
+        //     // _Surface.Index.insert({_Vertex, idx});
         //     return idx;
         // }
 
-        // return it->second;
+        // return it2->second;
+
+        // TODO: How to index for simple mesher. Greedy not neccessary because of "random" distribution
+        // FIXME: The old me is stupid.
+        auto it = _Surface.Index.find(_Vertex);
+        if(it == _Surface.Index.end())
+        {
+            int idx = _Surface.Surface->GetVertexCount();
+            _Surface.Surface->AddVertex(_Vertex);
+            _Surface.Index.insert({_Vertex, idx});
+            return idx;
+        }
+
+        return it->second;
     }
 
-    void CMeshBuilder::AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, Material _material)
+    void CMeshBuilder::AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, const Material &_material)
     {
         auto it = m_Surfaces.find((uintptr_t)_material.get());
         if(it == m_Surfaces.end())
@@ -125,7 +131,7 @@ namespace VCore
         }
     }
    
-    void CMeshBuilder::AddFace(SVertex v1, SVertex v2, SVertex v3, Material _material)
+    void CMeshBuilder::AddFace(SVertex v1, SVertex v2, SVertex v3, const Material &_material)
     {        
         auto it = m_Surfaces.find((uintptr_t)_material.get());
         if(it == m_Surfaces.end())
@@ -156,6 +162,30 @@ namespace VCore
         m_Surfaces.clear();
 
         return ret;
+    }
+
+    void CMeshBuilder::SelectSurface(const Material &_Material)
+    {
+        auto it = m_Surfaces.find((uintptr_t)_Material.get());
+        if(it == m_Surfaces.end())
+        {
+            SIndexedSurface surface(m_SurfaceFactory());
+            surface.Surface->FaceMaterial = _Material;
+            it = m_Surfaces.insert({(uintptr_t)_Material.get(), surface}).first;
+        }
+
+        m_CurrentSurface = it->second.Surface;
+    }
+
+    uint32_t CMeshBuilder::AddVertex(const SVertex& _Vertex)
+    {
+        return m_CurrentSurface->AddVertex(_Vertex);
+    }
+
+    void CMeshBuilder::AddFace(uint32_t _Idx1, uint32_t _Idx2, uint32_t _Idx3, uint32_t _Idx4)
+    {
+        m_CurrentSurface->AddFace(_Idx1, _Idx2, _Idx3);
+        m_CurrentSurface->AddFace(_Idx2, _Idx4, _Idx3);
     }
 
     Mesh CMeshBuilder::Merge(Mesh _MergeInto, const std::vector<Mesh> &_Meshes, bool _ApplyModelMatrix)

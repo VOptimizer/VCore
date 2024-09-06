@@ -47,6 +47,11 @@ namespace VCore
                 m_TextureMap = _Map;
             }
 
+            inline const ankerl::unordered_dense::map<TextureType, Texture> *GetTextures() const
+            {
+                return m_Textures;
+            } 
+
             /**
              * @brief Adds all needed textures to the mesh. This must be called before AddFace
              * 
@@ -67,12 +72,12 @@ namespace VCore
              * 
              * @throws CMeshBuilderException If AddTextures has not been previously called.
              */
-            void AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, Material _material);
+            void AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, const Material &_material);
 
             /**
              * @brief Adds a new triangle to the mesh.
              */
-            void AddFace(SVertex v1, SVertex v2, SVertex v3, Material _material);
+            void AddFace(SVertex v1, SVertex v2, SVertex v3, const Material &_material);
 
             /**
              * @brief Merges a list of meshes into one.
@@ -85,9 +90,14 @@ namespace VCore
              */
             Mesh Build();
 
+            void SelectSurface(const Material &_Material);
+            uint32_t AddVertex(const SVertex& _Vertex);
+            void AddFace(uint32_t _Idx1, uint32_t _Idx2, uint32_t _Idx3, uint32_t _Idx4);
+
             ~CMeshBuilder() = default;
         private:
             Material FaceMaterial;
+            ISurface *m_CurrentSurface;
 
             struct SIndexedSurface
             {
