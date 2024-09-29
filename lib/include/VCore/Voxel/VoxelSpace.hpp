@@ -35,6 +35,12 @@
 
 namespace VCore
 {
+    inline Math::Vec3i GetChunkpos(const Math::Vec3i &_Position)
+    {
+        const static uint32_t mask = ~(CHUNK_SIZE - 1);
+        return _Position & mask;
+    }
+
     class CVoxelSpace;
     class CChunk;
 
@@ -111,23 +117,23 @@ namespace VCore
             /**
              * @brief Insert a new voxel.
              */
-            void insert(CVoxelSpace *_Space, const pair &_pair, const CBBox &_ChunkDim);
+            void insert(CVoxelSpace *_Space, const pair &_pair);
 
             /**
              * @brief Removes a voxel.
              */
-            ppair erase(CVoxelSpace *_Space, const iterator &_it, const CBBox &_ChunkDim);
+            ppair erase(CVoxelSpace *_Space, const iterator &_it);
 
             /**
              * @brief Returns the next voxel or null.
              */
-            ppair next(const Math::Vec3i &_Position, const CBBox &_ChunkDim) const;
+            ppair next(const Math::Vec3i &_Position) const;
 
             /**
              * @brief Tries to find a voxel.
              * @brief Returns a reference to the voxel.
              */
-            Voxel find(const Math::Vec3i &_v, const CBBox &_ChunkDim) const;
+            Voxel find(const Math::Vec3i &_v) const;
 
             inline CBBox inner_bbox(const Math::Vec3i &_Position) const
             {
@@ -143,8 +149,8 @@ namespace VCore
             CBitMaskChunk m_Mask;
 
         private:
-            CVoxel *GetBlock(CVoxelSpace *_Space, const CBBox &_ChunkDim, const Math::Vec3i &_v);
-            bool HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos, const Math::Vec3i &_ChunkSize);
+            // CVoxel *GetBlock(CVoxelSpace *_Space, const CBBox &_ChunkDim, const Math::Vec3i &_v);
+            bool HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos);
 
             void clear();
 
@@ -282,6 +288,11 @@ namespace VCore
 
             CBBox calculateBBox() const;
 
+            inline const CChunk *getChunk(const Math::Vec3i &_Position)
+            {
+                return GetChunk(_Position);
+            }
+
             void clear();
 
             CVoxelSpace &operator=(const CVoxelSpace &_Other) = delete;
@@ -291,8 +302,6 @@ namespace VCore
 
         private:
             CChunk *GetChunk(const Math::Vec3i &_Position);
-
-            Math::Vec3i chunkpos(const Math::Vec3i &_Position) const;
             iterator next(const Math::Vec3i &_FromPosition) const;
 
             Math::Vec3i m_ChunkSize;

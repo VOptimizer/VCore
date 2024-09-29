@@ -303,6 +303,11 @@ namespace VCore
                     return TVector3(x * scalar, y * scalar, z * scalar);
                 }
 
+                inline TVector3 operator&(T scalar) const
+                {
+                    return TVector3(x & scalar, y & scalar, z & scalar);
+                }
+
                 inline TVector3 operator-() const
                 {
                     return TVector3(-x, -y, -z);

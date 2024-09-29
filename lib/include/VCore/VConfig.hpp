@@ -45,8 +45,8 @@
 #define BITMASK_TYPE uint64_t
 #endif
 
-// Chunksize if always maximum bits of BITMASK_TYPE minus 2
-#define CHUNK_SIZE 32 //(sizeof(BITMASK_TYPE) * 8 - 2)
+// Chunksize if always maximum bits of BITMASK_TYPE divided by two.
+#define CHUNK_SIZE ((sizeof(BITMASK_TYPE) * 8) >> 1)
 
 // Precomputed mask for later face determination.
 #define FACE_MASK (((BITMASK_TYPE)1 << CHUNK_SIZE) - 1)

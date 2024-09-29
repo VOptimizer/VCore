@@ -27,7 +27,7 @@
 
 #include <vector>
 #include <VCore/Meshing/IMesher.hpp>
-#include "Slicer/Slices.hpp"
+#include <VCore/Meshing/Mesh/MeshBuilder.hpp>
 #include "../FaceMask.hpp"
 
 namespace VCore
@@ -41,13 +41,14 @@ namespace VCore
 
             virtual ~CGreedyMesher() = default;
         protected:
+            SMeshChunk GenerateMeshChunk(VoxelModel, const SChunkMeta&, bool) override;
+
+            Mesh GenerateMeshSlice(const VoxelModel &_Model, const CBBox &_ModelBBox, int _RunAxis, int _AxisPos);
+
             bool m_GenerateTexture;
             bool m_GenerateSingleChunks;
-            std::pair<const SChunkMeta&, CSliceCollection> GenerateSlicedChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque);
 
-            SMeshChunk GenerateMeshChunk(VoxelModel _Mesh, CSliceCollection &_Collection, const SChunkMeta *_Chunk = nullptr);
-
-            void GenerateQuad(CSliceCollection &result, BITMASK_TYPE faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const Voxel _Voxel);
+            void GenerateQuad(CMeshBuilder &result, const std::vector<Material> &_Materials, BITMASK_TYPE faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const Voxel _Voxel);
     };
 }
 

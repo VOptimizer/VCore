@@ -28,6 +28,8 @@
 
 namespace VCore
 {
+    const static uint32_t g_ChunkRelativePosMask = (CHUNK_SIZE - 1);
+
     //////////////////////////////////////////////////
     // CChunkQueryList functions
     //////////////////////////////////////////////////
@@ -284,25 +286,25 @@ namespace VCore
 
     void CVoxelSpace::insert(const pair &_pair)
     {
-        Math::Vec3i position = chunkpos(_pair.first);
+        Math::Vec3i position = GetChunkpos(_pair.first);
         auto it = m_Chunks.find(position);
 
         // Creates a new chunk, if neccessary
         if(it == m_Chunks.end())
             it = m_Chunks.insert({position, CChunk(m_ChunkSize)}).first;
 
-        it->second.insert(this, _pair, CBBox(position, m_ChunkSize));
+        it->second.insert(this, _pair);
         m_VoxelsCount++;
     }
 
     CVoxelSpace::iterator CVoxelSpace::erase(const iterator &_it)
     {
-        Math::Vec3i position = chunkpos(_it->first);
+        Math::Vec3i position = GetChunkpos(_it->first);
         auto it = m_Chunks.find(position);
         if(it == m_Chunks.end())
             return end();
 
-        auto res = it->second.erase(this, _it, CBBox(position, m_ChunkSize));
+        auto res = it->second.erase(this, _it);
         m_VoxelsCount--;
 
         // Removes the empty chunk.
@@ -318,7 +320,7 @@ namespace VCore
                 if(it == m_Chunks.end())
                     return end();
 
-                res = it->second.next(it->second.inner_bbox(it->first).Beg, CBBox(it->first, m_ChunkSize));
+                res = it->second.next(it->second.inner_bbox(it->first).Beg);
             }
             
             if(res.second)
@@ -330,12 +332,12 @@ namespace VCore
 
     CVoxelSpace::iterator CVoxelSpace::find(const Math::Vec3i &_v) const
     {
-        Math::Vec3i position = chunkpos(_v);
+        Math::Vec3i position = GetChunkpos(_v);
         auto it = m_Chunks.find(position);
         if(it == m_Chunks.end())
             return end();
 
-        CVoxel *vox = it->second.find(_v, CBBox(position, m_ChunkSize));
+        CVoxel *vox = it->second.find(_v);
         if(!vox)
             return end();
 
@@ -375,12 +377,12 @@ namespace VCore
 
     CVoxelSpace::iterator CVoxelSpace::next(const Math::Vec3i &_FromPosition) const
     {
-        Math::Vec3i position = chunkpos(_FromPosition);
+        Math::Vec3i position = GetChunkpos(_FromPosition);
         auto it = m_Chunks.find(position);
         if(it == m_Chunks.end())
             return end();
 
-        auto res = it->second.next(_FromPosition, CBBox(position, m_ChunkSize));
+        auto res = it->second.next(_FromPosition);
         
         // Searches for the next voxel inside of any chunk.
         while (!res.second)
@@ -389,7 +391,7 @@ namespace VCore
             if(it == m_Chunks.end())
                 return end();
 
-            res = it->second.next(it->second.inner_bbox(it->first).Beg, CBBox(it->first, m_ChunkSize));
+            res = it->second.next(it->second.inner_bbox(it->first).Beg);
         }
 
         if(res.second)
@@ -405,7 +407,7 @@ namespace VCore
 
         auto it = m_Chunks.begin();
         auto bbox = it->second.inner_bbox(it->first);
-        return CVoxelSpaceIterator(this, bbox, it->second.next(bbox.Beg, CBBox(it->first, m_ChunkSize)));
+        return CVoxelSpaceIterator(this, bbox, it->second.next(bbox.Beg));
     }
 
     CVoxelSpace::iterator CVoxelSpace::end() const
@@ -442,20 +444,12 @@ namespace VCore
 
     CChunk *CVoxelSpace::GetChunk(const Math::Vec3i &_Position)
     {
-        auto position = chunkpos(_Position);
+        auto position = GetChunkpos(_Position);
         auto it = m_Chunks.find(position);
         if(it == m_Chunks.end())
             return nullptr;
 
         return &it->second;
-    }
-
-    Math::Vec3i CVoxelSpace::chunkpos(const Math::Vec3i &_Position) const
-    {
-        const static uint32_t mask = ~(CHUNK_SIZE - 1); //0xFFFFFFF0;
-        return Math::Vec3i(_Position.x & mask, _Position.y & mask, _Position.z & mask);
-
-        // return Math::floor(Math::Vec3f(_Position) / m_ChunkSize) * m_ChunkSize;
     }
 
     //////////////////////////////////////////////////
@@ -472,29 +466,29 @@ namespace VCore
         *this = std::move(_Other);
     }
 
-    CVoxel *CChunk::GetBlock(CVoxelSpace *_Space, const CBBox &_ChunkDim, const Math::Vec3i &_v)
-    {
-        if((_v.x >= 0 && _v.y >= 0 && _v.z >= 0) && (_v.x < _ChunkDim.End.x && _v.y < _ChunkDim.End.y && _v.z < _ChunkDim.End.z))
-            return &m_Data[_v.x + _ChunkDim.End.x * _v.y + _ChunkDim.End.x * _ChunkDim.End.y * _v.z];
-        else
-        {
-            auto globalPos =  _ChunkDim.Beg + _v;
-            auto chunk = _Space->GetChunk(globalPos);
-            if(chunk)
-            {
-                chunk->IsDirty = true;
-                auto chunkpos = _Space->chunkpos(globalPos);
-                return chunk->GetBlock(_Space, CBBox(chunkpos, _ChunkDim.End), globalPos - chunkpos);
-            }
-        }
+    // CVoxel *CChunk::GetBlock(CVoxelSpace *_Space, const CBBox &_ChunkDim, const Math::Vec3i &_v)
+    // {
+    //     if((_v.x >= 0 && _v.y >= 0 && _v.z >= 0) && (_v.x < _ChunkDim.End.x && _v.y < _ChunkDim.End.y && _v.z < _ChunkDim.End.z))
+    //         return &m_Data[_v.x + _ChunkDim.End.x * _v.y + _ChunkDim.End.x * _ChunkDim.End.y * _v.z];
+    //     else
+    //     {
+    //         auto globalPos =  _ChunkDim.Beg + _v;
+    //         auto chunk = _Space->GetChunk(globalPos);
+    //         if(chunk)
+    //         {
+    //             chunk->IsDirty = true;
+    //             auto chunkpos = _Space->chunkpos(globalPos);
+    //             return chunk->GetBlock(_Space, CBBox(chunkpos, _ChunkDim.End), globalPos - chunkpos);
+    //         }
+    //     }
 
-        return nullptr;
-    }
+    //     return nullptr;
+    // }
 
-    void CChunk::insert(CVoxelSpace *_Space, const pair &_pair, const CBBox &_ChunkDim)
+    void CChunk::insert(CVoxelSpace *_Space, const pair &_pair)
     {
-        Math::Vec3i relPos = (_pair.first - _ChunkDim.Beg).abs();
-        CVoxel &voxel = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z]; //= _pair.second;
+        Math::Vec3i relPos = _pair.first & g_ChunkRelativePosMask;
+        CVoxel &voxel = m_Data[relPos.x + CHUNK_SIZE * relPos.y + CHUNK_SIZE * CHUNK_SIZE * relPos.z];
         voxel.Color = _pair.second.Color;
         voxel.Material = _pair.second.Material;
 
@@ -502,7 +496,7 @@ namespace VCore
 
         for (size_t i = 0; i < 3; i++)
         {
-            if(relPos.v[i] == (_ChunkDim.End.v[i] - 1))
+            if(relPos.v[i] == (CHUNK_SIZE - 1))
             {
                 auto globalPos = _pair.first; //_ChunkDim.Beg + _v;
                 globalPos.v[i]++;
@@ -516,7 +510,7 @@ namespace VCore
                 if(chunk)
                 {
                     chunk->IsDirty = true;
-                    auto chunkpos = _Space->chunkpos(globalPos);
+                    auto chunkpos = GetChunkpos(globalPos);
 
                     auto faces = chunk->m_Mask.GetRowFaces(globalPos - chunkpos, i);
                     if(faces & 0x2)
@@ -551,7 +545,7 @@ namespace VCore
                 if(chunk)
                 {
                     chunk->IsDirty = true;
-                    auto chunkpos = _Space->chunkpos(globalPos);
+                    auto chunkpos = GetChunkpos(globalPos);
 
                     auto faces = chunk->m_Mask.GetRowFaces(globalPos - chunkpos, i);
                     if(faces & (FACE_MASK + 1))
@@ -579,7 +573,7 @@ namespace VCore
         IsDirty = true;
     }
 
-    bool CChunk::HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos, const Math::Vec3i &_ChunkSize)
+    bool CChunk::HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos)
     {
         Math::Vec3i pos = _Pos;
         int heightAxis = (_Axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
@@ -591,7 +585,7 @@ namespace VCore
             pos.v[heightAxis] = m_InnerBBox.Beg.v[heightAxis];
             for (; pos.v[heightAxis] <= m_InnerBBox.End.v[heightAxis]; pos.v[heightAxis]++)
             {
-                if(m_Data[pos.x + _ChunkSize.x * pos.y + _ChunkSize.x * _ChunkSize.y * pos.z].IsInstantiated())
+                if(m_Data[pos.x + CHUNK_SIZE * pos.y + CHUNK_SIZE * CHUNK_SIZE * pos.z].IsInstantiated())
                     return true;
             }
         }
@@ -599,11 +593,10 @@ namespace VCore
         return false;
     }
 
-    CVoxelSpace::ppair CChunk::erase(CVoxelSpace *_Space, const iterator &_it, const CBBox &_ChunkDim)
+    CVoxelSpace::ppair CChunk::erase(CVoxelSpace *_Space, const iterator &_it)
     {
-        Math::Vec3i relPos = (_it->first - _ChunkDim.Beg).abs();
-        // m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z] = CVoxel();
-        CVoxel &voxel = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
+        Math::Vec3i relPos = _it->first & g_ChunkRelativePosMask;
+        CVoxel &voxel = m_Data[relPos.x + CHUNK_SIZE * relPos.y + CHUNK_SIZE * CHUNK_SIZE * relPos.z];
         voxel = CVoxel();
         IsDirty = true;
 
@@ -621,23 +614,19 @@ namespace VCore
         // Checks if the bbox must be resized
         for (size_t i = 0; i < 3; i++)
         {
-            if((relPos.v[i] == m_InnerBBox.End.v[i]) && !HasVoxelOnPlane(i, relPos, _ChunkDim.End))
+            if((relPos.v[i] == m_InnerBBox.End.v[i]) && !HasVoxelOnPlane(i, relPos))
                 m_InnerBBox.End.v[i] -= 1;
-            else if((relPos.v[i] == m_InnerBBox.Beg.v[i]) && !HasVoxelOnPlane(i, relPos, _ChunkDim.End))
+            else if((relPos.v[i] == m_InnerBBox.Beg.v[i]) && !HasVoxelOnPlane(i, relPos))
                 m_InnerBBox.Beg.v[i] += 1;
         }
         
-        return next(_it->first, _ChunkDim);
+        return next(_it->first);
     }
 
-    CVoxelSpace::ppair CChunk::next(const Math::Vec3i &_Position, const CBBox &_ChunkDim) const
+    CVoxelSpace::ppair CChunk::next(const Math::Vec3i &_Position) const
     {
         // Math::Vec3i relPos = (_Position - _ChunkDim.Beg).abs();
-        Math::Vec3i relPos = _Position.abs(); //(_v - _ChunkDim.Beg).abs();
-        const static uint32_t mask = (CHUNK_SIZE - 1);
-        relPos.x &= mask;
-        relPos.y &= mask;
-        relPos.z &= mask;
+        Math::Vec3i relPos = _Position & g_ChunkRelativePosMask; //(_v - _ChunkDim.Beg).abs();
 
         for (int z = relPos.z; z < m_InnerBBox.End.z; z++)
         {
@@ -645,9 +634,9 @@ namespace VCore
             {
                 for (int x = relPos.x; x < m_InnerBBox.End.x; x++)
                 {
-                    CVoxel &vox = m_Data[x + _ChunkDim.End.x * y + _ChunkDim.End.x * _ChunkDim.End.y * z];
+                    CVoxel &vox = m_Data[x + CHUNK_SIZE * y + CHUNK_SIZE * CHUNK_SIZE * z];
                     if(vox.IsInstantiated())
-                        return {_ChunkDim.Beg + Math::Vec3i(x, y, z), &vox};
+                        return {GetChunkpos(_Position) + Math::Vec3i(x, y, z), &vox};
                 }
             }
         }
@@ -655,14 +644,10 @@ namespace VCore
         return {Math::Vec3i(), nullptr};
     }
 
-    Voxel CChunk::find(const Math::Vec3i &_v, const CBBox &_ChunkDim) const
+    Voxel CChunk::find(const Math::Vec3i &_v) const
     {
-        Math::Vec3i relPos = _v.abs(); //(_v - _ChunkDim.Beg).abs();
-        const static uint32_t mask = (CHUNK_SIZE - 1);
-        relPos.x &= mask;
-        relPos.y &= mask;
-        relPos.z &= mask;
-        CVoxel &vox = m_Data[relPos.x + _ChunkDim.End.x * relPos.y + _ChunkDim.End.x * _ChunkDim.End.y * relPos.z];
+        Math::Vec3i relPos = _v & g_ChunkRelativePosMask; //(_v - _ChunkDim.Beg).abs();
+        CVoxel &vox = m_Data[relPos.x + CHUNK_SIZE * relPos.y + CHUNK_SIZE * CHUNK_SIZE * relPos.z];
         if(vox.IsInstantiated())
             return &vox;
 

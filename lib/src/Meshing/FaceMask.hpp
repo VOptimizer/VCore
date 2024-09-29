@@ -35,7 +35,7 @@ namespace VCore
         public:
             struct Mask
             {
-                BITMASK_TYPE Bits[CHUNK_SIZE * 2];
+                BITMASK_TYPE Bits[(CHUNK_SIZE + 2) * 2];
             };
 
             CFaceMask() = default;
@@ -44,6 +44,8 @@ namespace VCore
              * @brief Generates the face bit mask for the given chunk on the axis.
              */
             ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> Generate(const VoxelModel &_Model, const SChunkMeta &_Chunk, uint8_t _Axis);
+
+            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> GenerateChunkBoundary(const VoxelModel &_Model, const SChunkMeta &_Chunk, uint8_t _Axis);
 
             ~CFaceMask() = default;
 
@@ -56,7 +58,10 @@ namespace VCore
 
             void GenerateMask(BITMASK_TYPE faces, bool backFace, Math::Vec3i position, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk);
             OpaqueMask GenerateOpaqueMask(const VoxelModel &_Model, const SChunkMeta &_Chunk, BITMASK_TYPE _Voxels, Math::Vec3i position, uint8_t _Axis);
-            
+
+            OpaqueMask GenerateOpaqueMask(const VoxelModel &_Model, BITMASK_TYPE _Voxels, Math::Vec3i position, uint8_t _Axis, const CBBox &_TotalBBox, const CChunk *_Chunk);
+            void GenerateMask(BITMASK_TYPE faces, bool backFace, Math::Vec3i position, const Math::Vec3i &_Axis, const CBBox &_TotalBBox, const CChunk *_Chunk);
+
             ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> m_FacesMasks;
     };
 } // namespace VCore

@@ -44,7 +44,9 @@ namespace VCore
              */
             inline bool IsInstantiated() const
             {
-                return (Color != 0xFFFFFF) && (Material != 0xFF);
+                return *((uint32_t*)this) != 0xFFFFFFFF;
+
+                // return (Color != 0xFFFFFF) && (Material != 0xFF);
             }
 
             ~CVoxel() = default;
