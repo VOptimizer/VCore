@@ -628,11 +628,11 @@ namespace VCore
         // Math::Vec3i relPos = (_Position - _ChunkDim.Beg).abs();
         Math::Vec3i relPos = _Position & g_ChunkRelativePosMask; //(_v - _ChunkDim.Beg).abs();
 
-        for (int z = relPos.z; z < m_InnerBBox.End.z; z++)
+        for (int z = relPos.z; z <= m_InnerBBox.End.z; z++)
         {
-            for (int y = relPos.y; y < m_InnerBBox.End.y; y++)
+            for (int y = relPos.y; y <= m_InnerBBox.End.y; y++)
             {
-                for (int x = relPos.x; x < m_InnerBBox.End.x; x++)
+                for (int x = relPos.x; x <= m_InnerBBox.End.x; x++)
                 {
                     CVoxel &vox = m_Data[x + CHUNK_SIZE * y + CHUNK_SIZE * CHUNK_SIZE * z];
                     if(vox.IsInstantiated())
@@ -708,13 +708,41 @@ namespace VCore
     
     CVoxelSpaceIterator& CVoxelSpaceIterator::operator++()
     {
-        *this = m_Space->next(m_Pair.first);
+        auto next = m_Pair.first;
+        next.x++;
+
+        if(next.x > m_InnerBox.End.x)
+        {
+            next.x = m_InnerBox.Beg.x;
+            next.y++;
+            if(next.y > m_InnerBox.End.y)
+            {
+                next.y = m_InnerBox.Beg.y;
+                next.z++;
+            }
+        }
+
+        *this = m_Space->next(next);
         return *this;
     }
 
     CVoxelSpaceIterator& CVoxelSpaceIterator::operator++(int)
     {
-        *this = m_Space->next(m_Pair.first);
+        auto next = m_Pair.first;
+        next.x++;
+
+        if(next.x > m_InnerBox.End.x)
+        {
+            next.x = m_InnerBox.Beg.x;
+            next.y++;
+            if(next.y > m_InnerBox.End.y)
+            {
+                next.y = m_InnerBox.Beg.y;
+                next.z++;
+            }
+        }
+
+        *this = m_Space->next(next);
         return *this;
     }
 
