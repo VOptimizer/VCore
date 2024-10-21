@@ -638,7 +638,11 @@ namespace VCore
                     if(vox.IsInstantiated())
                         return {GetChunkpos(_Position) + Math::Vec3i(x, y, z), &vox};
                 }
+
+                relPos.x = m_InnerBBox.Beg.x;
             }
+
+            relPos.y = m_InnerBBox.Beg.y;
         }
         
         return {Math::Vec3i(), nullptr};
