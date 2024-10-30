@@ -34,31 +34,26 @@ namespace VCore
         return std::move(m_FacesMasks);
     }
 
-    ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>> CFaceMask::Generate(const VoxelModel &_Model, const Math::Vec3i &_Position, uint8_t _Axis)
+    ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>> CFaceMask::Generate(const VoxelModel &_Model, Math::Vec3i _ChunkPos, uint8_t _Axis)
     {
-        auto chunkPos = GetChunkpos(_Position);
-        Math::Vec3iHasher hasher;
-
         SChunkMeta meta;
-        meta.Chunk = _Model->GetVoxels().getChunk(chunkPos);
+        auto &voxels = _Model->GetVoxels();
+        meta.Chunk = voxels.getChunk(_ChunkPos);
         if(meta.Chunk)
         {
-            meta.UniqueId = hasher(chunkPos);
-            meta.TotalBBox = CBBox(chunkPos, chunkPos + Math::Vec3i(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE));
-            meta.InnerBBox = meta.Chunk->inner_bbox(chunkPos);
+            // meta.UniqueId = hasher(_ChunkPos);
+            meta.TotalBBox = CBBox(_ChunkPos, _ChunkPos + Math::Vec3i(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE));
+            meta.InnerBBox = meta.Chunk->inner_bbox(_ChunkPos);
             InternalGenerate(_Model, meta, _Axis, ((CHUNK_SIZE << 1) - 1));
         }
 
-        Math::Vec3i add;
-        add.v[(_Axis + 1) % 3] = CHUNK_SIZE;
-
-        chunkPos = GetChunkpos(_Position + add);
-        meta.Chunk = _Model->GetVoxels().getChunk(chunkPos);
+        _ChunkPos.v[(_Axis + 1) % 3] += CHUNK_SIZE;
+        meta.Chunk = voxels.getChunk(_ChunkPos);
         if(meta.Chunk)
         {
-            meta.UniqueId = hasher(chunkPos);
-            meta.TotalBBox = CBBox(chunkPos, chunkPos + Math::Vec3i(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE));
-            meta.InnerBBox = meta.Chunk->inner_bbox(chunkPos);
+            // meta.UniqueId = hasher(_ChunkPos);
+            meta.TotalBBox = CBBox(_ChunkPos, _ChunkPos + Math::Vec3i(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE));
+            meta.InnerBBox = meta.Chunk->inner_bbox(_ChunkPos);
             InternalGenerate(_Model, meta, _Axis, ((CHUNK_SIZE << 1) - 1));
         }
 
@@ -88,6 +83,8 @@ namespace VCore
 
                 // Gets the current "ray" of bits.
                 auto voxels = _Chunk.Chunk->m_Mask.GetRowFaces(subpos, _Axis);
+                if(!voxels)
+                    continue;
 
                 // Splits the bits into opaque and transparent ones.
                 auto mask = GenerateOpaqueMask(_Model, _Chunk, voxels, position, _Axis);
@@ -159,6 +156,8 @@ namespace VCore
     void CFaceMask::GenerateMask(BITMASK_TYPE faces, bool backFace, Math::Vec3i position, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, int _ChunkMask)
     {
         const auto chunk = _Chunk.Chunk;
+        const static uint32_t cmask = (CHUNK_SIZE - 1);
+        auto offset = CHUNK_SIZE * (int)backFace;
 
         BITMASK_TYPE pos = 0;
         while ((pos <= (CHUNK_SIZE + 2)) && (faces >> pos))
@@ -168,7 +167,7 @@ namespace VCore
                 break;
 
             position.v[_Axis.x] = pos + _Chunk.TotalBBox.Beg.v[_Axis.x];
-            auto voxel = chunk->find(position);
+            Voxel voxel = chunk->find(position);
             if(!voxel)
             {
                 pos++;
@@ -176,7 +175,7 @@ namespace VCore
             }
 
             auto &mask = m_FacesMasks[pos][*((uint32_t*)voxel)];
-            mask.Bits[position.v[_Axis.z] - _Chunk.TotalBBox.Beg.v[_Axis.z] + CHUNK_SIZE * (int)backFace] |= (BITMASK_TYPE)1 << (position.v[_Axis.y] & _ChunkMask);
+            mask.Bits[(position.v[_Axis.z] & cmask) + offset] |= (BITMASK_TYPE)1 << (position.v[_Axis.y] & _ChunkMask);
             pos++;
         }
     }

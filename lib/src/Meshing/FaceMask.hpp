@@ -45,7 +45,7 @@ namespace VCore
              */
             ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> Generate(const VoxelModel &_Model, const SChunkMeta &_Chunk, uint8_t _Axis);
 
-            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> Generate(const VoxelModel &_Model, const Math::Vec3i &_Position, uint8_t _Axis);
+            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> Generate(const VoxelModel &_Model, Math::Vec3i _ChunkPos, uint8_t _Axis);
 
             ~CFaceMask() = default;
 

@@ -30,19 +30,24 @@
 #include <vector>
 
 #include "GreedyMesher.hpp"
+#include <iostream>
 
 namespace VCore
 {    
+    const static uint32_t g_CMask = (CHUNK_SIZE - 1);
+    const static uint32_t g_ChunkSizeP2 = (CHUNK_SIZE << 1);
+    const static uint32_t g_Mask64 = ~(g_ChunkSizeP2 - 1);
+
     template<typename R>
     bool is_ready(std::future<R> const& f)
-    { return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }
+    { return f.wait_for(std::chrono::microseconds(0)) == std::future_status::ready; }
 
     inline Math::Vec3i GetChunkpos64(Math::Vec3i _Position, const Math::Vec3i &_Axis)
     {
-        const static uint32_t mask = ~(CHUNK_SIZE - 1);
-        const static uint32_t mask64 = ~((CHUNK_SIZE << 1) - 1);
+        const static uint32_t mask = ~g_CMask;
+        
         _Position.v[_Axis.x] &= mask;
-        _Position.v[_Axis.y] &= mask64;
+        _Position.v[_Axis.y] &= g_Mask64;
         _Position.v[_Axis.z] &= mask;
 
         return _Position;
@@ -55,6 +60,10 @@ namespace VCore
 
         auto bbox = _Mesh->GetBBox();
 
+        auto startTime = std::chrono::high_resolution_clock::now();
+
+        std::chrono::milliseconds duration1(0);
+
         std::vector<std::future<Mesh>> futures;
         std::vector<Mesh> slices;
         for (int runAxis = 0; runAxis < 3; runAxis++)
@@ -64,7 +73,8 @@ namespace VCore
 
             for (int axis = begin; axis < end; axis += CHUNK_SIZE)
             {
-                futures.push_back(std::async(&CGreedyMesher::GenerateMeshSlice, this, _Mesh, bbox, runAxis, axis));
+                futures.push_back(std::async(&CGreedyMesher::GenerateMeshSlices, this, _Mesh, bbox, runAxis, axis));
+                auto startTime2 = std::chrono::high_resolution_clock::now();
                 while(futures.size() >= std::thread::hardware_concurrency())
                 {
                     auto it = futures.begin();
@@ -73,13 +83,15 @@ namespace VCore
                         if(is_ready(*it))
                         {
                             auto result = it->get();
-                            slices.push_back(result);              
+                            slices.push_back(std::move(result));              
                             it = futures.erase(it);
                         }
                         else
                             it++;
                     }
                 }
+                auto endTime2 = std::chrono::high_resolution_clock::now();
+                duration1 += std::chrono::duration_cast<std::chrono::milliseconds>(endTime2 - startTime2);
             }
         }
         
@@ -92,6 +104,16 @@ namespace VCore
             it = futures.erase(it);
         }
 
+        // for (auto &&ctx : taskContexts)
+        //     delete ctx;
+
+        auto endTime = std::chrono::high_resolution_clock::now();
+
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+        // std::cout << "Thread time taken: " << duration.count() << " ms" << std::endl;
+
+        // std::cout << "Thread time taken (Wait): " << duration1.count() << " ms" << std::endl;
+
         CMeshBuilder builder(m_SurfaceFactory);
         builder.AddTextures(_Mesh->Textures);
 
@@ -103,8 +125,31 @@ namespace VCore
         chunk.TotalBBox = bbox;
         chunk.MeshData = builder.Merge(nullptr, slices);
 
+        // std::cout << "MaskgenerationTime taken: " << m_MaskgenerationTime.count() << " ms" << std::endl;
+        // std::cout << "WidthgenerationTime taken: " << m_WidthgenerationTime.count() << " ms" << std::endl;
+
+        m_MaskgenerationTime = std::chrono::milliseconds(0);
+        m_WidthgenerationTime = std::chrono::milliseconds(0);
+
         return {chunk};
     }
+
+    // Mesh CGreedyMesher::SlicerTask(TaskContext *_TaskContext)
+    // {
+    //     std::vector<Mesh> meshes;
+    //     while (_TaskContext->NextSlice.load() < _TaskContext->ModelBBox.End.v[_TaskContext->Axis])
+    //     {
+    //         auto start = _TaskContext->NextSlice.load();
+    //         _TaskContext->NextSlice += _TaskContext->SliceProcessCount;
+
+    //         meshes.push_back(GenerateMeshSlices(*_TaskContext, start));
+    //     }
+
+    //     CMeshBuilder builder(m_SurfaceFactory);
+    //     builder.AddTextures(_TaskContext->Model->Textures);
+
+    //     return builder.Merge(nullptr, meshes);
+    // }
 
     void CGreedyMesher::GenerateQuad(CMeshBuilder &result, const std::vector<Material> &_Materials, BITMASK_TYPE faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const Voxel _Voxel)
     {
@@ -218,82 +263,69 @@ namespace VCore
         return chunk;
     }
 
-    using MaskCollection = ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>>;
-    struct MeshSlicerContext
+    CFaceMask::Mask *CGreedyMesher::GetFaceMask(MeshSlicerContext &_Context, const Math::Vec3i &_Chunkpos, int d)
     {
-        MeshSlicerContext(const VoxelModel &_Model, const CBBox &_ModelBBox, SurfaceFactory _Factory) : Model(_Model), ModelBBox(_ModelBBox), Builder(_Factory) 
+        auto key = _Context.SliceIt->first;
+
+        // Checks if the current chunk is already indexed.
+        auto it = _Context.Chunks.find(_Chunkpos);
+        if(it == _Context.Chunks.end())
         {
-            Builder.AddTextures(Model->Textures);
-        }   
+            CFaceMask maskGenerator;
+            it = _Context.Chunks.insert({_Chunkpos, std::move(maskGenerator.Generate(_Context.Model, _Chunkpos, _Context.Axis.z))}).first;
 
-        const VoxelModel &Model;
-        CMeshBuilder Builder;
-        const CBBox &ModelBBox;
-        MaskCollection::iterator DepthIt;
-        ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>::iterator SliceIt;
-        Math::Vec3i Axis;
-        Math::Vec3i Position;
-        ankerl::unordered_dense::map<Math::Vec3i, MaskCollection, Math::Vec3iHasher> Chunks;
-    };
+            // Since the map changed, we need to optain the old iterators, so we can continue from the current position.
+            _Context.DepthIt = _Context.Chunks[GetChunkpos64(_Context.Position, _Context.Axis)].find(d);
+            _Context.SliceIt = _Context.DepthIt->second.find(key);
+        }
 
-    void GenerateMeshSlice1(MeshSlicerContext &_Context, BITMASK_TYPE _Faces, bool _IsFront)
+        // Try to get the same slice with the same material properties as this one.
+        auto depthIt = it->second.find(d);
+        if(depthIt != it->second.end())
+        {
+            auto keyIt = depthIt->second.find(key);
+            if(keyIt != depthIt->second.end())
+                return &keyIt->second;
+        }
+
+        return nullptr;
+    }
+
+    BITMASK_TYPE *CGreedyMesher::GetFaces(MeshSlicerContext &_Context, const Math::Vec3i &_Chunkpos, int d, int x, bool _IsFront)
+    {
+        BITMASK_TYPE *faces = nullptr;
+        auto mask = GetFaceMask(_Context, _Chunkpos, d);
+        if(mask)
+            faces = &mask->Bits[(x & g_CMask) + ((1 - (int)_IsFront) * CHUNK_SIZE)];
+
+        return faces;     
+    }
+
+    void CGreedyMesher::GenerateMeshSlice(MeshSlicerContext &_Context, BITMASK_TYPE _Faces, bool _IsFront)
     {
         unsigned currentMaterial = -1;
-        int d = _Context.Position.v[_Context.Axis.z] & (CHUNK_SIZE - 1);
-        int x = _Context.Position.v[_Context.Axis.x];
+        const int d = _Context.Position.v[_Context.Axis.z] & g_CMask;
+        const int x = _Context.Position.v[_Context.Axis.x];
         int y = _Context.Position.v[_Context.Axis.y];
-
-        auto key = _Context.SliceIt->first;
         
-        CFaceMask maskGenerator;
         while (y <= _Context.ModelBBox.End.v[_Context.Axis.y])
         {
             fast_vector<BITMASK_TYPE> bitmasks;
-            BITMASK_TYPE heightPos = y & ((CHUNK_SIZE << 1) - 1);
+            BITMASK_TYPE heightPos = y & (g_ChunkSizeP2 - 1);
             BITMASK_TYPE totalHeight = 0;
 
             auto position = _Context.Position;
             position.v[_Context.Axis.y] = y;
             auto chunkpos = GetChunkpos64(position, _Context.Axis);
-            auto it = _Context.Chunks.find(chunkpos);
-            if(it == _Context.Chunks.end())
-            {
-                it = _Context.Chunks.insert({chunkpos, std::move(maskGenerator.Generate(_Context.Model, chunkpos, _Context.Axis.z))}).first;
-                _Context.DepthIt = _Context.Chunks[GetChunkpos64(_Context.Position, _Context.Axis)].find(d);
-                if(_Context.DepthIt == _Context.Chunks[GetChunkpos64(_Context.Position, _Context.Axis)].end())
-                {
-                    int i = 0;
-                    i++;
-                }
 
-                _Context.SliceIt = _Context.DepthIt->second.find(key);
-                if(_Context.SliceIt == _Context.DepthIt->second.end())
-                {
-                    int i = 0;
-                    i++;
-                }
-            }
-
-            auto depthIt = _Context.Chunks[chunkpos].find(d);
-            if(depthIt != _Context.Chunks[chunkpos].end())
-            {
-                auto keyIt = depthIt->second.find(key);
-                if(keyIt != depthIt->second.end())
-                    _Faces = keyIt->second.Bits[(x & (CHUNK_SIZE - 1)) + ((1 - (int)_IsFront) * CHUNK_SIZE)];
-                else
-                    break;
-            }
-            else
-                break;
-
-            // _Faces = _Context.SliceIt->second.Bits[x & (CHUNK_SIZE - 1) + ((1 - (int)_IsFront) * CHUNK_SIZE)];
+            auto startTime = std::chrono::high_resolution_clock::now();
 
             // Bitmask calculations
             while (true)
             {
                 // Step 1: Get right y position
                 auto zeros = CountTrailingZeroBits(_Faces >> heightPos);
-                if(zeros == (CHUNK_SIZE << 1))
+                if(zeros == g_ChunkSizeP2)
                     zeros -= heightPos;
 
                 // Only continues 1 bits can be grouped to one big mask!
@@ -308,47 +340,21 @@ namespace VCore
                     break;
 
                 // Two chunks boundary reached
-                if(heightPos >= (CHUNK_SIZE * 2))
+                if(heightPos >= g_ChunkSizeP2)
                 {
                     // Resets the heightpos for the new chunk.
                     heightPos = 0;
 
                     // Step 2: Get the chunk group above this one.
-                    chunkpos.v[_Context.Axis.y] += CHUNK_SIZE << 1;
+                    chunkpos.v[_Context.Axis.y] += g_ChunkSizeP2;
                     if(chunkpos.v[_Context.Axis.y] > _Context.ModelBBox.End.v[_Context.Axis.y])
                         break;
 
-                    auto it = _Context.Chunks.find(chunkpos);
-                    if(it == _Context.Chunks.end())
-                    {
-                        it = _Context.Chunks.insert({chunkpos, std::move(maskGenerator.Generate(_Context.Model, chunkpos, _Context.Axis.z))}).first;
-                        _Context.DepthIt = _Context.Chunks[GetChunkpos64(_Context.Position, _Context.Axis)].find(d);
-                        if(_Context.DepthIt == _Context.Chunks[GetChunkpos64(_Context.Position, _Context.Axis)].end())
-                        {
-                            int i = 0;
-                            i++;
-                        }
-
-                        _Context.SliceIt = _Context.DepthIt->second.find(key);
-                        if(_Context.SliceIt == _Context.DepthIt->second.end())
-                        {
-                            int i = 0;
-                            i++;
-                        }
-                    }
-
-                    // Try to get the same slice with the same material properties as this one.
-                    auto depthIt = it->second.find(d);
-                    if(depthIt != it->second.end())
-                    {
-                        auto keyIt = depthIt->second.find(key);
-                        if(keyIt != depthIt->second.end())
-                            _Faces = keyIt->second.Bits[(x & (CHUNK_SIZE - 1)) + ((1 - (int)_IsFront) * CHUNK_SIZE)];
-                        else
-                            break;
-                    }
-                    else
+                    auto faces = GetFaces(_Context, chunkpos, d, x, _IsFront);
+                    if(!faces)
                         break;
+                    
+                    _Faces = *faces;
                 }
                 else
                 {
@@ -364,56 +370,29 @@ namespace VCore
                 }
             }
 
+            auto endTime = std::chrono::high_resolution_clock::now();
+            m_MaskgenerationTime += std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+
             if(bitmasks.size() > 0)
             {
                 // Step 4: Find the biggest face
                 auto position = _Context.Position;
 
-                unsigned width = 1;
-                for (int tmpWidth = x + 1; tmpWidth <= _Context.ModelBBox.End.v[_Context.Axis.x]; tmpWidth++)
-                {
-                    position.v[_Context.Axis.x] = tmpWidth;
-                    position.v[_Context.Axis.y] = y;
+                startTime = std::chrono::high_resolution_clock::now();
 
-                    bool isContinues = true;
+                unsigned width = 1;
+                position.v[_Context.Axis.y] = y;
+
+                for (position.v[_Context.Axis.x] = x + 1; position.v[_Context.Axis.x] <= _Context.ModelBBox.End.v[_Context.Axis.x]; position.v[_Context.Axis.x]++)
+                {
+                    bool isContinues = false;
+
+                    // Gets the current chunks mask
+                    auto chunkpos = GetChunkpos64(position, _Context.Axis);
                     for (auto &&bitmask : bitmasks)
                     {
-                        isContinues = false;
-
-                        // Gets the current chunks mask
-                        auto chunkpos = GetChunkpos64(position, _Context.Axis);
-                        auto it = _Context.Chunks.find(chunkpos);
-                        if(it == _Context.Chunks.end())
-                        {
-                            it = _Context.Chunks.insert({chunkpos, std::move(maskGenerator.Generate(_Context.Model, chunkpos, _Context.Axis.z))}).first;
-                            _Context.DepthIt = _Context.Chunks[GetChunkpos64(_Context.Position, _Context.Axis)].find(d);
-                            if(_Context.DepthIt == _Context.Chunks[GetChunkpos64(_Context.Position, _Context.Axis)].end())
-                            {
-                                int i = 0;
-                                i++;
-                            }
-
-                            _Context.SliceIt = _Context.DepthIt->second.find(key);
-                            if(_Context.SliceIt == _Context.DepthIt->second.end())
-                            {
-                                int i = 0;
-                                i++;
-                            }
-                        }
-
-                        BITMASK_TYPE *nextfaces = 0;
-
-                        // Try to get the same slice with the same material properties as this one.
-                        auto depthIt = it->second.find(d);
-                        if(depthIt != it->second.end())
-                        {
-                            auto keyIt = depthIt->second.find(key);
-                            if(keyIt != depthIt->second.end())
-                                nextfaces = &keyIt->second.Bits[(tmpWidth & (CHUNK_SIZE - 1)) + ((1 - (int)_IsFront) * CHUNK_SIZE)];
-                            else
-                                break;
-                        }
-                        else
+                        auto nextfaces = GetFaces(_Context, chunkpos, d, position.v[_Context.Axis.x], _IsFront);
+                        if(!nextfaces)
                             break;
 
                         if((*nextfaces & bitmask) != bitmask)
@@ -422,7 +401,7 @@ namespace VCore
                         *nextfaces ^= bitmask;
                         isContinues = true;
 
-                        position.v[_Context.Axis.y] += (CHUNK_SIZE << 1);
+                        chunkpos.v[_Context.Axis.y] += g_ChunkSizeP2;
                     }
                     
                     if(isContinues)
@@ -431,19 +410,20 @@ namespace VCore
                         break;
                 }
 
+                endTime = std::chrono::high_resolution_clock::now();
+                m_WidthgenerationTime += std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+
                 // Step 5: Build the mesh faces
                 position.v[_Context.Axis.x] = x;
                 position.v[_Context.Axis.y] = y;
 
-                auto chunkpos = GetChunkpos64(position, _Context.Axis);
+                if(!_IsFront)
+                    position.v[_Context.Axis.z] += 1;
+
+                // auto chunkpos = GetChunkpos64(position, _Context.Axis);
 
                 Math::Vec3f normal;
                 normal.v[_Context.Axis.z] = _IsFront ? -1 : 1;
-
-                // Math::Vec3i position;
-                position.v[_Context.Axis.z] = chunkpos.v[_Context.Axis.z] + d + (!_IsFront ? 1 : 0);
-                position.v[_Context.Axis.y] = chunkpos.v[_Context.Axis.y] + (y & ((CHUNK_SIZE << 1) - 1));
-                position.v[_Context.Axis.x] = chunkpos.v[_Context.Axis.x] + (x & (CHUNK_SIZE - 1));
 
                 Math::Vec3i size;
                 size.v[_Context.Axis.z] = 0;
@@ -456,6 +436,7 @@ namespace VCore
                 Math::Vec3f dv;
                 dv.v[_Context.Axis.y] = size.v[_Context.Axis.y];
 
+                auto key = _Context.SliceIt->first;
                 Voxel voxel = (Voxel)&key;
                 if((currentMaterial != voxel->Material) && (voxel->Material < (int)_Context.Model->Materials.size()))
                 {
@@ -478,14 +459,26 @@ namespace VCore
                     _Context.Builder.AddFace(idx1, idx3, idx2, idx4);
 
                 y += totalHeight;
+
+                if((y & g_Mask64) > chunkpos.v[_Context.Axis.y])
+                {
+                    chunkpos.v[_Context.Axis.y] = y & g_Mask64;
+                    auto faces = GetFaces(_Context, chunkpos, d, x, _IsFront);
+                    if(!faces)
+                        break;
+
+                    _Faces = *faces;
+                }
             }
             else
                 break;
         }
     }
 
-    Mesh CGreedyMesher::GenerateMeshSlice(const VoxelModel &_Model, const CBBox &_ModelBBox, int _RunAxis, int _AxisPos)
+    Mesh CGreedyMesher::GenerateMeshSlices(const VoxelModel &_Model, const CBBox &_ModelBBox, int _RunAxis, int _AxisPos)
     {
+        auto startTime = std::chrono::high_resolution_clock::now();
+
         MeshSlicerContext ctx(_Model, _ModelBBox, m_SurfaceFactory);
 
         // This logic calculates the index of one of the three other axis.
@@ -494,9 +487,9 @@ namespace VCore
         ctx.Axis = Math::Vec3i((_RunAxis + 2) % 3, (_RunAxis + 1) % 3, _RunAxis);
 
         CFaceMask mask;
-        for (int d = _AxisPos; d < _AxisPos + CHUNK_SIZE; d++)
+        for (int x = _ModelBBox.Beg.v[ctx.Axis.x]; x <= _ModelBBox.End.v[ctx.Axis.x]; x++)
         {
-            for (int x = _ModelBBox.Beg.v[ctx.Axis.x]; x <= _ModelBBox.End.v[ctx.Axis.x]; x++)
+            for (int d = _AxisPos; d < _AxisPos + CHUNK_SIZE; d++)              
             {
                 ctx.Position.v[ctx.Axis.z] = d;
                 ctx.Position.v[ctx.Axis.x] = x;
@@ -508,27 +501,20 @@ namespace VCore
                     auto chunkpos = GetChunkpos64(ctx.Position, ctx.Axis);
                     auto it = ctx.Chunks.find(chunkpos);
                     if(it == ctx.Chunks.end())
-                        it = ctx.Chunks.insert({chunkpos, std::move(mask.Generate(_Model, chunkpos, _RunAxis))}).first;
+                        it = ctx.Chunks.insert({chunkpos, mask.Generate(_Model, chunkpos, _RunAxis)}).first;
 
                     // Checks if there is a slice for the current depth
-                    ctx.DepthIt = it->second.find(d & (CHUNK_SIZE - 1));
+                    ctx.DepthIt = it->second.find(d & g_CMask);
                     if(ctx.DepthIt != it->second.end())
                     {
                         ctx.SliceIt = ctx.DepthIt->second.begin();
                         while (ctx.SliceIt != ctx.DepthIt->second.end())
                         {
-                            // ctx.Position.v[ctx.Axis.x] = x;
-                            // ctx.Position.v[ctx.Axis.y] = _ModelBBox.Beg.v[ctx.Axis.y];
+                            BITMASK_TYPE faces = ctx.SliceIt->second.Bits[x & g_CMask];
+                            GenerateMeshSlice(ctx, faces, true);
 
-                            BITMASK_TYPE faces = ctx.SliceIt->second.Bits[x & (CHUNK_SIZE - 1)];
-                            GenerateMeshSlice1(ctx, faces, true);
-
-                            // ctx.Position.v[ctx.Axis.x] = x;
-                            // ctx.Position.v[ctx.Axis.y] = _ModelBBox.Beg.v[ctx.Axis.y];
-
-                            int xpos = (x & (CHUNK_SIZE - 1));
-                            faces = ctx.SliceIt->second.Bits[(x & (CHUNK_SIZE - 1)) + CHUNK_SIZE];
-                            GenerateMeshSlice1(ctx, faces, false);
+                            faces = ctx.SliceIt->second.Bits[(x & g_CMask) + CHUNK_SIZE];
+                            GenerateMeshSlice(ctx, faces, false);
 
                             ctx.SliceIt++;
                         }
@@ -537,108 +523,17 @@ namespace VCore
                     }
                     else
                     {
-                        ctx.Position.v[ctx.Axis.y] += CHUNK_SIZE << 1;
+                        ctx.Position.v[ctx.Axis.y] += g_ChunkSizeP2;
                         if(ctx.Position.v[ctx.Axis.y] >= _ModelBBox.End.v[ctx.Axis.y])
                             break;
                     }
                 }
             }
-                    
-
-
-            // for (int h = _ModelBBox.Beg.v[heightAxis]; h < _ModelBBox.End.v[heightAxis]; h++)
-            // {
-
-
-            //     auto chunkpos = GetChunkpos(pos);
-            //     auto it = chunks.find(chunkpos);
-            //     if(it == chunks.end())
-            //         it = chunks.insert({chunkpos, std::move(mask.Generate(_Model, pos, _RunAxis))}).first;
-
-            //     auto depthIt = it->second.find(d);
-            //     if(depthIt != it->second.end())
-            //     {
-            //         for (auto &&key : depthIt->second)
-            //         {
-            //             auto voxel = (Voxel)&key.first;
-
-                    
-                    
-            //         }
-            //     }
-            // }
-
-            // for (int w = _ModelBBox.Beg.v[widthAxis]; w < _ModelBBox.End.v[widthAxis]; w++)
-            // {
-            //     Math::Vec3i pos;
-            //     pos.v[_RunAxis] = d;
-            //     pos.v[widthAxis] = w;
-            //     pos.v[heightAxis] = _ModelBBox.Beg.v[heightAxis];
-
-            //     auto chunkpos = GetChunkpos(pos);
-            //     auto it = chunks.find(chunkpos);
-            //     if(it == chunks.end())
-            //         it = chunks.insert({chunkpos, std::move(mask.Generate(_Model, pos, _RunAxis))}).first;
-            //     pos.v[heightAxis] = chunkpos.v[heightAxis];
-
-            //     int currentMaterial = -1;
-            //     for (auto &&key : it->second[d])
-            //     {
-            //         auto voxel = (Voxel)&key.first;
-            //         auto faces = key.second.Bits[w & (CHUNK_SIZE - 1)];
-
-            //         int heightPos = 0;
-            //         while (heightPos <= totalHeight)
-            //         {
-            //             // pos.v[heightAxis] = heightPos + _ModelBBox.Beg.v[heightAxis];
-
-            //             heightPos += CountTrailingZeroBits(faces >> (heightPos & ((CHUNK_SIZE * 2) - 1)));
-            //             if((heightPos & ((CHUNK_SIZE * 2) - 1)) >= ((CHUNK_SIZE * 2) - 1))
-            //             {
-            //                 pos.v[heightAxis] += (CHUNK_SIZE * 2);
-            //                 chunkpos = GetChunkpos(pos);
-            //                 it = chunks.find(chunkpos);
-            //                 if(it == chunks.end())
-            //                     it = chunks.insert({chunkpos, std::move(mask.Generate(_Model, pos, _RunAxis))}).first;
-            //             }
-            //                 // break;
-
-            //             BITMASK_TYPE faceCount = CountTrailingOneBits(faces >> (heightPos & ((CHUNK_SIZE * 2) - 1)));
-            //             BITMASK_TYPE mask = (((BITMASK_TYPE)1 << faceCount) - 1) << (heightPos & ((CHUNK_SIZE * 2) - 1));
-            //         }
-            //     }
-            // }
         }
 
-        
-        {
-
-            
-
-            // int h = _ModelBBox.Beg.v[heightAxis];
-            // while (h < _ModelBBox.End.v[heightAxis])
-            // {
-            //     Math::Vec3i pos;
-            //     pos.v[_RunAxis] = _AxisPos;
-            //     pos.v[heightAxis] = h;
-            //     pos.v[widthAxis] = w;
-
-            //     auto chunkpos = GetChunkpos(pos);
-            //     chunks[chunkpos] = std::move(mask.Generate(_Model, pos, _RunAxis));
-            //     h += CHUNK_SIZE * 2;
-            // }
-            
-
-            // for (int h = _ModelBBox.Beg.v[heightAxis]; h < _ModelBBox.End.v[heightAxis]; h += CHUNK_SIZE * 2)
-            // {
-            //     Math::Vec3i pos;
-            //     pos.v[_RunAxis] = _AxisPos;
-            //     pos.v[heightAxis] = h;
-            //     pos.v[widthAxis] = w;
-
-            //     chunks[GetChunkpos(pos)] = std::move(mask.Generate(_Model, pos, _RunAxis));
-            // }
-        }
+        auto endTime = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+        // std::cout << "Slicer time taken: " << duration.count() << " ms" << std::endl;
 
         return ctx.Builder.Build();
     }
