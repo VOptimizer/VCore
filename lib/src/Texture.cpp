@@ -53,7 +53,7 @@ namespace VCore
 
     void CTexture::AddPixel(const CColor &_Color, const Math::Vec2ui &_Position)
     {
-        if(_Position >= m_Size)
+        if((_Position.x >= m_Size.x) || (_Position.y >= m_Size.y))
             return;
 
         m_Pixels[_Position.x + m_Size.x * _Position.y] = _Color.AsRGBA();
@@ -70,19 +70,33 @@ namespace VCore
         m_Pixels.push_back(_Color.AsRGBA());
     }
 
-    void CTexture::AddRawPixels(const std::vector<CColor> &_Pixels, const Math::Vec2ui &_Position, const Math::Vec2ui &_Size)
+    void CTexture::CopyTexture(const Texture &_Texture, const Math::Vec2ui &_Position)
     {
-        if((_Position.x >= m_Size.x || _Position.y >= m_Size.y) ||
-           ((_Position.x + _Size.x > m_Size.x) || _Position.y + _Size.y > m_Size.y) ||
-           _Pixels.size() < (_Size.x * _Size.y))
+        if(_Position.x >= m_Size.x || _Position.y >= m_Size.y)
             return;
 
-        for (size_t y = _Position.y; y < _Position.y + _Size.y; y++)
+        auto endPositionY = std::min(_Position.y + _Texture->GetSize().y, m_Size.y);
+        auto strideSize = std::min(_Position.x + _Texture->GetSize().x, m_Size.x) - _Position.x;
+
+        for (size_t y = _Position.y; y < endPositionY; y++)
         {
-            for (size_t x = _Position.x; x < _Position.x + _Size.x; x++)
-            {
-                m_Pixels[x + m_Size.x * y] = _Pixels[(x - _Position.x) + _Size.x * (y - _Position.y)].AsRGBA();
-            }
+            auto textureY = _Texture->GetSize().x * (y - _Position.y);
+            memcpy(&m_Pixels[_Position.x + m_Size.x * y], &_Texture->m_Pixels[textureY], strideSize * sizeof(uint32_t));
+        }
+    }
+
+    void CTexture::AddRawPixels(const std::vector<uint32_t> &_Pixels, const Math::Vec2ui &_Position, const Math::Vec2ui &_Size)
+    {
+        if(_Position.x >= m_Size.x || _Position.y >= m_Size.y)
+            return;
+
+        auto endPositionY = std::min(_Position.y + _Size.y, m_Size.y);
+        auto strideSize = std::min(_Position.x + _Size.x, m_Size.x) - _Position.x;
+
+        for (size_t y = _Position.y; y < endPositionY; y++)
+        {
+            auto textureY = _Size.x * (y - _Position.y);
+            memcpy(&m_Pixels[_Position.x + m_Size.x * y], &_Pixels[textureY], strideSize * sizeof(uint32_t));
         }
     }
 

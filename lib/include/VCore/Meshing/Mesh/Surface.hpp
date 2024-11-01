@@ -66,6 +66,11 @@ namespace VCore
             virtual uint64_t GetFaceCount() const = 0;
 
             /**
+             * @brief Updates a vertex at a given index.
+             */
+            virtual void UpdateVertex(uint64_t _Idx, const SVertex &_Vertex) = 0;
+
+            /**
              * @return Returns a vertex at the given index.
              */
             virtual SVertex GetVertex(uint64_t _Idx) const = 0;
@@ -164,6 +169,12 @@ namespace VCore
             uint64_t GetFaceCount() const override
             {
                 return (uint64_t)(m_Indices.size() / 3);
+            }
+
+            void UpdateVertex(uint64_t _Idx, const SVertex &_Vertex) override
+            {
+                if(_Idx < m_Vertices.size())
+                    m_Vertices[_Idx] = _Vertex;
             }
 
             SVertex GetVertex(uint64_t _Idx) const override

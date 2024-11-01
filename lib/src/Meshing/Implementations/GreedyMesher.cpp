@@ -26,11 +26,11 @@
 #include <future>
 
 #include "../../Misc/Helper.hpp"
+#include "../../Misc/TexturePacker.hpp"
 #include <VCore/Meshing/Mesh/MeshBuilder.hpp>
 #include <vector>
 
 #include "GreedyMesher.hpp"
-#include <iostream>
 
 namespace VCore
 {    
@@ -60,10 +60,6 @@ namespace VCore
 
         auto bbox = _Mesh->GetBBox();
 
-        auto startTime = std::chrono::high_resolution_clock::now();
-
-        std::chrono::milliseconds duration1(0);
-
         std::vector<std::future<Mesh>> futures;
         std::vector<Mesh> slices;
         for (int runAxis = 0; runAxis < 3; runAxis++)
@@ -74,7 +70,6 @@ namespace VCore
             for (int axis = begin; axis < end; axis += CHUNK_SIZE)
             {
                 futures.push_back(std::async(&CGreedyMesher::GenerateMeshSlices, this, _Mesh, bbox, runAxis, axis));
-                auto startTime2 = std::chrono::high_resolution_clock::now();
                 while(futures.size() >= std::thread::hardware_concurrency())
                 {
                     auto it = futures.begin();
@@ -90,8 +85,6 @@ namespace VCore
                             it++;
                     }
                 }
-                auto endTime2 = std::chrono::high_resolution_clock::now();
-                duration1 += std::chrono::duration_cast<std::chrono::milliseconds>(endTime2 - startTime2);
             }
         }
         
@@ -104,16 +97,6 @@ namespace VCore
             it = futures.erase(it);
         }
 
-        // for (auto &&ctx : taskContexts)
-        //     delete ctx;
-
-        auto endTime = std::chrono::high_resolution_clock::now();
-
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-        // std::cout << "Thread time taken: " << duration.count() << " ms" << std::endl;
-
-        // std::cout << "Thread time taken (Wait): " << duration1.count() << " ms" << std::endl;
-
         CMeshBuilder builder(m_SurfaceFactory);
         builder.AddTextures(_Mesh->Textures);
 
@@ -125,31 +108,112 @@ namespace VCore
         chunk.TotalBBox = bbox;
         chunk.MeshData = builder.Merge(nullptr, slices);
 
-        // std::cout << "MaskgenerationTime taken: " << m_MaskgenerationTime.count() << " ms" << std::endl;
-        // std::cout << "WidthgenerationTime taken: " << m_WidthgenerationTime.count() << " ms" << std::endl;
+        if(m_GenerateTexture)
+        {
+            TTexturePacker<TextureInfo> packer;
+            auto head = m_Head.load();
+            while (head)
+            {
+                packer.AddRect(head->Info.Size, std::move(head->Info));
+                head = head->Next;
+            }
+            
+            auto rects = packer.Pack();
+            ankerl::unordered_dense::map<uint32_t, decltype(rects)::value_type> textureMapping;
+            auto texture = std::make_shared<CTexture>(packer.GetCanvasSize());
 
-        m_MaskgenerationTime = std::chrono::milliseconds(0);
-        m_WidthgenerationTime = std::chrono::milliseconds(0);
+            for (auto &&rect : rects)
+            {
+                textureMapping[rect.Reference.Id] = rect;
+                CopyToAtlas(texture, _Mesh, rect.Position, rect.Reference);
+
+
+                // texture->AddRawPixels(rect.Reference.RawTexture, rect.Position, rect.Size);
+            }
+
+            chunk.MeshData->Textures[TextureType::DIFFIUSE] = texture;
+            
+            for (auto &&surface : chunk.MeshData->Surfaces)
+            {
+                for (uint32_t i = 0; i < surface->GetVertexCount(); i += 4)
+                {
+                    auto v1 = surface->GetVertex(i);
+                    auto v2 = surface->GetVertex(i + 1);
+                    auto v3 = surface->GetVertex(i + 2);
+                    auto v4 = surface->GetVertex(i + 3);
+                    auto textureRect = textureMapping[v1.UV.x];
+
+                    // For each position we need to substract the margin pixels.
+                    v1.UV = Math::Vec2f(textureRect.Position.x + 1, textureRect.Position.y + 1) / packer.GetCanvasSize();
+                    v2.UV = Math::Vec2f((textureRect.Position.x + 1) + (textureRect.Size.x - 2), textureRect.Position.y + 1) / packer.GetCanvasSize();
+                    v3.UV = Math::Vec2f(textureRect.Position.x + 1, (textureRect.Position.y + 1) + (textureRect.Size.y - 2)) / packer.GetCanvasSize();
+                    v4.UV = Math::Vec2f((textureRect.Position + Math::Vec2f(1, 1)) + (textureRect.Size - Math::Vec2f(2, 2))) / packer.GetCanvasSize();
+
+                    surface->UpdateVertex(i, v1);
+                    surface->UpdateVertex(i + 1, v2);
+                    surface->UpdateVertex(i + 2, v3);
+                    surface->UpdateVertex(i + 3, v4);
+                }
+            }
+
+            ClearTextures();
+        }
 
         return {chunk};
     }
 
-    // Mesh CGreedyMesher::SlicerTask(TaskContext *_TaskContext)
-    // {
-    //     std::vector<Mesh> meshes;
-    //     while (_TaskContext->NextSlice.load() < _TaskContext->ModelBBox.End.v[_TaskContext->Axis])
-    //     {
-    //         auto start = _TaskContext->NextSlice.load();
-    //         _TaskContext->NextSlice += _TaskContext->SliceProcessCount;
+    void CGreedyMesher::CopyToAtlas(Texture &_Atlas, const VoxelModel &_Model, const Math::Vec2ui &_Position, const TextureInfo &_Info)
+    {
+        auto diffuse = _Model->Textures.find(TextureType::DIFFIUSE);
+        if(diffuse != _Model->Textures.end())
+        {
+            auto size = _Info.Size - Math::Vec2ui(2, 2);
 
-    //         meshes.push_back(GenerateMeshSlices(*_TaskContext, start));
-    //     }
+            for (int x = 0; x < size.x; x++)
+            {
+                for (int y = 0; y < size.y; y++)
+                {
+                    auto pos = _Info.Position;
+                    pos.v[_Info.Axis.x] += x;
+                    pos.v[_Info.Axis.y] += y;
 
-    //     CMeshBuilder builder(m_SurfaceFactory);
-    //     builder.AddTextures(_TaskContext->Model->Textures);
+                    auto vox = _Model->GetVoxel(pos);
+                    if(vox)
+                    {
+                        auto pixel = diffuse->second->GetPixel(Math::Vec2ui(vox->Color, 0));
+                        _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x + 1, y + 1));
 
-    //     return builder.Merge(nullptr, meshes);
-    // }
+                        // Adds margin pixels to the texture
+                        if((x == 0) && (y == 0))
+                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x, y));
+
+                        if(x == 0)
+                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x, y + 1));
+
+                        if(y == 0)
+                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x + 1, y));
+                        
+                        if(((x + 1) == size.x) && ((y + 1) == size.y))
+                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x + 2, y + 2));
+
+                        if((x + 1) == size.x)
+                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x + 2, y + 1));
+
+                        if((y + 1) == size.y)
+                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x + 1, y + 2));
+
+                        // Top right
+                        if(((x + 1) == size.x) && (y == 0))
+                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x + 2, y));
+
+                        // Bottom left
+                        if((x == 0) && ((y + 1) == size.y))
+                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x, y + 2));
+                    }
+                }
+            }
+        }
+    }
 
     void CGreedyMesher::GenerateQuad(CMeshBuilder &result, const std::vector<Material> &_Materials, BITMASK_TYPE faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const Voxel _Voxel)
     {
@@ -220,6 +284,37 @@ namespace VCore
         }
     }
 
+    uint32_t CGreedyMesher::AddTexture(const Math::Vec3i &_Position, const Math::Vec3i &_Axis, const Math::Vec2ui &_Size)
+    {
+        // std::lock_guard<std::mutex> lock(m_Lock);
+
+        uint32_t id = m_NextId++;
+
+        auto node = new TextureNode(id, _Position, _Axis, _Size);
+        // TextureNode *node = m_Pool.alloc(id, _Position, _Axis, _Size);
+        auto head = m_Head.load(std::memory_order_relaxed);
+        do
+        {
+            node->Next = head;
+        } while(!m_Head.compare_exchange_weak(head, node, std::memory_order_release, std::memory_order_relaxed));
+
+        return id;
+    }
+
+    void CGreedyMesher::ClearTextures()
+    {
+        if(m_Head)
+        {
+            while (m_Head)
+            {
+                auto next = m_Head.load()->Next;
+                delete m_Head.load();
+                // m_Pool.dealloc(m_Head.load());
+                m_Head = next;
+            }
+        }
+    }
+
     SMeshChunk CGreedyMesher::GenerateMeshChunk(VoxelModel _Mesh, const SChunkMeta& _Chunk, bool)
     {
         CMeshBuilder builder(m_SurfaceFactory);
@@ -272,6 +367,7 @@ namespace VCore
         if(it == _Context.Chunks.end())
         {
             CFaceMask maskGenerator;
+            maskGenerator.GroupAfterMaterial = m_GenerateTexture;
             it = _Context.Chunks.insert({_Chunkpos, std::move(maskGenerator.Generate(_Context.Model, _Chunkpos, _Context.Axis.z))}).first;
 
             // Since the map changed, we need to optain the old iterators, so we can continue from the current position.
@@ -317,8 +413,6 @@ namespace VCore
             auto position = _Context.Position;
             position.v[_Context.Axis.y] = y;
             auto chunkpos = GetChunkpos64(position, _Context.Axis);
-
-            auto startTime = std::chrono::high_resolution_clock::now();
 
             // Bitmask calculations
             while (true)
@@ -370,15 +464,10 @@ namespace VCore
                 }
             }
 
-            auto endTime = std::chrono::high_resolution_clock::now();
-            m_MaskgenerationTime += std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-
             if(bitmasks.size() > 0)
             {
                 // Step 4: Find the biggest face
                 auto position = _Context.Position;
-
-                startTime = std::chrono::high_resolution_clock::now();
 
                 unsigned width = 1;
                 position.v[_Context.Axis.y] = y;
@@ -410,17 +499,12 @@ namespace VCore
                         break;
                 }
 
-                endTime = std::chrono::high_resolution_clock::now();
-                m_WidthgenerationTime += std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-
                 // Step 5: Build the mesh faces
                 position.v[_Context.Axis.x] = x;
                 position.v[_Context.Axis.y] = y;
 
                 if(!_IsFront)
                     position.v[_Context.Axis.z] += 1;
-
-                // auto chunkpos = GetChunkpos64(position, _Context.Axis);
 
                 Math::Vec3f normal;
                 normal.v[_Context.Axis.z] = _IsFront ? -1 : 1;
@@ -445,7 +529,16 @@ namespace VCore
                 }
 
                 Math::Vec2f uv;
-                if(_Context.Builder.GetTextures() && !_Context.Builder.GetTextures()->empty())
+                if(m_GenerateTexture && !_Context.Model->Textures.empty())
+                {
+                    Math::Vec2ui textureSize(size.v[_Context.Axis.x] + 2, size.v[_Context.Axis.y] + 2);
+                    auto pos = position;
+                    if(!_IsFront)
+                        pos.v[_Context.Axis.z] -= 1;
+
+                    uv.x = AddTexture(pos, _Context.Axis, textureSize);
+                }
+                else if(_Context.Builder.GetTextures() && !_Context.Builder.GetTextures()->empty())
                     uv = Math::Vec2f(((float)(voxel->Color + 0.5f)) / _Context.Builder.GetTextures()->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
 
                 uint32_t idx1 = _Context.Builder.AddVertex(SVertex(position, normal, uv));
@@ -477,8 +570,6 @@ namespace VCore
 
     Mesh CGreedyMesher::GenerateMeshSlices(const VoxelModel &_Model, const CBBox &_ModelBBox, int _RunAxis, int _AxisPos)
     {
-        auto startTime = std::chrono::high_resolution_clock::now();
-
         MeshSlicerContext ctx(_Model, _ModelBBox, m_SurfaceFactory);
 
         // This logic calculates the index of one of the three other axis.
@@ -487,6 +578,7 @@ namespace VCore
         ctx.Axis = Math::Vec3i((_RunAxis + 2) % 3, (_RunAxis + 1) % 3, _RunAxis);
 
         CFaceMask mask;
+        mask.GroupAfterMaterial = m_GenerateTexture;
         for (int x = _ModelBBox.Beg.v[ctx.Axis.x]; x <= _ModelBBox.End.v[ctx.Axis.x]; x++)
         {
             for (int d = _AxisPos; d < _AxisPos + CHUNK_SIZE; d++)              
@@ -530,10 +622,6 @@ namespace VCore
                 }
             }
         }
-
-        auto endTime = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-        // std::cout << "Slicer time taken: " << duration.count() << " ms" << std::endl;
 
         return ctx.Builder.Build();
     }

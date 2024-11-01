@@ -33,7 +33,7 @@ set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelModel.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/IExporter.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Misc/FileStream.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Misc/TexturePacker.cpp"
+        #  "${PROJECT_SOURCE_DIR}/src/Misc/TexturePacker.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Export/Implementations/WavefrontObjExporter.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/Implementations/SpriteStackingExporter.cpp"

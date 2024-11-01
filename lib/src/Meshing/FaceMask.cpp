@@ -174,7 +174,11 @@ namespace VCore
                 continue;
             }
 
-            auto &mask = m_FacesMasks[pos][*((uint32_t*)voxel)];
+            uint32_t key = *((uint32_t*)voxel);
+            if(GroupAfterMaterial)
+                key = voxel->Material;
+
+            auto &mask = m_FacesMasks[pos][key];
             mask.Bits[(position.v[_Axis.z] & cmask) + offset] |= (BITMASK_TYPE)1 << (position.v[_Axis.y] & _ChunkMask);
             pos++;
         }

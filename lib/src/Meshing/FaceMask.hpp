@@ -40,6 +40,8 @@ namespace VCore
 
             CFaceMask() = default;
 
+            bool GroupAfterMaterial = false;
+
             /**
              * @brief Generates the face bit mask for the given chunk on the axis.
              */

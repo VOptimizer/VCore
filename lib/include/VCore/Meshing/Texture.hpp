@@ -40,6 +40,9 @@ namespace VCore
         EMISSION
     };
 
+    class CTexture;
+    using Texture = std::shared_ptr<CTexture>;
+
     class CTexture
     {
         public:
@@ -51,7 +54,9 @@ namespace VCore
             void AddPixel(const CColor &_Color, const Math::Vec2ui &_Position);
             void AddPixel(const CColor &_Color);
 
-            void AddRawPixels(const std::vector<CColor> &_Pixels, const Math::Vec2ui &_Position, const Math::Vec2ui &_Size);
+            void CopyTexture(const Texture &_Texture, const Math::Vec2ui &_Position);
+
+            void AddRawPixels(const std::vector<uint32_t> &_Pixels, const Math::Vec2ui &_Position, const Math::Vec2ui &_Size);
 
             inline Math::Vec2ui GetSize() const
             {
@@ -71,8 +76,6 @@ namespace VCore
             Math::Vec2ui m_Size;
             std::vector<uint32_t> m_Pixels;
     };
-
-    using Texture = std::shared_ptr<CTexture>;
 }
 
 #endif //TEXTURE_HPP

@@ -27,35 +27,30 @@
 
 #include <vector>
 #include <VCore/Meshing/IMesher.hpp>
+#include <VCore/Memory/ObjectPool.hpp>
 #include <VCore/Meshing/Mesh/MeshBuilder.hpp>
 #include "../FaceMask.hpp"
 
-#include <chrono>
 #include <atomic>
+#include <mutex>
 
 namespace VCore
 {
     class CGreedyMesher : public IMesher
     {
         public:
-            CGreedyMesher(bool _GenerateTexture = false, bool _GenerateSingleChunks = false) : IMesher(), m_GenerateTexture(_GenerateTexture), m_GenerateSingleChunks(_GenerateSingleChunks), m_MaskgenerationTime(0), m_WidthgenerationTime(0) {}
+            CGreedyMesher(bool _GenerateTexture = false, bool _GenerateSingleChunks = false) : 
+                IMesher(), 
+                m_NextId(0),
+                m_Head(nullptr),
+                m_GenerateTexture(_GenerateTexture), 
+                m_GenerateSingleChunks(_GenerateSingleChunks) {}
 
             std::vector<SMeshChunk> GenerateChunks(VoxelModel _Mesh, bool _OnlyDirty = false) override;
 
-            virtual ~CGreedyMesher() = default;
+            virtual ~CGreedyMesher() { ClearTextures(); }
         protected:
-            using MaskCollection = ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>>;
-            struct TaskContext
-            {
-                TaskContext(int _Axis, int _SliceProcessCount, const VoxelModel &_Model, const CBBox &_ModelBBox, int _NextSlice) : Axis(_Axis), SliceProcessCount(_SliceProcessCount), Model(_Model), ModelBBox(_ModelBBox), NextSlice(_NextSlice) {}
-
-                const int Axis;
-                const int SliceProcessCount;
-                const VoxelModel &Model;
-                const CBBox &ModelBBox;
-                std::atomic<int> NextSlice;
-            };
-            
+            using MaskCollection = ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>>;            
             struct MeshSlicerContext
             {
                 MeshSlicerContext(const VoxelModel &_Model, const CBBox &_ModelBBox, SurfaceFactory _Factory) : Model(_Model), ModelBBox(_ModelBBox), Builder(_Factory) 
@@ -73,7 +68,43 @@ namespace VCore
                 ankerl::unordered_dense::map<Math::Vec3i, MaskCollection, Math::Vec3iHasher> Chunks;
             };
 
-            Mesh SlicerTask(TaskContext &_TaskContext);
+            struct TextureInfo
+            {
+                TextureInfo() = default;
+                TextureInfo(uint32_t _Id, const Math::Vec3i &_Position, const Math::Vec3i &_Axis, const Math::Vec2ui &_Size) : Id(_Id), Position(_Position), Axis(_Axis), Size(_Size) {}
+                TextureInfo(TextureInfo &&) = default;
+                TextureInfo(const TextureInfo &) = default;
+
+                TextureInfo &operator=(TextureInfo &&) = default;
+                TextureInfo &operator=(const TextureInfo &) = default;
+
+                uint32_t Id;
+                Math::Vec3i Position;
+                Math::Vec3i Axis;
+                Math::Vec2ui Size;
+            };
+
+            struct TextureNode
+            {
+                TextureNode(uint32_t _Id, const Math::Vec3i &_Position, const Math::Vec3i &_Axis, const Math::Vec2ui &_Size) : Info(_Id, _Position, _Axis, _Size), Next(nullptr) {}
+
+                TextureInfo Info;
+                TextureNode *Next;
+            };
+            uint32_t AddTexture(const Math::Vec3i &_Position, const Math::Vec3i &_Axis, const Math::Vec2ui &_Size);
+            void ClearTextures();
+
+            void CopyToAtlas(Texture &_Atlas, const VoxelModel &_Model, const Math::Vec2ui &_Position, const TextureInfo &_Info);
+
+            std::atomic<uint32_t> m_NextId;
+            std::atomic<TextureNode*> m_Head;
+
+            CObjectPool<TextureNode> m_Pool;
+
+            // uint32_t m_NextId;
+            // TextureNode* m_Head;
+
+            // std::mutex m_Lock;
 
             SMeshChunk GenerateMeshChunk(VoxelModel, const SChunkMeta&, bool) override;
 
@@ -99,8 +130,6 @@ namespace VCore
 
             bool m_GenerateTexture;
             bool m_GenerateSingleChunks;
-
-            std::chrono::milliseconds m_MaskgenerationTime, m_WidthgenerationTime;
 
             void GenerateQuad(CMeshBuilder &result, const std::vector<Material> &_Materials, BITMASK_TYPE faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const Voxel _Voxel);
     };
