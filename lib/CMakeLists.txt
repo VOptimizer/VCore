@@ -12,7 +12,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelModel.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelAnimation.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/PlanesVoxelizer.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelSpace.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Voxel/Storage/VoxelSpace.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Voxel/Storage/Iterator.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Voxel/Storage/Chunk.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelTextureMap.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/MagicaVoxelFormat.cpp"

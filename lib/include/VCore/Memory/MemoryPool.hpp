@@ -25,11 +25,15 @@
 #ifndef MEMORYPOOL_HPP
 #define MEMORYPOOL_HPP
 
+#include <atomic>
+#include <memory>
+#include <mutex>
+#include <new>
 #include <stddef.h>
 
 namespace VCore
 {
-    template<class T, size_t GrowSize = 100>
+    template<class T, size_t BlockSize = 100>
     class CMemoryPool
     {
         public:
@@ -37,112 +41,128 @@ namespace VCore
             using size_type = size_t;
             using difference_type = std::ptrdiff_t;
 
-            CMemoryPool();
+            CMemoryPool() : m_FirstFreeChunk(nullptr), m_Blocks(nullptr) { }
+            CMemoryPool(CMemoryPool &&) = default;
+            CMemoryPool(const CMemoryPool &) = delete;
+
+            CMemoryPool &operator=(CMemoryPool &&) = default;
+            CMemoryPool &operator=(const CMemoryPool &) = delete;
 
             /**
-             * @brief Allocates data of the pool.
+             * @brief Constructs a new object from the pool.
+             */
+            template<class ...args>
+            T* construct(args&& ..._args);
+
+            /**
+             * @brief Releases an object to the pool.
+             */
+            void destruct(T* _ptr);
+
+            /**
+             * @brief Allocates data of the pool, without intializing it.
              */
             T* allocate(size_type _n);
 
             /**
-             * @brief Releases data to the pool.
+             * @brief Releases data to the pool. Without deinitializing it.
              */
-            void deallocate(T *_ptr, size_type _n);
+            void deallocate(T *_ptr, size_type);
 
             /**
              * @brief Frees all allocated blocks.
              */
             void clear();
 
-            virtual ~CMemoryPool();
+            virtual ~CMemoryPool() { clear(); }
 
         private:
-            struct Chunk
-            {
-                Chunk *Next;
-            };
+            struct Chunk { Chunk *Next; };
+            static constexpr size_type ChunkSize = sizeof(T) >= sizeof(Chunk) ? sizeof(T) : sizeof(Chunk);
 
             class Block
             {
                 public:
-                    static const size_type ChunkSize;
-                    Block(Block *_next, Chunk *_free, size_type _reserve);
+                    Block(Block *_next, Chunk *_free);
 
+                    char Data[BlockSize * CMemoryPool::ChunkSize];
                     Block *Next;
-                    char *Data;
 
-                    ~Block();
-                private:
-                    size_type m_Size;
+                    ~Block() = default;
             };
 
-            void allocateBlock(size_type _size);
+            void AllocateBlock();
 
-            Chunk *m_FirstFreeChunk;
-            Block *m_Blocks;
+            std::atomic<Chunk*> m_FirstFreeChunk;
+            Block* m_Blocks;
+
+            // Locks the allocation of a new block.
+            std::recursive_mutex m_BlockLock;
     };
 
     //////////////////////////////////////////////////
     // CMemoryPool functions
     //////////////////////////////////////////////////
 
-    template<class T, size_t GrowSize>
-    inline CMemoryPool<T, GrowSize>::CMemoryPool() : m_FirstFreeChunk(nullptr), m_Blocks(nullptr) { }
-
-    template<class T, size_t GrowSize>
-    inline T* CMemoryPool<T, GrowSize>::allocate(size_type _n)
+    template <class T, size_t BlockSize>
+    template <class ...args>
+    inline T* CMemoryPool<T, BlockSize>::construct(args&& ..._args)
     {
-        if(!m_FirstFreeChunk)
-            allocateBlock(_n > GrowSize ? _n : GrowSize);
+        auto data = allocate(sizeof(T));
+        T *obj = new(data) T(std::forward<args>(_args)...);
+        return obj; 
+    }
 
-        Chunk *tmp = m_FirstFreeChunk;
-        if(_n == 1)
-        {
-            m_FirstFreeChunk = tmp->Next;
-            return (T*)tmp;
-        }
+    template <class T, size_t BlockSize>
+    inline void CMemoryPool<T, BlockSize>::destruct(T* _ptr)
+    {
+        _ptr->~T();
+        deallocate(_ptr, sizeof(T));
+    }
 
-        size_type continues = 0;
-        while (tmp)
+    template<class T, size_t BlockSize>
+    inline T* CMemoryPool<T, BlockSize>::allocate(size_type _n)
+    {
+        if(sizeof(T) != _n)
+            throw std::bad_alloc();
+
+        Chunk *tmp = m_FirstFreeChunk.load(std::memory_order_relaxed);
+        Chunk *next = nullptr;
+        do
         {
-            if((tmp + Block::ChunkSize) == tmp->Next)
-                continues++;
+            if(tmp)
+                next = tmp->Next;
             else
-                continues = 0;
+            {
+                // If a new block of memory need to be allocated, we need every thread to wait, which tries to
+                // allocate a new block. Otherwise, each thread will create a new empty block of memory, which isn't
+                // be used at worst.
+                std::lock_guard<std::recursive_mutex> lock(m_BlockLock);
+                if(!m_FirstFreeChunk.load(std::memory_order_relaxed))
+                    AllocateBlock();
+                
+                tmp = m_FirstFreeChunk.load(std::memory_order_relaxed);
+            }
+        } while(!m_FirstFreeChunk.compare_exchange_weak(tmp, next, std::memory_order_release, std::memory_order_relaxed));
 
-            if(continues == _n)
-                break;
-
-            tmp = tmp->Next;
-        }
-        
-        if(continues == _n)
-        {
-            tmp = m_FirstFreeChunk;
-            m_FirstFreeChunk = tmp->Next;
-            return (T*)tmp;
-        }
-        
-        allocateBlock(_n);
-        tmp = m_FirstFreeChunk;
-        m_FirstFreeChunk = tmp->Next;
         return (T*)tmp;
     }
 
-    template<class T, size_t GrowSize>
-    inline void CMemoryPool<T, GrowSize>::deallocate(T *_ptr, size_type _n)
+    template<class T, size_t BlockSize>
+    inline void CMemoryPool<T, BlockSize>::deallocate(T *_ptr, size_type)
     {
-        for (size_t i = 0; i < _n; i++)
+        Chunk *tmp = (Chunk*)_ptr;
+        Chunk *head = m_FirstFreeChunk.load(std::memory_order_relaxed);
+        do
         {
-            Chunk *tmp = (Chunk*)(_ptr + (Block::ChunkSize * i));
-            tmp->Next = m_FirstFreeChunk;
-            m_FirstFreeChunk = tmp;
-        }
+            tmp->Next = head;
+        } while (!m_FirstFreeChunk.compare_exchange_weak(head, tmp, std::memory_order_release, std::memory_order_relaxed));
     }
 
-    template<class T, size_t GrowSize>
-    inline void CMemoryPool<T, GrowSize>::clear()
+    template<class T, size_t BlockSize>
+    inline void CMemoryPool<T, BlockSize>::clear()
     {
+        std::lock_guard<std::recursive_mutex> lock(m_BlockLock);
         while(m_Blocks)
         {
             Block *tmp = m_Blocks->Next;
@@ -152,49 +172,32 @@ namespace VCore
         m_FirstFreeChunk = nullptr;
     }
 
-    template<class T, size_t GrowSize>
-    inline void CMemoryPool<T, GrowSize>::allocateBlock(size_type _size)
+    template<class T, size_t BlockSize>
+    inline void CMemoryPool<T, BlockSize>::AllocateBlock()
     {
-        Block *tmp = new Block(m_Blocks, m_FirstFreeChunk, _size);
+        std::lock_guard<std::recursive_mutex> lock(m_BlockLock);
+        Block *tmp = new Block(m_Blocks, m_FirstFreeChunk.load(std::memory_order_relaxed));
         m_Blocks = tmp;
 
         m_FirstFreeChunk = (Chunk*)tmp->Data;            
-    }
-
-    template<class T, size_t GrowSize>
-    inline CMemoryPool<T, GrowSize>::~CMemoryPool()
-    {
-        clear();
     }
 
     //////////////////////////////////////////////////
     // CMemoryPool::Block functions
     //////////////////////////////////////////////////
 
-    template<class T, size_t GrowSize>
-    const typename CMemoryPool<T, GrowSize>::size_type CMemoryPool<T, GrowSize>::Block::ChunkSize = sizeof(T) >= sizeof(Chunk) ? sizeof(T) : sizeof(Chunk);
-
-    template<class T, size_t GrowSize>
-    inline CMemoryPool<T, GrowSize>::Block::Block(Block *_next, Chunk *_free, size_type _reserve) : Next(_next), m_Size(_reserve)
+    template<class T, size_t BlockSize>
+    inline CMemoryPool<T, BlockSize>::Block::Block(Block *_next, Chunk *_free) : Next(_next)
     {
-        size_t tt = ChunkSize;
-
-        Data = new char[ChunkSize * m_Size];
         Chunk *tmp = (Chunk*)Data;
-        for (size_t i = 1; i < m_Size - 1; i++)
+        for (size_t i = 1; i < BlockSize; i++)
         {
-            Chunk *next = (Chunk*)(Data + (i * ChunkSize));
+            Chunk *next = (Chunk*)(Data + (i * CMemoryPool<T, BlockSize>::ChunkSize));
             tmp->Next = next;
             tmp = next;
         }
 
         tmp->Next = _free;
-    }
-
-    template<class T, size_t GrowSize>
-    inline CMemoryPool<T, GrowSize>::Block::~Block()
-    {
-        delete[] Data;
     }
 } // namespace VoxelOptimizer
 

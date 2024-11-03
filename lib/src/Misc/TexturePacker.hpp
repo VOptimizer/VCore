@@ -26,7 +26,7 @@
 #define TEXTUREPACKER_HPP
 
 #include <VCore/Math/Vector.hpp>
-#include <VCore/Memory/ObjectPool.hpp>
+#include <VCore/Memory/MemoryPool.hpp>
 #include <vector>
 
 namespace VCore
@@ -107,7 +107,7 @@ namespace VCore
 
                 m_CanvasSize = m_Rects.back().Size;
                 // SNode *root = new SNode(Math::Vec2ui(), m_CanvasSize);
-                SNode *root = m_Pool.alloc(Math::Vec2ui(), m_CanvasSize, &m_Pool);
+                SNode *root = m_Pool.construct(Math::Vec2ui(), m_CanvasSize, &m_Pool);
 
                 auto it = m_Rects.rbegin();
                 while (it != m_Rects.rend())
@@ -129,7 +129,7 @@ namespace VCore
                 }
 
                 // delete root;
-                m_Pool.dealloc(root);
+                m_Pool.destruct(root);
                 return m_Rects;
             }
 
@@ -144,12 +144,12 @@ namespace VCore
             ~TTexturePacker() {}
         private:
             struct SNode;
-            CObjectPool<SNode> m_Pool;
+            CMemoryPool<SNode> m_Pool;
 
             struct SNode
             {
                 SNode() : Child(), Leaf(true), Pool(nullptr) {}
-                SNode(const Math::Vec2ui &_Position, const Math::Vec2ui &_Size, CObjectPool<SNode> *_Pool) : SNode()
+                SNode(const Math::Vec2ui &_Position, const Math::Vec2ui &_Size, CMemoryPool<SNode> *_Pool) : SNode()
                 {
                     Position = _Position;
                     Size = _Size;
@@ -159,7 +159,7 @@ namespace VCore
                 SNode *Child[2];
                 Math::Vec2ui Position;
                 Math::Vec2ui Size;
-                CObjectPool<SNode> *Pool;
+                CMemoryPool<SNode> *Pool;
                 bool Leaf;
 
                 ~SNode()
@@ -167,7 +167,7 @@ namespace VCore
                     for (size_t i = 0; i < 2; i++)
                     {
                         if(Child[i])
-                            Pool->dealloc(Child[i]);
+                            Pool->destruct(Child[i]);
                             // delete Child[i];
                     }
                 }
@@ -200,12 +200,12 @@ namespace VCore
                 _Root->Leaf = false;
                 auto size = _Root->Size - Math::Vec2ui(0, _Size.y);
                 if(size.y > 0)
-                    _Root->Child[0] = m_Pool.alloc(_Root->Position + Math::Vec2ui(0, _Size.y), _Root->Size - Math::Vec2ui(0, _Size.y), &m_Pool);
+                    _Root->Child[0] = m_Pool.construct(_Root->Position + Math::Vec2ui(0, _Size.y), _Root->Size - Math::Vec2ui(0, _Size.y), &m_Pool);
                     // new SNode(_Root->Position + Math::Vec2ui(0, _Size.y), _Root->Size - Math::Vec2ui(0, _Size.y));
 
                 size = _Root->Size - Math::Vec2ui(_Size.x, size.y);
                 if(size.x > 0)
-                    _Root->Child[1] = m_Pool.alloc(_Root->Position + Math::Vec2ui(_Size.x, 0), size, &m_Pool);
+                    _Root->Child[1] = m_Pool.construct(_Root->Position + Math::Vec2ui(_Size.x, 0), size, &m_Pool);
                     // new SNode(_Root->Position + Math::Vec2ui(_Size.x, 0), size);
 
                 return _Root->Position;
@@ -237,10 +237,10 @@ namespace VCore
             inline SNode *ResizeCanvasRight(SNode *_Root, const Math::Vec2ui &_Size)
             {
                 m_CanvasSize.x += _Size.x;
-                auto newRoot = m_Pool.alloc(Math::Vec2ui(), m_CanvasSize, &m_Pool);
+                auto newRoot = m_Pool.construct(Math::Vec2ui(), m_CanvasSize, &m_Pool);
                 // new SNode(Math::Vec2ui(), m_CanvasSize);
                 newRoot->Child[0] = _Root;
-                newRoot->Child[1] = m_Pool.alloc(Math::Vec2ui(_Root->Size.x, 0), Math::Vec2ui(_Size.x, m_CanvasSize.y), &m_Pool);
+                newRoot->Child[1] = m_Pool.construct(Math::Vec2ui(_Root->Size.x, 0), Math::Vec2ui(_Size.x, m_CanvasSize.y), &m_Pool);
                 // new SNode(Math::Vec2ui(_Root->Size.x, 0), Math::Vec2ui(_Size.x, m_CanvasSize.y));
                 newRoot->Leaf = false;
 
@@ -251,10 +251,10 @@ namespace VCore
             {
                 m_CanvasSize.y += _Size.y;
 
-                auto newRoot = m_Pool.alloc(Math::Vec2ui(), m_CanvasSize, &m_Pool);
+                auto newRoot = m_Pool.construct(Math::Vec2ui(), m_CanvasSize, &m_Pool);
                 // new SNode(Math::Vec2ui(), m_CanvasSize);
                 newRoot->Child[1] = _Root;
-                newRoot->Child[0] = m_Pool.alloc(Math::Vec2ui(0, _Root->Size.y), Math::Vec2ui(m_CanvasSize.x, _Size.y), &m_Pool);
+                newRoot->Child[0] = m_Pool.construct(Math::Vec2ui(0, _Root->Size.y), Math::Vec2ui(m_CanvasSize.x, _Size.y), &m_Pool);
                 // new SNode(Math::Vec2ui(0, _Root->Size.y), Math::Vec2ui(m_CanvasSize.x, _Size.y));
                 newRoot->Leaf = false;
 

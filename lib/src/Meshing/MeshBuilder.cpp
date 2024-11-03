@@ -34,9 +34,9 @@ namespace VCore
 
     int CMeshBuilder::AddVertex(const SVertex &_Vertex, SIndexedSurface &_Surface)
     {
-        // const static unsigned int mask = ~((CHUNK_SIZE >> 1) - 1);
+        // const static unsigned int mask = ~((Config::ChunkSize >> 1) - 1);
 
-        // auto cell = Math::Vec3i(_Vertex.Pos); //Math::Vec3i(_Vertex.Pos / (CHUNK_SIZE + 1));
+        // auto cell = Math::Vec3i(_Vertex.Pos); //Math::Vec3i(_Vertex.Pos / (Config::ChunkSize + 1));
         // cell.x &= mask;
         // cell.y &= mask;
         // cell.z &= mask;
@@ -234,10 +234,10 @@ namespace VCore
     {
         for (size_t i = 0; i < 3; i++)
         {
-            int pos = _Pos.v[i] - ((int)(_Pos.v[i] / (float)CHUNK_SIZE) * CHUNK_SIZE);
+            int pos = _Pos.v[i] - ((int)(_Pos.v[i] / (float)Config::ChunkSize) * Config::ChunkSize);
 
             // TODO: Should I ever make the chunk size dynamically, than must this be also dynamic.
-            if(pos == 0 || pos == (CHUNK_SIZE - 1))
+            if(pos == 0 || pos == Config::InnerChunkMask)
                 return true;
         }
 

@@ -27,7 +27,7 @@
 
 #include <vector>
 #include <VCore/Meshing/IMesher.hpp>
-#include <VCore/Memory/ObjectPool.hpp>
+#include <VCore/Memory/MemoryPool.hpp>
 #include <VCore/Meshing/Mesh/MeshBuilder.hpp>
 #include "../FaceMask.hpp"
 
@@ -99,7 +99,7 @@ namespace VCore
             std::atomic<uint32_t> m_NextId;
             std::atomic<TextureNode*> m_Head;
 
-            CObjectPool<TextureNode> m_Pool;
+            CMemoryPool<TextureNode> m_Pool;
 
             // uint32_t m_NextId;
             // TextureNode* m_Head;
@@ -109,7 +109,7 @@ namespace VCore
             SMeshChunk GenerateMeshChunk(VoxelModel, const SChunkMeta&, bool) override;
 
             Mesh GenerateMeshSlices(const VoxelModel &_Model, const CBBox &_ModelBBox, int _RunAxis, int _AxisPos);
-            void GenerateMeshSlice(MeshSlicerContext &_Context, BITMASK_TYPE _Faces, bool _IsFront);
+            void GenerateMeshSlice(MeshSlicerContext &_Context, Config::bitmask_t _Faces, bool _IsFront);
 
             /**
              * Gets a column of faces for a given chunkpos. If the chunk isn't indexed,
@@ -117,21 +117,21 @@ namespace VCore
              * 
              * @param _Context: Current slicer context
              * @param _Chunkpos: Position of the chunk to process.
-             * @param d: Current slice depth inside of the chunk, reanges from 0 - (CHUNK_SIZE - 1)
+             * @param d: Current slice depth inside of the chunk, reanges from 0 - Config::InnerChunkMask
              * @param x: Current column position of the slice.
              * @param _IsFront: Tells which faces we are interested in, either backfaces (false) or frontfaces (true).
              * @param _Found: Will be true, if for the given _Chunkpos, d and x tripple a column of faces where found.
              * 
              * @return Returns the faces column.
              */
-            BITMASK_TYPE *GetFaces(MeshSlicerContext &_Context, const Math::Vec3i &_Chunkpos, int d, int x, bool _IsFront);
+            Config::bitmask_t *GetFaces(MeshSlicerContext &_Context, const Math::Vec3i &_Chunkpos, int d, int x, bool _IsFront);
 
             CFaceMask::Mask *GetFaceMask(MeshSlicerContext &_Context, const Math::Vec3i &_Chunkpos, int d);
 
             bool m_GenerateTexture;
             bool m_GenerateSingleChunks;
 
-            void GenerateQuad(CMeshBuilder &result, const std::vector<Material> &_Materials, BITMASK_TYPE faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const Voxel _Voxel);
+            void GenerateQuad(CMeshBuilder &result, const std::vector<Material> &_Materials, Config::bitmask_t faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const Voxel _Voxel);
     };
 }
 

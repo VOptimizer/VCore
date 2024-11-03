@@ -136,38 +136,10 @@ namespace VCore
         #endif
     }
 
-    // /**
-    //  * @brief Counts the number of trailing zeros and returns their count.
-    //  */
-    // inline unsigned int CountTrailingZeroBits(BITMASK_TYPE _Bits)
-    // {
-    //     if (_Bits == 0) 
-    //         return sizeof(_Bits) * CHAR_BIT;
-
-    //     // First check for compiler support for this functionality.
-    //     // Since the compiler can use CPU instructions which are far more faster than a loop.
-    //     #ifdef VCORE_HAS_BUILTIN_CTZ
-    //         return static_cast<unsigned int>(__builtin_ctz(_Bits));
-    //     #elif defined(_MSC_VER)
-    //         unsigned long index;
-    //         _BitScanForward(&index, _Bits);
-    //         return static_cast<unsigned int>(index);
-    //     #else
-    //         unsigned int count = 0;
-    //         while ((_Bits & 1) == 0) 
-    //         {
-    //             _Bits >>= 1;
-    //             count++;
-    //         }
-
-    //         return count;
-    //     #endif
-    // }
-
     /**
      * @brief Counts the number of trailing ones and returns their count.
      */
-    inline unsigned int CountTrailingOneBits(BITMASK_TYPE _Bits)
+    inline unsigned int CountTrailingOneBits(Config::bitmask_t _Bits)
     {
         return CountTrailingZeroBits(~_Bits);
     }

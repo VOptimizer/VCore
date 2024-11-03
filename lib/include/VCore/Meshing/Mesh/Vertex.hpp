@@ -32,11 +32,17 @@ namespace VCore
     struct SVertex
     {
         SVertex() = default;
-        SVertex(const Math::Vec3f &_Pos, const Math::Vec3f &_Normal, const Math::Vec2f &_UV, const Math::Vec2f &_UV2 = Math::Vec2f()) : Pos(_Pos), Normal(_Normal), UV(_UV), UV2(_UV2) {}
+        SVertex(const Math::Vec3f &_Pos, const Math::Vec3f &_Normal, const Math::Vec2f &_UV, uint8_t _AmbientOcclusionValue = 3) : Pos(_Pos), Normal(_Normal), UV(_UV), AmbientOcclusionValue(_AmbientOcclusionValue) {}
+        SVertex(SVertex &&) = default;
+        SVertex(const SVertex &) = default;
+
+        SVertex &operator=(SVertex &&) = default;
+        SVertex &operator=(const SVertex &) = default;
 
         Math::Vec3f Pos;
         Math::Vec3f Normal;
-        Math::Vec2f UV, UV2;
+        Math::Vec2f UV;
+        uint8_t AmbientOcclusionValue;
 
         inline bool operator==(const SVertex &_Vertex) const
         {

@@ -35,7 +35,7 @@ namespace VCore
         public:
             struct Mask
             {
-                BITMASK_TYPE Bits[(CHUNK_SIZE + 2) * 2];
+                Config::bitmask_t Bits[(Config::ChunkSize + 2) * 2];
             };
 
             CFaceMask() = default;
@@ -54,14 +54,14 @@ namespace VCore
         private:
             struct OpaqueMask
             {
-                BITMASK_TYPE Opaque = 0;
-                BITMASK_TYPE Transparent = 0;
+                Config::bitmask_t Opaque = 0;
+                Config::bitmask_t Transparent = 0;
             };
 
             void InternalGenerate(const VoxelModel &_Model, const SChunkMeta &_Chunk, uint8_t _Axis, int _ChunkMask);
 
-            void GenerateMask(BITMASK_TYPE faces, bool backFace, Math::Vec3i position, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, int _ChunkMask);
-            OpaqueMask GenerateOpaqueMask(const VoxelModel &_Model, const SChunkMeta &_Chunk, BITMASK_TYPE _Voxels, Math::Vec3i position, uint8_t _Axis);
+            void GenerateMask(Config::bitmask_t faces, bool backFace, Math::Vec3i position, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, int _ChunkMask);
+            OpaqueMask GenerateOpaqueMask(const VoxelModel &_Model, const SChunkMeta &_Chunk, Config::bitmask_t _Voxels, Math::Vec3i position, uint8_t _Axis);
 
             ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> m_FacesMasks;
     };

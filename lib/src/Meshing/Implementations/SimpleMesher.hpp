@@ -39,8 +39,8 @@ namespace VCore
         protected:
             struct IndexPair
             {
-                IndexPair() : Idx2(0), Idx4(0), Instantiated(false) {}
-                IndexPair(uint32_t _Idx2, uint32_t _Idx4) : Idx2(_Idx2), Idx4(_Idx4), Instantiated(true) {}
+                IndexPair() : Idx2(0), Idx4(0), AO2(0), AO4(0), Instantiated(false) {}
+                IndexPair(uint32_t _Idx2, uint32_t _Idx4, uint8_t _AO2, uint8_t _AO4) : Idx2(_Idx2), Idx4(_Idx4), AO2(_AO2), AO4(_AO4), Instantiated(true) {}
                 IndexPair(IndexPair &&) = default;
                 IndexPair(const IndexPair &) = default;
 
@@ -49,10 +49,12 @@ namespace VCore
 
                 uint32_t Idx2;
                 uint32_t Idx4;
+                uint8_t AO2;
+                uint8_t AO4;
                 bool Instantiated;
             };
 
-            void GenerateQuads(CMeshBuilder &_Builder, BITMASK_TYPE _Faces, int depth, int width, bool isFront, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, const VoxelModel &_Model, const Voxel _Voxel, IndexPair *_Cache);
+            void GenerateQuads(CMeshBuilder &_Builder, Config::bitmask_t _Faces, int depth, int width, bool isFront, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, const VoxelModel &_Model, const Voxel _Voxel, IndexPair *_Cache);
 
             SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
     };

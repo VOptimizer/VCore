@@ -40,15 +40,29 @@
   #endif
 #endif
 
-// This will influence the size of the chunks.
-#ifndef BITMASK_TYPE
-#define BITMASK_TYPE uint64_t
-#endif
+namespace VCore
+{
+  namespace Config
+  {
+    // Type of the bitmask. This is also used to determine the size of the chunks.
+    // Config: To adjust the size of the chunks, simply change the type.
+    using bitmask_t = uint64_t;
 
-// Chunksize if always maximum bits of BITMASK_TYPE divided by two.
-#define CHUNK_SIZE ((sizeof(BITMASK_TYPE) * 8) >> 1)
+    // Maximum value of the Bitmask_t
+    static constexpr bitmask_t BitmaskMax = ~((bitmask_t)0);
 
-// Precomputed mask for later face determination.
-#define FACE_MASK (((BITMASK_TYPE)1 << CHUNK_SIZE) - 1)
+    // ChunkSize is always the maximum bits of bitmask_t divided by two.
+    static constexpr uint32_t ChunkSize = (sizeof(bitmask_t) * 8) >> 1;
+
+    // Precomputed mask for later face determination.
+    static constexpr bitmask_t FaceMask = ((bitmask_t)1 << ChunkSize) - 1;
+
+    // Mask to convert a world space position to a inner chunk position.
+    static constexpr uint32_t InnerChunkMask = Config::ChunkSize - 1;
+
+    // Mask to convert a world space position to a chunk start position.
+    static constexpr uint32_t ChunkPositionMask = ~InnerChunkMask;
+  }
+}
 
 #endif

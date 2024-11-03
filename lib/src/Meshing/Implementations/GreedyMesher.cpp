@@ -33,10 +33,9 @@
 #include "GreedyMesher.hpp"
 
 namespace VCore
-{    
-    const static uint32_t g_CMask = (CHUNK_SIZE - 1);
-    const static uint32_t g_ChunkSizeP2 = (CHUNK_SIZE << 1);
-    const static uint32_t g_Mask64 = ~(g_ChunkSizeP2 - 1);
+{
+    constexpr static uint32_t g_ChunkSizeP2 = (Config::ChunkSize << 1);
+    constexpr static uint32_t g_Mask64 = ~(g_ChunkSizeP2 - 1);
 
     template<typename R>
     bool is_ready(std::future<R> const& f)
@@ -44,11 +43,8 @@ namespace VCore
 
     inline Math::Vec3i GetChunkpos64(Math::Vec3i _Position, const Math::Vec3i &_Axis)
     {
-        const static uint32_t mask = ~g_CMask;
-        
-        _Position.v[_Axis.x] &= mask;
+        _Position = GetChunkpos(_Position);
         _Position.v[_Axis.y] &= g_Mask64;
-        _Position.v[_Axis.z] &= mask;
 
         return _Position;
     }
@@ -65,9 +61,9 @@ namespace VCore
         for (int runAxis = 0; runAxis < 3; runAxis++)
         {
             auto begin = GetChunkpos(bbox.Beg).v[runAxis];
-            auto end = GetChunkpos(bbox.End).v[runAxis] + CHUNK_SIZE;
+            auto end = GetChunkpos(bbox.End).v[runAxis] + Config::ChunkSize;
 
-            for (int axis = begin; axis < end; axis += CHUNK_SIZE)
+            for (int axis = begin; axis < end; axis += Config::ChunkSize)
             {
                 futures.push_back(std::async(&CGreedyMesher::GenerateMeshSlices, this, _Mesh, bbox, runAxis, axis));
                 while(futures.size() >= std::thread::hardware_concurrency())
@@ -215,25 +211,25 @@ namespace VCore
         }
     }
 
-    void CGreedyMesher::GenerateQuad(CMeshBuilder &result, const std::vector<Material> &_Materials, BITMASK_TYPE faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const Voxel _Voxel)
+    void CGreedyMesher::GenerateQuad(CMeshBuilder &result, const std::vector<Material> &_Materials, Config::bitmask_t faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const Voxel _Voxel)
     {
         int currentMaterial = -1;
 
-        BITMASK_TYPE heightPos = 0;
+        Config::bitmask_t heightPos = 0;
         // Shift werid = hang
-        while ((heightPos <= (CHUNK_SIZE + 2)) && (faces >> heightPos))
+        while ((heightPos <= (Config::ChunkSize + 2)) && (faces >> heightPos))
         {
             heightPos += CountTrailingZeroBits(faces >> heightPos);
-            if(heightPos >= CHUNK_SIZE)
+            if(heightPos >= Config::ChunkSize)
                 break;
 
-            BITMASK_TYPE faceCount = CountTrailingOneBits(faces >> heightPos);
-            BITMASK_TYPE mask = (((BITMASK_TYPE)1 << faceCount) - 1) << heightPos;
+            Config::bitmask_t faceCount = CountTrailingOneBits(faces >> heightPos);
+            Config::bitmask_t mask = (((Config::bitmask_t)1 << faceCount) - 1) << heightPos;
 
             unsigned w = 1;
-            for (int tmpWidth = width + 1; tmpWidth < CHUNK_SIZE; tmpWidth++)
+            for (int tmpWidth = width + 1; tmpWidth < Config::ChunkSize; tmpWidth++)
             {
-                auto &nextfaces = bits.Bits[tmpWidth + ((1 - (int)isFront) * CHUNK_SIZE)];
+                auto &nextfaces = bits.Bits[tmpWidth + ((1 - (int)isFront) * Config::ChunkSize)];
                 if((nextfaces & mask) != mask)
                     break;
 
@@ -290,8 +286,8 @@ namespace VCore
 
         uint32_t id = m_NextId++;
 
-        auto node = new TextureNode(id, _Position, _Axis, _Size);
-        // TextureNode *node = m_Pool.alloc(id, _Position, _Axis, _Size);
+        // auto node = new TextureNode(id, _Position, _Axis, _Size);
+        TextureNode *node = m_Pool.construct(id, _Position, _Axis, _Size);
         auto head = m_Head.load(std::memory_order_relaxed);
         do
         {
@@ -308,8 +304,8 @@ namespace VCore
             while (m_Head)
             {
                 auto next = m_Head.load()->Next;
-                delete m_Head.load();
-                // m_Pool.dealloc(m_Head.load());
+                // delete m_Head.load();
+                m_Pool.destruct(m_Head.load());
                 m_Head = next;
             }
         }
@@ -337,12 +333,12 @@ namespace VCore
                 {
                     auto voxel = (Voxel)&key.first;
 
-                    for (int widthAxis = 0; widthAxis < CHUNK_SIZE; widthAxis++)
+                    for (int widthAxis = 0; widthAxis < Config::ChunkSize; widthAxis++)
                     {
                         auto faces = key.second.Bits[widthAxis];
                         GenerateQuad(builder, materials, faces, key.second, widthAxis, depth.first, true, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
 
-                        faces = key.second.Bits[widthAxis + CHUNK_SIZE];
+                        faces = key.second.Bits[widthAxis + Config::ChunkSize];
                         GenerateQuad(builder, materials, faces, key.second, widthAxis, depth.first + 1, false, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
                     }
                 }
@@ -387,28 +383,28 @@ namespace VCore
         return nullptr;
     }
 
-    BITMASK_TYPE *CGreedyMesher::GetFaces(MeshSlicerContext &_Context, const Math::Vec3i &_Chunkpos, int d, int x, bool _IsFront)
+    Config::bitmask_t *CGreedyMesher::GetFaces(MeshSlicerContext &_Context, const Math::Vec3i &_Chunkpos, int d, int x, bool _IsFront)
     {
-        BITMASK_TYPE *faces = nullptr;
+        Config::bitmask_t *faces = nullptr;
         auto mask = GetFaceMask(_Context, _Chunkpos, d);
         if(mask)
-            faces = &mask->Bits[(x & g_CMask) + ((1 - (int)_IsFront) * CHUNK_SIZE)];
+            faces = &mask->Bits[(x & Config::InnerChunkMask) + ((1 - (int)_IsFront) * Config::ChunkSize)];
 
         return faces;     
     }
 
-    void CGreedyMesher::GenerateMeshSlice(MeshSlicerContext &_Context, BITMASK_TYPE _Faces, bool _IsFront)
+    void CGreedyMesher::GenerateMeshSlice(MeshSlicerContext &_Context, Config::bitmask_t _Faces, bool _IsFront)
     {
         unsigned currentMaterial = -1;
-        const int d = _Context.Position.v[_Context.Axis.z] & g_CMask;
+        const int d = _Context.Position.v[_Context.Axis.z] & Config::InnerChunkMask;
         const int x = _Context.Position.v[_Context.Axis.x];
         int y = _Context.Position.v[_Context.Axis.y];
         
         while (y <= _Context.ModelBBox.End.v[_Context.Axis.y])
         {
-            fast_vector<BITMASK_TYPE> bitmasks;
-            BITMASK_TYPE heightPos = y & (g_ChunkSizeP2 - 1);
-            BITMASK_TYPE totalHeight = 0;
+            fast_vector<Config::bitmask_t> bitmasks;
+            Config::bitmask_t heightPos = y & (g_ChunkSizeP2 - 1);
+            Config::bitmask_t totalHeight = 0;
 
             auto position = _Context.Position;
             position.v[_Context.Axis.y] = y;
@@ -453,10 +449,10 @@ namespace VCore
                 else
                 {
                     // Step 3: Create the bitmask for the face groups.
-                    BITMASK_TYPE faceCount = CountTrailingOneBits(_Faces >> heightPos);
-                    BITMASK_TYPE mask = _Faces;
-                    if(mask != UINT64_MAX)
-                        mask = (((BITMASK_TYPE)1 << faceCount) - 1) << heightPos;
+                    Config::bitmask_t faceCount = CountTrailingOneBits(_Faces >> heightPos);
+                    Config::bitmask_t mask = _Faces;
+                    if(mask != Config::BitmaskMax)
+                        mask = (((Config::bitmask_t)1 << faceCount) - 1) << heightPos;
 
                     bitmasks.push_back(mask);
                     heightPos += faceCount;
@@ -581,7 +577,7 @@ namespace VCore
         mask.GroupAfterMaterial = m_GenerateTexture;
         for (int x = _ModelBBox.Beg.v[ctx.Axis.x]; x <= _ModelBBox.End.v[ctx.Axis.x]; x++)
         {
-            for (int d = _AxisPos; d < _AxisPos + CHUNK_SIZE; d++)              
+            for (int d = _AxisPos; d < _AxisPos + Config::ChunkSize; d++)              
             {
                 ctx.Position.v[ctx.Axis.z] = d;
                 ctx.Position.v[ctx.Axis.x] = x;
@@ -596,16 +592,16 @@ namespace VCore
                         it = ctx.Chunks.insert({chunkpos, mask.Generate(_Model, chunkpos, _RunAxis)}).first;
 
                     // Checks if there is a slice for the current depth
-                    ctx.DepthIt = it->second.find(d & g_CMask);
+                    ctx.DepthIt = it->second.find(d & Config::InnerChunkMask);
                     if(ctx.DepthIt != it->second.end())
                     {
                         ctx.SliceIt = ctx.DepthIt->second.begin();
                         while (ctx.SliceIt != ctx.DepthIt->second.end())
                         {
-                            BITMASK_TYPE faces = ctx.SliceIt->second.Bits[x & g_CMask];
+                            Config::bitmask_t faces = ctx.SliceIt->second.Bits[x & Config::InnerChunkMask];
                             GenerateMeshSlice(ctx, faces, true);
 
-                            faces = ctx.SliceIt->second.Bits[(x & g_CMask) + CHUNK_SIZE];
+                            faces = ctx.SliceIt->second.Bits[(x & Config::InnerChunkMask) + Config::ChunkSize];
                             GenerateMeshSlice(ctx, faces, false);
 
                             ctx.SliceIt++;

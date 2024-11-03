@@ -31,133 +31,13 @@
 #include <VCore/Voxel/Frustum.hpp>
 #include <VCore/VConfig.hpp>
 
+#include "Chunk.hpp"
+
 #include <vector>
 
 namespace VCore
 {
-    inline Math::Vec3i GetChunkpos(const Math::Vec3i &_Position)
-    {
-        const static uint32_t mask = ~(CHUNK_SIZE - 1);
-        return _Position & mask;
-    }
-
     class CVoxelSpace;
-    class CChunk;
-
-    struct SChunkMeta
-    {
-        size_t UniqueId;            //!< Unique identifier of the chunks. Only changes, if the voxel mesh is resized.
-        const CChunk *Chunk;        //!< Chunk with is associated with this metadata.
-        CBBox TotalBBox;            //!< The total bounding box of the chunk.
-        CBBox InnerBBox;            //!< The bounding box of the model inside the chunk.
-    };
-
-    class CVoxelSpaceIterator
-    {
-        public:
-            using pair = std::pair<Math::Vec3i, Voxel>;
-            using reference = std::pair<Math::Vec3i, Voxel>&;
-            using pointer = pair*;
-
-            CVoxelSpaceIterator();
-            CVoxelSpaceIterator(const CVoxelSpace *_Space, const CBBox &_InnerBox, const pair &_Pair);
-            CVoxelSpaceIterator(const CVoxelSpaceIterator &_Other);
-            CVoxelSpaceIterator(CVoxelSpaceIterator &&_Other);
-
-            reference operator*() const;
-            pointer operator->() const;
-
-            CVoxelSpaceIterator& operator++();
-            CVoxelSpaceIterator& operator++(int);
-
-            bool operator!=(const CVoxelSpaceIterator &_Rhs);
-            bool operator==(const CVoxelSpaceIterator &_Rhs);
-
-            CVoxelSpaceIterator& operator=(const CVoxelSpaceIterator &_Other);
-            CVoxelSpaceIterator& operator=(CVoxelSpaceIterator &&_Other);
-        
-        private:
-            const CVoxelSpace *m_Space;
-            CBBox m_InnerBox;
-            mutable pair m_Pair;
-    };
-
-    class CBitMaskChunk
-    {
-        public:
-            CBitMaskChunk(const Math::Vec3i &_ChunkSize);
-            CBitMaskChunk(CBitMaskChunk &&_Other) = default;
-
-            void Set(const Math::Vec3i &_Position, bool _Value);
-            void SetAxis(const Math::Vec3i &_Position, bool _Value, char _Axis);
-
-            BITMASK_TYPE GetRowFaces(const Math::Vec3i &_Position, char _Axis) const;
-
-            CBitMaskChunk &operator=(CBitMaskChunk &&_Other) = default;
-            CBitMaskChunk &operator=(const CBitMaskChunk &_Other) = delete;
-
-        private:
-            std::vector<BITMASK_TYPE> m_Grid;
-    };
-
-    class CChunk
-    {
-        public:
-            using ppair = std::pair<Math::Vec3i, Voxel>;
-            using pair = std::pair<Math::Vec3i, CVoxel>;
-            using iterator = CVoxelSpaceIterator;
-
-            bool IsDirty;
-
-            CChunk() = delete;
-            CChunk(const CChunk &_Other) = delete;
-            CChunk(const Math::Vec3i &_ChunkSize);
-            CChunk(CChunk &&_Other);
-
-            /**
-             * @brief Insert a new voxel.
-             */
-            void insert(CVoxelSpace *_Space, const pair &_pair);
-
-            /**
-             * @brief Removes a voxel.
-             */
-            ppair erase(CVoxelSpace *_Space, const iterator &_it);
-
-            /**
-             * @brief Returns the next voxel or null.
-             */
-            ppair next(const Math::Vec3i &_Position) const;
-
-            /**
-             * @brief Tries to find a voxel.
-             * @brief Returns a reference to the voxel.
-             */
-            Voxel find(const Math::Vec3i &_v) const;
-
-            inline CBBox inner_bbox(const Math::Vec3i &_Position) const
-            {
-                return CBBox(m_InnerBBox.Beg + _Position, m_InnerBBox.End + _Position);
-            }
-
-            CChunk &operator=(CChunk &&_Other);
-            CChunk &operator=(const CChunk &_Other) = delete;
-
-            ~CChunk() { clear(); }
-
-
-            CBitMaskChunk m_Mask;
-
-        private:
-            // CVoxel *GetBlock(CVoxelSpace *_Space, const CBBox &_ChunkDim, const Math::Vec3i &_v);
-            bool HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos);
-
-            void clear();
-
-            CVoxel *m_Data;
-            CBBox m_InnerBBox;
-    };
-
     class CChunkQueryList
     {
         class CChunkQueryIterator
@@ -278,10 +158,7 @@ namespace VCore
             /**
              * @return Gets the voxel count.
              */
-            inline size_t size() const
-            {
-                return m_VoxelsCount;
-            }
+            inline size_t size() const { return m_VoxelsCount; }
 
             iterator begin();
             iterator end() const;

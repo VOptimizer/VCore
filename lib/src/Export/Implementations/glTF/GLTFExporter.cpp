@@ -85,9 +85,10 @@ namespace VCore
 
                 GLTF::CBufferView surfaceVerticesView, indexView;
 
-                surfaceVerticesView.Size = surface->GetVertexCount() * sizeof(SVertex);
+                const auto vertexSize = (sizeof(Math::Vec3f) * 2 + sizeof(Math::Vec2f) + sizeof(Math::Vec4f));
+                surfaceVerticesView.Size = surface->GetVertexCount() * vertexSize;
                 surfaceVerticesView.Target = GLTF::BufferTarget::ARRAY_BUFFER;
-                surfaceVerticesView.ByteStride = sizeof(SVertex);
+                surfaceVerticesView.ByteStride = vertexSize;//sizeof(SVertex);
                 surfaceVerticesView.Offset = binary.size();
 
                 indexView.Offset = surfaceVerticesView.Offset + surfaceVerticesView.Size;//uv.Size;
@@ -101,7 +102,7 @@ namespace VCore
                     min = v.Pos.min(min);
                 }
 
-                GLTF::CAccessor positionAccessor, normalAccessor, uvAccessor, indexAccessor;
+                GLTF::CAccessor positionAccessor, normalAccessor, uvAccessor, colorAccesor, indexAccessor;
                 positionAccessor.BufferView = bufferViews.size();
                 positionAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
                 positionAccessor.Count = surface->GetVertexCount();
@@ -121,6 +122,12 @@ namespace VCore
                 uvAccessor.Type = "VEC2";
                 uvAccessor.Offset = normalAccessor.Offset + sizeof(Math::Vec3f);
 
+                colorAccesor.BufferView = bufferViews.size();
+                colorAccesor.ComponentType = GLTF::GLTFTypes::FLOAT;
+                colorAccesor.Count = surface->GetVertexCount();
+                colorAccesor.Type = "VEC4";
+                colorAccesor.Offset = uvAccessor.Offset + sizeof(Math::Vec2f);
+
                 indexAccessor.BufferView = bufferViews.size() + 1;
                 indexAccessor.ComponentType = GLTF::GLTFTypes::INT;
                 indexAccessor.Count = (surface->GetFaceCount() * 3);
@@ -130,7 +137,8 @@ namespace VCore
                 Primitive.PositionAccessor = accessors.size();
                 Primitive.NormalAccessor = accessors.size() + 1;
                 Primitive.TextCoordAccessor = accessors.size() + 2;
-                Primitive.IndicesAccessor = accessors.size() + 3;
+                Primitive.ColorAccessor = accessors.size() + 3;
+                Primitive.IndicesAccessor = accessors.size() + 4;
                 Primitive.Material = matId;
                 matId++;
 
@@ -142,14 +150,32 @@ namespace VCore
                 accessors.push_back(positionAccessor);
                 accessors.push_back(normalAccessor);
                 accessors.push_back(uvAccessor);
+                accessors.push_back(colorAccesor);
                 accessors.push_back(indexAccessor);
 
                 size_t pos = binary.size();
 
                 binary.resize(binary.size() + surfaceVerticesView.Size + indexView.Size);
 
-                memcpy(binary.data() + pos, surface->GetRawVertexPointer(), surfaceVerticesView.Size);
-                pos += surfaceVerticesView.Size;
+                for (size_t i = 0; i < surface->GetVertexCount(); i++)
+                {
+                    auto vertex = surface->GetVertex(i);
+                    memcpy(binary.data() + pos, &vertex.Pos, sizeof(Math::Vec3f));
+                    pos += sizeof(Math::Vec3f);
+
+                    memcpy(binary.data() + pos, &vertex.Normal, sizeof(Math::Vec3f));
+                    pos += sizeof(Math::Vec3f);
+
+                    memcpy(binary.data() + pos, &vertex.UV, sizeof(Math::Vec2f));
+                    pos += sizeof(Math::Vec2f);
+
+                    Math::Vec4f color(0, 0, 0, 0.8);
+                    if(vertex.AmbientOcclusionValue != 0)
+                        color.w = 1.0f - (vertex.AmbientOcclusionValue / 3.0);
+
+                    memcpy(binary.data() + pos, &color, sizeof(color));
+                    pos += sizeof(color);
+                }
 
                 memcpy(binary.data() + pos, surface->GetRawIndexPointer(), indexView.Size);
             }

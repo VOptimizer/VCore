@@ -31,7 +31,7 @@
 #include <vector>
 #include <VCore/Math/Mat4x4.hpp>
 #include <VCore/Meshing/Material.hpp>
-#include <VCore/Voxel/VoxelSpace.hpp>
+#include <VCore/Voxel/Storage/VoxelSpace.hpp>
 #include <VCore/Meshing/Texture.hpp>
 #include <map>
 #include <memory>

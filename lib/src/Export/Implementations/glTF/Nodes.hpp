@@ -227,6 +227,7 @@ namespace VCore
 
                 int64_t NormalAccessor;
                 int64_t PositionAccessor;
+                int64_t ColorAccessor;
                 int64_t TextCoordAccessor;
                 int64_t IndicesAccessor;
                 int64_t Material;
@@ -238,6 +239,7 @@ namespace VCore
                     Attributes["NORMAL"] = NormalAccessor;
                     Attributes["POSITION"] = PositionAccessor;
                     Attributes["TEXCOORD_0"] = TextCoordAccessor;
+                    Attributes["COLOR_0"] = ColorAccessor;
 
                     json.AddPair("attributes", Attributes);
                     json.AddPair("indices", IndicesAccessor);
