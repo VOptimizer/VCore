@@ -35,9 +35,18 @@ namespace VCore
     {
         public:
             CVoxel() : Color(0xFFFFFF), Material(0xFF) { }
+            CVoxel(uint32_t _Color, uint32_t _Material) : Color(_Color), Material(_Material) { }
+            CVoxel(const CVoxel &_Other) { *this = _Other; }
 
-            uint32_t Color      : 24;           //!< Index of the color.
-            uint32_t Material    : 8;            //!< Index of the material.
+            uint32_t Color      : 24;               //!< Index of the color.
+            uint32_t Material    : 8;               //!< Index of the material.
+
+            inline CVoxel &operator=(const CVoxel &_Other)
+            {
+                Color = _Other.Color;
+                Material = _Other.Material;
+                return *this;
+            }
 
             /**
              * @return Returns true if this voxel is instantiated.
@@ -45,14 +54,25 @@ namespace VCore
             inline bool IsInstantiated() const
             {
                 return *((uint32_t*)this) != 0xFFFFFFFF;
+            }
 
-                // return (Color != 0xFFFFFF) && (Material != 0xFF);
+            inline operator uint32_t() const
+            {
+                return *((uint32_t*)this);
+            };
+
+            inline bool operator==(const CVoxel &_rhs) const
+            {
+                return *((uint32_t*)this) == *((uint32_t*)&_rhs);
+            }
+
+            inline bool operator!=(const CVoxel &_rhs) const
+            {
+                return *((uint32_t*)this) != *((uint32_t*)&_rhs);
             }
 
             ~CVoxel() = default;
     };
-
-    using Voxel = CVoxel*;
 }
 
 #endif

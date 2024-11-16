@@ -194,9 +194,9 @@ namespace VCore
                 for (auto &&key : depth.second)
                 {
                     // auto parts = split(key.first, "_");
-                    auto voxel = (Voxel)&key.first;
+                    auto voxel = *(CVoxel*)&key.first;
 
-                    builder.SelectSurface(m->Materials[voxel->Material]);
+                    builder.SelectSurface(m->Materials[voxel.Material]);
 
                     // Column connections
                     IndexPair indexFrontCache[Config::ChunkSize] = {};
@@ -240,11 +240,11 @@ namespace VCore
         auto side2 = _Model->GetVoxel(_Direction.Side2 + _Position);
         auto corner = _Model->GetVoxel(_Direction.Corner + _Position);
 
-        _Ao = GenerateAO(side1 != nullptr, side2 != nullptr, corner != nullptr);
+        _Ao = GenerateAO(side1.IsInstantiated(), side2.IsInstantiated(), corner.IsInstantiated());
         return _Builder.AddVertex(SVertex(vertex, _Normal, _UV, _Ao));
     }
 
-    void CSimpleMesher::GenerateQuads(CMeshBuilder &_Builder, Config::bitmask_t _Faces, int depth, int width, bool isFront, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, const VoxelModel &_Model, const Voxel _Voxel, IndexPair *_Cache)
+    void CSimpleMesher::GenerateQuads(CMeshBuilder &_Builder, Config::bitmask_t _Faces, int depth, int width, bool isFront, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, const VoxelModel &_Model, const CVoxel& _Voxel, IndexPair *_Cache)
     {
         // Last two indices of the last quad.
         uint32_t lastLeftIdx = 0, lastRightIdx = 0;
@@ -254,7 +254,7 @@ namespace VCore
         Math::Vec2f uv;
         auto textures = _Builder.GetTextures();
         if(textures && !textures->empty())
-            uv = Math::Vec2f(((float)(_Voxel->Color + 0.5f)) / textures->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
+            uv = Math::Vec2f(((float)(_Voxel.Color + 0.5f)) / textures->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
 
         Config::bitmask_t heightPos = 0;
         while ((heightPos <= (Config::ChunkSize + 2)) && (_Faces >> heightPos))

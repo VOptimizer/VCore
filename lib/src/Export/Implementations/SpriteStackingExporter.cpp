@@ -53,9 +53,8 @@ namespace VCore
                 for (size_t z = 0; z < Size.z; z++)
                 {
                     auto Vox = m->GetVoxel(Math::Vec3f(x, y, z));
-
-                    if(Vox)
-                        Pixels[x + (size_t)Size.x * z + (size_t)Size.x * (size_t)Size.z * y] = diffuse->GetPixel(Math::Vec2ui(Vox->Color, 0));
+                    if(Vox.IsInstantiated())
+                        Pixels[x + (size_t)Size.x * z + (size_t)Size.x * (size_t)Size.z * y] = diffuse->GetPixel(Math::Vec2ui(Vox.Color, 0));
                 }
             }
         }

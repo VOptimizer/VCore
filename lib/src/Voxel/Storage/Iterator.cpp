@@ -31,7 +31,7 @@ namespace VCore
     // CVoxelSpaceIterator functions
     //////////////////////////////////////////////////
 
-    CVoxelSpaceIterator::CVoxelSpaceIterator() : m_Space(nullptr), m_Pair(Math::Vec3i(), nullptr) { }
+    CVoxelSpaceIterator::CVoxelSpaceIterator() : m_Space(nullptr), m_Pair(Math::Vec3i(), CVoxel()) { }
     CVoxelSpaceIterator::CVoxelSpaceIterator(const CVoxelSpace *_Space, const CBBox &_InnerBox, const pair &_Pair) : m_Space(_Space), m_InnerBox(_InnerBox), m_Pair(_Pair) { }
     CVoxelSpaceIterator::CVoxelSpaceIterator(const CVoxelSpaceIterator &_Other)
     {
@@ -119,7 +119,7 @@ namespace VCore
         m_InnerBox = _Other.m_InnerBox;
 
         _Other.m_Space = nullptr;
-        _Other.m_Pair = {Math::Vec3i(), nullptr};
+        _Other.m_Pair = {Math::Vec3i(), CVoxel()};
         _Other.m_InnerBox = CBBox();
 
         return *this;

@@ -36,8 +36,8 @@ namespace VCore
     class CVoxelSpaceIterator
     {
         public:
-            using pair = std::pair<Math::Vec3i, Voxel>;
-            using reference = std::pair<Math::Vec3i, Voxel>&;
+            using pair = std::pair<Math::Vec3i, CVoxel>;
+            using reference = std::pair<Math::Vec3i, CVoxel>&;
             using pointer = pair*;
 
             CVoxelSpaceIterator();

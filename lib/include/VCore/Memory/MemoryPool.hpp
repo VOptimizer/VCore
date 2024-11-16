@@ -25,6 +25,7 @@
 #ifndef MEMORYPOOL_HPP
 #define MEMORYPOOL_HPP
 
+#include <assert.h>
 #include <atomic>
 #include <memory>
 #include <mutex>
@@ -33,6 +34,9 @@
 
 namespace VCore
 {
+    static constexpr uintptr_t AlignTo = sizeof(uintptr_t) - 1;
+    static constexpr uintptr_t PointerMask = ~AlignTo;
+
     template<class T, size_t BlockSize = 100>
     class CMemoryPool
     {
@@ -41,7 +45,7 @@ namespace VCore
             using size_type = size_t;
             using difference_type = std::ptrdiff_t;
 
-            CMemoryPool() : m_FirstFreeChunk(nullptr), m_Blocks(nullptr) { }
+            CMemoryPool() : m_FirstFreeChunk(TaggedPointer()), m_Blocks(nullptr) { }
             CMemoryPool(CMemoryPool &&) = default;
             CMemoryPool(const CMemoryPool &) = delete;
 
@@ -80,6 +84,14 @@ namespace VCore
             struct Chunk { Chunk *Next; };
             static constexpr size_type ChunkSize = sizeof(T) >= sizeof(Chunk) ? sizeof(T) : sizeof(Chunk);
 
+            union TaggedPointer
+            {
+                TaggedPointer() : Ptr(nullptr) {}
+
+                Chunk *Ptr;
+                uintptr_t Bits;
+            };
+
             class Block
             {
                 public:
@@ -93,11 +105,12 @@ namespace VCore
 
             void AllocateBlock();
 
-            std::atomic<Chunk*> m_FirstFreeChunk;
+            // std::atomic<Chunk*> m_FirstFreeChunk;
+            std::atomic<TaggedPointer> m_FirstFreeChunk;
             Block* m_Blocks;
 
             // Locks the allocation of a new block.
-            std::recursive_mutex m_BlockLock;
+            std::mutex m_BlockLock;
     };
 
     //////////////////////////////////////////////////
@@ -126,10 +139,15 @@ namespace VCore
         if(sizeof(T) != _n)
             throw std::bad_alloc();
 
-        Chunk *tmp = m_FirstFreeChunk.load(std::memory_order_relaxed);
+        TaggedPointer tagged = m_FirstFreeChunk.load(std::memory_order_acquire);
+        Chunk *tmp = nullptr; //tagged.Ptr & PointerMask;
         Chunk *next = nullptr;
+
+        TaggedPointer newptr;
         do
         {
+            tmp = (Chunk*)(tagged.Bits & PointerMask);
+
             if(tmp)
                 next = tmp->Next;
             else
@@ -137,49 +155,72 @@ namespace VCore
                 // If a new block of memory need to be allocated, we need every thread to wait, which tries to
                 // allocate a new block. Otherwise, each thread will create a new empty block of memory, which isn't
                 // be used at worst.
-                std::lock_guard<std::recursive_mutex> lock(m_BlockLock);
-                if(!m_FirstFreeChunk.load(std::memory_order_relaxed))
+                std::lock_guard<std::mutex> lock(m_BlockLock);
+                tagged = m_FirstFreeChunk.load(std::memory_order_acquire);
+                if(!(tagged.Bits & PointerMask))
                     AllocateBlock();
-                
-                tmp = m_FirstFreeChunk.load(std::memory_order_relaxed);
-            }
-        } while(!m_FirstFreeChunk.compare_exchange_weak(tmp, next, std::memory_order_release, std::memory_order_relaxed));
 
-        return (T*)tmp;
+                tagged = m_FirstFreeChunk.load(std::memory_order_acquire);
+                tmp = (Chunk*)(tagged.Bits & PointerMask);
+                if(tmp)
+                    next = tmp->Next;
+                else
+                    next = nullptr;
+            }
+
+            auto tag = (tagged.Bits & AlignTo);
+            tag++;
+            if(tag > 7)
+                tag = 0;
+
+            newptr.Ptr = next;
+            newptr.Bits |= tag;
+        } while(!m_FirstFreeChunk.compare_exchange_weak(tagged, newptr, std::memory_order_release, std::memory_order_acquire));
+
+        return reinterpret_cast<T*>(tmp);
     }
 
     template<class T, size_t BlockSize>
     inline void CMemoryPool<T, BlockSize>::deallocate(T *_ptr, size_type)
     {
-        Chunk *tmp = (Chunk*)_ptr;
-        Chunk *head = m_FirstFreeChunk.load(std::memory_order_relaxed);
+        TaggedPointer tagged;
+
+        auto tmp = (Chunk*)_ptr;
+        tagged.Ptr = tmp;
+        tagged.Bits |= 1;
+
+        TaggedPointer head = m_FirstFreeChunk.load(std::memory_order_acquire);
         do
         {
-            tmp->Next = head;
-        } while (!m_FirstFreeChunk.compare_exchange_weak(head, tmp, std::memory_order_release, std::memory_order_relaxed));
+            tmp->Next = (Chunk*)(head.Bits & PointerMask);
+        } while (!m_FirstFreeChunk.compare_exchange_weak(head, tagged, std::memory_order_release, std::memory_order_acquire));
     }
 
     template<class T, size_t BlockSize>
     inline void CMemoryPool<T, BlockSize>::clear()
     {
-        std::lock_guard<std::recursive_mutex> lock(m_BlockLock);
+        std::lock_guard<std::mutex> lock(m_BlockLock);
         while(m_Blocks)
         {
             Block *tmp = m_Blocks->Next;
             delete m_Blocks;
             m_Blocks = tmp;
         }
-        m_FirstFreeChunk = nullptr;
+        m_FirstFreeChunk = TaggedPointer();
     }
 
     template<class T, size_t BlockSize>
     inline void CMemoryPool<T, BlockSize>::AllocateBlock()
     {
-        std::lock_guard<std::recursive_mutex> lock(m_BlockLock);
-        Block *tmp = new Block(m_Blocks, m_FirstFreeChunk.load(std::memory_order_relaxed));
+        TaggedPointer tagged = m_FirstFreeChunk.load(std::memory_order_relaxed);
+        Block *tmp = new Block(m_Blocks, (Chunk*)(tagged.Bits & PointerMask));
         m_Blocks = tmp;
 
-        m_FirstFreeChunk = (Chunk*)tmp->Data;            
+        tagged.Ptr = (Chunk*)tmp->Data;
+        assert((reinterpret_cast<uintptr_t>(tagged.Ptr) & AlignTo) == 0);
+
+        tagged.Bits |= 0;
+        m_FirstFreeChunk = tagged;            
     }
 
     //////////////////////////////////////////////////
@@ -190,7 +231,7 @@ namespace VCore
     inline CMemoryPool<T, BlockSize>::Block::Block(Block *_next, Chunk *_free) : Next(_next)
     {
         Chunk *tmp = (Chunk*)Data;
-        for (size_t i = 1; i < BlockSize; i++)
+        for (size_t i = 1; i < BlockSize - 1; i++)
         {
             Chunk *next = (Chunk*)(Data + (i * CMemoryPool<T, BlockSize>::ChunkSize));
             tmp->Next = next;

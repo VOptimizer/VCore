@@ -100,7 +100,7 @@ namespace VCore
             /**
              * @return Gets a voxel on a given position.
              */
-            Voxel GetVoxel(const Math::Vec3i &Pos);
+            CVoxel GetVoxel(const Math::Vec3i &Pos);
 
             /**
              * @return Returns the bbox of the voxel model.

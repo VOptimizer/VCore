@@ -49,11 +49,11 @@ namespace VCore
         m_Voxels.clear();
     }
 
-    Voxel CVoxelModel::GetVoxel(const Math::Vec3i &Pos)
+    CVoxel CVoxelModel::GetVoxel(const Math::Vec3i &Pos)
     {
         auto it = m_Voxels.find(Pos);
         if(it == m_Voxels.end())
-            return nullptr;
+            return CVoxel();
 
         return it->second;
     }

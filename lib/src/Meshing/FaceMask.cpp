@@ -124,18 +124,18 @@ namespace VCore
 
             posAxis = totalBeg + (pos - 1);
             bool transparent = false;
-            Voxel voxel = nullptr;
+            CVoxel voxel;
 
             if(posAxis < totalBeg || posAxis >= totalEnd)
                 voxel = _Model->GetVoxel(position);
             else
                 voxel = _Chunk.Chunk->find(position);
 
-            if(voxel)
+            if(voxel.IsInstantiated())
             {
-                if(voxel->Material < _Model->Materials.size())
+                if(voxel.Material < _Model->Materials.size())
                 {
-                    const auto &material = _Model->Materials[voxel->Material];
+                    const auto &material = _Model->Materials[voxel.Material];
                     transparent = std::fpclassify(material->Transparency) != FP_ZERO;
                 }
             }
@@ -164,16 +164,16 @@ namespace VCore
                 break;
 
             position.v[_Axis.x] = pos + _Chunk.TotalBBox.Beg.v[_Axis.x];
-            Voxel voxel = chunk->find(position);
-            if(!voxel)
+            auto voxel = chunk->find(position);
+            if(!voxel.IsInstantiated())
             {
                 pos++;
                 continue;
             }
 
-            uint32_t key = *((uint32_t*)voxel);
+            uint32_t key = *((uint32_t*)&voxel);
             if(GroupAfterMaterial)
-                key = voxel->Material;
+                key = voxel.Material;
 
             auto &mask = m_FacesMasks[pos][key];
             mask.Bits[(position.v[_Axis.z] & Config::InnerChunkMask) + offset] |= (Config::bitmask_t)1 << (position.v[_Axis.y] & _ChunkMask);

@@ -174,9 +174,9 @@ namespace VCore
                     pos.v[_Info.Axis.y] += y;
 
                     auto vox = _Model->GetVoxel(pos);
-                    if(vox)
+                    if(vox.IsInstantiated())
                     {
-                        auto pixel = diffuse->second->GetPixel(Math::Vec2ui(vox->Color, 0));
+                        auto pixel = diffuse->second->GetPixel(Math::Vec2ui(vox.Color, 0));
                         _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x + 1, y + 1));
 
                         // Adds margin pixels to the texture
@@ -211,7 +211,7 @@ namespace VCore
         }
     }
 
-    void CGreedyMesher::GenerateQuad(CMeshBuilder &result, const std::vector<Material> &_Materials, Config::bitmask_t faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const Voxel _Voxel)
+    void CGreedyMesher::GenerateQuad(CMeshBuilder &result, const std::vector<Material> &_Materials, Config::bitmask_t faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const CVoxel& _Voxel)
     {
         int currentMaterial = -1;
 
@@ -256,15 +256,15 @@ namespace VCore
             Math::Vec3f dv;
             dv.v[axis.y] = size.v[axis.y];
 
-            if((currentMaterial != _Voxel->Material) && (_Voxel->Material < (int)_Materials.size()))
+            if((currentMaterial != _Voxel.Material) && (_Voxel.Material < (int)_Materials.size()))
             {
-                currentMaterial = _Voxel->Material;
-                result.SelectSurface(_Materials[_Voxel->Material]);
+                currentMaterial = _Voxel.Material;
+                result.SelectSurface(_Materials[_Voxel.Material]);
             }
 
             Math::Vec2f uv;
             if(result.GetTextures() && !result.GetTextures()->empty())
-                uv = Math::Vec2f(((float)(_Voxel->Color + 0.5f)) / result.GetTextures()->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
+                uv = Math::Vec2f(((float)(_Voxel.Color + 0.5f)) / result.GetTextures()->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
 
             uint32_t idx1 = result.AddVertex(SVertex(position, normal, uv));
             uint32_t idx2 = result.AddVertex(SVertex(position + du, normal, uv));
@@ -331,7 +331,7 @@ namespace VCore
             {
                 for (auto &&key : depth.second)
                 {
-                    auto voxel = (Voxel)&key.first;
+                    auto voxel = *(CVoxel*)&key.first;
 
                     for (int widthAxis = 0; widthAxis < Config::ChunkSize; widthAxis++)
                     {
@@ -517,11 +517,11 @@ namespace VCore
                 dv.v[_Context.Axis.y] = size.v[_Context.Axis.y];
 
                 auto key = _Context.SliceIt->first;
-                Voxel voxel = (Voxel)&key;
-                if((currentMaterial != voxel->Material) && (voxel->Material < (int)_Context.Model->Materials.size()))
+                auto voxel = *(CVoxel*)&key;
+                if((currentMaterial != voxel.Material) && (voxel.Material < (int)_Context.Model->Materials.size()))
                 {
-                    currentMaterial = voxel->Material;
-                    _Context.Builder.SelectSurface(_Context.Model->Materials[voxel->Material]);
+                    currentMaterial = voxel.Material;
+                    _Context.Builder.SelectSurface(_Context.Model->Materials[voxel.Material]);
                 }
 
                 Math::Vec2f uv;
@@ -535,7 +535,7 @@ namespace VCore
                     uv.x = AddTexture(pos, _Context.Axis, textureSize);
                 }
                 else if(_Context.Builder.GetTextures() && !_Context.Builder.GetTextures()->empty())
-                    uv = Math::Vec2f(((float)(voxel->Color + 0.5f)) / _Context.Builder.GetTextures()->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
+                    uv = Math::Vec2f(((float)(voxel.Color + 0.5f)) / _Context.Builder.GetTextures()->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
 
                 uint32_t idx1 = _Context.Builder.AddVertex(SVertex(position, normal, uv));
                 uint32_t idx2 = _Context.Builder.AddVertex(SVertex(position + du, normal, uv));

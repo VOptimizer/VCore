@@ -54,7 +54,7 @@ namespace VCore
                 bool Instantiated;
             };
 
-            void GenerateQuads(CMeshBuilder &_Builder, Config::bitmask_t _Faces, int depth, int width, bool isFront, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, const VoxelModel &_Model, const Voxel _Voxel, IndexPair *_Cache);
+            void GenerateQuads(CMeshBuilder &_Builder, Config::bitmask_t _Faces, int depth, int width, bool isFront, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, const VoxelModel &_Model, const CVoxel& _Voxel, IndexPair *_Cache);
 
             SMeshChunk GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque) override;
     };
