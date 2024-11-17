@@ -34,6 +34,7 @@ namespace VCore
 
     void CPlanesVoxelizer::SetVoxelSpaceSize(const Math::Vec3i &_size)
     {
+        (void)_size;
         // m_Mesh->SetSize(_size);
         // m_Mesh->BBox = CBBox(Math::Vec3i(), m_Mesh->GetSize());
     }
@@ -77,6 +78,7 @@ namespace VCore
 
     void CPlanesVoxelizer::ProjectPlanes(Texture _planes, const SPlanesInfo &_info)
     {
+        (void)_planes;
         Math::Vec3i sizeTop = _info.Top.GetSize() - Math::Vec3i(1, 1, 1);
         Math::Vec3i sizeFront = _info.Front.GetSize() - Math::Vec3i(1, 1, 1);
         Math::Vec3i sizeLeft = _info.Left.GetSize() - Math::Vec3i(1, 1, 1);
@@ -121,6 +123,10 @@ namespace VCore
         uint8_t axis1 = (_axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
         uint8_t axis2 = (_axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
 
+        (void)axis1;
+        (void)axis2;
+        (void)_otherSide;
+
         for (int y = 0; y < size.y; y++)
         {
             for (int x = 0; x < size.x; x++)
@@ -132,6 +138,7 @@ namespace VCore
                     continue;
 
                 int colorIdx = AddOrGetColor(p);
+                (void)colorIdx;
 
                 // Projects the color onto the mesh.
             //     for (int z = 0; z < m_Mesh->GetSize().v[_axis]; z++)

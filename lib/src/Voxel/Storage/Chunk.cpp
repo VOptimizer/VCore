@@ -118,22 +118,14 @@ namespace VCore
         return result;
     }
 
-    bool IChunk::insert(CVoxelSpace *_Space, const pair &_pair)
+    void IChunk::UpdateNeighborChunks(CVoxelSpace *_Space, bool _Value, const Math::Vec3i &_GlobalPos)
     {
-        Math::Vec3i relPos = _pair.first & Config::InnerChunkMask;
-        auto result = SetVoxel(_pair.second, relPos);
-
-        // CVoxel &voxel = m_Data[relPos.x + Config::ChunkSize * relPos.y + Config::ChunkSize * Config::ChunkSize * relPos.z];
-        // voxel.Color = _pair.second.Color;
-        // voxel.Material = _pair.second.Material;
-
-        m_Mask.Set(relPos, true);
-
+        Math::Vec3i relPos = _GlobalPos & Config::InnerChunkMask;
         for (size_t i = 0; i < 3; i++)
         {
             if(relPos.v[i] == Config::InnerChunkMask)
             {
-                auto globalPos = _pair.first;
+                auto globalPos = _GlobalPos;
                 globalPos.v[i]++;
                 auto chunk = _Space->GetChunk(globalPos);
                 if(chunk)
@@ -146,24 +138,18 @@ namespace VCore
                     {
                         auto tmp = relPos;
                         tmp.v[i]++;
-                        m_Mask.SetAxis(tmp, true, i);
+                        m_Mask.SetAxis(tmp, _Value, i);
                     }
 
                     globalPos.v[i]--;
-                    chunk->m_Mask.SetAxis(globalPos - chunkpos, true, i);
+                    chunk->m_Mask.SetAxis(globalPos - chunkpos, _Value, i);
                 }
             }
             else if(relPos.v[i] == 0)
             {
-                auto globalPos = _pair.first;
+                auto globalPos = _GlobalPos;
                 globalPos.v[i]--;
                 auto chunk = _Space->GetChunk(globalPos);
-                if(chunk == this)
-                {
-                    int i = 0;
-                    i++;
-                }
-
                 if(chunk)
                 {
                     chunk->IsDirty = true;
@@ -174,14 +160,27 @@ namespace VCore
                     {
                         auto tmp = relPos;
                         tmp.v[i]--;
-                        m_Mask.SetAxis(tmp, true, i);
+                        m_Mask.SetAxis(tmp, _Value, i);
                     }
 
                     globalPos.v[i]++;
-                    chunk->m_Mask.SetAxis(globalPos - chunkpos, true, i);
+                    chunk->m_Mask.SetAxis(globalPos - chunkpos, _Value, i);
                 }
             }
         }
+    }
+
+    bool IChunk::insert(CVoxelSpace *_Space, const pair &_pair)
+    {
+        Math::Vec3i relPos = _pair.first & Config::InnerChunkMask;
+        auto result = SetVoxel(_pair.second, relPos);
+
+        // CVoxel &voxel = m_Data[relPos.x + Config::ChunkSize * relPos.y + Config::ChunkSize * Config::ChunkSize * relPos.z];
+        // voxel.Color = _pair.second.Color;
+        // voxel.Material = _pair.second.Material;
+
+        m_Mask.Set(relPos, true);
+        UpdateNeighborChunks(_Space, true, _pair.first);
 
         m_InnerBBox.Beg = m_InnerBBox.Beg.min(relPos);
         m_InnerBBox.End = m_InnerBBox.End.max(relPos);
@@ -220,6 +219,7 @@ namespace VCore
         IsDirty = true;
 
         m_Mask.Set(relPos, false);
+        UpdateNeighborChunks(_Space, false, _it->first);
 
         // Checks if the bbox must be resized
         for (size_t i = 0; i < 3; i++)
@@ -350,7 +350,7 @@ namespace VCore
 
     void CChunk::Clear()
     {
-        memset(m_Data, 0xFFFFFFFF, sizeof(m_Data));
+        memset(reinterpret_cast<char*>(m_Data), 0xFF, sizeof(m_Data));
         m_InnerBBox = CBBox();
     }
 } // namespace VCore

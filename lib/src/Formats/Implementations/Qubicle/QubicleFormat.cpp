@@ -254,7 +254,7 @@ namespace VCore
     void CQubicleFormat::AddVoxel(VoxelModel mesh, uint32_t color, Math::Vec3i pos)
     {
         uint32_t cid = GetColorIdx(color);
-        if(cid == -1)
+        if(cid == 0xFFFFFFFF)
             return;
 
         mesh->SetVoxel(pos, 0, cid);

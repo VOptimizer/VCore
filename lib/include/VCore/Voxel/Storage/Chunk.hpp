@@ -109,6 +109,8 @@ namespace VCore
             CBBox m_InnerBBox;
         private:
             bool HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos);
+
+            void UpdateNeighborChunks(CVoxelSpace *_Space, bool _Value, const Math::Vec3i &_GlobalPos);
     };
 
     class CByteChunk : public IChunk

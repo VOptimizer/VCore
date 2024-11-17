@@ -97,7 +97,7 @@ namespace VCore
                 {
                     uint32_t color = m_DataStream->Read<int>();
                     uint32_t cid = GetColorIdx(color);
-                    if(cid == -1)
+                    if(cid == 0xFFFFFFFF)
                         continue;
 
                     auto pos = Math::Vec3f(x, y, z);
@@ -135,7 +135,7 @@ namespace VCore
 
                         index++;
                         cid = GetColorIdx(data);
-                        if(cid == -1)
+                        if(cid == 0xFFFFFFFF)
                             continue;
 
                         mesh->SetVoxel(pos, 0, cid);
@@ -152,7 +152,7 @@ namespace VCore
 
                     index++;
                     cid = GetColorIdx(data);
-                    if(cid == -1)
+                    if(cid == 0xFFFFFFFF)
                         continue;
 
                     mesh->SetVoxel(pos, 0, cid);

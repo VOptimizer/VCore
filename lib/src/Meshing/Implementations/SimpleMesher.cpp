@@ -202,7 +202,7 @@ namespace VCore
                     IndexPair indexFrontCache[Config::ChunkSize] = {};
                     IndexPair indexBackCache[Config::ChunkSize] = {};
 
-                    for (int widthAxis = 0; widthAxis < Config::ChunkSize; widthAxis++)
+                    for (uint32_t widthAxis = 0; widthAxis < Config::ChunkSize; widthAxis++)
                     {
                         auto faces = key.second.Bits[widthAxis];
                         GenerateQuads(builder, faces, depth.first, widthAxis, true, Math::Vec3i(axis, axis1, axis2), _Chunk, m, voxel, indexFrontCache);

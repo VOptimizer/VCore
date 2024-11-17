@@ -148,7 +148,7 @@ namespace VCore
 
             struct SNode
             {
-                SNode() : Child(), Leaf(true), Pool(nullptr) {}
+                SNode() : Child(), Pool(nullptr), Leaf(true) {}
                 SNode(const Math::Vec2ui &_Position, const Math::Vec2ui &_Size, CMemoryPool<SNode> *_Pool) : SNode()
                 {
                     Position = _Position;

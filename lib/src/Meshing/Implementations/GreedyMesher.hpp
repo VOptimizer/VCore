@@ -53,7 +53,7 @@ namespace VCore
             using MaskCollection = ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>>;            
             struct MeshSlicerContext
             {
-                MeshSlicerContext(const VoxelModel &_Model, const CBBox &_ModelBBox, SurfaceFactory _Factory) : Model(_Model), ModelBBox(_ModelBBox), Builder(_Factory) 
+                MeshSlicerContext(const VoxelModel &_Model, const CBBox &_ModelBBox, SurfaceFactory _Factory) : Model(_Model), Builder(_Factory), ModelBBox(_ModelBBox)
                 {
                     Builder.AddTextures(Model->Textures);
                 }   

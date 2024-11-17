@@ -63,7 +63,7 @@ namespace VCore
             auto begin = GetChunkpos(bbox.Beg).v[runAxis];
             auto end = GetChunkpos(bbox.End).v[runAxis] + Config::ChunkSize;
 
-            for (int axis = begin; axis < end; axis += Config::ChunkSize)
+            for (int axis = begin; axis < static_cast<int>(end); axis += Config::ChunkSize)
             {
                 futures.push_back(std::async(&CGreedyMesher::GenerateMeshSlices, this, _Mesh, bbox, runAxis, axis));
                 while(futures.size() >= std::thread::hardware_concurrency())
@@ -165,9 +165,9 @@ namespace VCore
         {
             auto size = _Info.Size - Math::Vec2ui(2, 2);
 
-            for (int x = 0; x < size.x; x++)
+            for (uint32_t x = 0; x < size.x; x++)
             {
-                for (int y = 0; y < size.y; y++)
+                for (uint32_t y = 0; y < size.y; y++)
                 {
                     auto pos = _Info.Position;
                     pos.v[_Info.Axis.x] += x;
@@ -227,7 +227,7 @@ namespace VCore
             Config::bitmask_t mask = (((Config::bitmask_t)1 << faceCount) - 1) << heightPos;
 
             unsigned w = 1;
-            for (int tmpWidth = width + 1; tmpWidth < Config::ChunkSize; tmpWidth++)
+            for (uint32_t tmpWidth = width + 1; tmpWidth < Config::ChunkSize; tmpWidth++)
             {
                 auto &nextfaces = bits.Bits[tmpWidth + ((1 - (int)isFront) * Config::ChunkSize)];
                 if((nextfaces & mask) != mask)
@@ -333,7 +333,7 @@ namespace VCore
                 {
                     auto voxel = *(CVoxel*)&key.first;
 
-                    for (int widthAxis = 0; widthAxis < Config::ChunkSize; widthAxis++)
+                    for (uint32_t widthAxis = 0; widthAxis < Config::ChunkSize; widthAxis++)
                     {
                         auto faces = key.second.Bits[widthAxis];
                         GenerateQuad(builder, materials, faces, key.second, widthAxis, depth.first, true, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
@@ -549,7 +549,7 @@ namespace VCore
 
                 y += totalHeight;
 
-                if((y & g_Mask64) > chunkpos.v[_Context.Axis.y])
+                if(static_cast<int>(y & g_Mask64) > chunkpos.v[_Context.Axis.y])
                 {
                     chunkpos.v[_Context.Axis.y] = y & g_Mask64;
                     auto faces = GetFaces(_Context, chunkpos, d, x, _IsFront);
@@ -577,7 +577,7 @@ namespace VCore
         mask.GroupAfterMaterial = m_GenerateTexture;
         for (int x = _ModelBBox.Beg.v[ctx.Axis.x]; x <= _ModelBBox.End.v[ctx.Axis.x]; x++)
         {
-            for (int d = _AxisPos; d < _AxisPos + Config::ChunkSize; d++)              
+            for (uint32_t d = _AxisPos; d < _AxisPos + Config::ChunkSize; d++)              
             {
                 ctx.Position.v[ctx.Axis.z] = d;
                 ctx.Position.v[ctx.Axis.x] = x;

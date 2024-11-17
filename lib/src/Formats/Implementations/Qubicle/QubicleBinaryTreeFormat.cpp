@@ -155,7 +155,7 @@ namespace VCore
                     else
                         cid = GetColorIdx(color);
 
-                    if(cid == -1 || ((color & 0xFF000000) >> 24) == 0)
+                    if(cid == 0xFFFFFFFF || ((color & 0xFF000000) >> 24) == 0)
                         continue;
 
                     auto pos = Math::Vec3i(x, y, z);
@@ -215,7 +215,7 @@ namespace VCore
                     else
                         cid = GetColorIdx(color);
 
-                    if(cid == -1 || ((color & 0xFF000000) >> 24) == 0)
+                    if(cid == 0xFFFFFFFF || ((color & 0xFF000000) >> 24) == 0)
                         continue;
 
                     auto pos = Math::Vec3f(x, y, z);

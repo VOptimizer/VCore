@@ -64,7 +64,7 @@ namespace VCore
                 // Lazy memory management.
                 {
                     std::stringstream vertexList, uvList, normalList;
-                    for(int i = 0; i < surface->GetVertexCount(); i++)
+                    for(uint64_t i = 0; i < surface->GetVertexCount(); i++)
                     {
                         auto v = surface->GetVertex(i);
                         Math::Vec3f pos = v.Pos;

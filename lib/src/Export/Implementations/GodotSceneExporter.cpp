@@ -105,7 +105,7 @@ namespace VCore
                     normalList << "\t\tVector3Array(";
                     uvList << "\t\tVector2Array(";
                     bool first = true;
-                    for(int i = 0; i < surface->GetVertexCount(); i++)
+                    for(uint64_t i = 0; i < surface->GetVertexCount(); i++)
                     {
                         auto v = surface->GetVertex(i);
 

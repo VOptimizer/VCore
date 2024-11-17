@@ -48,7 +48,7 @@ namespace VCore
 
             for (auto &&surface : mesh->Surfaces)
             {
-                for(int i = 0; i < surface->GetVertexCount(); i++)
+                for(uint64_t i = 0; i < surface->GetVertexCount(); i++)
                 {
                     auto v = surface->GetVertex(i);
                     vertexList << v.Pos.x << " " << v.Pos.z << " " << v.Pos.y << " " << v.Normal.x << " " << v.Normal.z << " " << v.Normal.y << " " << v.UV.x << " " << v.UV.y << std::endl;
