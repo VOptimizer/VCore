@@ -25,21 +25,6 @@
 #ifndef VCONFIG_HPP
 #define VCONFIG_HPP
 
-// Checks if rtti is enabled, and sets an helper flag.
-#if defined(__clang__)
-  #if __has_feature(cxx_rtti)
-    #define VCORE_RTTI_ENABLED
-  #endif
-#elif defined(__GNUC__)
-  #if defined(__GXX_RTTI)
-    #define VCORE_RTTI_ENABLED
-  #endif
-#elif defined(_MSC_VER)
-  #if defined(_CPPRTTI)
-    #define VCORE_RTTI_ENABLED
-  #endif
-#endif
-
 namespace VCore
 {
   namespace Config

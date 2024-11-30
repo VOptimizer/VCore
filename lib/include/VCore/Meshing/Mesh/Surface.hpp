@@ -27,7 +27,7 @@
 
 #include "Vertex.hpp"
 #include <VCore/Meshing/Material.hpp>
-#include <VCore/VConfig.hpp>
+#include <VCore/VPlatform.hpp>
 #include <VCore/Misc/fast_vector.hpp>
 #include <climits>
 

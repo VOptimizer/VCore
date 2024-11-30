@@ -32,6 +32,10 @@
 
 #include "GreedyMesher.hpp"
 
+#include <immintrin.h>
+
+#include "Simd.hpp"
+
 namespace VCore
 {
     constexpr static uint32_t g_ChunkSizeP2 = (Config::ChunkSize << 1);
@@ -215,10 +219,20 @@ namespace VCore
     {
         int currentMaterial = -1;
 
+        bool hasTexture = result.GetTextures() && !result.GetTextures()->empty();
+        int textureWidth = 0;
+        if(hasTexture)
+            textureWidth = result.GetTextures()->at(TextureType::DIFFIUSE)->GetSize().x;
+
+        (void)axis;
+        (void)_Chunk;
+        (void)_Voxel;
+
         Config::bitmask_t heightPos = 0;
         // Shift werid = hang
         while ((heightPos <= (Config::ChunkSize + 2)) && (faces >> heightPos))
         {
+            // ~ 5ms
             heightPos += CountTrailingZeroBits(faces >> heightPos);
             if(heightPos >= Config::ChunkSize)
                 break;
@@ -226,16 +240,34 @@ namespace VCore
             Config::bitmask_t faceCount = CountTrailingOneBits(faces >> heightPos);
             Config::bitmask_t mask = (((Config::bitmask_t)1 << faceCount) - 1) << heightPos;
 
-            unsigned w = 1;
-            for (uint32_t tmpWidth = width + 1; tmpWidth < Config::ChunkSize; tmpWidth++)
-            {
-                auto &nextfaces = bits.Bits[tmpWidth + ((1 - (int)isFront) * Config::ChunkSize)];
-                if((nextfaces & mask) != mask)
-                    break;
+            Simd::Simdi<128> simd_mask(mask);
+            const int integers = 4;
 
-                nextfaces ^= mask;
-                w++;
+            unsigned w = 1;
+            for (uint32_t tmpWidth = width + 1; tmpWidth < Config::ChunkSize; tmpWidth += integers) //++)
+            {
+                const size_t rounds = (tmpWidth + integers < Config::ChunkSize) ? integers : (Config::ChunkSize - tmpWidth);
+                int smask = (1 << rounds) - 1;
+
+                int buf[integers] = {};
+                for (size_t i = 0; i < rounds; i++)
+                    buf[i] = bits.Bits[(tmpWidth + i) + ((1 - (int)isFront) * Config::ChunkSize)];
+
+                Simd::Simdi<128> simd_cols(buf, integers);
+
+                auto result = (simd_mask & simd_cols) == simd_mask;
+                int mResult = result.MoveMask();
+                auto colcnt = CountTrailingOneBits(mResult & smask);
+
+                for (size_t i = 0; i < colcnt; i++)
+                    bits.Bits[(tmpWidth + i) + ((1 - (int)isFront) * Config::ChunkSize)] ^= mask;
+                    
+                w += colcnt;
+                if(colcnt != rounds)
+                    break;
             }
+
+            // ~40ms
 
             Math::Vec3f normal;
             normal.v[axis.x] = isFront ? -1 : 1;
@@ -244,6 +276,12 @@ namespace VCore
             position.v[axis.x] = _Chunk.TotalBBox.Beg.v[axis.x] + depth;
             position.v[axis.y] = _Chunk.TotalBBox.Beg.v[axis.y] + heightPos;
             position.v[axis.z] = _Chunk.TotalBBox.Beg.v[axis.z] + width;
+
+            if((position.x == 68 || position.x == 69) && (position.y == 47 || position.y == 48) && position.z == 35)
+            {
+                int i = 0;
+                i++;
+            }
 
             Math::Vec3i size;
             size.v[axis.x] = 0;
@@ -263,8 +301,8 @@ namespace VCore
             }
 
             Math::Vec2f uv;
-            if(result.GetTextures() && !result.GetTextures()->empty())
-                uv = Math::Vec2f(((float)(_Voxel.Color + 0.5f)) / result.GetTextures()->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
+            if(hasTexture)
+                uv = Math::Vec2f(((float)(_Voxel.Color + 0.5f)) / textureWidth, 0.5f);
 
             uint32_t idx1 = result.AddVertex(SVertex(position, normal, uv));
             uint32_t idx2 = result.AddVertex(SVertex(position + du, normal, uv));
@@ -325,21 +363,33 @@ namespace VCore
             int axis2 = (axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
 
             CFaceMask mask;
-            auto masks = mask.Generate(_Mesh, _Chunk, axis);
 
+            // ~15ms
+            auto masks = mask.Generate(_Mesh, _Chunk, axis);
+            
             for (auto &&depth : masks)
             {
                 for (auto &&key : depth.second)
                 {
                     auto voxel = *(CVoxel*)&key.first;
 
+                    // unsigned int iMask[(Config::ChunkSize + 2) * 2];
+                    // for (size_t i = 0; i < sizeof(key.second.Bits) / sizeof(Config::bitmask_t); i++)
+                    // {
+                    //     iMask[i] = key.second.Bits[i];
+                    // }
+
                     for (uint32_t widthAxis = 0; widthAxis < Config::ChunkSize; widthAxis++)
                     {
                         auto faces = key.second.Bits[widthAxis];
-                        GenerateQuad(builder, materials, faces, key.second, widthAxis, depth.first, true, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
+
+                        if(faces)
+                            GenerateQuad(builder, materials, faces, key.second, widthAxis, depth.first, true, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
 
                         faces = key.second.Bits[widthAxis + Config::ChunkSize];
-                        GenerateQuad(builder, materials, faces, key.second, widthAxis, depth.first + 1, false, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
+
+                        if(faces)
+                            GenerateQuad(builder, materials, faces, key.second, widthAxis, depth.first + 1, false, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
                     }
                 }
             }
