@@ -48,7 +48,7 @@ namespace VCore
              * @brief Adds a new Vertex to the surface.
              * @return Returns the index of the vertex.
              */
-            virtual uint32_t AddVertex(const SVertex &_Vertex) = 0;
+            virtual uint32_t AddVertex(const SVertex *_Vertex) = 0;
 
             /**
              * @brief Adds a face to the surface. The order must be counter clockwise.
@@ -108,7 +108,7 @@ namespace VCore
             /**
              * @brief Merges two surfaces together.
              */
-            virtual void MergeSurface(const ISurface *_Surface) = 0;
+            virtual void MergeSurface(ISurface *_Surface) = 0;
 
             template<class T>
             const T &GetVertexReference() const
@@ -132,6 +132,8 @@ namespace VCore
                 return *(T*)GetUnderlyingIndexReference();
             }
 
+            virtual void ClaimVertices() = 0;
+
             virtual ~ISurface() = default;
 
         protected:
@@ -148,9 +150,17 @@ namespace VCore
     class TSurface : public ISurface
     {
         public:
-            uint32_t AddVertex(const SVertex &_Vertex) override
+            virtual ~TSurface()
             {
-                m_Vertices.push_back(_Vertex);
+                for (auto &&v : m_Vertices)
+                    delete v;
+
+                m_Vertices.clear();
+            }
+
+            uint32_t AddVertex(const SVertex *_Vertex) override
+            {
+                m_Vertices.push_back(const_cast<SVertex*>(_Vertex));
                 return m_Vertices.size() - 1;
             }
 
@@ -174,12 +184,12 @@ namespace VCore
             void UpdateVertex(uint64_t _Idx, const SVertex &_Vertex) override
             {
                 if(_Idx < m_Vertices.size())
-                    m_Vertices[_Idx] = _Vertex;
+                    *m_Vertices[_Idx] = _Vertex;
             }
 
             SVertex GetVertex(uint64_t _Idx) const override
             {
-                return m_Vertices[_Idx];
+                return *m_Vertices[_Idx];
             }
 
             uint32_t GetIndex(uint64_t _Idx) const override
@@ -199,7 +209,7 @@ namespace VCore
 
             const SVertex* GetRawVertexPointer() const override
             {
-                return m_Vertices.data();
+                return nullptr; //m_Vertices.data();
             }
 
             const void* GetRawIndexPointer() const override
@@ -212,7 +222,7 @@ namespace VCore
                 return (IndexMax - m_Vertices.size()) > 3;
             }
 
-            void MergeSurface(const ISurface *_Surface) override
+            void MergeSurface(ISurface *_Surface) override
             {
                 ReserveVertices(_Surface->GetVertexCount() + GetVertexCount());
                 ReserveFaces(_Surface->GetFaceCount() + GetFaceCount());
@@ -222,8 +232,17 @@ namespace VCore
 
                 auto startIdx = m_Vertices.size();
                 m_Vertices.insert(m_Vertices.end(), otherVertices.begin(), otherVertices.end());
+
                 for (auto &&i : otherIndices)
                     m_Indices.push_back(startIdx + i);
+
+                _Surface->ClaimVertices();
+            }
+
+            void ClaimVertices() override
+            {
+                m_Vertices.clear();
+                m_Indices.clear();
             }
         protected:
             const void *GetUnderlyingVertexReference() const override
@@ -253,7 +272,7 @@ namespace VCore
     };
 
     using SurfaceFactory = ISurface* (*)();
-    using DefaultSurface = TSurface<fast_vector<SVertex>, fast_vector<uint32_t>, UINT32_MAX>;
+    using DefaultSurface = TSurface<fast_vector<SVertex*>, fast_vector<uint32_t>, UINT32_MAX>;
 } // namespace VCore
 
 #endif

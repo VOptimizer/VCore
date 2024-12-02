@@ -26,6 +26,7 @@
 #define FACEMASK_HPP
 
 #include <VCore/Voxel/VoxelModel.hpp>
+#include <VCore/Misc/fast_vector.hpp>
 #include <map>
 
 namespace VCore
@@ -45,9 +46,9 @@ namespace VCore
             /**
              * @brief Generates the face bit mask for the given chunk on the axis.
              */
-            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> Generate(const VoxelModel &_Model, const SChunkMeta &_Chunk, uint8_t _Axis);
+            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> Generate(const VoxelModel &_Model, const SChunkMeta &_Chunk, const uint8_t _Axis);
 
-            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> Generate(const VoxelModel &_Model, Math::Vec3i _ChunkPos, uint8_t _Axis);
+            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> Generate(const VoxelModel &_Model, Math::Vec3i _ChunkPos, const uint8_t _Axis);
 
             ~CFaceMask() = default;
 
@@ -58,10 +59,20 @@ namespace VCore
                 Config::bitmask_t Transparent = 0;
             };
 
-            void InternalGenerate(const VoxelModel &_Model, const SChunkMeta &_Chunk, uint8_t _Axis, int _ChunkMask);
+            void InternalGenerate(int _ChunkMask);
+            void FillVoxelBits(int *_opaqueVoxels, int *_transparentVoxels, const IChunk *_Chunk, const Math::Vec3i &_Position, const int _Count);
+            void GenerateMask(int *_Voxels, const Math::Vec3i &_Subpos, const int _Count);
+            void FillSlice(uint32_t _Faces, const Math::Vec3i &_Subpos, const int _Column, const bool _Backface, ankerl::unordered_dense::map<uint32_t, Mask> &_Masks);
 
-            void GenerateMask(Config::bitmask_t faces, bool backFace, Math::Vec3i position, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, int _ChunkMask);
-            OpaqueMask GenerateOpaqueMask(const VoxelModel &_Model, const SChunkMeta &_Chunk, Config::bitmask_t _Voxels, Math::Vec3i position, uint8_t _Axis);
+            VoxelModel m_Model;
+            SChunkMeta m_Chunk;
+
+            // X = Run axis, Y = Height axis, Z = Width axis.
+            Math::TVector3<char> m_Axis;
+
+            fast_vector<int> m_TransparentMaterials;
+            Mask *m_MaskCache;
+            uint32_t m_CachedKey;
 
             ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> m_FacesMasks;
     };

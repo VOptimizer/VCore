@@ -91,7 +91,14 @@ namespace VCore
             Mesh Build();
 
             void SelectSurface(const Material &_Material);
-            uint32_t AddVertex(const SVertex& _Vertex);
+
+            /**
+             * @brief Adds a new vertex to the currently selected surface.
+             * @param _Vertex: New vertex to add.
+             * @return Returns a new unique id for the new vertex.
+             */
+            uint32_t AddVertex(const SVertex* _Vertex);
+
             void AddFace(uint32_t _Idx1, uint32_t _Idx2, uint32_t _Idx3, uint32_t _Idx4);
 
             ~CMeshBuilder() = default;

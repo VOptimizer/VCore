@@ -177,7 +177,7 @@ namespace VCore
         m_CurrentSurface = it->second.Surface;
     }
 
-    uint32_t CMeshBuilder::AddVertex(const SVertex& _Vertex)
+    uint32_t CMeshBuilder::AddVertex(const SVertex* _Vertex)
     {
         return m_CurrentSurface->AddVertex(_Vertex);
     }

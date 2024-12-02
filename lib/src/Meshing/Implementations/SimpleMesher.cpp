@@ -241,7 +241,7 @@ namespace VCore
         auto corner = _Model->GetVoxel(_Direction.Corner + _Position);
 
         _Ao = GenerateAO(side1.IsInstantiated(), side2.IsInstantiated(), corner.IsInstantiated());
-        return _Builder.AddVertex(SVertex(vertex, _Normal, _UV, _Ao));
+        return _Builder.AddVertex(new SVertex(vertex, _Normal, _UV, _Ao));
     }
 
     void CSimpleMesher::GenerateQuads(CMeshBuilder &_Builder, Config::bitmask_t _Faces, int depth, int width, bool isFront, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, const VoxelModel &_Model, const CVoxel& _Voxel, IndexPair *_Cache)

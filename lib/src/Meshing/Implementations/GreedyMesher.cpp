@@ -224,10 +224,6 @@ namespace VCore
         if(hasTexture)
             textureWidth = result.GetTextures()->at(TextureType::DIFFIUSE)->GetSize().x;
 
-        (void)axis;
-        (void)_Chunk;
-        (void)_Voxel;
-
         Config::bitmask_t heightPos = 0;
         // Shift werid = hang
         while ((heightPos <= (Config::ChunkSize + 2)) && (faces >> heightPos))
@@ -244,7 +240,7 @@ namespace VCore
             const int integers = 4;
 
             unsigned w = 1;
-            for (uint32_t tmpWidth = width + 1; tmpWidth < Config::ChunkSize; tmpWidth += integers) //++)
+            for (uint32_t tmpWidth = width + 1; tmpWidth < Config::ChunkSize; tmpWidth += integers)
             {
                 const size_t rounds = (tmpWidth + integers < Config::ChunkSize) ? integers : (Config::ChunkSize - tmpWidth);
                 int smask = (1 << rounds) - 1;
@@ -277,12 +273,6 @@ namespace VCore
             position.v[axis.y] = _Chunk.TotalBBox.Beg.v[axis.y] + heightPos;
             position.v[axis.z] = _Chunk.TotalBBox.Beg.v[axis.z] + width;
 
-            if((position.x == 68 || position.x == 69) && (position.y == 47 || position.y == 48) && position.z == 35)
-            {
-                int i = 0;
-                i++;
-            }
-
             Math::Vec3i size;
             size.v[axis.x] = 0;
             size.v[axis.y] = faceCount;
@@ -304,10 +294,10 @@ namespace VCore
             if(hasTexture)
                 uv = Math::Vec2f(((float)(_Voxel.Color + 0.5f)) / textureWidth, 0.5f);
 
-            uint32_t idx1 = result.AddVertex(SVertex(position, normal, uv));
-            uint32_t idx2 = result.AddVertex(SVertex(position + du, normal, uv));
-            uint32_t idx3 = result.AddVertex(SVertex(position + dv, normal, uv));
-            uint32_t idx4 = result.AddVertex(SVertex(position + size, normal, uv));
+            uint32_t idx1 = result.AddVertex(new SVertex(position, normal, uv));
+            uint32_t idx2 = result.AddVertex(new SVertex(position + du, normal, uv));
+            uint32_t idx3 = result.AddVertex(new SVertex(position + dv, normal, uv));
+            uint32_t idx4 = result.AddVertex(new SVertex(position + size, normal, uv));
 
             if(isFront)
                 result.AddFace(idx1, idx2, idx3, idx4);
@@ -365,6 +355,9 @@ namespace VCore
             CFaceMask mask;
 
             // ~15ms
+
+            // ~4ms without Grouping
+            // ~10ms with grouping
             auto masks = mask.Generate(_Mesh, _Chunk, axis);
             
             for (auto &&depth : masks)
@@ -372,12 +365,6 @@ namespace VCore
                 for (auto &&key : depth.second)
                 {
                     auto voxel = *(CVoxel*)&key.first;
-
-                    // unsigned int iMask[(Config::ChunkSize + 2) * 2];
-                    // for (size_t i = 0; i < sizeof(key.second.Bits) / sizeof(Config::bitmask_t); i++)
-                    // {
-                    //     iMask[i] = key.second.Bits[i];
-                    // }
 
                     for (uint32_t widthAxis = 0; widthAxis < Config::ChunkSize; widthAxis++)
                     {

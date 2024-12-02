@@ -36,13 +36,6 @@ namespace VCore
 {
     namespace Simd
     {
-        class SimdFallback
-        {
-            public:
-                SimdFallback(/* args */) {}
-                ~SimdFallback() {}
-        };
-
         template <int Bits>
         class Simdi { };
 
@@ -93,22 +86,87 @@ namespace VCore
                 inline Simdi &operator=(const Simdi&) = default;
                 inline Simdi &operator=(Simdi&&) = default;
 
-                inline Simdi operator^(const Simdi<128> &_Other) const
+                inline Simdi operator^(const Simdi &_Other) const
                 {
                     return Simdi(_mm_xor_si128(m_Value, _Other.m_Value));
                 };
 
-                inline Simdi operator&(const Simdi<128> &_Other) const
+                inline Simdi operator&(const Simdi &_Other) const
                 {
                     return Simdi(_mm_and_si128(m_Value, _Other.m_Value));
                 };
 
-                inline Simdi operator==(const Simdi<128> &_Other) const
+                inline Simdi operator==(const Simdi &_Other) const
                 {
                     return Simdi(_mm_cmpeq_epi32(m_Value, _Other.m_Value));
                 };
             private:
                 __m128i m_Value;
+        };
+    
+        template <>
+        class Simdi<256> 
+        {
+            public:
+                Simdi() : m_Value(_mm256_setzero_si256()) {}
+                Simdi(const __m256i &_Value) : m_Value(_Value) {}
+                Simdi(const int _Value) : m_Value(_mm256_set1_epi32(_Value)) {}
+                Simdi(const int *_Values, const unsigned char _Size) : Simdi() { Load(_Values, _Size); }
+
+                Simdi(const Simdi&) = default;
+                Simdi(Simdi&&) = default;
+
+                /** Loads given values into the register. */
+                inline Simdi &Load(const int *_Values, const unsigned char _Size)
+                {
+                    if(_Size < 8)
+                    {
+                        alignas(32) int buf[8] = {};
+                        memcpy(buf, _Values, sizeof(int) * _Size);
+                        m_Value = _mm256_load_si256((__m256i*)buf);
+                    }
+                    else
+                        m_Value = _mm256_loadu_si256((__m256i*)_Values);
+
+                    return *this;
+                }
+
+                inline void Store(int *_Values, const unsigned char _Size) const
+                {
+                    if(_Size < 8)
+                    {
+                        alignas(32) int buf[8] = {};
+                        _mm256_store_si256((__m256i*)buf, m_Value);
+                        memcpy(_Values, buf, sizeof(int) * _Size);
+                    }
+                    else
+                        _mm256_storeu_si256((__m256i*)_Values, m_Value);
+                }
+
+                inline int MoveMask() const
+                {
+                    return _mm256_movemask_ps(_mm256_castsi256_ps(m_Value));
+                }
+
+                inline Simdi &operator=(const Simdi&) = default;
+                inline Simdi &operator=(Simdi&&) = default;
+
+                inline Simdi operator^(const Simdi &_Other) const
+                {
+                    return Simdi(_mm256_castps_si256(_mm256_xor_ps(_mm256_castsi256_ps(m_Value), _mm256_castsi256_ps(_Other.m_Value))));
+                };
+
+                inline Simdi operator&(const Simdi &_Other) const
+                {
+                    return Simdi(_mm256_castps_si256(_mm256_and_ps(_mm256_castsi256_ps(m_Value), _mm256_castsi256_ps(_Other.m_Value))));
+                };
+
+                inline Simdi operator==(const Simdi &_Other) const
+                {
+                    return Simdi(_mm256_castps_si256(_mm256_cmp_ps(_mm256_castsi256_ps(m_Value), _mm256_castsi256_ps(_Other.m_Value), _CMP_EQ_OQ)));
+                };
+            private:
+                __m256i m_Value;
         };
     } // namespace simd
 } // namespace VCore

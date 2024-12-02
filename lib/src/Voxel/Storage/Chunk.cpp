@@ -287,7 +287,7 @@ namespace VCore
     void CByteChunk::Clear()
     {
         memset(m_Data, 0xFF, sizeof(m_Data));
-        m_InnerBBox = CBBox();
+        m_InnerBBox = CBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i());
     }
 
     bool CByteChunk::SetVoxel(const CVoxel &_Voxel, const Math::Vec3i &_Position)

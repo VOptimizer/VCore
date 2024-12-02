@@ -26,6 +26,8 @@
 #define VERTEX_HPP
 
 #include <VCore/Math/Vector.hpp>
+#include <string.h>
+#include <VCore/Memory/MemoryPool.hpp>
 
 namespace VCore
 {
@@ -37,6 +39,7 @@ namespace VCore
         SVertex(const SVertex &) = default;
 
         SVertex &operator=(SVertex &&) = default;
+
         SVertex &operator=(const SVertex &) = default;
 
         Math::Vec3f Pos;
@@ -44,11 +47,26 @@ namespace VCore
         Math::Vec2f UV;
         uint8_t AmbientOcclusionValue;
 
+        void *operator new(size_t n)
+        {
+            return s_Pool.allocate(n);
+        }
+
+        void operator delete(void *p)
+        {
+            s_Pool.deallocate((SVertex*)p, sizeof(SVertex));
+        }
+
         inline bool operator==(const SVertex &_Vertex) const
         {
             return _Vertex.Pos == Pos && _Vertex.Normal == Normal && _Vertex.UV == UV;
         }
+
+        private:
+            static CMemoryPool<SVertex> s_Pool;
     };
+
+    inline CMemoryPool<SVertex> SVertex::s_Pool;
 
     struct VertexHasher
     {

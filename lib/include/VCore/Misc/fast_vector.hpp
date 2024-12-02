@@ -4,6 +4,13 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <new>
+
+// #include <Windows.h>
+
+#define custom_malloc(size) malloc(size) // HeapAlloc(GetProcessHeap(), 0, size)
+#define custom_realloc(mem, size) realloc(mem, size) // HeapReAlloc(GetProcessHeap(), 0, mem, size)
+#define custom_free(mem) free(mem) // HeapFree(GetProcessHeap(), 0, mem)
 
 namespace VCore
 {
@@ -19,13 +26,13 @@ namespace VCore
             {
                 if(!m_Data)
                 {
-                    m_Capacity = 100;
-                    m_Data = static_cast<T*>(malloc(m_Capacity * sizeof(T)));
+                    m_Capacity = 1000;
+                    m_Data = static_cast<T*>(custom_malloc(m_Capacity * sizeof(T)));
                 }
                 else if((m_Size + 1) >= m_Capacity)
                 {
                     m_Capacity *= 1.5f;
-                    m_Data = static_cast<T*>(realloc(static_cast<void*>(m_Data), m_Capacity * sizeof(T)));
+                    m_Data = static_cast<T*>(custom_realloc(static_cast<void*>(m_Data), m_Capacity * sizeof(T)));
                 }
 
                 new(&m_Data[m_Size++]) T(_Value);
@@ -44,7 +51,7 @@ namespace VCore
                 if((from + size) >= m_Capacity)
                 {
                     m_Capacity += ((from + size) - m_Capacity);
-                    m_Data = static_cast<T*>(realloc(static_cast<void*>(m_Data), m_Capacity * sizeof(T)));
+                    m_Data = static_cast<T*>(custom_realloc(static_cast<void*>(m_Data), m_Capacity * sizeof(T)));
                 }
 
                 memcpy(m_Data + from, _Begin, size * sizeof(T));
@@ -69,7 +76,7 @@ namespace VCore
                     return;
 
                 m_Capacity += (_Size - m_Capacity) + 1;
-                m_Data = static_cast<T*>(realloc(static_cast<void*>(m_Data), m_Capacity * sizeof(T)));
+                m_Data = static_cast<T*>(custom_realloc(static_cast<void*>(m_Data), m_Capacity * sizeof(T)));
             }
 
             inline fast_vector &operator=(fast_vector &&_Other)
@@ -90,7 +97,7 @@ namespace VCore
                 m_Size = _Other.m_Size;
                 m_Capacity = _Other.m_Capacity;
 
-                m_Data = static_cast<T*>(malloc(m_Capacity * sizeof(T)));
+                m_Data = static_cast<T*>(custom_malloc(m_Capacity * sizeof(T)));
                 for (size_t i = 0; i < m_Size; i++)
                     new(&m_Data[i]) T(_Other.m_Data[i]);
                 
@@ -104,7 +111,7 @@ namespace VCore
                     for (uint64_t i = 0; i < m_Size; i++)
                         m_Data[i].~T();
                     
-                    free(static_cast<void*>(m_Data));
+                    custom_free(static_cast<void*>(m_Data));
 
                     m_Data = nullptr;
                     m_Size = 0;

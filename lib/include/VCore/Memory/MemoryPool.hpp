@@ -82,7 +82,9 @@ namespace VCore
 
         private:
             struct Chunk { Chunk *Next; };
-            static constexpr size_type ChunkSize = sizeof(T) >= sizeof(Chunk) ? sizeof(T) : sizeof(Chunk);
+
+            // Calculates the aligned size of the chunk. This size must lie inside the boundaries of the word size of the processor.
+            static constexpr size_type ChunkSize = sizeof(T) >= sizeof(Chunk) ? ((sizeof(T) + AlignTo) & PointerMask) : sizeof(Chunk);
 
             union TaggedPointer
             {
@@ -174,6 +176,8 @@ namespace VCore
                 tag = 0;
 
             newptr.Ptr = next;
+            assert((reinterpret_cast<uintptr_t>(newptr.Ptr) & AlignTo) == 0);
+
             newptr.Bits |= tag;
         } while(!m_FirstFreeChunk.compare_exchange_weak(tagged, newptr, std::memory_order_release, std::memory_order_acquire));
 
