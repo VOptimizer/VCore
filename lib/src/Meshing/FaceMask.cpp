@@ -37,22 +37,26 @@ namespace VCore
         // This logic calculates the index of one of the three other axis.
         m_Axis = Math::TVector3<char>(_Axis, (_Axis + 1) % 3, (_Axis + 2) % 3);
 
-        InternalGenerate(Config::InnerChunkMask);
+        InternalGenerate();
         return std::move(m_FacesMasks);
     }
 
     ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>> CFaceMask::Generate(const VoxelModel &_Model, Math::Vec3i _ChunkPos, const uint8_t _Axis)
     {
-        // SChunkMeta meta;
-        // auto &voxels = _Model->GetVoxels();
-        // meta.Chunk = voxels.getChunk(_ChunkPos);
-        // if(meta.Chunk)
-        // {
-        //     // meta.UniqueId = hasher(_ChunkPos);
-        //     meta.TotalBBox = CBBox(_ChunkPos, _ChunkPos + Math::Vec3i(Config::ChunkSize, Config::ChunkSize, Config::ChunkSize));
-        //     meta.InnerBBox = meta.Chunk->inner_bbox(_ChunkPos);
-        //     InternalGenerate(_Model, meta, _Axis, ((Config::ChunkSize << 1) - 1));
-        // }
+        m_Model = _Model;
+
+        // This logic calculates the index of one of the three other axis.
+        m_Axis = Math::TVector3<char>(_Axis, (_Axis + 1) % 3, (_Axis + 2) % 3);
+
+        auto &voxels = _Model->GetVoxels();
+        m_Chunk.Chunk = voxels.getChunk(_ChunkPos);
+        if(m_Chunk.Chunk)
+        {
+            // meta.UniqueId = hasher(_ChunkPos);
+            m_Chunk.TotalBBox = CBBox(_ChunkPos, _ChunkPos + Math::Vec3i(Config::ChunkSize, Config::ChunkSize, Config::ChunkSize));
+            m_Chunk.InnerBBox = m_Chunk.Chunk->inner_bbox(_ChunkPos);
+            InternalGenerate();
+        }
 
         // _ChunkPos.v[(_Axis + 1) % 3] += Config::ChunkSize;
         // meta.Chunk = voxels.getChunk(_ChunkPos);
@@ -67,30 +71,12 @@ namespace VCore
         return std::move(m_FacesMasks);
     }
 
-    void CFaceMask::FillVoxelBits(int *_opaqueVoxels, int *_transparentVoxels, const IChunk *_Chunk, const Math::Vec3i &_Position, const int _Count)
+    void CFaceMask::FillVoxelBits(Config::bitmask_t *_opaqueVoxels, Config::bitmask_t *_transparentVoxels, const IChunk *_Chunk, const Math::Vec3i &_Position, const int _Count)
     {
         Math::Vec3i subpos = _Position & Config::InnerChunkMask;
         for (int i = 0; i < _Count; i++)
-        {
-            // VoxelSpan span;
-            // auto it = m_SpanCache.find(subpos);
-            // if(it == m_SpanCache.end())
-            // {
-            //     _Chunk->GetVoxelSpan(span, subpos, m_Axis.y);
-            //     m_SpanCache[subpos] = span;
-            // }
-            // else
-            //     span = it->second;
-
-            // for (int j = 0; j < (Config::ChunkSize / 8); j++)
-            // {
-            //     Simd::Simdi<256> col((int*)(span.Voxels + (j * 8)), 8);
-
-            //     _opaqueVoxels[i] |= (~(col == Simd::Simdi<256>(-1)).MoveMask()) << (j * 8);
-            // }
-            
-
-            _opaqueVoxels[i] = (_Chunk->m_Mask.GetRowFaces(subpos, m_Axis.y) >> 1) & 0xFFFFFFFF;
+        {          
+            _opaqueVoxels[i] = _Chunk->m_Mask.GetRowFaces(subpos, m_Axis.y); // (_Chunk->m_Mask.GetRowFaces(subpos, m_Axis.y) >> 1) & 0xFFFFFFFF;
 
             if(_opaqueVoxels[i] && (m_TransparentMaterials.size() > 0))
             {
@@ -122,7 +108,7 @@ namespace VCore
     constexpr static int simdBits = 256;
     const int simdSize = simdBits / 32;
 
-    void CFaceMask::InternalGenerate(int _ChunkMask)
+    void CFaceMask::InternalGenerate()
     {
         const CBBox &BBox = m_Chunk.InnerBBox;
         const CBBox &TotalBBox = m_Chunk.TotalBBox;
@@ -165,8 +151,8 @@ namespace VCore
                 // | 0 -  simdSize            | Voxel column before the current one |
                 // | simdSize - simdSize*2    | Current voxel column    |
                 // | simdSize*2 - simdSize*3  | Voxel column after the current one  |
-                int opaqueVoxels[simdSize * 3] = {};
-                int transparentVoxels[simdSize * 3] = {};
+                Config::bitmask_t opaqueVoxels[simdSize * 3] = {};
+                Config::bitmask_t transparentVoxels[simdSize * 3] = {};
 
                 // Go before the current voxel column.
                 position.v[m_Axis.x]--;
@@ -194,25 +180,25 @@ namespace VCore
         m_TransparentMaterials.clear();
     }
 
-    void CFaceMask::GenerateMask(int *_Voxels, const Math::Vec3i &_Subpos, const int _Count)
+    void CFaceMask::GenerateMask(Config::bitmask_t *_Voxels, const Math::Vec3i &_Subpos, const int _Count)
     {
-        Simd::Simdi<simdBits> beforeVoxelsSimd(_Voxels, simdSize);
-        Simd::Simdi<simdBits> voxelsSimd(_Voxels + simdSize, simdSize);
-        Simd::Simdi<simdBits> afterVoxelsSimd(_Voxels + (simdSize * 2), simdSize);
+        Simd::Simdi<simdBits> beforeVoxelsSimd((int*)_Voxels, simdSize);
+        Simd::Simdi<simdBits> voxelsSimd((int*)_Voxels + simdSize, simdSize);
+        Simd::Simdi<simdBits> afterVoxelsSimd((int*)_Voxels + (simdSize * 2), simdSize);
 
         // Cache reset
         ankerl::unordered_dense::map<uint32_t, Mask> *masks = nullptr;
         m_CachedKey = 0xFFFFFFFF;
         m_MaskCache = nullptr;
 
-        int frontFaces[simdSize] = {};
-        int backFaces[simdSize] = {};
+        Config::bitmask_t frontFaces[simdSize] = {};
+        Config::bitmask_t backFaces[simdSize] = {};
 
         // With simd and bit manipulation, we find all faces which are not
         // corvered. Since simd works on parallel data, we can check 32 * simdSize faces
         // at the same time.
-        ((beforeVoxelsSimd & voxelsSimd) ^ voxelsSimd).Store(frontFaces, simdSize);
-        ((afterVoxelsSimd & voxelsSimd) ^ voxelsSimd).Store(backFaces, simdSize);
+        ((beforeVoxelsSimd & voxelsSimd) ^ voxelsSimd).Store((int*)frontFaces, simdSize);
+        ((afterVoxelsSimd & voxelsSimd) ^ voxelsSimd).Store((int*)backFaces, simdSize);
 
         // Fill the mask structure with data.
         for (int i = 0; i < _Count; i++)
@@ -235,7 +221,7 @@ namespace VCore
         }
     }
 
-    void CFaceMask::FillSlice(uint32_t _Faces, const Math::Vec3i &_Subpos, const int _Column, const bool _Backface, ankerl::unordered_dense::map<uint32_t, Mask> &_Masks)
+    void CFaceMask::FillSlice(Config::bitmask_t _Faces, const Math::Vec3i &_Subpos, const int _Column, const bool _Backface, ankerl::unordered_dense::map<uint32_t, Mask> &_Masks)
     {
         int bitCount = CountTrailingZeroBits(_Faces);
         auto subposCopy = _Subpos;
@@ -251,14 +237,18 @@ namespace VCore
                 if(!voxel.IsInstantiated())
                     continue;
 
+                auto key = (uint32_t)voxel;
+                if(GroupAfterMaterial)
+                    key = voxel.Material;
+
                 // Checks if there is already a cached version.
-                if(((uint32_t)voxel != m_CachedKey) || !m_MaskCache)
+                if((key != m_CachedKey) || !m_MaskCache)
                 {
-                    m_CachedKey = (uint32_t)voxel;
+                    m_CachedKey = key;
                     m_MaskCache = &_Masks[m_CachedKey];
                 }
 
-                m_MaskCache->Bits[_Subpos.v[m_Axis.z] + _Column + (_Backface * Config::ChunkSize)] |= (uint32_t)1 << (bitCount + j);
+                m_MaskCache->Bits[_Subpos.v[m_Axis.z] + _Column + (_Backface * Config::ChunkSize)] |= (Config::bitmask_t)1 << (bitCount + j);
             }
 
             bitCount += count;

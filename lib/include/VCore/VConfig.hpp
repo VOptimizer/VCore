@@ -31,16 +31,16 @@ namespace VCore
   {
     // Type of the bitmask. This is also used to determine the size of the chunks.
     // Config: To adjust the size of the chunks, simply change the type.
-    using bitmask_t = uint64_t;
+    using bitmask_t = uint32_t;
 
     // Maximum value of the Bitmask_t
     static constexpr bitmask_t BitmaskMax = ~((bitmask_t)0);
 
-    // ChunkSize is always the maximum bits of bitmask_t divided by two.
-    static constexpr uint32_t ChunkSize = (sizeof(bitmask_t) * 8) >> 1;
+    // ChunkSize is always the maximum bits of bitmask_t.
+    static constexpr uint32_t ChunkSize = sizeof(bitmask_t) * 8;
 
     // Precomputed mask for later face determination.
-    static constexpr bitmask_t FaceMask = ((bitmask_t)1 << ChunkSize) - 1;
+    static constexpr bitmask_t FaceMask = BitmaskMax;//((bitmask_t)1 << ChunkSize) - 1;
 
     // Mask to convert a world space position to a inner chunk position.
     static constexpr uint32_t InnerChunkMask = Config::ChunkSize - 1;

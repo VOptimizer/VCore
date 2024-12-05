@@ -38,20 +38,9 @@
 
 namespace VCore
 {
-    constexpr static uint32_t g_ChunkSizeP2 = (Config::ChunkSize << 1);
-    constexpr static uint32_t g_Mask64 = ~(g_ChunkSizeP2 - 1);
-
     template<typename R>
     bool is_ready(std::future<R> const& f)
     { return f.wait_for(std::chrono::microseconds(0)) == std::future_status::ready; }
-
-    inline Math::Vec3i GetChunkpos64(Math::Vec3i _Position, const Math::Vec3i &_Axis)
-    {
-        _Position = GetChunkpos(_Position);
-        _Position.v[_Axis.y] &= g_Mask64;
-
-        return _Position;
-    }
 
     std::vector<SMeshChunk> CGreedyMesher::GenerateChunks(VoxelModel _Mesh, bool _OnlyDirty)
     {
@@ -234,7 +223,9 @@ namespace VCore
                 break;
 
             Config::bitmask_t faceCount = CountTrailingOneBits(faces >> heightPos);
-            Config::bitmask_t mask = (((Config::bitmask_t)1 << faceCount) - 1) << heightPos;
+            Config::bitmask_t mask = Config::BitmaskMax;
+            if(faceCount != Config::ChunkSize)
+                mask = (((Config::bitmask_t)1 << faceCount) - 1) << heightPos;
 
             Simd::Simdi<128> simd_mask(mask);
             const int integers = 4;
@@ -245,11 +236,11 @@ namespace VCore
                 const size_t rounds = (tmpWidth + integers < Config::ChunkSize) ? integers : (Config::ChunkSize - tmpWidth);
                 int smask = (1 << rounds) - 1;
 
-                int buf[integers] = {};
-                for (size_t i = 0; i < rounds; i++)
-                    buf[i] = bits.Bits[(tmpWidth + i) + ((1 - (int)isFront) * Config::ChunkSize)];
+                // int buf[integers] = {};
+                // for (size_t i = 0; i < rounds; i++)
+                //     buf[i] = bits.Bits[(tmpWidth + i) + ((1 - (int)isFront) * Config::ChunkSize)];
 
-                Simd::Simdi<128> simd_cols(buf, integers);
+                Simd::Simdi<128> simd_cols((int*)&bits.Bits[tmpWidth + ((1 - (int)isFront) * Config::ChunkSize)], integers);
 
                 auto result = (simd_mask & simd_cols) == simd_mask;
                 int mResult = result.MoveMask();
@@ -404,7 +395,7 @@ namespace VCore
             it = _Context.Chunks.insert({_Chunkpos, std::move(maskGenerator.Generate(_Context.Model, _Chunkpos, _Context.Axis.z))}).first;
 
             // Since the map changed, we need to optain the old iterators, so we can continue from the current position.
-            _Context.DepthIt = _Context.Chunks[GetChunkpos64(_Context.Position, _Context.Axis)].find(d);
+            _Context.DepthIt = _Context.Chunks[GetChunkpos(_Context.Position)].find(d);
             _Context.SliceIt = _Context.DepthIt->second.find(key);
         }
 
@@ -440,19 +431,19 @@ namespace VCore
         while (y <= _Context.ModelBBox.End.v[_Context.Axis.y])
         {
             fast_vector<Config::bitmask_t> bitmasks;
-            Config::bitmask_t heightPos = y & (g_ChunkSizeP2 - 1);
+            Config::bitmask_t heightPos = y & Config::InnerChunkMask;
             Config::bitmask_t totalHeight = 0;
 
             auto position = _Context.Position;
             position.v[_Context.Axis.y] = y;
-            auto chunkpos = GetChunkpos64(position, _Context.Axis);
+            auto chunkpos = GetChunkpos(position);
 
             // Bitmask calculations
             while (true)
             {
                 // Step 1: Get right y position
-                auto zeros = CountTrailingZeroBits(_Faces >> heightPos);
-                if(zeros == g_ChunkSizeP2)
+                auto zeros = heightPos >= Config::ChunkSize ? 0 : CountTrailingZeroBits(_Faces >> heightPos);
+                if(zeros == Config::ChunkSize)
                     zeros -= heightPos;
 
                 // Only continues 1 bits can be grouped to one big mask!
@@ -467,17 +458,37 @@ namespace VCore
                     break;
 
                 // Two chunks boundary reached
-                if(heightPos >= g_ChunkSizeP2)
+                if(heightPos >= Config::ChunkSize)
                 {
                     // Resets the heightpos for the new chunk.
                     heightPos = 0;
 
                     // Step 2: Get the chunk group above this one.
-                    chunkpos.v[_Context.Axis.y] += g_ChunkSizeP2;
-                    if(chunkpos.v[_Context.Axis.y] > _Context.ModelBBox.End.v[_Context.Axis.y])
-                        break;
+                    Config::bitmask_t *faces = nullptr;
 
-                    auto faces = GetFaces(_Context, chunkpos, d, x, _IsFront);
+                    // Loops until the next chunk is reached or no more chunks follows the current one.
+                    while (!faces)
+                    {
+                        chunkpos.v[_Context.Axis.y] += Config::ChunkSize;
+                        if(chunkpos.v[_Context.Axis.y] > _Context.ModelBBox.End.v[_Context.Axis.y])
+                        {
+                            chunkpos.v[_Context.Axis.y] -= Config::ChunkSize;
+                            break;
+                        }
+
+                        faces = GetFaces(_Context, chunkpos, d, x, _IsFront);
+
+                        // Breaks the loop immediately, if no chunk follows the current one.
+                        if(!faces && bitmasks.size() > 0)
+                        {
+                            chunkpos.v[_Context.Axis.y] -= Config::ChunkSize;
+                            break;
+                        }
+                        
+                        if(!faces)
+                            y += Config::ChunkSize;
+                    }
+
                     if(!faces)
                         break;
                     
@@ -487,9 +498,13 @@ namespace VCore
                 {
                     // Step 3: Create the bitmask for the face groups.
                     Config::bitmask_t faceCount = CountTrailingOneBits(_Faces >> heightPos);
-                    Config::bitmask_t mask = _Faces;
-                    if(mask != Config::BitmaskMax)
+                    Config::bitmask_t mask = Config::BitmaskMax;
+                    if(faceCount != Config::ChunkSize)
                         mask = (((Config::bitmask_t)1 << faceCount) - 1) << heightPos;
+
+                    // Config::bitmask_t mask = _Faces;
+                    // if(mask != Config::BitmaskMax)
+                    //     mask = (((Config::bitmask_t)1 << faceCount) - 1) << heightPos;
 
                     bitmasks.push_back(mask);
                     heightPos += faceCount;
@@ -508,9 +523,10 @@ namespace VCore
                 for (position.v[_Context.Axis.x] = x + 1; position.v[_Context.Axis.x] <= _Context.ModelBBox.End.v[_Context.Axis.x]; position.v[_Context.Axis.x]++)
                 {
                     bool isContinues = false;
+                    fast_vector<std::pair<Config::bitmask_t*, Config::bitmask_t>> nextFaces;
 
                     // Gets the current chunks mask
-                    auto chunkpos = GetChunkpos64(position, _Context.Axis);
+                    auto chunkpos = GetChunkpos(position);
                     for (auto &&bitmask : bitmasks)
                     {
                         auto nextfaces = GetFaces(_Context, chunkpos, d, position.v[_Context.Axis.x], _IsFront);
@@ -518,16 +534,25 @@ namespace VCore
                             break;
 
                         if((*nextfaces & bitmask) != bitmask)
+                        {
+                            isContinues = false;
                             break;
+                        }
 
-                        *nextfaces ^= bitmask;
+                        // *nextfaces ^= bitmask;
+                        nextFaces.push_back({nextfaces, bitmask});
                         isContinues = true;
 
-                        chunkpos.v[_Context.Axis.y] += g_ChunkSizeP2;
+                        chunkpos.v[_Context.Axis.y] += Config::ChunkSize;
                     }
                     
                     if(isContinues)
+                    {
+                        for (auto &&pair : nextFaces)
+                            *pair.first ^= pair.second;
+                        
                         width++;
+                    }
                     else
                         break;
                 }
@@ -574,10 +599,10 @@ namespace VCore
                 else if(_Context.Builder.GetTextures() && !_Context.Builder.GetTextures()->empty())
                     uv = Math::Vec2f(((float)(voxel.Color + 0.5f)) / _Context.Builder.GetTextures()->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
 
-                uint32_t idx1 = _Context.Builder.AddVertex(SVertex(position, normal, uv));
-                uint32_t idx2 = _Context.Builder.AddVertex(SVertex(position + du, normal, uv));
-                uint32_t idx3 = _Context.Builder.AddVertex(SVertex(position + dv, normal, uv));
-                uint32_t idx4 = _Context.Builder.AddVertex(SVertex(position + size, normal, uv));
+                uint32_t idx1 = _Context.Builder.AddVertex(new SVertex(position, normal, uv));
+                uint32_t idx2 = _Context.Builder.AddVertex(new SVertex(position + du, normal, uv));
+                uint32_t idx3 = _Context.Builder.AddVertex(new SVertex(position + dv, normal, uv));
+                uint32_t idx4 = _Context.Builder.AddVertex(new SVertex(position + size, normal, uv));
 
                 if(_IsFront)
                     _Context.Builder.AddFace(idx1, idx2, idx3, idx4);
@@ -586,10 +611,26 @@ namespace VCore
 
                 y += totalHeight;
 
-                if(static_cast<int>(y & g_Mask64) > chunkpos.v[_Context.Axis.y])
+                if(static_cast<int>(y & Config::ChunkPositionMask) > chunkpos.v[_Context.Axis.y])
                 {
-                    chunkpos.v[_Context.Axis.y] = y & g_Mask64;
-                    auto faces = GetFaces(_Context, chunkpos, d, x, _IsFront);
+                    chunkpos.v[_Context.Axis.y] = y & Config::ChunkPositionMask;
+                    Config::bitmask_t *faces = nullptr;
+
+                    // Loops until the next chunk is reached or no more chunks follows the current one.
+                    while (!faces)
+                    {
+                        if(chunkpos.v[_Context.Axis.y] > _Context.ModelBBox.End.v[_Context.Axis.y])
+                            break;
+
+                        faces = GetFaces(_Context, chunkpos, d, x, _IsFront);
+                        if(!faces)
+                        {
+                            chunkpos.v[_Context.Axis.y] += Config::ChunkSize;
+                            y += Config::ChunkSize;
+                        }
+                    }
+
+                    // auto faces = GetFaces(_Context, chunkpos, d, x, _IsFront);
                     if(!faces)
                         break;
 
@@ -618,12 +659,12 @@ namespace VCore
             {
                 ctx.Position.v[ctx.Axis.z] = d;
                 ctx.Position.v[ctx.Axis.x] = x;
-                ctx.Position.v[ctx.Axis.y] = _ModelBBox.Beg.v[ctx.Axis.y];
+                ctx.Position.v[ctx.Axis.y] = _ModelBBox.Beg.v[ctx.Axis.y] & Config::ChunkPositionMask;
 
                 while (true)
                 {
                     // Gets the current chunks mask
-                    auto chunkpos = GetChunkpos64(ctx.Position, ctx.Axis);
+                    auto chunkpos = GetChunkpos(ctx.Position);
                     auto it = ctx.Chunks.find(chunkpos);
                     if(it == ctx.Chunks.end())
                         it = ctx.Chunks.insert({chunkpos, mask.Generate(_Model, chunkpos, _RunAxis)}).first;
@@ -648,9 +689,11 @@ namespace VCore
                     }
                     else
                     {
-                        ctx.Position.v[ctx.Axis.y] += g_ChunkSizeP2;
                         if(ctx.Position.v[ctx.Axis.y] >= _ModelBBox.End.v[ctx.Axis.y])
                             break;
+
+                        ctx.Position.v[ctx.Axis.y] += Config::ChunkSize;
+                        // ctx.Position.v[ctx.Axis.y] &= Config::ChunkPositionMask;
                     }
                 }
             }

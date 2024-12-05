@@ -63,7 +63,8 @@ namespace VCore
         if(it == _Surface.Index.end())
         {
             int idx = _Surface.Surface->GetVertexCount();
-            _Surface.Surface->AddVertex(_Vertex);
+            // TODO:
+            // _Surface.Surface->AddVertex(_Vertex);
             _Surface.Index.insert({_Vertex, idx});
             return idx;
         }
@@ -280,7 +281,8 @@ namespace VCore
             else
             {
                 idx = _Surface.Surface->GetVertexCount();
-                _Surface.Surface->AddVertex(_Vertex);
+                // TODO:
+                // _Surface.Surface->AddVertex(_Vertex);
                 _Index.insert({_Vertex, idx});
             }
         }

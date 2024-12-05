@@ -59,10 +59,10 @@ namespace VCore
                 Config::bitmask_t Transparent = 0;
             };
 
-            void InternalGenerate(int _ChunkMask);
-            void FillVoxelBits(int *_opaqueVoxels, int *_transparentVoxels, const IChunk *_Chunk, const Math::Vec3i &_Position, const int _Count);
-            void GenerateMask(int *_Voxels, const Math::Vec3i &_Subpos, const int _Count);
-            void FillSlice(uint32_t _Faces, const Math::Vec3i &_Subpos, const int _Column, const bool _Backface, ankerl::unordered_dense::map<uint32_t, Mask> &_Masks);
+            void InternalGenerate();
+            void FillVoxelBits(Config::bitmask_t *_opaqueVoxels, Config::bitmask_t *_transparentVoxels, const IChunk *_Chunk, const Math::Vec3i &_Position, const int _Count);
+            void GenerateMask(Config::bitmask_t *_Voxels, const Math::Vec3i &_Subpos, const int _Count);
+            void FillSlice(Config::bitmask_t _Faces, const Math::Vec3i &_Subpos, const int _Column, const bool _Backface, ankerl::unordered_dense::map<uint32_t, Mask> &_Masks);
 
             VoxelModel m_Model;
             SChunkMeta m_Chunk;

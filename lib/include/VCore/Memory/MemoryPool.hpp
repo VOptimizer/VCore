@@ -158,16 +158,27 @@ namespace VCore
                 // allocate a new block. Otherwise, each thread will create a new empty block of memory, which isn't
                 // be used at worst.
                 std::lock_guard<std::mutex> lock(m_BlockLock);
-                tagged = m_FirstFreeChunk.load(std::memory_order_acquire);
-                if(!(tagged.Bits & PointerMask))
-                    AllocateBlock();
 
-                tagged = m_FirstFreeChunk.load(std::memory_order_acquire);
-                tmp = (Chunk*)(tagged.Bits & PointerMask);
-                if(tmp)
-                    next = tmp->Next;
-                else
-                    next = nullptr;
+                // Since even after allocating a new block of memory, the m_FirstFreeChunk can be null,
+                // we need to loop until we got a valid chunk of memory.
+                bool continued = true;
+                while (continued)
+                {
+                    continued = false;
+                    tagged = m_FirstFreeChunk.load(std::memory_order_acquire);
+                    if(!(tagged.Bits & PointerMask))
+                        AllocateBlock();
+
+                    tagged = m_FirstFreeChunk.load(std::memory_order_acquire);
+                    tmp = (Chunk*)(tagged.Bits & PointerMask);
+                    if(tmp)
+                        next = tmp->Next;
+                    else
+                    {
+                        continued = true;
+                        continue;
+                    }
+                }
             }
 
             auto tag = (tagged.Bits & AlignTo);
@@ -176,10 +187,10 @@ namespace VCore
                 tag = 0;
 
             newptr.Ptr = next;
-            assert((reinterpret_cast<uintptr_t>(newptr.Ptr) & AlignTo) == 0);
-
             newptr.Bits |= tag;
         } while(!m_FirstFreeChunk.compare_exchange_weak(tagged, newptr, std::memory_order_release, std::memory_order_acquire));
+
+        assert(tmp != nullptr);
 
         return reinterpret_cast<T*>(tmp);
     }
@@ -222,9 +233,10 @@ namespace VCore
 
         tagged.Ptr = (Chunk*)tmp->Data;
         assert((reinterpret_cast<uintptr_t>(tagged.Ptr) & AlignTo) == 0);
+        assert(tagged.Ptr != nullptr);
 
         tagged.Bits |= 0;
-        m_FirstFreeChunk = tagged;            
+        m_FirstFreeChunk.store(tagged, std::memory_order_acquire);            
     }
 
     //////////////////////////////////////////////////

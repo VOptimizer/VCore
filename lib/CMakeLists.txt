@@ -59,6 +59,13 @@ target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wunused-parameter -Wmismatched-tags -Wpessimizing-move -mavx>
 )
 
+find_program(CPPCHECK cppcheck)
+if(CPPCHECK)
+  add_custom_target(cppcheck
+      COMMAND ${CPPCHECK} --enable=all --std=c++${CMAKE_CXX_STANDARD} --output-file=log.sarif --output-format=sarif -q -I "${PROJECT_SOURCE_DIR}/third_party" -I "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src"
+  )
+endif()
+
 INSTALL(
     DIRECTORY ${PROJECT_SOURCE_DIR}/include/
     DESTINATION include

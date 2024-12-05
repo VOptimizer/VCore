@@ -41,18 +41,18 @@ namespace VCore
         {
             switch (_Axis)
             {
-                case 0: m_Grid[(_Position.z) + Config::ChunkSize * (_Position.y)] |= ((Config::bitmask_t)1 << (_Position.x + 1)); break;
-                case 1: m_Grid[(_Position.x) + Config::ChunkSize * (_Position.z) + (Config::ChunkSize * Config::ChunkSize)] |= ((Config::bitmask_t)1 << (_Position.y + 1)); break;
-                case 2: m_Grid[(_Position.x) + Config::ChunkSize * (_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] |= ((Config::bitmask_t)1 << (_Position.z + 1)); break;
+                case 0: m_Grid[(_Position.z) + Config::ChunkSize * (_Position.y)] |= ((Config::bitmask_t)1 << (_Position.x)); break;
+                case 1: m_Grid[(_Position.x) + Config::ChunkSize * (_Position.z) + (Config::ChunkSize * Config::ChunkSize)] |= ((Config::bitmask_t)1 << (_Position.y)); break;
+                case 2: m_Grid[(_Position.x) + Config::ChunkSize * (_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] |= ((Config::bitmask_t)1 << (_Position.z)); break;
             }
         }
         else
         {
             switch (_Axis)
             {
-                case 0: m_Grid[(_Position.z) + Config::ChunkSize * (_Position.y)] &= ~((Config::bitmask_t)1 << (_Position.x + 1)); break;
-                case 1: m_Grid[(_Position.x) + Config::ChunkSize * (_Position.z) + (Config::ChunkSize * Config::ChunkSize)] &= ~((Config::bitmask_t)1 << (_Position.y + 1)); break;
-                case 2: m_Grid[(_Position.x) + Config::ChunkSize * (_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] &= ~((Config::bitmask_t)1 << (_Position.z + 1)); break;
+                case 0: m_Grid[(_Position.z) + Config::ChunkSize * (_Position.y)] &= ~((Config::bitmask_t)1 << (_Position.x)); break;
+                case 1: m_Grid[(_Position.x) + Config::ChunkSize * (_Position.z) + (Config::ChunkSize * Config::ChunkSize)] &= ~((Config::bitmask_t)1 << (_Position.y)); break;
+                case 2: m_Grid[(_Position.x) + Config::ChunkSize * (_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] &= ~((Config::bitmask_t)1 << (_Position.z)); break;
             }
         }
     }
@@ -67,15 +67,15 @@ namespace VCore
     {
         if(_Value)
         {
-            m_Grid[(_Position.z) + Config::ChunkSize * (_Position.y)] |= ((Config::bitmask_t)1 << (_Position.x + 1));
-            m_Grid[(_Position.x) + Config::ChunkSize * (_Position.z) + (Config::ChunkSize * Config::ChunkSize)] |= ((Config::bitmask_t)1 << (_Position.y + 1));
-            m_Grid[(_Position.x) + Config::ChunkSize * (_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] |= ((Config::bitmask_t)1 << (_Position.z + 1));
+            m_Grid[(_Position.z) + Config::ChunkSize * (_Position.y)] |= ((Config::bitmask_t)1 << (_Position.x));
+            m_Grid[(_Position.x) + Config::ChunkSize * (_Position.z) + (Config::ChunkSize * Config::ChunkSize)] |= ((Config::bitmask_t)1 << (_Position.y));
+            m_Grid[(_Position.x) + Config::ChunkSize * (_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] |= ((Config::bitmask_t)1 << (_Position.z));
         }
         else
         {
-            m_Grid[(_Position.z) + Config::ChunkSize * (_Position.y)] &= ~((Config::bitmask_t)1 << (_Position.x + 1));
-            m_Grid[(_Position.x) + Config::ChunkSize * (_Position.z) + (Config::ChunkSize * Config::ChunkSize)] &= ~((Config::bitmask_t)1 << (_Position.y + 1));
-            m_Grid[(_Position.x) + Config::ChunkSize * (_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] &= ~((Config::bitmask_t)1 << (_Position.z + 1));
+            m_Grid[(_Position.z) + Config::ChunkSize * (_Position.y)] &= ~((Config::bitmask_t)1 << (_Position.x));
+            m_Grid[(_Position.x) + Config::ChunkSize * (_Position.z) + (Config::ChunkSize * Config::ChunkSize)] &= ~((Config::bitmask_t)1 << (_Position.y));
+            m_Grid[(_Position.x) + Config::ChunkSize * (_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] &= ~((Config::bitmask_t)1 << (_Position.z));
         }
     }
 
@@ -131,18 +131,18 @@ namespace VCore
                 if(chunk)
                 {
                     chunk->IsDirty = true;
-                    auto chunkpos = GetChunkpos(globalPos);
+                    // auto chunkpos = GetChunkpos(globalPos);
 
-                    auto faces = chunk->m_Mask.GetRowFaces(globalPos - chunkpos, i);
-                    if(faces & 0x2)
-                    {
-                        auto tmp = relPos;
-                        tmp.v[i]++;
-                        m_Mask.SetAxis(tmp, _Value, i);
-                    }
+                    // auto faces = chunk->m_Mask.GetRowFaces(globalPos - chunkpos, i);
+                    // if(faces & 0x2)
+                    // {
+                    //     auto tmp = relPos;
+                    //     tmp.v[i]++;
+                    //     m_Mask.SetAxis(tmp, _Value, i);
+                    // }
 
-                    globalPos.v[i]--;
-                    chunk->m_Mask.SetAxis(globalPos - chunkpos, _Value, i);
+                    // globalPos.v[i]--;
+                    // chunk->m_Mask.SetAxis(globalPos - chunkpos, _Value, i);
                 }
             }
             else if(relPos.v[i] == 0)
@@ -153,18 +153,18 @@ namespace VCore
                 if(chunk)
                 {
                     chunk->IsDirty = true;
-                    auto chunkpos = GetChunkpos(globalPos);
+                    // auto chunkpos = GetChunkpos(globalPos);
 
-                    auto faces = chunk->m_Mask.GetRowFaces(globalPos - chunkpos, i);
-                    if(faces & (Config::FaceMask + 1))
-                    {
-                        auto tmp = relPos;
-                        tmp.v[i]--;
-                        m_Mask.SetAxis(tmp, _Value, i);
-                    }
+                    // auto faces = chunk->m_Mask.GetRowFaces(globalPos - chunkpos, i);
+                    // if(faces & (Config::FaceMask + 1))
+                    // {
+                    //     auto tmp = relPos;
+                    //     tmp.v[i]--;
+                    //     m_Mask.SetAxis(tmp, _Value, i);
+                    // }
 
-                    globalPos.v[i]++;
-                    chunk->m_Mask.SetAxis(globalPos - chunkpos, _Value, i);
+                    // globalPos.v[i]++;
+                    // chunk->m_Mask.SetAxis(globalPos - chunkpos, _Value, i);
                 }
             }
         }
@@ -351,6 +351,6 @@ namespace VCore
     void CChunk::Clear()
     {
         memset(reinterpret_cast<char*>(m_Data), 0xFF, sizeof(m_Data));
-        m_InnerBBox = CBBox();
+        m_InnerBBox = CBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i());
     }
 } // namespace VCore
