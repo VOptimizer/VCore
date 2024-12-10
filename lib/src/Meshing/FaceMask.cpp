@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include <algorithm>
 #include "FaceMask.hpp"
 #include "Implementations/Simd.hpp"
 #include "../Misc/Helper.hpp"
@@ -80,12 +81,12 @@ namespace VCore
 
             if(_opaqueVoxels[i] && (m_TransparentMaterials.size() > 0))
             {
-                int bitCount = CountTrailingZeroBits(_opaqueVoxels[i]);
+                uint32_t bitCount = CountTrailingZeroBits(_opaqueVoxels[i]);
                 auto subposCopy = subpos;
                 while (bitCount < Config::ChunkSize)
                 {
                     auto count = CountTrailingOneBits(_opaqueVoxels[i] >> bitCount);
-                    for (int j = 0; j < count; j++)
+                    for (uint32_t j = 0; j < count; j++)
                     {
                         subposCopy.v[m_Axis.y] = bitCount + j;
                         auto voxel = _Chunk->find(subposCopy);
@@ -223,14 +224,14 @@ namespace VCore
 
     void CFaceMask::FillSlice(Config::bitmask_t _Faces, const Math::Vec3i &_Subpos, const int _Column, const bool _Backface, ankerl::unordered_dense::map<uint32_t, Mask> &_Masks)
     {
-        int bitCount = CountTrailingZeroBits(_Faces);
+        auto bitCount = CountTrailingZeroBits(_Faces);
         auto subposCopy = _Subpos;
         subposCopy.v[m_Axis.z] += _Column;
 
         while (bitCount < Config::ChunkSize)
         {
             auto count = CountTrailingOneBits(_Faces >> bitCount);
-            for (int j = 0; j < count; j++)
+            for (uint32_t j = 0; j < count; j++)
             {
                 subposCopy.v[m_Axis.y] = bitCount + j;
                 auto voxel = m_Chunk.Chunk->find(subposCopy);

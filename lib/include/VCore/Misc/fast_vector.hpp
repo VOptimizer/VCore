@@ -26,7 +26,7 @@ namespace VCore
             {
                 if(!m_Data)
                 {
-                    m_Capacity = 1000;
+                    m_Capacity = 100;
                     m_Data = static_cast<T*>(custom_malloc(m_Capacity * sizeof(T)));
                 }
                 else if((m_Size + 1) >= m_Capacity)
@@ -36,6 +36,11 @@ namespace VCore
                 }
 
                 new(&m_Data[m_Size++]) T(_Value);
+            }
+
+            inline T pop_back()
+            {
+                return m_Data[--m_Size];
             }
 
             inline T* begin() const { return m_Data; }

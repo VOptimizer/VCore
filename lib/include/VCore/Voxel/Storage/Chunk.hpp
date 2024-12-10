@@ -110,7 +110,7 @@ namespace VCore
         private:
             bool HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos);
 
-            void UpdateNeighborChunks(CVoxelSpace *_Space, bool _Value, const Math::Vec3i &_GlobalPos);
+            void UpdateNeighborChunks(CVoxelSpace *_Space, const Math::Vec3i &_GlobalPos);
     };
 
     class CByteChunk : public IChunk

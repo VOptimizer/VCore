@@ -236,7 +236,7 @@ namespace VCore
         assert(tagged.Ptr != nullptr);
 
         tagged.Bits |= 0;
-        m_FirstFreeChunk.store(tagged, std::memory_order_acquire);            
+        m_FirstFreeChunk.store(tagged, std::memory_order_release);            
     }
 
     //////////////////////////////////////////////////

@@ -25,6 +25,7 @@
 #ifndef FACEMASK_HPP
 #define FACEMASK_HPP
 
+#include <cstddef>
 #include <VCore/Voxel/VoxelModel.hpp>
 #include <VCore/Misc/fast_vector.hpp>
 #include <map>
@@ -68,7 +69,7 @@ namespace VCore
             SChunkMeta m_Chunk;
 
             // X = Run axis, Y = Height axis, Z = Width axis.
-            Math::TVector3<char> m_Axis;
+            Math::TVector3<uint8_t> m_Axis;
 
             fast_vector<int> m_TransparentMaterials;
             Mask *m_MaskCache;

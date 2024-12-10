@@ -118,7 +118,7 @@ namespace VCore
         return result;
     }
 
-    void IChunk::UpdateNeighborChunks(CVoxelSpace *_Space, bool _Value, const Math::Vec3i &_GlobalPos)
+    void IChunk::UpdateNeighborChunks(CVoxelSpace *_Space, const Math::Vec3i &_GlobalPos)
     {
         Math::Vec3i relPos = _GlobalPos & Config::InnerChunkMask;
         for (size_t i = 0; i < 3; i++)
@@ -180,7 +180,7 @@ namespace VCore
         // voxel.Material = _pair.second.Material;
 
         m_Mask.Set(relPos, true);
-        UpdateNeighborChunks(_Space, true, _pair.first);
+        UpdateNeighborChunks(_Space, _pair.first);
 
         m_InnerBBox.Beg = m_InnerBBox.Beg.min(relPos);
         m_InnerBBox.End = m_InnerBBox.End.max(relPos);
@@ -219,7 +219,7 @@ namespace VCore
         IsDirty = true;
 
         m_Mask.Set(relPos, false);
-        UpdateNeighborChunks(_Space, false, _it->first);
+        UpdateNeighborChunks(_Space, _it->first);
 
         // Checks if the bbox must be resized
         for (size_t i = 0; i < 3; i++)

@@ -38,6 +38,9 @@
 
 namespace VCore
 {
+    // template <class T, size_t Elements>
+    // thread_local typename CObjectPool<T, Elements>::CLocalStoragePointer CObjectPool<T, Elements>::s_Storage;
+
     template<typename R>
     bool is_ready(std::future<R> const& f)
     { return f.wait_for(std::chrono::microseconds(0)) == std::future_status::ready; }
@@ -392,7 +395,7 @@ namespace VCore
         {
             CFaceMask maskGenerator;
             maskGenerator.GroupAfterMaterial = m_GenerateTexture;
-            it = _Context.Chunks.insert({_Chunkpos, std::move(maskGenerator.Generate(_Context.Model, _Chunkpos, _Context.Axis.z))}).first;
+            it = _Context.Chunks.insert({_Chunkpos, maskGenerator.Generate(_Context.Model, _Chunkpos, _Context.Axis.z)}).first;
 
             // Since the map changed, we need to optain the old iterators, so we can continue from the current position.
             _Context.DepthIt = _Context.Chunks[GetChunkpos(_Context.Position)].find(d);
