@@ -27,7 +27,7 @@
 
 #include <VCore/Math/Vector.hpp>
 #include <string.h>
-#include <VCore/Memory/MemoryPool.hpp>
+#include <VCore/Memory/ObjectPool.hpp>
 
 namespace VCore
 {
@@ -47,14 +47,14 @@ namespace VCore
         Math::Vec2f UV;
         uint8_t AmbientOcclusionValue;
 
-        void *operator new(size_t n)
-        {
-            return s_Pool.allocate(n);
+        void *operator new(size_t)
+        {            
+            return s_Pool.Allocate();
         }
 
         void operator delete(void *p)
         {
-            s_Pool.deallocate((SVertex*)p, sizeof(SVertex));
+            s_Pool.Deallocate(p);
         }
 
         inline bool operator==(const SVertex &_Vertex) const
@@ -63,10 +63,10 @@ namespace VCore
         }
 
         private:
-            static CMemoryPool<SVertex> s_Pool;
+            static Memory::CObjectPool<SVertex, 1000> s_Pool;
     };
 
-    inline CMemoryPool<SVertex> SVertex::s_Pool;
+    inline Memory::CObjectPool<SVertex, 1000> SVertex::s_Pool;
 
     struct VertexHasher
     {

@@ -27,7 +27,7 @@
 
 #include <vector>
 #include <VCore/Meshing/IMesher.hpp>
-#include <VCore/Memory/MemoryPool.hpp>
+#include <VCore/Memory/ObjectPool.hpp>
 #include <VCore/Meshing/Mesh/MeshBuilder.hpp>
 #include "../FaceMask.hpp"
 
@@ -99,7 +99,7 @@ namespace VCore
             std::atomic<uint32_t> m_NextId;
             std::atomic<TextureNode*> m_Head;
 
-            CMemoryPool<TextureNode> m_Pool;
+            Memory::CObjectPool<TextureNode> m_Pool;
 
             // uint32_t m_NextId;
             // TextureNode* m_Head;

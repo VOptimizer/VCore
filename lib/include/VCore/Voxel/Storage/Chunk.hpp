@@ -30,7 +30,6 @@
 #include "../Voxel.hpp"
 #include <utility>
 #include <VCore/VConfig.hpp>
-#include <VCore/Memory/MemoryPool.hpp>
 
 namespace VCore
 {
@@ -121,21 +120,21 @@ namespace VCore
                 Clear();
             }
 
-            void *operator new(size_t n)
-            {
-                // 59424
-                return m_Pool.allocate(n);
-            }
+            // void *operator new(size_t n)
+            // {
+            //     // 59424
+            //     return m_Pool.allocate(n);
+            // }
 
-            void operator delete(void *p)
-            {
-                m_Pool.deallocate((CByteChunk*)p, sizeof(CByteChunk));
-            }
+            // void operator delete(void *p)
+            // {
+            //     m_Pool.deallocate((CByteChunk*)p, sizeof(CByteChunk));
+            // }
 
             virtual ~CByteChunk() { Clear(); }
 
         private:
-            static CMemoryPool<CByteChunk> m_Pool;
+            // static CMemoryPool<CByteChunk> m_Pool;
             static constexpr int HASHMAP_SIZE = 254;
 
             struct VoxelRef
@@ -161,16 +160,16 @@ namespace VCore
     class CChunk : public IChunk
     {
         public:
-            void *operator new(size_t n)
-            {
-                // 155696
-                return m_Pool.allocate(n);
-            }
+            // void *operator new(size_t n)
+            // {
+            //     // 155696
+            //     return m_Pool.allocate(n);
+            // }
 
-            void operator delete(void *p)
-            {
-                m_Pool.deallocate((CChunk*)p, sizeof(CChunk));
-            }
+            // void operator delete(void *p)
+            // {
+            //     m_Pool.deallocate((CChunk*)p, sizeof(CChunk));
+            // }
 
             virtual ~CChunk() { Clear(); }
 
@@ -179,7 +178,7 @@ namespace VCore
             CVoxel GetVoxel(const Math::Vec3i &_Position) const override;
 
         private:
-            static CMemoryPool<CChunk> m_Pool;
+            // static CMemoryPool<CChunk> m_Pool;
 
             void Clear();
             CVoxel m_Data[Config::ChunkSize * Config::ChunkSize * Config::ChunkSize];

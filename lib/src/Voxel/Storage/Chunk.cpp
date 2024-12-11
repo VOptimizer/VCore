@@ -28,9 +28,6 @@
 
 namespace VCore
 {
-    CMemoryPool<CChunk> CChunk::m_Pool;
-    CMemoryPool<CByteChunk> CByteChunk::m_Pool;
-
     //////////////////////////////////////////////////
     // CBitMaskChunk functions
     //////////////////////////////////////////////////

@@ -26,7 +26,7 @@
 #define TEXTUREPACKER_HPP
 
 #include <VCore/Math/Vector.hpp>
-#include <VCore/Memory/MemoryPool.hpp>
+#include <VCore/Memory/ObjectPool.hpp>
 #include <vector>
 
 namespace VCore
@@ -144,12 +144,12 @@ namespace VCore
             ~TTexturePacker() {}
         private:
             struct SNode;
-            CMemoryPool<SNode> m_Pool;
+            Memory::CObjectPool<SNode> m_Pool;
 
             struct SNode
             {
                 SNode() : Child(), Pool(nullptr), Leaf(true) {}
-                SNode(const Math::Vec2ui &_Position, const Math::Vec2ui &_Size, CMemoryPool<SNode> *_Pool) : SNode()
+                SNode(const Math::Vec2ui &_Position, const Math::Vec2ui &_Size, Memory::CObjectPool<SNode> *_Pool) : SNode()
                 {
                     Position = _Position;
                     Size = _Size;
@@ -159,7 +159,7 @@ namespace VCore
                 SNode *Child[2];
                 Math::Vec2ui Position;
                 Math::Vec2ui Size;
-                CMemoryPool<SNode> *Pool;
+                Memory::CObjectPool<SNode> *Pool;
                 bool Leaf;
 
                 ~SNode()
