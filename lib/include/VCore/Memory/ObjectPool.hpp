@@ -291,11 +291,13 @@ namespace VCore
                 inline void destruct(T* _ptr)
                 {
                     _ptr->~T();
-                    _Internal::s_Storage->Deallocate(_ptr);
+                    Deallocate(_ptr);
                 }
 
                 ~CObjectPool()
                 {
+                    _Internal::s_Storage.SetStorage(nullptr, nullptr);
+
                     // Frees all allocated memory.
                     for (auto &&block : m_Blocks)
                         delete[] block;

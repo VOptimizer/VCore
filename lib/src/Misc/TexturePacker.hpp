@@ -106,7 +106,6 @@ namespace VCore
                 );
 
                 m_CanvasSize = m_Rects.back().Size;
-                // SNode *root = new SNode(Math::Vec2ui(), m_CanvasSize);
                 SNode *root = m_Pool.construct(Math::Vec2ui(), m_CanvasSize, &m_Pool);
 
                 auto it = m_Rects.rbegin();
@@ -143,9 +142,6 @@ namespace VCore
 
             ~TTexturePacker() {}
         private:
-            struct SNode;
-            Memory::CObjectPool<SNode> m_Pool;
-
             struct SNode
             {
                 SNode() : Child(), Pool(nullptr), Leaf(true) {}
@@ -172,6 +168,8 @@ namespace VCore
                     }
                 }
             };
+
+            Memory::CObjectPool<SNode> m_Pool;
 
             Math::Vec2ui m_CanvasSize;
             std::vector<TRect<T>> m_Rects;
