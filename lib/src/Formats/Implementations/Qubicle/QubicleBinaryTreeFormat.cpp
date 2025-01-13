@@ -126,7 +126,7 @@ namespace VCore
 
         auto sceneNode = std::make_shared<CSceneNode>();
         sceneNode->Position = pos;
-        sceneNode->Mesh = mesh;
+        sceneNode->Model = mesh;
         m_SceneTree->AddChild(sceneNode);
 
         uint32_t dataSize = m_DataStream->Read<uint32_t>();
@@ -187,7 +187,7 @@ namespace VCore
 
         auto sceneNode = std::make_shared<CSceneNode>();
         sceneNode->Position = pos;
-        sceneNode->Mesh = mesh;
+        sceneNode->Model = mesh;
         m_SceneTree->AddChild(sceneNode);
 
         uint32_t dataSize = m_DataStream->Read<uint32_t>();

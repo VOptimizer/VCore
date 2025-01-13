@@ -17,7 +17,7 @@ set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelModel.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/Storage/Chunk.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelTextureMap.cpp"
 
-         "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/MagicaVoxelFormat.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/MagicaVoxel/MagicaVoxelFormat.cpp"
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/GoxelFormat.cpp"
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/KenshapeFormat.cpp"
 

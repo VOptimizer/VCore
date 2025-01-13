@@ -157,9 +157,9 @@ namespace VCore
         else
             modelMatrix = sceneTree->GetModelMatrix();
 
-        if(sceneTree->Mesh)
+        if(sceneTree->Model)
         {
-            auto mesh = GenerateMesh(sceneTree->Mesh);
+            auto mesh = GenerateMesh(sceneTree->Model);
             if(mesh)
             {
                 mesh->ModelMatrix = modelMatrix;

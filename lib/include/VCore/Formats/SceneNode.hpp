@@ -46,8 +46,8 @@ namespace VCore
             Math::Vec3f Scale;
             std::string Name;
 
-            VoxelModel Mesh;            //!< A scene node can either have a mesh or an animation
-            VoxelAnimation Animation;   //!< A scene node can either have a mesh or an animation
+            VoxelModel Model;            //!< A scene node can either have a model or an animation
+            VoxelAnimation Animation;   //!< A scene node can either have a model or an animation
 
             inline Math::Mat4x4 GetModelMatrix() const
             {

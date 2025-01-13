@@ -144,7 +144,7 @@ namespace VCore
 
             auto sceneNode = std::make_shared<CSceneNode>();
 
-            sceneNode->Mesh = m;
+            sceneNode->Model = m;
             m_SceneTree->AddChild(sceneNode);
             m_SceneTree->Visible = l.Visible;
 

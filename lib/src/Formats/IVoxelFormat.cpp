@@ -28,7 +28,7 @@
 
 #include "../FileUtils.hpp"
 
-#include "Implementations/MagicaVoxelFormat.hpp"
+#include "Implementations/MagicaVoxel/MagicaVoxelFormat.hpp"
 #include "Implementations/KenshapeFormat.hpp"
 #include "Implementations/GoxelFormat.hpp"
 #include "Implementations/Qubicle/QubicleBinaryFormat.hpp"
@@ -94,6 +94,52 @@ namespace VCore
 
         ClearCache();
         ParseFormat();
+    }
+
+    void IVoxelFormat::Open(IIOHandler *_IOHandler, const std::string _File, FileMode _Mode)
+    {
+        if(_Mode == FileMode::CLOSED)
+            throw CVoxelLoaderException("Can't open file in closed mode!");
+
+        DeleteFileStream();
+        m_IOHandler = _IOHandler;
+        m_Mode = _Mode;
+
+        char openMode[4] = {};
+        uint8_t pos = 0;
+        if((static_cast<int>(_Mode) & static_cast<int>(FileMode::READ)) || (static_cast<int>(_Mode) & static_cast<int>(FileMode::STREAMED)))
+            openMode[pos++] = 'r';
+
+        if((static_cast<int>(_Mode) & static_cast<int>(FileMode::WRITE)))
+            openMode[pos++] = 'w';
+
+        openMode[pos++] = 'b';
+        m_DataStream = m_IOHandler->Open(_File, openMode);
+
+        // ClearCache();
+        // ParseFormat();
+    }
+
+    void IVoxelFormat::Load()
+    {
+        if((m_Mode != FileMode::READ) && (m_Mode != FileMode::STREAMED))
+            throw CVoxelLoaderException("Can't read file which isn't opened in read mode!");
+
+        ClearCache();
+        ParseFormat();
+    }
+
+    void IVoxelFormat::Save()
+    {
+        if(m_Mode != FileMode::WRITE)
+            throw CVoxelLoaderException("Can't save to file which isn't opened in write mode!");
+
+        WriteFormat();
+    }
+
+    void IVoxelFormat::Close()
+    {
+        DeleteFileStream();
     }
 
     void IVoxelFormat::DeleteFileStream()

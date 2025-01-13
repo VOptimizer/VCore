@@ -99,7 +99,7 @@ namespace VCore
 
         auto sceneNode = std::make_shared<CSceneNode>();
         m_SceneTree->AddChild(sceneNode);
-        sceneNode->Mesh = m;
+        sceneNode->Model = m;
 
         m->Textures = std::move(m_Textures);
 

@@ -46,12 +46,44 @@ namespace VCore
         QUBICLE
     };
 
+    enum class FileMode
+    {
+        CLOSED = 0,
+        READ = 1,
+        WRITE = 2,
+        STREAMED = 4
+    };
+
     class IVoxelFormat;
     using VoxelFormat = std::shared_ptr<IVoxelFormat>;
 
     class IVoxelFormat
     {
         public:
+            IVoxelFormat() : m_Mode(FileMode::CLOSED), m_IOHandler(nullptr), m_DataStream(nullptr) {}
+
+            template<class IOHandler = CDefaultIOHandler>
+            static VoxelFormat CreateAndOpen(const std::string &_Filename, FileMode _Mode)
+            {
+                auto loader = Create(GetType(_Filename));
+                loader->Open<IOHandler>(_Filename, _Mode);
+
+                return loader;
+            }
+      
+            template<class IOHandler = CDefaultIOHandler>
+            void Open(const std::string &_File, FileMode _Mode)
+            {
+                Open(new IOHandler(), _File, _Mode);
+            }
+
+            virtual void Open(IIOHandler *_IOHandler, const std::string _File, FileMode _Mode);
+
+            virtual void Load();
+            virtual void Save();
+
+            virtual void Close();
+
             /**
              * @brief Creates an instance of a loader, which then loads the given file.
              * 
@@ -98,6 +130,8 @@ namespace VCore
              */
             virtual void Load(IIOHandler *_IOHandler, const std::string _File);
 
+            std::vector<VoxelModel> m_Models;
+
             /**
              * @return Gets a list with all models inside the voxel file.
              */
@@ -112,16 +146,6 @@ namespace VCore
             inline std::vector<VoxelAnimation> GetAnimations() const
             {
                 return m_Animations;
-            }
-
-            inline ankerl::unordered_dense::map<TextureType, Texture> GetTextures() const
-            {
-                return m_Textures;
-            }
-
-            inline std::vector<Material> GetMaterials() const
-            {
-                return m_Materials;
             }
 
             /**
@@ -140,46 +164,24 @@ namespace VCore
                 m_SceneTree = _Tree;
             }
 
-            virtual ~IVoxelFormat() { DeleteFileStream(); }
-
-            /**
-             * @brief Merges all colors and materials into one list. With this helper method it is possible to merge multiple voxel files together.
-             * 
-             * @param textures: Map in which the colors are merged into
-             * @param materials: vector in which the materials are merged into
-             * @param meshes: Voxel meshes from another file
-             */
-            // static void Combine(std::map<TextureType, Texture> &textures, std::vector<Material> &materials, const std::vector<VoxelMesh> &meshes);
+            virtual ~IVoxelFormat() { ClearCache(); DeleteFileStream(); }
         protected:
             virtual void ClearCache();
             void DeleteFileStream();
 
             SceneNode m_SceneTree;
+            FileMode m_Mode;
 
             IIOHandler *m_IOHandler;
             IFileStream *m_DataStream;
 
-            std::vector<VoxelModel> m_Models;
+            
             std::vector<VoxelAnimation> m_Animations;
             std::vector<Material> m_Materials;
             ankerl::unordered_dense::map<TextureType, Texture> m_Textures;
 
             virtual void ParseFormat() = 0;
-
-            // template<class T>
-            // T ReadData()
-            // {
-            //     T Ret;
-            //     ReadData((char*)&Ret, sizeof(Ret));
-            //     return Ret;
-            // }
-
-            // void ReadData(char *Buf, size_t Size);
-            // bool IsEof();
-            // size_t Tellg();
-            // void Skip(size_t Bytes);
-            // void Reset();
-            // std::vector<char> ReadDataChunk(size_t size);
+            virtual void WriteFormat() {}
     };
 }
 
