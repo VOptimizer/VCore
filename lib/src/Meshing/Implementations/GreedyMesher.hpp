@@ -131,7 +131,7 @@ namespace VCore
             bool m_GenerateTexture;
             bool m_GenerateSingleChunks;
 
-            void GenerateQuad(CMeshBuilder &result, const std::vector<Material> &_Materials, Config::bitmask_t faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const CVoxel& _Voxel);
+            void GenerateQuad(CMeshBuilder &result, Config::bitmask_t faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const CVoxel& _Voxel);
     };
 }
 

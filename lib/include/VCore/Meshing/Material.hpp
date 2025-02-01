@@ -34,7 +34,7 @@ namespace VCore
     class CMaterial
     {
         public:
-            CMaterial() : Name(), Metallic(0), Specular(0), Roughness(1), IOR(0), Power(0), Transparency(0) {}
+            CMaterial() : Name(), Metallic(0), Specular(0), Roughness(1), IOR(0), Emission(0), Power(0), Transparency(0) {}
             CMaterial(const CMaterial &_Material) { *this = _Material; }
 
             std::string Name;
@@ -42,6 +42,7 @@ namespace VCore
             float Specular;
             float Roughness;
             float IOR;
+            float Emission;
             float Power;    //!< For emissive.
             float Transparency;
 
@@ -52,6 +53,7 @@ namespace VCore
                 Specular = _Material.Specular;
                 Roughness = _Material.Roughness;
                 IOR = _Material.IOR;
+                Emission = _Material.Emission;
                 Power = _Material.Power;
                 Transparency = _Material.Transparency;
 
@@ -66,6 +68,7 @@ namespace VCore
                 equal = Specular == other.Specular && equal;
                 equal = Roughness == other.Roughness && equal;
                 equal = IOR == other.IOR && equal;
+                equal = Emission == other.Emission && equal;
                 equal = Power == other.Power && equal;
                 equal = Transparency == other.Transparency && equal;
 
@@ -80,7 +83,7 @@ namespace VCore
             ~CMaterial() = default;
     };
 
-    using Material = std::shared_ptr<CMaterial>;
+    using Material = CMaterial*;
 }
 
 #endif //MATERIAL_HPP

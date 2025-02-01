@@ -25,6 +25,8 @@
 #ifndef VCONFIG_HPP
 #define VCONFIG_HPP
 
+#include <stdint.h>
+
 namespace VCore
 {
   namespace Config
@@ -47,6 +49,9 @@ namespace VCore
 
     // Mask to convert a world space position to a chunk start position.
     static constexpr uint32_t ChunkPositionMask = ~InnerChunkMask;
+
+    // Maximum count of materials
+    static constexpr uint8_t MaxMaterialSlots = UCHAR_MAX;
   }
 }
 

@@ -25,6 +25,7 @@
 #include <stb_image.h>
 #include <string.h>
 #include <VCore/Misc/Exceptions.hpp>
+#include <VCore/Meshing/MaterialManager.hpp>
 #include "QubicleBinaryTreeFormat.hpp"
 
 namespace VCore
@@ -40,7 +41,7 @@ namespace VCore
         if(major != 1 && minor != 0)
             throw CVoxelLoaderException("Unsupported version!");
 
-        m_Materials.push_back(std::make_shared<CMaterial>());
+        // m_Materials.push_back(MaterialManager::GetMaterial(0));
 
         m_DataStream->Seek(3 * sizeof(float));
         m_DataStream->Seek(8); // COLORMAP
@@ -114,8 +115,7 @@ namespace VCore
         std::string name(nameLen + 1, '\0');
         m_DataStream->Read(&name[0], nameLen);
 
-        VoxelModel mesh = std::make_shared<CVoxelModel>();
-        mesh->Materials = m_Materials;
+        VoxelModel mesh = std::make_shared<CVoxelSpace>();
         mesh->Name = name;
         auto pos = ReadVector();
 
@@ -159,7 +159,8 @@ namespace VCore
                         continue;
 
                     auto pos = Math::Vec3i(x, y, z);
-                    mesh->SetVoxel(pos, 0, cid);
+
+                    mesh->insert({pos, CVoxel(cid, 0)});
                 }
             }
         }
@@ -174,8 +175,7 @@ namespace VCore
         std::string name(nameLen + 1, '\0');
         m_DataStream->Read(&name[0], nameLen);
 
-        VoxelModel mesh = std::make_shared<CVoxelModel>();
-        mesh->Materials = m_Materials;
+        VoxelModel mesh = std::make_shared<CVoxelSpace>();
         mesh->Name = name;
         auto pos = ReadVector();
 
@@ -219,7 +219,7 @@ namespace VCore
                         continue;
 
                     auto pos = Math::Vec3f(x, y, z);
-                    mesh->SetVoxel(pos, 0, cid);
+                    mesh->insert({pos, CVoxel(cid, 0)});
                 }
             }
         }

@@ -32,6 +32,8 @@
 #include <VCore/Voxel/VoxelAnimation.hpp>
 #include <VCore/Misc/FileStream.hpp>
 
+#include <VCore/Meshing/Material.hpp>
+
 namespace VCore
 {
     enum class LoaderType
@@ -172,7 +174,7 @@ namespace VCore
             SceneNode m_SceneTree;
             FileMode m_Mode;
 
-            IIOHandler *m_IOHandler;
+            std::shared_ptr<IIOHandler> m_IOHandler;
             IFileStream *m_DataStream;
 
             

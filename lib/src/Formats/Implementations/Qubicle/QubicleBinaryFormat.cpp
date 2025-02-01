@@ -24,6 +24,7 @@
 
 #include <stdint.h>
 #include <VCore/Misc/Exceptions.hpp>
+#include <VCore/Meshing/MaterialManager.hpp>
 #include "QubicleBinaryFormat.hpp"
 
 namespace VCore
@@ -37,12 +38,11 @@ namespace VCore
         if(m_Header.Version[0] != 1 || m_Header.Version[1] != 1 || m_Header.Version[2] != 0 || m_Header.Version[3] != 0)
             throw CVoxelLoaderException("Version: " + std::to_string(m_Header.Version[0]) + "." + std::to_string(m_Header.Version[1]) + "." + std::to_string(m_Header.Version[2]) + "." + std::to_string(m_Header.Version[3]) + " is not supported");
 
-        m_Materials.push_back(std::make_shared<CMaterial>());
+        m_Materials.push_back(MaterialManager::GetMaterial(0));
 
         for (int i = 0; i < m_Header.MatrixCount; i++)
         {
-            VoxelModel mesh = std::make_shared<CVoxelModel>();
-            mesh->Materials = m_Materials;
+            VoxelModel mesh = std::make_shared<CVoxelSpace>();
 
             uint8_t nameLen = m_DataStream->Read<uint8_t>();
             std::string name(nameLen + 1, '\0');
@@ -101,7 +101,7 @@ namespace VCore
                         continue;
 
                     auto pos = Math::Vec3f(x, y, z);
-                    mesh->SetVoxel(pos, 0, cid);
+                    mesh->insert({pos, CVoxel(cid, 0)});
                 }
             }
         }
@@ -138,7 +138,7 @@ namespace VCore
                         if(cid == 0xFFFFFFFF)
                             continue;
 
-                        mesh->SetVoxel(pos, 0, cid);
+                        mesh->insert({pos, CVoxel(cid, 0)});
                     }
                     
                 }
@@ -155,7 +155,7 @@ namespace VCore
                     if(cid == 0xFFFFFFFF)
                         continue;
 
-                    mesh->SetVoxel(pos, 0, cid);
+                    mesh->insert({pos, CVoxel(cid, 0)});
                 }
             }
         }

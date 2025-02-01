@@ -26,6 +26,7 @@
 #include "KenshapeFormat.hpp"
 #include <stb_image.h>
 #include <VCore/Misc/Exceptions.hpp>
+#include <VCore/Meshing/MaterialManager.hpp>
 
 namespace VCore
 {
@@ -60,11 +61,7 @@ namespace VCore
             throw CVoxelLoaderException("Invalid file format!");
         }
 
-        VoxelModel m = std::make_shared<CVoxelModel>();
-        auto mat = std::make_shared<CMaterial>();
-        m_Materials.push_back(mat);
-        m->Materials.push_back(mat);
-
+        VoxelModel m = std::make_shared<CVoxelSpace>();
         Math::Vec3f Pos;
 
         Pos.y = Content->Size.y - 1;
@@ -85,7 +82,7 @@ namespace VCore
                 for (; z <= Pos.z + blocks; z++)
                 {
                     Math::Vec3f v(Pos.x, Pos.y, z);
-                    m->SetVoxel(v, 0, (z < Pos.z) ? backIdx : idx);
+                    m->insert({v, CVoxel((z < Pos.z) ? backIdx : idx, 0)});
                 }
             }
 

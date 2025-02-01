@@ -86,7 +86,7 @@ namespace VCore
              * @param _Size: Size of the buffer.
              * @return Returns the read size.
              */
-            virtual size_t Read(char *_Buffer, size_t _Size) = 0;
+            virtual uint64_t Read(char *_Buffer, uint64_t _Size) = 0;
 
             /**
              * @brief Writes data to a file.
@@ -94,31 +94,35 @@ namespace VCore
              * @param _Size: Size of the buffer.
              * @return Returns the written size.
              */
-            virtual size_t Write(const char *_Buffer, size_t _Size) = 0;
+            virtual uint64_t Write(const char *_Buffer, uint64_t _Size) = 0;
 
             /**
              * @brief Moves the cursor by the given offset from the origin.
              * @param _Offset: Offset in bytes to move the cursor.
              * @param _Origin: The seek origin.
              */
-            virtual void Seek(size_t _Offset, SeekOrigin _Origin = SeekOrigin::CUR) = 0;
+            virtual void Seek(uint64_t _Offset, SeekOrigin _Origin = SeekOrigin::CUR) = 0;
 
             /**
              * @return Returns the current cursor position in bytes.
              */
-            virtual size_t Tell() = 0;
+            virtual uint64_t Tell() = 0;
 
             /**
              * @return Returns the size of the file.
              */
-            virtual size_t Size() = 0;
+            virtual uint64_t Size() = 0;
 
             /**
              * @brief Closes the file stream.
              */
-            virtual void Close() {}
+            virtual void Close() = 0;
 
-            virtual ~IFileStream() { Close(); }
+            const std::string &GetFilePath() const { return m_FilePath; }
+
+            virtual ~IFileStream() = default;
+        protected:
+            std::string m_FilePath;
     };
 
     template<>
@@ -156,16 +160,16 @@ namespace VCore
         public:
             CDefaultFileStream(const std::string &_File, const char *_OpenMode);
 
-            size_t Read(char *_Buffer, size_t _Size) override;
-            size_t Write(const char *_Buffer, size_t _Size) override;
-            void Seek(size_t _Offset, SeekOrigin _Origin = SeekOrigin::CUR) override;
-            size_t Tell() override;
-            size_t Size() override;
+            uint64_t Read(char *_Buffer, uint64_t _Size) override;
+            uint64_t Write(const char *_Buffer, uint64_t _Size) override;
+            void Seek(uint64_t _Offset, SeekOrigin _Origin = SeekOrigin::CUR) override;
+            uint64_t Tell() override;
+            uint64_t Size() override;
             void Close() override;
 
-            virtual ~CDefaultFileStream() = default;
+            virtual ~CDefaultFileStream() { Close(); }
         private:
-            size_t m_Size;
+            uint64_t m_Size;
             FILE *m_File;
     };
 

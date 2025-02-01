@@ -22,12 +22,15 @@
  * SOFTWARE.
  */
 
+#include <VCore/Formats/Streamable.hpp>
 #include <VCore/Voxel/Storage/VoxelSpace.hpp>
 #include <VCore/Voxel/VoxelModel.hpp>
 #include <VCore/VConfig.hpp>
 
 namespace VCore
 {
+    static const Math::Vec3i CHUNK_SIZE(Config::ChunkSize, Config::ChunkSize, Config::ChunkSize);
+
     //////////////////////////////////////////////////
     // CChunkQueryList functions
     //////////////////////////////////////////////////
@@ -43,7 +46,7 @@ namespace VCore
         {
             Math::Vec3iHasher hasher;
 
-            CBBox bbox(it.m_Iterator->first, it.m_Iterator->first + m_ChunkSize);
+            CBBox bbox(it.m_Iterator->first, it.m_Iterator->first + CHUNK_SIZE);
             it.m_ChunkMeta = {hasher(it.m_Iterator->first), it.m_Iterator->second, bbox, it.m_Iterator->second->inner_bbox(it.m_Iterator->first)};
         }
 
@@ -65,7 +68,7 @@ namespace VCore
         else
         {
             Math::Vec3iHasher hasher;
-            CBBox bbox(it.m_Iterator->first, it.m_Iterator->first + m_ChunkSize);
+            CBBox bbox(it.m_Iterator->first, it.m_Iterator->first + CHUNK_SIZE);
             it.m_ChunkMeta = {hasher(it.m_Iterator->first), it.m_Iterator->second, bbox, it.m_Iterator->second->inner_bbox(it.m_Iterator->first)};
         }
         return it;
@@ -97,7 +100,6 @@ namespace VCore
         m_Chunks = _Other.m_Chunks;
         m_FilterFunction = _Other.m_FilterFunction;
         m_Userdata = _Other.m_Userdata;
-        m_ChunkSize = _Other.m_ChunkSize;
         return *this;
     }
 
@@ -106,18 +108,16 @@ namespace VCore
         m_Chunks = _Other.m_Chunks;
         m_FilterFunction = _Other.m_FilterFunction;
         m_Userdata = _Other.m_Userdata;
-        m_ChunkSize = _Other.m_ChunkSize;
 
         _Other.m_Chunks = nullptr;
         _Other.m_FilterFunction = nullptr;
         _Other.m_Userdata = nullptr;
-        _Other.m_ChunkSize = Math::Vec3i();
         return *this;
     }
 
     bool CChunkQueryList::ApplyFilter(ankerl::unordered_dense::map<Math::Vec3i, IChunk*, Math::Vec3iHasher>::const_iterator &_Iterator, SChunkMeta &_ChunkMeta) const
     {
-        CBBox bbox(_Iterator->first, _Iterator->first + m_ChunkSize);
+        CBBox bbox(_Iterator->first, _Iterator->first + CHUNK_SIZE);
         bool filtered = !m_FilterFunction;
         if(m_FilterFunction)
             filtered = m_FilterFunction(bbox, _Iterator->second, m_Userdata);
@@ -208,19 +208,20 @@ namespace VCore
     // CVoxelSpace functions
     //////////////////////////////////////////////////
 
-    CVoxelSpace::CVoxelSpace() : m_ChunkSize(Config::ChunkSize, Config::ChunkSize, Config::ChunkSize), m_VoxelsCount(0) {}
-    CVoxelSpace::CVoxelSpace(const Math::Vec3i &_ChunkSize) : CVoxelSpace()
-    {
-        m_ChunkSize = _ChunkSize;
-    }
+    CVoxelSpace::CVoxelSpace(IStreamable *_Stream) : m_VoxelsCount(0), m_Stream(_Stream), m_ModelLoaded(false) {}
+    CVoxelSpace::CVoxelSpace(CVoxelSpace &&_Other) { *this = std::move(_Other); }
 
-    CVoxelSpace::CVoxelSpace(CVoxelSpace &&_Other) 
-    {
-        *this = std::move(_Other);
+    CVoxelSpace::~CVoxelSpace() 
+    { 
+        clear(); 
+        if(m_Stream) 
+            delete m_Stream;
     }
 
     void CVoxelSpace::insert(const pair &_pair)
     {
+        CheckLoadModel();
+
         Math::Vec3i position = GetChunkpos(_pair.first);
         auto it = m_Chunks.find(position);
 
@@ -241,6 +242,8 @@ namespace VCore
 
     CVoxelSpace::iterator CVoxelSpace::erase(const iterator &_it)
     {
+        CheckLoadModel();
+
         Math::Vec3i position = GetChunkpos(_it->first);
         auto it = m_Chunks.find(position);
         if(it == m_Chunks.end())
@@ -277,6 +280,7 @@ namespace VCore
 
     CVoxelSpace::iterator CVoxelSpace::find(const Math::Vec3i &_v) const
     {
+        const_cast<CVoxelSpace*>(this)->CheckLoadModel();
         Math::Vec3i position = GetChunkpos(_v);
         auto it = m_Chunks.find(position);
         if(it == m_Chunks.end())
@@ -291,7 +295,8 @@ namespace VCore
 
     CVoxelSpace::querylist CVoxelSpace::queryDirtyChunks() const
     {
-        return CChunkQueryList(m_Chunks, m_ChunkSize, [](const CBBox &_BBox, const IChunk *_Chunk, void *_Userdata)
+        const_cast<CVoxelSpace*>(this)->CheckLoadModel();
+        return CChunkQueryList(m_Chunks, [](const CBBox &_BBox, const IChunk *_Chunk, void *_Userdata)
         {
             (void)_BBox;
             (void)_Userdata;
@@ -308,12 +313,14 @@ namespace VCore
 
     CVoxelSpace::querylist CVoxelSpace::queryChunks() const
     {
-        return CChunkQueryList(m_Chunks, m_ChunkSize);
+        const_cast<CVoxelSpace*>(this)->CheckLoadModel();
+        return CChunkQueryList(m_Chunks);
     }
 
     CVoxelSpace::querylist CVoxelSpace::queryChunks(const CFrustum *_Frustum) const
     {
-        return CChunkQueryList(m_Chunks, m_ChunkSize, [](const CBBox &_BBox, const IChunk *_Chunk, void *_Userdata)
+        const_cast<CVoxelSpace*>(this)->CheckLoadModel();
+        return CChunkQueryList(m_Chunks, [](const CBBox &_BBox, const IChunk *_Chunk, void *_Userdata)
         {
             CFrustum *frustum = (CFrustum*)_Userdata;
             return frustum->IsOnFrustum(_Chunk->inner_bbox(_BBox.Beg));
@@ -345,8 +352,18 @@ namespace VCore
         return end();
     }
 
+    void CVoxelSpace::CheckLoadModel()
+    {
+        if(m_Stream && !m_ModelLoaded && !m_Stream->SupportsChunkOffloading())
+        {
+            m_ModelLoaded = true;
+            m_Stream->ReadVoxelSpace(*this);
+        }
+    }
+
     CVoxelSpace::iterator CVoxelSpace::begin()
     {
+        const_cast<CVoxelSpace*>(this)->CheckLoadModel();
         if(m_Chunks.empty())
             return end();
 
@@ -362,6 +379,8 @@ namespace VCore
 
     CBBox CVoxelSpace::calculateBBox() const
     {
+        const_cast<CVoxelSpace*>(this)->CheckLoadModel();
+
         CBBox bbox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i());
         for (auto &&c : m_Chunks)
         {
@@ -379,13 +398,14 @@ namespace VCore
             delete chunk.second;
         
         m_Chunks.clear();
+        m_ModelLoaded = false;
     }
 
     CVoxelSpace &CVoxelSpace::operator=(CVoxelSpace &&_Other)
     {
-        m_ChunkSize = _Other.m_ChunkSize;
         m_VoxelsCount = _Other.m_VoxelsCount;
         m_Chunks = std::move(_Other.m_Chunks);
+        m_ModelLoaded = std::move(_Other.m_ModelLoaded);
 
         return *this;
     }

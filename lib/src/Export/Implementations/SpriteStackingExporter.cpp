@@ -41,7 +41,7 @@ namespace VCore
 
     std::vector<char> CSpriteStackingExporter::Generate(VoxelModel m)
     {
-        Math::Vec3f Size = m->GetBBox().GetSize();
+        Math::Vec3f Size = m->calculateBBox().GetSize();
         std::vector<uint32_t> Pixels(Size.x * Size.y * Size.z, 0);
 
         auto diffuse = m->Textures.at(TextureType::DIFFIUSE);
@@ -52,9 +52,9 @@ namespace VCore
             {
                 for (size_t z = 0; z < Size.z; z++)
                 {
-                    auto Vox = m->GetVoxel(Math::Vec3f(x, y, z));
-                    if(Vox.IsInstantiated())
-                        Pixels[x + (size_t)Size.x * z + (size_t)Size.x * (size_t)Size.z * y] = diffuse->GetPixel(Math::Vec2ui(Vox.Color, 0));
+                    auto voxIt = m->find(Math::Vec3f(x, y, z));
+                    if(voxIt != m->end())
+                        Pixels[x + (size_t)Size.x * z + (size_t)Size.x * (size_t)Size.z * y] = diffuse->GetPixel(Math::Vec2ui(voxIt->second.Color, 0));
                 }
             }
         }

@@ -27,6 +27,7 @@
 
 #include <VCore/Voxel/VoxelModel.hpp>
 #include <VCore/Voxel/VoxelAnimation.hpp>
+#include <VCore/Math/Mat4x4.hpp>
 
 namespace VCore
 {

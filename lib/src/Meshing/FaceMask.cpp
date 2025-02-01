@@ -27,6 +27,7 @@
 #include "Implementations/Simd.hpp"
 #include "../Misc/Helper.hpp"
 #include <cmath>
+#include <VCore/Meshing/MaterialManager.hpp>
 
 namespace VCore
 {
@@ -49,7 +50,7 @@ namespace VCore
         // This logic calculates the index of one of the three other axis.
         m_Axis = Math::TVector3<char>(_Axis, (_Axis + 1) % 3, (_Axis + 2) % 3);
 
-        auto &voxels = _Model->GetVoxels();
+        auto &voxels = *_Model;
         m_Chunk.Chunk = voxels.getChunk(_ChunkPos);
         if(m_Chunk.Chunk)
         {
@@ -118,13 +119,11 @@ namespace VCore
         m_CachedKey = 0xFFFFFFFF;
 
         // Finds all transparent materials.
-        int counter = 0;
-        for (auto &&material : m_Model->Materials)
+        for (uint8_t i = 0; i < Config::MaxMaterialSlots; i++)
         {
-            if(std::fpclassify(material->Transparency) != FP_ZERO)
-                m_TransparentMaterials.push_back(counter);
-
-            counter++;
+            auto material = MaterialManager::GetMaterial(i);
+            if(material && std::fpclassify(material->Transparency) != FP_ZERO)
+                m_TransparentMaterials.push_back(i);
         }
 
         // for (int heightAxis = BBox.Beg.v[axis1]; heightAxis <= BBox.End.v[axis1]; heightAxis++)
@@ -165,7 +164,7 @@ namespace VCore
 
                     // Checks if the position is outside of the current chunk and gets the neighbor chunk
                     if((position.v[m_Axis.x] < TotalBBox.Beg.v[m_Axis.x]) || (position.v[m_Axis.x] >= TotalBBox.End.v[m_Axis.x]))
-                        chunk = m_Model->GetVoxels().getChunk(position);
+                        chunk = m_Model->getChunk(position);
 
                     if(chunk)
                         FillVoxelBits(opaqueVoxels + (i * simdSize), transparentVoxels + (i * simdSize), chunk, position, count);

@@ -28,8 +28,7 @@ namespace VCore
 {
     CPlanesVoxelizer::CPlanesVoxelizer()
     {
-        m_Mesh = std::make_shared<CVoxelModel>();
-        m_Mesh->Materials.push_back(std::make_shared<CMaterial>());
+        m_Mesh = std::make_shared<CVoxelSpace>();
     }
 
     void CPlanesVoxelizer::SetVoxelSpaceSize(const Math::Vec3i &_size)
@@ -56,7 +55,7 @@ namespace VCore
         if(topsize.IsZero())
             return;
 
-        m_Mesh->Clear();
+        m_Mesh->clear();
         m_Mesh->Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
 
         ProjectPlanes(_planes, _info);

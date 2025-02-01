@@ -30,6 +30,7 @@
 #include <VCore/Voxel/Voxel.hpp>
 #include <VCore/Voxel/Frustum.hpp>
 #include <VCore/VConfig.hpp>
+#include <VCore/Meshing/Texture.hpp>
 
 #include "Chunk.hpp"
 
@@ -38,6 +39,8 @@
 namespace VCore
 {
     class CVoxelSpace;
+    class IStreamable;
+
     class CChunkQueryList
     {
         class CChunkQueryIterator
@@ -77,7 +80,7 @@ namespace VCore
             using FilterFunction = bool (*)(const CBBox &_BBox, const IChunk *_Chunk, void *_Userdata);
 
             CChunkQueryList() : m_FilterFunction(nullptr), m_Chunks(nullptr) {}
-            CChunkQueryList(const ankerl::unordered_dense::map<Math::Vec3i, IChunk*, Math::Vec3iHasher> &_Chunks, const Math::Vec3i &_ChunkSize, FilterFunction _FilterFn = nullptr, void *_Userdata = nullptr) : m_FilterFunction(_FilterFn), m_ChunkSize(_ChunkSize), m_Chunks(&_Chunks), m_Userdata(_Userdata) {}
+            CChunkQueryList(const ankerl::unordered_dense::map<Math::Vec3i, IChunk*, Math::Vec3iHasher> &_Chunks, FilterFunction _FilterFn = nullptr, void *_Userdata = nullptr) : m_FilterFunction(_FilterFn), m_Chunks(&_Chunks), m_Userdata(_Userdata) {}
             CChunkQueryList(const CChunkQueryList &_Other) { *this = _Other; }
             CChunkQueryList(CChunkQueryList &&_Other) { *this = std::move(_Other); }
 
@@ -97,7 +100,6 @@ namespace VCore
             SChunkMeta FilterNext(ankerl::unordered_dense::map<Math::Vec3i, IChunk*, Math::Vec3iHasher>::const_iterator &_Iterator) const;
 
             FilterFunction m_FilterFunction;
-            Math::Vec3i m_ChunkSize;
             const ankerl::unordered_dense::map<Math::Vec3i, IChunk*, Math::Vec3iHasher> *m_Chunks;
             void *m_Userdata;
     };
@@ -112,8 +114,10 @@ namespace VCore
             using iterator = CVoxelSpaceIterator;
             using querylist = CChunkQueryList;
 
-            CVoxelSpace();
-            CVoxelSpace(const Math::Vec3i &_ChunkSize);
+            ankerl::unordered_dense::map<TextureType, Texture> Textures;   //!< Used colors
+            std::string Name; //!< Name of this model.
+
+            CVoxelSpace(IStreamable *_Stream = nullptr);
             CVoxelSpace(const CVoxelSpace &_Other) = delete;
             CVoxelSpace(CVoxelSpace &&_Other);
 
@@ -174,16 +178,24 @@ namespace VCore
             CVoxelSpace &operator=(const CVoxelSpace &_Other) = delete;
             CVoxelSpace &operator=(CVoxelSpace &&_Other);
 
-            ~CVoxelSpace() { clear(); }
+            ~CVoxelSpace();
 
         private:
             IChunk *GetChunk(const Math::Vec3i &_Position);
             iterator next(const Math::Vec3i &_FromPosition) const;
 
-            Math::Vec3i m_ChunkSize;
+            // Checks if the whole model needs to be loaded.
+            void CheckLoadModel();
+
             size_t m_VoxelsCount;
             ankerl::unordered_dense::map<Math::Vec3i, IChunk*, Math::Vec3iHasher> m_Chunks;
+
+            // Allows to stream content from and to disk or other storage devices.
+            IStreamable *m_Stream;
+            bool m_ModelLoaded;
     };
+
+    using VoxelModel = std::shared_ptr<CVoxelSpace>;
 }
 
 

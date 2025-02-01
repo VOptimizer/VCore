@@ -29,6 +29,7 @@
 #include "GoxelFormat.hpp"
 #include <string.h>
 #include <VCore/Misc/Exceptions.hpp>
+#include <VCore/Meshing/MaterialManager.hpp>
 
 namespace VCore
 {
@@ -38,8 +39,8 @@ namespace VCore
 
         ReadFile();
         
-        std::map<int, int> ColorIdx;
-        std::map<int, int> EmissionColorIdx;
+        ankerl::unordered_dense::map<int, int> colorIdx;
+        ankerl::unordered_dense::map<int, int> emissionColorIdx;
         
         for (auto &&l : m_Layers)
         {
@@ -47,10 +48,9 @@ namespace VCore
             if(!l.Visible)
                 continue;
 
-            VoxelModel m = std::make_shared<CVoxelModel>();
+            VoxelModel m = std::make_shared<CVoxelSpace>();
             m->Name = l.Name;
             auto size = m_BBox.End + m_BBox.Beg.abs();
-            std::map<int, int> meshMaterialMapping;
 
             for (auto &&b : l.Blocks)
             {
@@ -76,16 +76,9 @@ namespace VCore
                                 bool found = false;
                                 uint32_t matIdx = 0;
 
-                                auto it = meshMaterialMapping.find(l.MatIdx);
-                                if(it != meshMaterialMapping.end())
+                                auto it = m_MeshMaterialMapping.find(l.MatIdx);
+                                if(it != m_MeshMaterialMapping.end())
                                     matIdx = it->second;
-                                else
-                                {
-                                    auto material = m_Materials[l.MatIdx];
-                                    m->Materials.push_back(material);
-                                    matIdx = m->Materials.size() - 1;
-                                    meshMaterialMapping[l.MatIdx] = matIdx;
-                                }
 
                                 if(m_HasEmission)
                                 {
@@ -96,17 +89,17 @@ namespace VCore
                                     auto material = m_Materials[l.MatIdx];
                                     if(material->Power > 0)
                                     {
-                                        if(EmissionColorIdx.find(p) == EmissionColorIdx.end())
+                                        if(emissionColorIdx.find(p) == emissionColorIdx.end())
                                         {
                                             CColor c;
                                             memcpy(c.c, &p, 4);
 
                                             m_Textures[TextureType::EMISSION]->AddPixel(c);
                                             IdxC = m_Textures[TextureType::EMISSION]->GetSize().x - 1;
-                                            EmissionColorIdx[p] = IdxC;
+                                            emissionColorIdx[p] = IdxC;
                                         }
                                         else
-                                            IdxC = EmissionColorIdx[p];
+                                            IdxC = emissionColorIdx[p];
 
                                         found = true;
                                     }
@@ -114,7 +107,7 @@ namespace VCore
 
                                 if(!found)
                                 {
-                                    if(ColorIdx.find(p) == ColorIdx.end())
+                                    if(colorIdx.find(p) == colorIdx.end())
                                     {
                                         CColor c;
                                         memcpy(c.c, &p, 4);
@@ -129,13 +122,13 @@ namespace VCore
                                             m_Textures[TextureType::EMISSION]->AddPixel(CColor(0, 0, 0, 255));
                                         
                                         IdxC = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;
-                                        ColorIdx[p] = IdxC;
+                                        colorIdx[p] = IdxC;
                                     }
                                     else
-                                        IdxC = ColorIdx[p];
+                                        IdxC = colorIdx[p];
                                 }
                                 
-                                m->SetVoxel(vi, matIdx, IdxC);
+                                m->insert({vi, CVoxel(IdxC, matIdx)});
                             }
                         }
                     }
@@ -157,6 +150,7 @@ namespace VCore
         m_BBox = CBBox();
         m_BL16s.clear();
         m_Layers.clear();
+        m_MeshMaterialMapping.clear();
     }
 
     void CGoxelFormat::ReadFile()
@@ -190,19 +184,25 @@ namespace VCore
 
     void CGoxelFormat::ProcessMaterial(const SChunkHeader &Chunk)
     {
-        auto Dict = ReadDict(Chunk, m_DataStream->Tell());
-        m_Materials.push_back(std::make_shared<CMaterial>());
+        auto dict = ReadDict(Chunk, m_DataStream->Tell());
+        // m_Materials.push_back(MaterialManager::GetMaterial(0));
+        CMaterial mat;
 
         float c[4];
-        memcpy(c, Dict["color"].data(), 4 * sizeof(float));
+        memcpy(c, dict["color"].data(), 4 * sizeof(float));
 
-        m_Materials.back()->Transparency = 1.f - c[3];
-        m_Materials.back()->Metallic = *((float*)(Dict["metallic"]).data());
-        m_Materials.back()->Roughness = *((float*)(Dict["roughness"]).data());
-        m_Materials.back()->Power = *((float*)(Dict["emission"]).data());
+        mat.Transparency = 1.f - c[3];
+        mat.Metallic = *((float*)(dict["metallic"]).data());
+        mat.Roughness = *((float*)(dict["roughness"]).data());
+        mat.Power = *((float*)(dict["emission"]).data());
 
-        if(m_Materials.back()->Power != 0.0)
+        if(mat.Power != 0.0)
             m_HasEmission = true;
+
+        auto slot = MaterialManager::FindMaterialSlot(mat);
+        if(slot == UCHAR_MAX)
+            slot = MaterialManager::AddMaterial(mat);
+        m_MeshMaterialMapping[m_MeshMaterialMapping.size()] = slot;
 
         m_DataStream->Seek(sizeof(int));
     }
@@ -210,7 +210,7 @@ namespace VCore
     void CGoxelFormat::ProcessLayer(const SChunkHeader &Chunk)
     {
         Layer l;
-        size_t StartPos = m_DataStream->Tell();
+        auto StartPos = m_DataStream->Tell();
 
         int Blocks = m_DataStream->Read<int>();
 
@@ -250,17 +250,16 @@ namespace VCore
 
         int w, h, c;
         uint32_t *ImgData = (uint32_t*)stbi_load_from_memory(PngData, Chunk.Size, &w, &h, &c, 4);
-        m_BL16s.emplace_back();
-        m_BL16s.back().SetData(ImgData);
+        m_BL16s.push_back(BL16(ImgData));
         delete[] ImgData;
         delete[] PngData;
 
         m_DataStream->Seek(sizeof(int));
     }
 
-    std::map<std::string, std::string> CGoxelFormat::ReadDict(const SChunkHeader &Chunk, size_t StartPos)
+    ankerl::unordered_dense::map<std::string, std::string> CGoxelFormat::ReadDict(const SChunkHeader &Chunk, size_t StartPos)
     {
-        std::map<std::string, std::string> Ret;
+        ankerl::unordered_dense::map<std::string, std::string> ret;
 
         while (m_DataStream->Tell() - StartPos < (size_t)Chunk.Size)
         {
@@ -273,9 +272,9 @@ namespace VCore
             std::string Value(Size, '\0');
             m_DataStream->Read(&Value[0], Size);
 
-            Ret[Key] = Value;
+            ret[Key] = Value;
         }
 
-        return Ret;
+        return ret;
     }
 }

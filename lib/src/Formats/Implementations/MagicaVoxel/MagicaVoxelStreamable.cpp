@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021 Christian Tost
+ * Copyright (c) 2025 Christian Tost
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,40 +22,23 @@
  * SOFTWARE.
  */
 
-#ifndef VCore_HPP
-#define VCore_HPP
+#include "MagicaVoxelStreamable.hpp"
+#include "MagicaVoxelModelParser.hpp"
 
-// Public interface
+namespace VCore
+{
+    bool CMagicaVoxelStreamable::ReadVoxelSpace(CVoxelSpace &_Space)
+    {
+        auto stream = m_IOHandler->Open(m_FilePath, "rb");
+        if(stream)
+        {
+            CMagicaVoxelModelParser parser(stream, m_ColorpalettePosition, m_ModelPosition, m_NotDefaultMaterials);
+            parser.FillVoxelSpace(_Space);
 
-// Export 
-#include <VCore/Export/ExportSettings.hpp>
-#include <VCore/Export/IExporter.hpp>
-#include <VCore/Export/SpriteStackingExporter.hpp>
+            m_IOHandler->Close(stream);
+            return true;
+        }
 
-// Formats
-#include <VCore/Formats/IVoxelFormat.hpp>
-#include <VCore/Formats/SceneNode.hpp>
-
-// Math
-#include <VCore/Math/Mat4x4.hpp>
-#include <VCore/Math/Vector.hpp>
-
-// Meshing
-#include <VCore/Meshing/Color.hpp>
-#include <VCore/Meshing/IMesher.hpp>
-#include <VCore/Meshing/Material.hpp>
-#include <VCore/Meshing/Mesh/Mesh.hpp>
-#include <VCore/Meshing/Mesh/MeshBuilder.hpp>
-#include <VCore/Meshing/Texture.hpp>
-
-// Miscellaneous
-#include <VCore/Misc/Exceptions.hpp>
-#include <VCore/Misc/FileStream.hpp>
-
-// Voxel
-#include <VCore/Voxel/BBox.hpp>
-#include <VCore/Voxel/VoxelAnimation.hpp>
-#include <VCore/Voxel/PlanesVoxelizer.hpp>
-#include <VCore/Voxel/Frustum.hpp>
-
-#endif //VCore_HPP
+        return false;
+    }
+} // namespace VCore

@@ -30,22 +30,13 @@
 #include <vector>
 #include <VCore/Formats/IVoxelFormat.hpp>
 #include <VCore/Meshing/Mesh/Mesh.hpp>
-#include <VCore/Voxel/VoxelTextureMap.hpp>
 
 namespace VCore
 {
     class CMeshBuilder
     {
         public:
-            CMeshBuilder(SurfaceFactory _Factory) : m_TextureMap(nullptr), m_SurfaceFactory(_Factory) {}
-
-            /**
-             * @brief Sets the texturing map.
-             */
-            inline void SetTextureMap(CVoxelTextureMap *_Map)
-            {
-                m_TextureMap = _Map;
-            }
+            CMeshBuilder(SurfaceFactory _Factory) : m_SurfaceFactory(_Factory) {}
 
             inline const ankerl::unordered_dense::map<TextureType, Texture> *GetTextures() const
             {
@@ -134,7 +125,6 @@ namespace VCore
             ankerl::unordered_dense::map<uintptr_t, SIndexedSurface> m_Surfaces;
             Mesh m_MergerMesh;
 
-            CVoxelTextureMap *m_TextureMap;
             SurfaceFactory m_SurfaceFactory;
     };
 }

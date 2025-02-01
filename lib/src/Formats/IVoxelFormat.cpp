@@ -89,7 +89,7 @@ namespace VCore
     void IVoxelFormat::Load(IIOHandler *_IOHandler, const std::string _File)
     {
         DeleteFileStream();
-        m_IOHandler = _IOHandler;
+        m_IOHandler = std::shared_ptr<IIOHandler>(_IOHandler);
         m_DataStream = m_IOHandler->Open(_File, "rb");
 
         ClearCache();
@@ -102,7 +102,7 @@ namespace VCore
             throw CVoxelLoaderException("Can't open file in closed mode!");
 
         DeleteFileStream();
-        m_IOHandler = _IOHandler;
+        m_IOHandler = std::shared_ptr<IIOHandler>(_IOHandler);
         m_Mode = _Mode;
 
         char openMode[4] = {};
@@ -149,7 +149,8 @@ namespace VCore
             if(m_DataStream)
                 m_IOHandler->Close(m_DataStream);
 
-            delete m_IOHandler;
+            // delete m_IOHandler;
+            
             m_IOHandler = nullptr;
             m_DataStream = nullptr; 
         }

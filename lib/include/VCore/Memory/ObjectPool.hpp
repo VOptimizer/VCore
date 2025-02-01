@@ -61,10 +61,10 @@ namespace VCore
             {
                 public:
                     LockFreeMutex() : m_Lock(ATOMIC_FLAG_INIT) {}
-                    LockFreeMutex(LockFreeMutex &&) = default;
+                    LockFreeMutex(LockFreeMutex &&) = delete;
                     LockFreeMutex(const LockFreeMutex &) = delete;
 
-                    LockFreeMutex &operator=(LockFreeMutex &&) = default;
+                    LockFreeMutex &operator=(LockFreeMutex &&) = delete;
                     LockFreeMutex &operator=(const LockFreeMutex &) = delete;
 
                     inline void lock()
@@ -325,8 +325,6 @@ namespace VCore
                     // Allocates a new block of memory, if no storages are left.
                     if(m_FreeStorages.size() == 0)
                     {
-                        auto size = BlockSize;
-
                         auto block = new std::byte[BlockSize];
                         m_Blocks.push_back(block);
 

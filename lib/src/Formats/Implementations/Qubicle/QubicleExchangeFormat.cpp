@@ -24,6 +24,7 @@
 
 #include <sstream>
 #include <VCore/Misc/Exceptions.hpp>
+#include <VCore/Meshing/MaterialManager.hpp>
 #include "QubicleExchangeFormat.hpp"
 
 namespace VCore
@@ -38,9 +39,7 @@ namespace VCore
 
         ReadLine();
 
-        VoxelModel mesh = std::make_shared<CVoxelModel>();
-        m_Materials.push_back(std::make_shared<CMaterial>());
-        mesh->Materials = m_Materials;
+        VoxelModel mesh = std::make_shared<CVoxelSpace>();
         ReadVector();
         ReadColors();
         ReadVoxels(mesh);
@@ -121,7 +120,7 @@ namespace VCore
             if(mask == 0)
                 continue;
 
-            mesh->SetVoxel(pos, 0, cid);
+            mesh->insert({pos, CVoxel(cid, 0)});
         }
     }
 }

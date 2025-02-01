@@ -27,6 +27,11 @@
 
 namespace VCore
 {
+    // CObjectPool<SVertex, 1000> SVertex::s_Pool;
+
+    // template <class T, size_t Elements>
+    // thread_local typename CObjectPool<T, Elements>::CLocalStoragePointer CObjectPool<T, Elements>::s_Storage;
+
     void CMeshBuilder::AddTextures(const ankerl::unordered_dense::map<TextureType, Texture> &_textures)
     {
         m_Textures = &_textures;
@@ -74,12 +79,12 @@ namespace VCore
 
     void CMeshBuilder::AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, const Material &_material)
     {
-        auto it = m_Surfaces.find((uintptr_t)_material.get());
+        auto it = m_Surfaces.find((uintptr_t)_material);
         if(it == m_Surfaces.end())
         {
             SIndexedSurface surface(m_SurfaceFactory());
             surface.Surface->FaceMaterial = _material;
-            it = m_Surfaces.insert({(uintptr_t)_material.get(), surface}).first;
+            it = m_Surfaces.insert({(uintptr_t)_material, surface}).first;
         }
 
         auto surface = &it->second;
@@ -89,20 +94,8 @@ namespace VCore
         // 4 UVs are needed for the case, that no colorpalette is available.
         Math::Vec2f uv1, uv2, uv3, uv4;
         
-        if(m_Textures && !m_Textures->empty() && !m_TextureMap)
+        if(m_Textures && !m_Textures->empty())
             uv1 = uv2 = uv3 = uv4 = Math::Vec2f(((float)(_color + 0.5f)) / m_Textures->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
-        else if(m_TextureMap)
-        {
-            const SUVMapping *map = m_TextureMap->GetVoxelFaceInfo(_color, _normal);
-
-            if(map)
-            {
-                uv1 = map->TopLeft; 
-                uv2 = map->TopRight;
-                uv3 = map->BottomLeft;
-                uv4 = map->BottomRight;
-            }
-        }
         else
         {
             uv1 = Math::Vec2f(_color, 0);
@@ -134,12 +127,12 @@ namespace VCore
    
     void CMeshBuilder::AddFace(SVertex v1, SVertex v2, SVertex v3, const Material &_material)
     {        
-        auto it = m_Surfaces.find((uintptr_t)_material.get());
+        auto it = m_Surfaces.find((uintptr_t)_material);
         if(it == m_Surfaces.end())
         {
             SIndexedSurface surface(m_SurfaceFactory());
             surface.Surface->FaceMaterial = _material;
-            it = m_Surfaces.insert({(uintptr_t)_material.get(), surface}).first;
+            it = m_Surfaces.insert({(uintptr_t)_material, surface}).first;
         }
 
         int i1, i2, i3;
@@ -167,12 +160,12 @@ namespace VCore
 
     void CMeshBuilder::SelectSurface(const Material &_Material)
     {
-        auto it = m_Surfaces.find((uintptr_t)_Material.get());
+        auto it = m_Surfaces.find((uintptr_t)_Material);
         if(it == m_Surfaces.end())
         {
             SIndexedSurface surface(m_SurfaceFactory());
             surface.Surface->FaceMaterial = _Material;
-            it = m_Surfaces.insert({(uintptr_t)_Material.get(), surface}).first;
+            it = m_Surfaces.insert({(uintptr_t)_Material, surface}).first;
         }
 
         m_CurrentSurface = it->second.Surface;
@@ -208,9 +201,9 @@ namespace VCore
         // {
         //     for(auto &&surface : m->Surfaces)
         //     {
-        //         auto it = m_Surfaces.find((size_t)surface.FaceMaterial.get());
+        //         auto it = m_Surfaces.find((size_t)surface.FaceMaterial);
         //         if(it == m_Surfaces.end())
-        //             it = m_Surfaces.insert({(size_t)surface.FaceMaterial.get(), SIndexedSurface(surface.FaceMaterial)}).first;
+        //             it = m_Surfaces.insert({(size_t)surface.FaceMaterial, SIndexedSurface(surface.FaceMaterial)}).first;
 
         //         it->second.Surface.Vertices.reserve(it->second.Surface.Vertices.capacity() + surface.Vertices.size());
         //         it->second.Surface.Indices.reserve(it->second.Surface.Indices.capacity() + surface.Indices.size());
@@ -251,9 +244,9 @@ namespace VCore
 
         for (auto &&surface : _MergeInto->Surfaces)
         {
-            auto it = m_Surfaces.find((uintptr_t)surface->FaceMaterial.get());
+            auto it = m_Surfaces.find((uintptr_t)surface->FaceMaterial);
             if(it == m_Surfaces.end())
-                it = m_Surfaces.insert({(uintptr_t)surface->FaceMaterial.get(), SIndexedSurface(nullptr)}).first;
+                it = m_Surfaces.insert({(uintptr_t)surface->FaceMaterial, SIndexedSurface(nullptr)}).first;
             
             it->second.Surface = std::move(surface);
             for (uint64_t i = 0; i < it->second.Surface->GetVertexCount(); i++)
@@ -306,13 +299,13 @@ namespace VCore
 
         for (auto &&surface : m->Surfaces)
         {
-            auto it = m_Surfaces.find((uintptr_t)surface->FaceMaterial.get());
+            auto it = m_Surfaces.find((uintptr_t)surface->FaceMaterial);
             if(it == m_Surfaces.end())
             {
                 auto newSurface = m_SurfaceFactory();
                 newSurface->FaceMaterial = surface->FaceMaterial;
 
-                it = m_Surfaces.insert({(uintptr_t)surface->FaceMaterial.get(), SIndexedSurface(newSurface)}).first;
+                it = m_Surfaces.insert({(uintptr_t)surface->FaceMaterial, SIndexedSurface(newSurface)}).first;
             }
 
             if(!_ApplyModelMatrix)

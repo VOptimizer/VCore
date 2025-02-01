@@ -15,20 +15,21 @@ namespace VCore
             Seek(0, SeekOrigin::END);
             m_Size = Tell();
             Seek(0, SeekOrigin::BEG);
+            m_FilePath = _File;
         }
     }
 
-    size_t CDefaultFileStream::Read(char *_Buffer, size_t _Size)
+    uint64_t CDefaultFileStream::Read(char *_Buffer, uint64_t _Size)
     {
         return fread(_Buffer, 1, _Size, m_File);
     }
 
-    size_t CDefaultFileStream::Write(const char *_Buffer, size_t _Size)
+    uint64_t CDefaultFileStream::Write(const char *_Buffer, uint64_t _Size)
     {
         return fwrite(_Buffer, 1, _Size, m_File);
     }
 
-    void CDefaultFileStream::Seek(size_t _Offset, SeekOrigin _Origin)
+    void CDefaultFileStream::Seek(uint64_t _Offset, SeekOrigin _Origin)
     {
         int seekOff = 0;
         switch (_Origin)
@@ -41,12 +42,12 @@ namespace VCore
         fseek(m_File, _Offset, seekOff);
     }
 
-    size_t CDefaultFileStream::Tell()
+    uint64_t CDefaultFileStream::Tell()
     {
         return ftell(m_File);
     }
 
-    size_t CDefaultFileStream::Size()
+    uint64_t CDefaultFileStream::Size()
     {
         return m_Size;
     }

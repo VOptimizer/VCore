@@ -26,6 +26,7 @@
 #define GOXELFORMAT_HPP
 
 #include <VCore/Formats/IVoxelFormat.hpp>
+#include <VCore/Misc/fast_vector.hpp>
 #include <string.h>
 
 namespace VCore
@@ -46,14 +47,21 @@ namespace VCore
             struct BL16
             {
                 public:
-                    BL16()
+                    BL16() : m_Data{} {}
+                    BL16(uint32_t *_Data) : BL16() { SetData(_Data); }
+                    BL16(const BL16 &_Other) { *this = _Other; }
+                    BL16(BL16 &&) = default;
+                    BL16 &operator=(BL16 &&) = default;
+
+                    BL16 &operator=(const BL16 &_Other)
                     {
-                        m_Data.resize(16 * 16 * 16);
+                        memcpy(&m_Data[0], _Other.m_Data, CHUNK_SIZE * sizeof(uint32_t));
+                        return *this;
                     }
 
-                    inline void SetData(uint32_t *Data)
+                    inline void SetData(uint32_t *_Data)
                     {
-                        memcpy(&m_Data[0], Data, m_Data.size() * sizeof(uint32_t));
+                        memcpy(&m_Data[0], _Data, CHUNK_SIZE * sizeof(uint32_t));
                     }
 
                     inline uint32_t GetVoxel(Math::Vec3i v)
@@ -62,7 +70,9 @@ namespace VCore
                     }
 
                 private:
-                    std::vector<uint32_t> m_Data;
+                    static constexpr uint16_t CHUNK_SIZE = 16 * 16 * 16;
+
+                    uint32_t m_Data[CHUNK_SIZE];
             }; 
 
             struct Block
@@ -79,8 +89,9 @@ namespace VCore
                 bool Visible;
             };
 
-            std::vector<BL16> m_BL16s;
-            std::vector<Layer> m_Layers;
+            fast_vector<BL16> m_BL16s;
+            fast_vector<Layer> m_Layers;
+            ankerl::unordered_dense::map<int, int> m_MeshMaterialMapping;
             CBBox m_BBox;
             bool m_HasEmission;
 
@@ -90,7 +101,7 @@ namespace VCore
             void ProcessMaterial(const SChunkHeader &Chunk);
             void ProcessLayer(const SChunkHeader &Chunk);
             void ProcessBL16(const SChunkHeader &Chunk);
-            std::map<std::string, std::string> ReadDict(const SChunkHeader &Chunk, size_t StartPos);
+            ankerl::unordered_dense::map<std::string, std::string> ReadDict(const SChunkHeader &Chunk, size_t StartPos);
     };
 }
 

@@ -27,6 +27,7 @@
 
 #include "../../Misc/Helper.hpp"
 #include "../FaceMask.hpp"
+#include <VCore/Meshing/MaterialManager.hpp>
 
 namespace VCore
 {
@@ -174,9 +175,6 @@ namespace VCore
         CMeshBuilder builder(m_SurfaceFactory);
         builder.AddTextures(m->Textures);
 
-        if(m->TexturingType == TexturingTypes::TEXTURED)
-            builder.SetTextureMap(&m->TextureMapping);
-
         const CBBox chunkBBox(_Chunk.TotalBBox.Beg, _Chunk.TotalBBox.GetSize());
 
         // For all 3 axis (x, y, z)
@@ -196,7 +194,11 @@ namespace VCore
                     // auto parts = split(key.first, "_");
                     auto voxel = *(CVoxel*)&key.first;
 
-                    builder.SelectSurface(m->Materials[voxel.Material]);
+                    auto material = MaterialManager::GetMaterial(voxel.Material);
+                    if(!material)
+                        material = MaterialManager::GetMaterial(0);
+
+                    builder.SelectSurface(material);
 
                     // Column connections
                     IndexPair indexFrontCache[Config::ChunkSize] = {};
@@ -236,11 +238,11 @@ namespace VCore
         auto vertex = _Vertex + _Position;
 
         // TODO: Makes everything 30ms slower (at my machine)
-        auto side1 = _Model->GetVoxel(_Direction.Side1 + _Position);
-        auto side2 = _Model->GetVoxel(_Direction.Side2 + _Position);
-        auto corner = _Model->GetVoxel(_Direction.Corner + _Position);
+        // auto side1 = _Model->GetVoxel(_Direction.Side1 + _Position);
+        // auto side2 = _Model->GetVoxel(_Direction.Side2 + _Position);
+        // auto corner = _Model->GetVoxel(_Direction.Corner + _Position);
 
-        _Ao = GenerateAO(side1.IsInstantiated(), side2.IsInstantiated(), corner.IsInstantiated());
+        // _Ao = GenerateAO(side1.IsInstantiated(), side2.IsInstantiated(), corner.IsInstantiated());
         return _Builder.AddVertex(new SVertex(vertex, _Normal, _UV, _Ao));
     }
 
@@ -257,9 +259,9 @@ namespace VCore
             uv = Math::Vec2f(((float)(_Voxel.Color + 0.5f)) / textures->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
 
         Config::bitmask_t heightPos = 0;
-        while ((heightPos <= (Config::ChunkSize + 2)) && (_Faces >> heightPos))
+        while ((heightPos <= Config::ChunkSize) && (_Faces >> heightPos))
         {
-            auto zeros = CountTrailingZeroBits(_Faces >> heightPos);
+            auto zeros = heightPos >= Config::ChunkSize ? 0 : CountTrailingZeroBits(_Faces >> heightPos);
 
             // Are there any gaps between the quads? If so reset the last save indices
             // Bits zero count > 0
@@ -271,7 +273,7 @@ namespace VCore
                 break;
 
             auto &faceInfo = FACE_INFOS[_Axis.x * 2 + (isFront ? 0 : 1)];
-            for (; heightPos <= (Config::ChunkSize + 2); heightPos++)
+            for (; heightPos <= Config::ChunkSize; heightPos++)
             {
                 if(((_Faces >> heightPos) & 0x1) == 0)
                     break;

@@ -31,6 +31,7 @@
 #include <stb_image.h>
 #include <string.h>
 #include <VCore/Misc/Exceptions.hpp>
+#include <VCore/Meshing/MaterialManager.hpp>
 #include "QubicleFormat.hpp"
 
 using namespace std;
@@ -44,7 +45,7 @@ namespace VCore
         m_Materials.clear();
         m_Textures.clear();
 
-        m_Materials.push_back(std::make_shared<CMaterial>());
+        m_Materials.push_back(MaterialManager::GetMaterial(0));
 
         std::string Signature(4, '\0');
         m_DataStream->Read(&Signature[0], 4);
@@ -126,8 +127,8 @@ namespace VCore
         m_DataStream->Read(&name[0], nameLen);
         m_DataStream->Seek(3); //Mysterious 3 bytes always 0x01 0x01 0x00
 
-        VoxelModel mesh = std::make_shared<CVoxelModel>();
-        mesh->Materials = m_Materials;
+        VoxelModel mesh = std::make_shared<CVoxelSpace>();
+
         mesh->Name = name;
         auto size = ReadVector();
 
@@ -257,6 +258,6 @@ namespace VCore
         if(cid == 0xFFFFFFFF)
             return;
 
-        mesh->SetVoxel(pos, 0, cid);
+        mesh->insert({pos, CVoxel(cid, 0)});
     }
 }

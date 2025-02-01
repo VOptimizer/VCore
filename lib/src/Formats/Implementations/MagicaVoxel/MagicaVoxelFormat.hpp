@@ -33,6 +33,7 @@
 
 namespace VCore
 {
+    // MagicaVoxel supports 256 different colors and materials.
     constexpr static int PALETTE_SIZE = 256;
 
     enum NodeType
@@ -99,6 +100,13 @@ namespace VCore
             fast_vector<SFrame> Models;
     };
 
+    struct SChunkHeader
+    {
+        char ID[4];
+        int ChunkContentSize;
+        int ChildChunkSize;
+    };
+
     using Node = std::shared_ptr<SNode>;
     using TransformNode = std::shared_ptr<STransformNode>;
     using GroupNode = std::shared_ptr<SGroupNode>;
@@ -117,18 +125,9 @@ namespace VCore
             void ClearCache() override;
 
         private:
-            struct SChunkHeader
-            {
-                char ID[4];
-                int ChunkContentSize;
-                int ChildChunkSize;
-            };
-
             /** @brief Loads the default color palette into m_ColorPalette */
             void LoadDefaultPalette();
 
-            Math::Vec3i ProcessSize();
-            void ProcessXYZI(VoxelModel m, const Math::Vec3i &_Size);
             fast_vector<fast_vector<SFrame>> ProcessMaterialAndSceneGraph();
 
             TransformNode ProcessTransformNode();
@@ -167,6 +166,9 @@ namespace VCore
             ankerl::unordered_dense::set<uintptr_t> m_AlreadyWrittenModels;
             ankerl::unordered_dense::set<uintptr_t> m_AlreadyWrittenAnimations;
 
+            std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial>> m_NotDefaultMaterials;
+
+
             CColor m_ColorPalette[PALETTE_SIZE];
 
             // Index counters
@@ -175,6 +177,8 @@ namespace VCore
             size_t m_UsedColorsPos;
 
             bool m_HasEmission;
+
+            uint64_t m_ColorpaletterPosition;
     };
 }
 

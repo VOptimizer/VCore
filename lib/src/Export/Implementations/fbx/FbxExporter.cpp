@@ -294,9 +294,9 @@ namespace VCore
         char czero = 0;
 
         // Padding for 16 Byte alignment.
-        size_t pos = _Stream->Tell();
-        size_t pad = 16 - (pos % 16);
-        for (size_t i = 0; i < pad; ++i)
+        auto pos = _Stream->Tell();
+        auto pad = 16 - (pos % 16);
+        for (uint64_t i = 0; i < pad; ++i)
             _Stream->Write(&czero, sizeof(czero));
 
         int zero = 0;
@@ -394,16 +394,16 @@ namespace VCore
             }
 
             int currentMatIdx = 0;
-            auto it = materialIndexMap.find((uint64_t)surface->FaceMaterial.get());
+            auto it = materialIndexMap.find((uint64_t)surface->FaceMaterial);
             if(it == materialIndexMap.end())
             {
                 AddMaterial(_Objects, surface->FaceMaterial);
 
                 // Connects the material with the mesh.
-                _Connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty((int64_t)surface->FaceMaterial.get()), CFbxProperty(((int64_t)_Mesh.get()) + 1) });
+                _Connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty((int64_t)surface->FaceMaterial), CFbxProperty(((int64_t)_Mesh.get()) + 1) });
             
                 currentMatIdx = materialIndex;
-                materialIndexMap[(uint64_t)surface->FaceMaterial.get()] = materialIndex++;
+                materialIndexMap[(uint64_t)surface->FaceMaterial] = materialIndex++;
 
                 ConnectTextures(_Connections, surface->FaceMaterial, _Mesh->Textures);
             }
@@ -520,7 +520,7 @@ namespace VCore
 
     void CFbxExporter::AddMaterial(CFbxNode &_Objects, Material _Material)
     {
-        CFbxNode material("Material", { CFbxProperty((int64_t)_Material.get()), CFbxProperty("default\x00\x01Material", 17, true), CFbxProperty("") });
+        CFbxNode material("Material", { CFbxProperty((int64_t)_Material), CFbxProperty("default\x00\x01Material", 17, true), CFbxProperty("") });
         material.AddSubNode("Version", { CFbxProperty(102) });
         material.AddSubNode("ShadingModel", { CFbxProperty("Phong") });
         material.AddSubNode("MultiLayer", { CFbxProperty(0) });
@@ -560,7 +560,7 @@ namespace VCore
                 case TextureType::EMISSION: propName = "EmissiveColor"; break;
             }
 
-            _Connections.AddSubNode("C", { CFbxProperty("OP"), CFbxProperty((int64_t)texture.second.get()), CFbxProperty((int64_t)_Material.get()), CFbxProperty(propName.c_str()) });
+            _Connections.AddSubNode("C", { CFbxProperty("OP"), CFbxProperty((int64_t)texture.second.get()), CFbxProperty((int64_t)_Material), CFbxProperty(propName.c_str()) });
         }
     }
 

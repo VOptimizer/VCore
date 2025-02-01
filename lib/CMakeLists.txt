@@ -9,15 +9,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelModel.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelAnimation.cpp"
+set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelAnimation.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/PlanesVoxelizer.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/Storage/VoxelSpace.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/Storage/Iterator.cpp"
          "${PROJECT_SOURCE_DIR}/src/Voxel/Storage/Chunk.cpp"
-         "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelTextureMap.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/MagicaVoxel/MagicaVoxelFormat.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/MagicaVoxel/MagicaVoxelModelParser.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/MagicaVoxel/MagicaVoxelStreamable.cpp"
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/GoxelFormat.cpp"
          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/KenshapeFormat.cpp"
 
@@ -32,6 +32,7 @@ set(SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelModel.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/IMesher.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/MeshBuilder.cpp"
          "${PROJECT_SOURCE_DIR}/src/Meshing/FaceMask.cpp"
+         "${PROJECT_SOURCE_DIR}/src/Meshing/MaterialManager.cpp"
          "${PROJECT_SOURCE_DIR}/src/Export/IExporter.cpp"
 
          "${PROJECT_SOURCE_DIR}/src/Misc/FileStream.cpp"
@@ -56,7 +57,7 @@ add_library(${PROJECT_NAME} STATIC ${SRCS})
 target_include_directories(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}")
 target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W4>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wunused-parameter -Wmismatched-tags -Wpessimizing-move -mavx>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wreturn-type -Wextra -Wunused-parameter -Wmismatched-tags -Wpessimizing-move -march=native>
 )
 
 find_program(CPPCHECK cppcheck)

@@ -28,6 +28,7 @@
 #include "../../Misc/Helper.hpp"
 #include "../../Misc/TexturePacker.hpp"
 #include <VCore/Meshing/Mesh/MeshBuilder.hpp>
+#include <VCore/Meshing/MaterialManager.hpp>
 #include <vector>
 
 #include "GreedyMesher.hpp"
@@ -50,7 +51,7 @@ namespace VCore
         if(m_GenerateSingleChunks)
             return IMesher::GenerateChunks(_Mesh, _OnlyDirty);
 
-        auto bbox = _Mesh->GetBBox();
+        auto bbox = _Mesh->calculateBBox();
 
         std::vector<std::future<Mesh>> futures;
         std::vector<Mesh> slices;
@@ -169,10 +170,10 @@ namespace VCore
                     pos.v[_Info.Axis.x] += x;
                     pos.v[_Info.Axis.y] += y;
 
-                    auto vox = _Model->GetVoxel(pos);
-                    if(vox.IsInstantiated())
+                    auto voxIt = _Model->find(pos);
+                    if(voxIt != _Model->end())
                     {
-                        auto pixel = diffuse->second->GetPixel(Math::Vec2ui(vox.Color, 0));
+                        auto pixel = diffuse->second->GetPixel(Math::Vec2ui(voxIt->second.Color, 0));
                         _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x + 1, y + 1));
 
                         // Adds margin pixels to the texture
@@ -207,7 +208,7 @@ namespace VCore
         }
     }
 
-    void CGreedyMesher::GenerateQuad(CMeshBuilder &result, const std::vector<Material> &_Materials, Config::bitmask_t faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const CVoxel& _Voxel)
+    void CGreedyMesher::GenerateQuad(CMeshBuilder &result, Config::bitmask_t faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const CVoxel& _Voxel)
     {
         int currentMaterial = -1;
 
@@ -218,14 +219,29 @@ namespace VCore
 
         Config::bitmask_t heightPos = 0;
         // Shift werid = hang
-        while ((heightPos <= (Config::ChunkSize + 2)) && (faces >> heightPos))
+        while ((heightPos <= Config::ChunkSize) && (faces >> heightPos))
         {
             // ~ 5ms
             heightPos += CountTrailingZeroBits(faces >> heightPos);
             if(heightPos >= Config::ChunkSize)
                 break;
 
+            // Math::Vec3i position;
+            // position.v[axis.x] = depth - 1;
+            // position.v[axis.y] = 0;
+            // position.v[axis.z] = width - 1;
+
             Config::bitmask_t faceCount = CountTrailingOneBits(faces >> heightPos);
+            // if(position.v[axis.x] > 0 && position.v[axis.z] > 0)
+            // {
+            //     auto voxels = _Chunk.Chunk->m_Mask.GetRowFaces(position, axis.x) >> heightPos;
+            //     auto voxelCount = CountTrailingOneBits(voxels);
+            //     if(voxelCount != 0 && voxelCount != faceCount)
+            //         faceCount = voxelCount;
+            // }
+
+
+
             Config::bitmask_t mask = Config::BitmaskMax;
             if(faceCount != Config::ChunkSize)
                 mask = (((Config::bitmask_t)1 << faceCount) - 1) << heightPos;
@@ -278,10 +294,14 @@ namespace VCore
             Math::Vec3f dv;
             dv.v[axis.y] = size.v[axis.y];
 
-            if((currentMaterial != _Voxel.Material) && (_Voxel.Material < (int)_Materials.size()))
+            if(currentMaterial != _Voxel.Material)
             {
-                currentMaterial = _Voxel.Material;
-                result.SelectSurface(_Materials[_Voxel.Material]);
+                auto material = MaterialManager::GetMaterial(_Voxel.Material);
+                if(material)
+                {
+                    currentMaterial = _Voxel.Material;
+                    result.SelectSurface(material);
+                }
             }
 
             Math::Vec2f uv;
@@ -337,7 +357,6 @@ namespace VCore
     {
         CMeshBuilder builder(m_SurfaceFactory);
         builder.AddTextures(_Mesh->Textures);
-        auto &materials = _Mesh->Materials;
 
         // For all 3 axis (x, y, z)
         for (size_t axis = 0; axis < 3; axis++)
@@ -365,12 +384,12 @@ namespace VCore
                         auto faces = key.second.Bits[widthAxis];
 
                         if(faces)
-                            GenerateQuad(builder, materials, faces, key.second, widthAxis, depth.first, true, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
+                            GenerateQuad(builder, faces, key.second, widthAxis, depth.first, true, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
 
                         faces = key.second.Bits[widthAxis + Config::ChunkSize];
 
                         if(faces)
-                            GenerateQuad(builder, materials, faces, key.second, widthAxis, depth.first + 1, false, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
+                            GenerateQuad(builder, faces, key.second, widthAxis, depth.first + 1, false, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
                     }
                 }
             }
@@ -583,10 +602,14 @@ namespace VCore
 
                 auto key = _Context.SliceIt->first;
                 auto voxel = *(CVoxel*)&key;
-                if((currentMaterial != voxel.Material) && (voxel.Material < (int)_Context.Model->Materials.size()))
+                if(currentMaterial != voxel.Material)
                 {
-                    currentMaterial = voxel.Material;
-                    _Context.Builder.SelectSurface(_Context.Model->Materials[voxel.Material]);
+                    auto material = MaterialManager::GetMaterial(voxel.Material);
+                    if(material)
+                    {
+                        currentMaterial = voxel.Material;
+                        _Context.Builder.SelectSurface(material);
+                    }
                 }
 
                 Math::Vec2f uv;
