@@ -105,10 +105,12 @@ namespace VCore
         }
 
         int i1, i2, i3, i4;
-        i1 = AddVertex(SVertex(_v1, _normal, uv1), *surface);
-        i2 = AddVertex(SVertex(_v2, _normal, uv2), *surface);
-        i3 = AddVertex(SVertex(_v3, _normal, uv3), *surface);
-        i4 = AddVertex(SVertex(_v4, _normal, uv4), *surface);
+
+        // TODO :FIX
+        // i1 = AddVertex(SVertex(_v1, _normal, uv1), *surface);
+        // i2 = AddVertex(SVertex(_v2, _normal, uv2), *surface);
+        // i3 = AddVertex(SVertex(_v3, _normal, uv3), *surface);
+        // i4 = AddVertex(SVertex(_v4, _normal, uv4), *surface);
 
         surface->Surface->ReserveFaces(surface->Surface->GetFaceCount() + 2);
 

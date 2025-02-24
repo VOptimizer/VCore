@@ -37,8 +37,9 @@ namespace VCore
     {
         enum GLTFTypes
         {
+            UNSIGNED_BYTE = 5121,
+            INT = 5125,
             FLOAT = 5126,
-            INT = 5125
         };
 
         class CAsset
@@ -207,6 +208,9 @@ namespace VCore
                     if(!m_Min.empty())
                         json.AddPair("min", m_Min);
 
+                    if(Type == "VEC4" && ComponentType == GLTFTypes::UNSIGNED_BYTE)
+                        json.AddPair("normalized", true);
+
                     json.AddPair("type", Type);
                     json.AddPair("count", Count);
                 }
@@ -238,7 +242,7 @@ namespace VCore
 
                     Attributes["NORMAL"] = NormalAccessor;
                     Attributes["POSITION"] = PositionAccessor;
-                    Attributes["TEXCOORD_0"] = TextCoordAccessor;
+                    // Attributes["TEXCOORD_0"] = TextCoordAccessor;
                     Attributes["COLOR_0"] = ColorAccessor;
 
                     json.AddPair("attributes", Attributes);
@@ -304,22 +308,22 @@ namespace VCore
                 {
                     CJSON PBRMetallicRoughness;
 
-                    std::map<std::string, int> BaseColorTexture = {
-                        {"index", 0},
-                        {"texCoord", 0}
-                    };
+                    // std::map<std::string, int> BaseColorTexture = {
+                    //     {"index", 0},
+                    //     {"texCoord", 0}
+                    // };
 
-                    if(Emissive != 0)
-                    {
-                        std::map<std::string, int> EmissiveTexture = {
-                            {"index", 1},
-                            {"texCoord", 0}
-                        };
+                    // if(Emissive != 0)
+                    // {
+                    //     std::map<std::string, int> EmissiveTexture = {
+                    //         {"index", 1},
+                    //         {"texCoord", 0}
+                    //     };
 
-                        json.AddPair("emissiveTexture", EmissiveTexture);
-                    }
+                    //     json.AddPair("emissiveTexture", EmissiveTexture);
+                    // }
 
-                    PBRMetallicRoughness.AddPair("baseColorTexture", BaseColorTexture);
+                    // PBRMetallicRoughness.AddPair("baseColorTexture", BaseColorTexture);
                     PBRMetallicRoughness.AddPair("roughnessFactor", Roughness);
                     PBRMetallicRoughness.AddPair("metallicFactor", Metallic);
 

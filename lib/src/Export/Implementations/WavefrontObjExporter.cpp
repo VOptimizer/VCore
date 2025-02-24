@@ -78,7 +78,9 @@ namespace VCore
 
                         vertexList << "v " << pos.x << " " << pos.y << " " << pos.z << std::endl;
                         normalList << "vn " << normal.x << " " << normal.y << " " << normal.z << std::endl;
-                        uvList << "vt " << v.UV.x << " " << v.UV.y << std::endl;
+                        
+                        // TODO: FIX
+                        // uvList << "vt " << v.UV.x << " " << v.UV.y << std::endl;
                     }
 
                     objFile->Write(vertexList.str() + "\n");

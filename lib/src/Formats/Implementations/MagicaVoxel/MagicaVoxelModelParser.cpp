@@ -55,38 +55,12 @@ namespace VCore
 
         // First get the model size.
         m_Size = ProcessSize(m_Stream);
-        auto chunk = m_Stream->Read<SChunkHeader>();
+        auto chunk = m_Stream->Read<SMagicaVoxelChunkHeader>();
         if(strncmp(chunk.ID, "XYZI", sizeof(chunk.ID)) != 0)
             return;
-            // throw CVoxelLoaderException("Can't understand the format.");
 
-        int VoxelCount = m_Stream->Read<int>();
-
-        // Maps the MagicaVoxel color to the index of the VCore Colorpalette
-        ankerl::unordered_dense::map<uint32_t, uint32_t> modelColorMapping;
-        auto texture = _Space.Textures[TextureType::DIFFIUSE];
-        Texture emission;
-        auto it = _Space.Textures.find(TextureType::EMISSION);
-        if(it != _Space.Textures.end())
-            emission = it->second;
-
-        if(texture)
-        {
-            // Generates an index of colors.
-            size_t idx = 0;
-            for (size_t y = 0; y < texture->GetSize().y; y++)
-            {
-                for (size_t x = 0; x < texture->GetSize().x; x++)
-                    modelColorMapping[texture->GetPixel(Math::Vec2ui(x, y))] = idx++;
-            }
-        }
-        else
-        {
-            texture = std::make_shared<CTexture>();
-            _Space.Textures[TextureType::DIFFIUSE] = texture;
-        }        
-
-        for (int i = 0; i < VoxelCount; i++)
+        int voxelCount = m_Stream->Read<int>();
+        for (int i = 0; i < voxelCount; i++)
         {
             Math::Vec3i position;
 
@@ -103,41 +77,9 @@ namespace VCore
 
             // Finds the material
             uint8_t materialIdx = GetMaterial(colorMaterialIdx);
-            auto material = MaterialManager::GetMaterial(materialIdx);
-            if((material->Power > 0) || (material->Emission > 0))
-            {
-                if(!emission)
-                {
-                    emission = std::make_shared<CTexture>();
-                    _Space.Textures[TextureType::EMISSION] = emission;
-                }
 
-                if(emission->GetSize().x < texture->GetSize().x)
-                {               
-                    for (size_t i = emission->GetSize().x; i < texture->GetSize().x; i++)
-                        emission->AddPixel(CColor(0, 0, 0, 255));
-                }
-            }
-
-            // Find an index the color
+            // Gets the color of this voxel
             auto color = GetColor(colorMaterialIdx);
-            auto colorIt = modelColorMapping.find(color);
-            if(colorIt != modelColorMapping.end())
-                color = colorIt->second;
-            else
-            {
-                texture->AddPixel(CColor(color));
-                modelColorMapping[color] = texture->GetSize().x - 1;
-                color = texture->GetSize().x - 1;
-
-                if(emission)
-                {
-                    if(material->Power > 0)
-                        emission->AddPixel(CColor(color));
-                    else
-                        emission->AddPixel(CColor(0, 0, 0, 255));
-                }
-            }
 
             _Space.insert({position, CVoxel(color, materialIdx)});
         }
@@ -161,7 +103,7 @@ namespace VCore
         auto currentPos = m_Stream->Tell();
         m_Stream->Seek(m_ColorpalettePosition, SeekOrigin::BEG);
 
-        auto header = m_Stream->Read<SChunkHeader>();
+        auto header = m_Stream->Read<SMagicaVoxelChunkHeader>();
         if(strncmp(header.ID, "RGBA", sizeof(header.ID)) != 0)
             return DefaultPalette[_ColorIdx];
 
@@ -186,7 +128,11 @@ namespace VCore
                 // Checks if the material is already indexed.
                 result = MaterialManager::FindMaterialSlot(it->second);
                 if(result == UINT8_MAX)
+                {
                     result = MaterialManager::AddMaterial(it->second);
+                    if(result == UINT8_MAX)
+                        result = 0;
+                }
             }
         }
 

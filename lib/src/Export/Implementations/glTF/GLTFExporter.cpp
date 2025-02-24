@@ -85,7 +85,7 @@ namespace VCore
 
                 GLTF::CBufferView surfaceVerticesView, indexView;
 
-                const auto vertexSize = (sizeof(Math::Vec3f) * 2 + sizeof(Math::Vec2f) + sizeof(Math::Vec4f));
+                const auto vertexSize = (sizeof(Math::Vec3f) * 2 /*+ sizeof(Math::Vec2f)*/ + sizeof(Math::Vec4f));
                 surfaceVerticesView.Size = surface->GetVertexCount() * vertexSize;
                 surfaceVerticesView.Target = GLTF::BufferTarget::ARRAY_BUFFER;
                 surfaceVerticesView.ByteStride = vertexSize;//sizeof(SVertex);
@@ -102,7 +102,7 @@ namespace VCore
                     min = v.Pos.min(min);
                 }
 
-                GLTF::CAccessor positionAccessor, normalAccessor, uvAccessor, colorAccesor, indexAccessor;
+                GLTF::CAccessor positionAccessor, normalAccessor, /*uvAccessor,*/ colorAccesor, indexAccessor;
                 positionAccessor.BufferView = bufferViews.size();
                 positionAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
                 positionAccessor.Count = surface->GetVertexCount();
@@ -116,17 +116,17 @@ namespace VCore
                 normalAccessor.Type = "VEC3";
                 normalAccessor.Offset = sizeof(Math::Vec3f);
 
-                uvAccessor.BufferView = bufferViews.size();
-                uvAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
-                uvAccessor.Count = surface->GetVertexCount();
-                uvAccessor.Type = "VEC2";
-                uvAccessor.Offset = normalAccessor.Offset + sizeof(Math::Vec3f);
+                // uvAccessor.BufferView = bufferViews.size();
+                // uvAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
+                // uvAccessor.Count = surface->GetVertexCount();
+                // uvAccessor.Type = "VEC2";
+                // uvAccessor.Offset = normalAccessor.Offset + sizeof(Math::Vec3f);
 
                 colorAccesor.BufferView = bufferViews.size();
                 colorAccesor.ComponentType = GLTF::GLTFTypes::FLOAT;
                 colorAccesor.Count = surface->GetVertexCount();
                 colorAccesor.Type = "VEC4";
-                colorAccesor.Offset = uvAccessor.Offset + sizeof(Math::Vec2f);
+                colorAccesor.Offset = /*uvAccessor.Offset*/ normalAccessor.Offset + sizeof(Math::Vec3f);
 
                 indexAccessor.BufferView = bufferViews.size() + 1;
                 indexAccessor.ComponentType = GLTF::GLTFTypes::INT;
@@ -136,9 +136,9 @@ namespace VCore
                 GLTF::CPrimitive Primitive;
                 Primitive.PositionAccessor = accessors.size();
                 Primitive.NormalAccessor = accessors.size() + 1;
-                Primitive.TextCoordAccessor = accessors.size() + 2;
-                Primitive.ColorAccessor = accessors.size() + 3;
-                Primitive.IndicesAccessor = accessors.size() + 4;
+                // Primitive.TextCoordAccessor = accessors.size() + 2;
+                Primitive.ColorAccessor = accessors.size() + 2;
+                Primitive.IndicesAccessor = accessors.size() + 3;
                 Primitive.Material = matId;
                 matId++;
 
@@ -149,7 +149,7 @@ namespace VCore
 
                 accessors.push_back(positionAccessor);
                 accessors.push_back(normalAccessor);
-                accessors.push_back(uvAccessor);
+                // accessors.push_back(uvAccessor);
                 accessors.push_back(colorAccesor);
                 accessors.push_back(indexAccessor);
 
@@ -166,13 +166,16 @@ namespace VCore
                     memcpy(binary.data() + pos, &vertex.Normal, sizeof(Math::Vec3f));
                     pos += sizeof(Math::Vec3f);
 
-                    memcpy(binary.data() + pos, &vertex.UV, sizeof(Math::Vec2f));
-                    pos += sizeof(Math::Vec2f);
+                    // memcpy(binary.data() + pos, &vertex.UV, sizeof(Math::Vec2f));
+                    // pos += sizeof(Math::Vec2f);
 
-                    Math::Vec4f color(0, 0, 0, 0.8);
+                    CColor c(vertex.Color);
+
+                    Math::Vec4f color(pow(c.R / 255.f, 2.2f), pow(c.G / 255.f, 2.2f), pow(c.B / 255.f, 2.2f), 0.8);
                     if(vertex.AmbientOcclusionValue != 0)
                         color.w = 1.0f - (vertex.AmbientOcclusionValue / 3.0);
 
+                    // auto color = c.AsRGBA();
                     memcpy(binary.data() + pos, &color, sizeof(color));
                     pos += sizeof(color);
                 }
@@ -183,60 +186,61 @@ namespace VCore
             glTFMeshes.push_back(GLTFMesh);
         }
         
-        std::vector<GLTF::CImage> Images;
+        // std::vector<GLTF::CImage> Images;
         GLTF::CBuffer Buffer;
 
-        auto textures = _Meshes[0]->Textures;
+        // auto textures = _Meshes[0]->Textures;
 
         // For glb add padding to satisfy the 4 Byte boundary.
         if(Settings->Binary)
         {          
-            std::vector<char> diffuse, emission;
-            diffuse = textures[TextureType::DIFFIUSE]->AsPNG();
+            // std::vector<char> diffuse, emission;
+            // diffuse = textures[TextureType::DIFFIUSE]->AsPNG();
 
-            if(textures.find(TextureType::EMISSION) != textures.end())
-                emission = textures[TextureType::EMISSION]->AsPNG();
+            // if(textures.find(TextureType::EMISSION) != textures.end())
+            //     emission = textures[TextureType::EMISSION]->AsPNG();
 
             size_t Size = binary.size();
-            int Padding = 4 - ((binary.size() + diffuse.size() + emission.size()) % 4);
+            int Padding = 4 - ((binary.size() /*+ diffuse.size() + emission.size()*/) % 4);
 
-            binary.resize(binary.size() + diffuse.size() + emission.size() + Padding, '\0');
-            memcpy(binary.data() + Size, diffuse.data(), diffuse.size());
-            memcpy(binary.data() + Size + diffuse.size(), emission.data(), emission.size());
+            binary.resize(binary.size() + Padding, '\0');
+            // binary.resize(binary.size() + diffuse.size() + emission.size() + Padding, '\0');
+            // memcpy(binary.data() + Size, diffuse.data(), diffuse.size());
+            // memcpy(binary.data() + Size + diffuse.size(), emission.data(), emission.size());
 
-            GLTF::CBufferView ImageView;
-            ImageView.Offset = Size;
-            ImageView.Size = diffuse.size();
+            // GLTF::CBufferView ImageView;
+            // ImageView.Offset = Size;
+            // ImageView.Size = diffuse.size();
 
-            GLTF::CImage Image;
-            Image.BufferView = bufferViews.size();
-            bufferViews.push_back(ImageView);
-            Images.push_back(Image);
+            // GLTF::CImage Image;
+            // Image.BufferView = bufferViews.size();
+            // bufferViews.push_back(ImageView);
+            // Images.push_back(Image);
 
-            if(!emission.empty())
-            {
-                GLTF::CBufferView ImageView;
-                ImageView.Offset = Size + diffuse.size();
-                ImageView.Size = emission.size();
+            // if(!emission.empty())
+            // {
+            //     GLTF::CBufferView ImageView;
+            //     ImageView.Offset = Size + diffuse.size();
+            //     ImageView.Size = emission.size();
 
-                GLTF::CImage Image;
-                Image.BufferView = bufferViews.size();
-                bufferViews.push_back(ImageView);
-                Images.push_back(Image);
-            }
+            //     GLTF::CImage Image;
+            //     Image.BufferView = bufferViews.size();
+            //     bufferViews.push_back(ImageView);
+            //     Images.push_back(Image);
+            // }
         }
         else
         {
-            GLTF::CImage Image;
-            Image.Uri = filenameWithoutExt + ".albedo.png";
-            Images.push_back(Image);
+            // GLTF::CImage Image;
+            // Image.Uri = filenameWithoutExt + ".albedo.png";
+            // Images.push_back(Image);
 
-            if(textures.find(TextureType::EMISSION) != textures.end())
-            {
-                GLTF::CImage Image;
-                Image.Uri = filenameWithoutExt + ".emission.png";
-                Images.push_back(Image);
-            }
+            // if(textures.find(TextureType::EMISSION) != textures.end())
+            // {
+            //     GLTF::CImage Image;
+            //     Image.Uri = filenameWithoutExt + ".emission.png";
+            //     Images.push_back(Image);
+            // }
 
             Buffer.Uri = filenameWithoutExt + ".bin";
         }
@@ -255,13 +259,13 @@ namespace VCore
         json.AddPair("bufferViews", bufferViews);
         json.AddPair("materials", materials);        
 
-        json.AddPair("images", Images);
+        // json.AddPair("images", Images);
 
-        std::vector<GLTF::CTexture> gltfTextures = { GLTF::CTexture() };
-        if(textures.find(TextureType::EMISSION) != textures.end())
-            gltfTextures.push_back(GLTF::CTexture(1));
+        // std::vector<GLTF::CTexture> gltfTextures = { GLTF::CTexture() };
+        // if(textures.find(TextureType::EMISSION) != textures.end())
+        //     gltfTextures.push_back(GLTF::CTexture(1));
 
-        json.AddPair("textures", gltfTextures);   
+        // json.AddPair("textures", gltfTextures);   
         json.AddPair("buffers", std::vector<GLTF::CBuffer>() = { Buffer });
         
         std::string JS = json.Serialize();
@@ -275,9 +279,9 @@ namespace VCore
             strm->Write(binary.data(), binary.size());
             m_IOHandler->Close(strm);
 
-            SaveTexture(textures[TextureType::DIFFIUSE], _Path, "albedo");
-            if(textures.find(TextureType::EMISSION) != textures.end())
-                SaveTexture(textures[TextureType::EMISSION], _Path, "emission");
+            // SaveTexture(textures[TextureType::DIFFIUSE], _Path, "albedo");
+            // if(textures.find(TextureType::EMISSION) != textures.end())
+            //     SaveTexture(textures[TextureType::EMISSION], _Path, "emission");
         }
         else
         {

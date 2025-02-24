@@ -118,7 +118,8 @@ namespace VCore
 
                         vertexList << v.Pos.x << ", " << v.Pos.y << ", " << v.Pos.z;
                         normalList << v.Normal.x << ", " << v.Normal.y << ", " << v.Normal.z;
-                        uvList << v.UV.x << ", " << v.UV.y;
+                        // TODO: FIX
+                        // uvList << v.UV.x << ", " << v.UV.y;
                         first = false;
                     }
                     vertexList << ")," << std::endl;

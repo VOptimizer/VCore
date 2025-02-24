@@ -44,11 +44,7 @@ namespace VCore
         IVoxelFormat::ClearCache();
         LoadDefaultPalette();
 
-        m_UsedColorsPos = 0;
-        m_ColorMapping.clear();
-        m_MaterialMapping.clear();
         m_ModelSceneTreeMapping.clear();
-        m_HasEmission = false;
         m_NotDefaultMaterials = nullptr;
     }
 
@@ -67,15 +63,15 @@ namespace VCore
         m_DataStream->Write("VOX ", 4);
         m_DataStream->Write((int32_t)150);
 
-        SChunkHeader mainChunk = { {'M', 'A', 'I', 'N'}, 0, 0 };
+        SMagicaVoxelChunkHeader mainChunk = { {'M', 'A', 'I', 'N'}, 0, 0 };
 
         // Position to path later.
-        auto patchPos = m_DataStream->Tell() + offsetof(SChunkHeader, ChildChunkSize);
+        auto patchPos = m_DataStream->Tell() + offsetof(SMagicaVoxelChunkHeader, ChildChunkSize);
         m_DataStream->Write(mainChunk);
 
         if(m_Models.size() > 1)
         {
-            SChunkHeader packChunk = { {'P', 'A', 'C', 'K'}, (int)sizeof(int32_t), 0 };
+            SMagicaVoxelChunkHeader packChunk = { {'P', 'A', 'C', 'K'}, (int)sizeof(int32_t), 0 };
             m_DataStream->Write(packChunk);
             m_DataStream->Write((int32_t)m_Models.size());
         }
@@ -126,15 +122,15 @@ namespace VCore
         WriteSceneTree();       
 
         // Write the used colors.
-        SChunkHeader rgbaChunk = { {'R', 'G', 'B', 'A'}, (int)sizeof(int32_t) * 256, 0 };
+        SMagicaVoxelChunkHeader rgbaChunk = { {'R', 'G', 'B', 'A'}, (int)sizeof(int32_t) * 256, 0 };
         m_DataStream->Write(rgbaChunk);
         m_DataStream->Write((char*)m_ColorPalette, (int)sizeof(int32_t) * PALETTE_SIZE);
 
         // Write for each color a material.
         for (size_t i = 0; i < PALETTE_SIZE; i++)
         {
-            auto matlPatchPos = m_DataStream->Tell() + offsetof(SChunkHeader, ChunkContentSize);
-            SChunkHeader matlChunk = { {'M', 'A', 'T', 'L'}, 0, 0 };
+            auto matlPatchPos = m_DataStream->Tell() + offsetof(SMagicaVoxelChunkHeader, ChunkContentSize);
+            SMagicaVoxelChunkHeader matlChunk = { {'M', 'A', 'T', 'L'}, 0, 0 };
             m_DataStream->Write(matlChunk);
             m_DataStream->Write((int32_t)i);
 
@@ -278,7 +274,7 @@ namespace VCore
                         it->second->Attributes["_loop"] = "1";
                     }
 
-                    SChunkHeader sizeChunk = { {'S', 'I', 'Z', 'E'}, (int)sizeof(int32_t) * 3, 0 };
+                    SMagicaVoxelChunkHeader sizeChunk = { {'S', 'I', 'Z', 'E'}, (int)sizeof(int32_t) * 3, 0 };
                     m_DataStream->Write(sizeChunk);
 
             	    auto modelSize = size - Math::Vec3f(x, y, z);
@@ -287,18 +283,13 @@ namespace VCore
                     m_DataStream->Write(std::min((int32_t)modelSize.z + 1, (int32_t)256));
                     m_DataStream->Write(std::min((int32_t)modelSize.y + 1, (int32_t)256));
 
-                    Texture diffuse;
-                    auto it = _Model->Textures.find(TextureType::DIFFIUSE);
-                    if(it != _Model->Textures.end())
-                        diffuse = it->second;
-
-                    auto patchPos = m_DataStream->Tell() + offsetof(SChunkHeader, ChunkContentSize);
-                    SChunkHeader xyziChunk = { {'X', 'Y', 'Z', 'I'}, 0, 0 };
+                    auto patchPos = m_DataStream->Tell() + offsetof(SMagicaVoxelChunkHeader, ChunkContentSize);
+                    SMagicaVoxelChunkHeader xyziChunk = { {'X', 'Y', 'Z', 'I'}, 0, 0 };
                     m_DataStream->Write(xyziChunk);
                     // static_cast<int>(sizeof(int32_t) + sizeof(int32_t) * _Model->GetBlockCount())
                     m_DataStream->Write((int32_t)0);
 
-                    ankerl::unordered_dense::map<Math::Vec3i, const IChunk*, Math::Vec3iHasher> chunks;
+                    ankerl::unordered_dense::map<Math::Vec3i, const CChunk*, Math::Vec3iHasher> chunks;
                     for (int mx = 0; mx <= modelSize.x; mx += Config::ChunkSize)
                     {
                         for (int my = 0; my <= modelSize.y; my += Config::ChunkSize)
@@ -337,8 +328,7 @@ namespace VCore
                                         auto mapIt = m_VoxelIndexMap.find((uint32_t)voxel);
                                         if(mapIt == m_VoxelIndexMap.end())
                                         {
-                                            if(diffuse)
-                                                m_ColorPalette[m_VoxelIndex - 1] = diffuse->GetPixel(Math::Vec2ui(voxel.Color, 0));
+                                            m_ColorPalette[m_VoxelIndex - 1] = 0xFF000000 | voxel.Color;
 
                                             auto mat = MaterialManager::GetMaterial(voxel.Material);
                                             if(mat)
@@ -481,14 +471,14 @@ namespace VCore
         for (auto &&node : m_MagicaSceneTree)
         {
             // Position to path later.
-            auto patchPos = m_DataStream->Tell() + offsetof(SChunkHeader, ChunkContentSize);
+            auto patchPos = m_DataStream->Tell() + offsetof(SMagicaVoxelChunkHeader, ChunkContentSize);
 
             switch (node->Type)
             {
                 case NodeType::TRANSFORM: {
                     auto transform = std::static_pointer_cast<STransformNode>(node);
 
-                    SChunkHeader nTRNChunk = { {'n', 'T', 'R', 'N'}, 0, 0 };
+                    SMagicaVoxelChunkHeader nTRNChunk = { {'n', 'T', 'R', 'N'}, 0, 0 };
                     m_DataStream->Write(nTRNChunk);
                     m_DataStream->Write(transform->NodeID);
                     m_DataStream->Write((int32_t)transform->Attributes.size());
@@ -513,7 +503,7 @@ namespace VCore
                 case NodeType::GROUP: {
                     auto group = std::static_pointer_cast<SGroupNode>(node);
 
-                    SChunkHeader nGRPChunk = { {'n', 'G', 'R', 'P'}, 0, 0 };
+                    SMagicaVoxelChunkHeader nGRPChunk = { {'n', 'G', 'R', 'P'}, 0, 0 };
                     m_DataStream->Write(nGRPChunk);
                     m_DataStream->Write(group->NodeID);
                     m_DataStream->Write((int32_t)0);
@@ -526,7 +516,7 @@ namespace VCore
                 case NodeType::SHAPE: {
                     auto shape = std::static_pointer_cast<SShapeNode>(node);
 
-                    SChunkHeader nSHPChunk = { {'n', 'S', 'H', 'P'}, 0, 0 };
+                    SMagicaVoxelChunkHeader nSHPChunk = { {'n', 'S', 'H', 'P'}, 0, 0 };
                     m_DataStream->Write(nSHPChunk);
                     m_DataStream->Write(shape->NodeID);
                     // m_DataStream->Write((int32_t)0);
@@ -604,12 +594,12 @@ namespace VCore
 
         if(!m_DataStream->Eof())
         {
-            SChunkHeader Tmp = m_DataStream->Read<SChunkHeader>();
+            SMagicaVoxelChunkHeader Tmp = m_DataStream->Read<SMagicaVoxelChunkHeader>();
             if(strncmp(Tmp.ID, "MAIN", sizeof(Tmp.ID)) == 0)
             {
                 while (!m_DataStream->Eof())
                 {
-                    Tmp = m_DataStream->Read<SChunkHeader>();
+                    Tmp = m_DataStream->Read<SMagicaVoxelChunkHeader>();
 
                     if(strncmp(Tmp.ID, "SIZE", sizeof(Tmp.ID)) == 0)
                     {
@@ -671,32 +661,6 @@ namespace VCore
                 }
             }
         }
-
-        ankerl::unordered_dense::map<TextureType, Texture> textures;
-        textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>(Math::Vec2ui(m_ColorMapping.size(), 1));
-
-        if(m_HasEmission)
-            textures[TextureType::EMISSION] = std::make_shared<CTexture>(Math::Vec2ui(m_ColorMapping.size(), 1));
-
-        // Creates the used color palette.
-        for (auto &&c : m_ColorMapping)
-        {
-            textures[TextureType::DIFFIUSE]->AddPixel(m_ColorPalette[c.first - 1], Math::Vec2ui(c.second, 0));
-            if(m_HasEmission)
-            {
-                int MatIdx = 0;
-                auto IT = m_MaterialMapping.find(c.first);
-                if(IT != m_MaterialMapping.end())
-                    MatIdx = IT->second;
-
-                auto material = m_Materials[MatIdx];
-                if(material->Power > 0)
-                    textures[TextureType::EMISSION]->AddPixel(m_ColorPalette[c.first - 1], Math::Vec2ui(c.second, 0));
-            }
-        }
-
-        for (auto &&m : m_Models)
-            m->Textures = textures;
     }
 
     fast_vector<fast_vector<SFrame>> CMagicaVoxelFormat::ProcessMaterialAndSceneGraph()
@@ -707,12 +671,12 @@ namespace VCore
 
         if(!m_DataStream->Eof())
         {
-            SChunkHeader Tmp = m_DataStream->Read<SChunkHeader>();
+            SMagicaVoxelChunkHeader Tmp = m_DataStream->Read<SMagicaVoxelChunkHeader>();
             if(strncmp(Tmp.ID, "MAIN", sizeof(Tmp.ID)) == 0)
             {
                 while (!m_DataStream->Eof())
                 {
-                    Tmp = m_DataStream->Read<SChunkHeader>();
+                    Tmp = m_DataStream->Read<SMagicaVoxelChunkHeader>();
 
                     if(strncmp(Tmp.ID, "MATL", sizeof(Tmp.ID)) == 0)
                     {
@@ -762,7 +726,7 @@ namespace VCore
                     }
                     else if(strncmp(Tmp.ID, "RGBA", sizeof(Tmp.ID)) == 0)
                     {
-                        m_ColorpaletterPosition = m_DataStream->Tell() - sizeof(SChunkHeader);
+                        m_ColorpaletterPosition = m_DataStream->Tell() - sizeof(SMagicaVoxelChunkHeader);
                         m_DataStream->Seek(Tmp.ChunkContentSize + Tmp.ChildChunkSize);
                     }
                     else if(strncmp(Tmp.ID, "nTRN", sizeof(Tmp.ID)) == 0)

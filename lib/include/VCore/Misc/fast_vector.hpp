@@ -25,23 +25,24 @@ namespace VCore
             inline void push_back(const T &_Value)
             {
                 if(!m_Data)
-                {
-                    m_Capacity = 100;
-                    m_Data = static_cast<T*>(custom_malloc(m_Capacity * sizeof(T)));
-                }
+                    reserve(100);
                 else if((m_Size + 1) >= m_Capacity)
-                {
-                    m_Capacity *= 1.5f;
-                    m_Data = static_cast<T*>(custom_realloc(static_cast<void*>(m_Data), m_Capacity * sizeof(T)));
-                }
+                    reserve(m_Capacity * 1.5f + 1);
 
                 new(&m_Data[m_Size++]) T(_Value);
             }
 
-            inline T pop_back()
+            inline void push_back(T &&_Value)
             {
-                return m_Data[--m_Size];
+                if(!m_Data)
+                    reserve(100);
+                else if((m_Size + 1) >= m_Capacity)
+                    reserve(m_Capacity * 1.5f + 1);
+
+                new(&m_Data[m_Size++]) T(std::move(_Value));
             }
+
+            inline T pop_back() { return m_Data[--m_Size]; }
 
             inline T* begin() const { return m_Data; }
             inline T* end() const { return m_Data + m_Size; }
@@ -49,31 +50,21 @@ namespace VCore
             inline uint64_t size() const { return m_Size; }
             inline uint64_t capacity() const { return m_Capacity; }
 
+            inline T &operator[](uint64_t _idx) { return m_Data[_idx]; }
+            inline T &operator[](uint64_t _idx) const { return m_Data[_idx]; }
+            
+            inline T *data() const { return m_Data; }
+
             inline void insert(T* _Position, T* _Begin, T*_End)
             {
                 auto size = (uintptr_t)(_End - _Begin);
                 auto from = (uintptr_t)(_Position - begin());
                 if((from + size) >= m_Capacity)
-                {
-                    m_Capacity += ((from + size) - m_Capacity);
-                    m_Data = static_cast<T*>(custom_realloc(static_cast<void*>(m_Data), m_Capacity * sizeof(T)));
-                }
+                    reserve(from + size);
 
                 memcpy(m_Data + from, _Begin, size * sizeof(T));
                 m_Size += size;
             }
-
-            inline T &operator[](uint64_t _idx)
-            {
-                return m_Data[_idx];
-            }
-
-            inline T &operator[](uint64_t _idx) const
-            {
-                return m_Data[_idx];
-            }
-
-            inline T *data() const { return m_Data; }
 
             inline void reserve(size_t _Size)
             {
@@ -124,10 +115,7 @@ namespace VCore
                 }
             }
 
-            ~fast_vector()
-            {
-                clear();
-            }
+            ~fast_vector() { clear(); }
         private:
             T *m_Data;
             uint64_t m_Size;

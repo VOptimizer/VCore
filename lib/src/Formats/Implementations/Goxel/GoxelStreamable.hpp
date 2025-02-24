@@ -22,44 +22,48 @@
  * SOFTWARE.
  */
 
-#ifndef MAGICAVOXELSTREAMABLE_HPP
-#define MAGICAVOXELSTREAMABLE_HPP
+#ifndef GOXELSTREAMABLE_HPP
+#define GOXELSTREAMABLE_HPP
 
 #include <VCore/Formats/Streamable.hpp>
 #include <VCore/Misc/FileStream.hpp>
 #include <VCore/Meshing/Material.hpp>
+#include "GoxelModelParser.hpp"
+
+#include <stdint.h>
 
 namespace VCore
 {
-    class CMagicaVoxelStreamable : public IStreamable
+    class CGoxelStreamable : public IStreamable
     {
         public:
-            CMagicaVoxelStreamable(
-                const std::shared_ptr<IIOHandler> &_IOHandler, 
-                uint64_t _ColorpalettePosition, 
-                uint64_t _ModelPosition,
-                const std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial>> &_NotDefaultMaterials,
-                const std::string &_FilePath) : 
+            CGoxelStreamable(
+                const std::shared_ptr<IIOHandler> &_IOHandler,
+                const std::string &_FilePath,
+                fast_vector<uint64_t> &&_BL16Offsets, 
+                fast_vector<CMaterial> &&_Materials, 
+                ankerl::unordered_dense::map<Math::Vec3i, fast_vector<ChunkInfo>, Math::Vec3iHasher> &&_Chunks,
+                int _BeginX, int _EndX) :
                 IStreamable(),
-                m_IOHandler(_IOHandler), 
-                m_ColorpalettePosition(_ColorpalettePosition),
-                m_ModelPosition(_ModelPosition),
-                m_NotDefaultMaterials(_NotDefaultMaterials),
-                m_FilePath(_FilePath) {}
+                m_IOHandler(_IOHandler),
+                m_FilePath(_FilePath),
+                m_BL16Offsets(std::move(_BL16Offsets)),
+                m_Materials(std::move(_Materials)),
+                m_Chunks(std::move(_Chunks)),
+                m_BeginX(_BeginX), m_EndX(_EndX) {}
 
-            /** @see IStreamable::SupportsChunkOffloading */
-            bool SupportsChunkOffloading() const override { return false; }
+            bool SupportsChunkOffloading() const override { return true; }
 
-            /** @see IStreamable::ReadVoxelSpace */
-            bool ReadVoxelSpace(CVoxelSpace &_Space) override;
-
+            bool ReadChunk(const Math::Vec3i &_Position, CChunk *_Chunk) override;
         private:
             std::shared_ptr<IIOHandler> m_IOHandler;
-            uint64_t m_ColorpalettePosition;
-            uint64_t m_ModelPosition;
-            const std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial>> m_NotDefaultMaterials;
             const std::string m_FilePath;
+            const fast_vector<uint64_t> m_BL16Offsets;
+            const fast_vector<CMaterial> m_Materials;
+            const ankerl::unordered_dense::map<Math::Vec3i, fast_vector<ChunkInfo>, Math::Vec3iHasher> m_Chunks;
+            int m_BeginX, m_EndX;
     };
 } // namespace VCore
+
 
 #endif

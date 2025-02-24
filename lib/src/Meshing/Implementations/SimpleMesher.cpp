@@ -233,17 +233,17 @@ namespace VCore
         return 3 - (_Side1 + _Side2 + _Corner);
     }
 
-    inline uint32_t AddVertex(CMeshBuilder &_Builder, const VoxelModel &_Model, const Math::Vec3i _Position, const SAmbientOcclusionDirection &_Direction, const Math::Vec3f &_Vertex, const Math::Vec3f &_Normal, const Math::Vec2f &_UV, uint8_t &_Ao)
+    inline uint32_t AddVertex(CMeshBuilder &_Builder, const VoxelModel &_Model, const Math::Vec3i _Position, const SAmbientOcclusionDirection &_Direction, const Math::Vec3f &_Vertex, const Math::Vec3f &_Normal, const uint32_t _Color, uint8_t &_Ao)
     {
         auto vertex = _Vertex + _Position;
 
         // TODO: Makes everything 30ms slower (at my machine)
-        // auto side1 = _Model->GetVoxel(_Direction.Side1 + _Position);
-        // auto side2 = _Model->GetVoxel(_Direction.Side2 + _Position);
-        // auto corner = _Model->GetVoxel(_Direction.Corner + _Position);
+        // auto side1 = _Model->find(_Direction.Side1 + _Position);
+        // auto side2 = _Model->find(_Direction.Side2 + _Position);
+        // auto corner = _Model->find(_Direction.Corner + _Position);
 
-        // _Ao = GenerateAO(side1.IsInstantiated(), side2.IsInstantiated(), corner.IsInstantiated());
-        return _Builder.AddVertex(new SVertex(vertex, _Normal, _UV, _Ao));
+        // _Ao = GenerateAO(side1 != _Model->end(), side2 != _Model->end(), corner != _Model->end());
+        return _Builder.AddVertex(new SVertex(vertex, _Normal, _Color, _Ao));
     }
 
     void CSimpleMesher::GenerateQuads(CMeshBuilder &_Builder, Config::bitmask_t _Faces, int depth, int width, bool isFront, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, const VoxelModel &_Model, const CVoxel& _Voxel, IndexPair *_Cache)
@@ -253,10 +253,10 @@ namespace VCore
         uint8_t lastLeftAO = 0, lastRightAO = 0;
         IndexPair localCache[Config::ChunkSize] = {};
 
-        Math::Vec2f uv;
-        auto textures = _Builder.GetTextures();
-        if(textures && !textures->empty())
-            uv = Math::Vec2f(((float)(_Voxel.Color + 0.5f)) / textures->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
+        // Math::Vec2f uv;
+        // auto textures = _Builder.GetTextures();
+        // if(textures && !textures->empty())
+        //     uv = Math::Vec2f(((float)(_Voxel.Color + 0.5f)) / textures->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
 
         Config::bitmask_t heightPos = 0;
         while ((heightPos <= Config::ChunkSize) && (_Faces >> heightPos))
@@ -273,7 +273,7 @@ namespace VCore
                 break;
 
             auto &faceInfo = FACE_INFOS[_Axis.x * 2 + (isFront ? 0 : 1)];
-            for (; heightPos <= Config::ChunkSize; heightPos++)
+            for (; heightPos < Config::ChunkSize; heightPos++)
             {
                 if(((_Faces >> heightPos) & 0x1) == 0)
                     break;
@@ -324,10 +324,10 @@ namespace VCore
                     }
 
                     if(!idx1)
-                        idx1 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[0], faceInfo.V1, faceInfo.Normal, uv, ao1);
+                        idx1 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[0], faceInfo.V1, faceInfo.Normal, _Voxel.Color, ao1);
 
                     if(!idx2)
-                        idx2 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[1], faceInfo.V2, faceInfo.Normal, uv, ao2);
+                        idx2 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[1], faceInfo.V2, faceInfo.Normal, _Voxel.Color, ao2);
                 }
 
                 if(heightPos < Config::ChunkSize)
@@ -361,10 +361,10 @@ namespace VCore
                 }
 
                 if(!idx3)
-                    idx3 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[2], faceInfo.V3, faceInfo.Normal, uv, ao3);
+                    idx3 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[2], faceInfo.V3, faceInfo.Normal, _Voxel.Color, ao3);
 
                 if(!idx4)
-                    idx4 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[3], faceInfo.V4, faceInfo.Normal, uv, ao4);
+                    idx4 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[3], faceInfo.V4, faceInfo.Normal, _Voxel.Color, ao4);
 
                 // Save the last two indices.
                 lastLeftIdx = idx3;

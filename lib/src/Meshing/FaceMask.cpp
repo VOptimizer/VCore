@@ -24,7 +24,7 @@
 
 #include <algorithm>
 #include "FaceMask.hpp"
-#include "Implementations/Simd.hpp"
+#include "../Simd/Simd.hpp"
 #include "../Misc/Helper.hpp"
 #include <cmath>
 #include <VCore/Meshing/MaterialManager.hpp>
@@ -73,12 +73,12 @@ namespace VCore
         return std::move(m_FacesMasks);
     }
 
-    void CFaceMask::FillVoxelBits(Config::bitmask_t *_opaqueVoxels, Config::bitmask_t *_transparentVoxels, const IChunk *_Chunk, const Math::Vec3i &_Position, const int _Count)
+    void CFaceMask::FillVoxelBits(Config::bitmask_t *_opaqueVoxels, Config::bitmask_t *_transparentVoxels, const CChunk *_Chunk, const Math::Vec3i &_Position, const int _Count)
     {
         Math::Vec3i subpos = _Position & Config::InnerChunkMask;
         for (int i = 0; i < _Count; i++)
         {          
-            _opaqueVoxels[i] = _Chunk->m_Mask.GetRowFaces(subpos, m_Axis.y); // (_Chunk->m_Mask.GetRowFaces(subpos, m_Axis.y) >> 1) & 0xFFFFFFFF;
+            _opaqueVoxels[i] = _Chunk->Mask.GetRowFaces(subpos, m_Axis.y); // (_Chunk->m_Mask.GetRowFaces(subpos, m_Axis.y) >> 1) & 0xFFFFFFFF;
 
             if(_opaqueVoxels[i] && (m_TransparentMaterials.size() > 0))
             {
@@ -107,8 +107,7 @@ namespace VCore
         }
     }
 
-    constexpr static int simdBits = 256;
-    const int simdSize = simdBits / 32;
+    const int simdIntSize = sizeof(Simd::NativeI) / sizeof(int);
 
     void CFaceMask::InternalGenerate()
     {
@@ -129,11 +128,11 @@ namespace VCore
         // for (int heightAxis = BBox.Beg.v[axis1]; heightAxis <= BBox.End.v[axis1]; heightAxis++)
         for (int depthAxis = BBox.Beg.v[m_Axis.x]; depthAxis <= BBox.End.v[m_Axis.x]; depthAxis++)
         {
-            for (int widthAxis = BBox.Beg.v[m_Axis.z]; widthAxis <= BBox.End.v[m_Axis.z]; widthAxis += simdSize)
+            for (int widthAxis = BBox.Beg.v[m_Axis.z]; widthAxis <= BBox.End.v[m_Axis.z]; widthAxis += simdIntSize)
             {
                 // Calculates the remaining amount of elements
                 // in the voxel array.
-                const int count = ((BBox.End.v[m_Axis.z] - widthAxis) >= simdSize) ? simdSize : ((BBox.End.v[m_Axis.z] - widthAxis) + 1);
+                const int count = ((BBox.End.v[m_Axis.z] - widthAxis) >= simdIntSize) ? simdIntSize : ((BBox.End.v[m_Axis.z] - widthAxis) + 1);
 
                 // Global position of the current column.
                 Math::Vec3i position;
@@ -151,8 +150,8 @@ namespace VCore
                 // | 0 -  simdSize            | Voxel column before the current one |
                 // | simdSize - simdSize*2    | Current voxel column    |
                 // | simdSize*2 - simdSize*3  | Voxel column after the current one  |
-                Config::bitmask_t opaqueVoxels[simdSize * 3] = {};
-                Config::bitmask_t transparentVoxels[simdSize * 3] = {};
+                Config::bitmask_t opaqueVoxels[simdIntSize * 3] = {};
+                Config::bitmask_t transparentVoxels[simdIntSize * 3] = {};
 
                 // Go before the current voxel column.
                 position.v[m_Axis.x]--;
@@ -167,7 +166,7 @@ namespace VCore
                         chunk = m_Model->getChunk(position);
 
                     if(chunk)
-                        FillVoxelBits(opaqueVoxels + (i * simdSize), transparentVoxels + (i * simdSize), chunk, position, count);
+                        FillVoxelBits(opaqueVoxels + (i * simdIntSize), transparentVoxels + (i * simdIntSize), chunk, position, count);
                     position.v[m_Axis.x]++;
                 }
 
@@ -182,23 +181,23 @@ namespace VCore
 
     void CFaceMask::GenerateMask(Config::bitmask_t *_Voxels, const Math::Vec3i &_Subpos, const int _Count)
     {
-        Simd::Simdi<simdBits> beforeVoxelsSimd((int*)_Voxels, simdSize);
-        Simd::Simdi<simdBits> voxelsSimd((int*)_Voxels + simdSize, simdSize);
-        Simd::Simdi<simdBits> afterVoxelsSimd((int*)_Voxels + (simdSize * 2), simdSize);
+        Simd::NativeI beforeVoxelsSimd((int*)_Voxels, simdIntSize);
+        Simd::NativeI voxelsSimd((int*)_Voxels + simdIntSize, simdIntSize);
+        Simd::NativeI afterVoxelsSimd((int*)_Voxels + (simdIntSize * 2), simdIntSize);
 
         // Cache reset
         ankerl::unordered_dense::map<uint32_t, Mask> *masks = nullptr;
         m_CachedKey = 0xFFFFFFFF;
         m_MaskCache = nullptr;
 
-        Config::bitmask_t frontFaces[simdSize] = {};
-        Config::bitmask_t backFaces[simdSize] = {};
+        Config::bitmask_t frontFaces[simdIntSize] = {};
+        Config::bitmask_t backFaces[simdIntSize] = {};
 
         // With simd and bit manipulation, we find all faces which are not
         // corvered. Since simd works on parallel data, we can check 32 * simdSize faces
         // at the same time.
-        ((beforeVoxelsSimd & voxelsSimd) ^ voxelsSimd).Store((int*)frontFaces, simdSize);
-        ((afterVoxelsSimd & voxelsSimd) ^ voxelsSimd).Store((int*)backFaces, simdSize);
+        ((beforeVoxelsSimd & voxelsSimd) ^ voxelsSimd).Store((int*)frontFaces, simdIntSize);
+        ((afterVoxelsSimd & voxelsSimd) ^ voxelsSimd).Store((int*)backFaces, simdIntSize);
 
         // Fill the mask structure with data.
         for (int i = 0; i < _Count; i++)

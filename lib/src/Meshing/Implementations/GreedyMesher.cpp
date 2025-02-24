@@ -32,10 +32,7 @@
 #include <vector>
 
 #include "GreedyMesher.hpp"
-
-#include <immintrin.h>
-
-#include "Simd.hpp"
+#include "../../Simd/Simd.hpp"
 
 namespace VCore
 {
@@ -134,13 +131,15 @@ namespace VCore
                     auto v2 = surface->GetVertex(i + 1);
                     auto v3 = surface->GetVertex(i + 2);
                     auto v4 = surface->GetVertex(i + 3);
-                    auto textureRect = textureMapping[v1.UV.x];
+                    // TODO: Currently no UVs! How to map Texture?
+                    // auto textureRect = textureMapping[v1.UV.x];
 
                     // For each position we need to substract the margin pixels.
-                    v1.UV = Math::Vec2f(textureRect.Position.x + 1, textureRect.Position.y + 1) / packer.GetCanvasSize();
-                    v2.UV = Math::Vec2f((textureRect.Position.x + 1) + (textureRect.Size.x - 2), textureRect.Position.y + 1) / packer.GetCanvasSize();
-                    v3.UV = Math::Vec2f(textureRect.Position.x + 1, (textureRect.Position.y + 1) + (textureRect.Size.y - 2)) / packer.GetCanvasSize();
-                    v4.UV = Math::Vec2f((textureRect.Position + Math::Vec2f(1, 1)) + (textureRect.Size - Math::Vec2f(2, 2))) / packer.GetCanvasSize();
+
+                    // v1.UV = Math::Vec2f(textureRect.Position.x + 1, textureRect.Position.y + 1) / packer.GetCanvasSize();
+                    // v2.UV = Math::Vec2f((textureRect.Position.x + 1) + (textureRect.Size.x - 2), textureRect.Position.y + 1) / packer.GetCanvasSize();
+                    // v3.UV = Math::Vec2f(textureRect.Position.x + 1, (textureRect.Position.y + 1) + (textureRect.Size.y - 2)) / packer.GetCanvasSize();
+                    // v4.UV = Math::Vec2f((textureRect.Position + Math::Vec2f(1, 1)) + (textureRect.Size - Math::Vec2f(2, 2))) / packer.GetCanvasSize();
 
                     surface->UpdateVertex(i, v1);
                     surface->UpdateVertex(i + 1, v2);
@@ -212,14 +211,14 @@ namespace VCore
     {
         int currentMaterial = -1;
 
-        bool hasTexture = result.GetTextures() && !result.GetTextures()->empty();
-        int textureWidth = 0;
-        if(hasTexture)
-            textureWidth = result.GetTextures()->at(TextureType::DIFFIUSE)->GetSize().x;
+        // bool hasTexture = result.GetTextures() && !result.GetTextures()->empty();
+        // int textureWidth = 0;
+        // if(hasTexture)
+        //     textureWidth = result.GetTextures()->at(TextureType::DIFFIUSE)->GetSize().x;
 
         Config::bitmask_t heightPos = 0;
         // Shift werid = hang
-        while ((heightPos <= Config::ChunkSize) && (faces >> heightPos))
+        while ((heightPos < Config::ChunkSize) && (faces >> heightPos))
         {
             // ~ 5ms
             heightPos += CountTrailingZeroBits(faces >> heightPos);
@@ -246,8 +245,8 @@ namespace VCore
             if(faceCount != Config::ChunkSize)
                 mask = (((Config::bitmask_t)1 << faceCount) - 1) << heightPos;
 
-            Simd::Simdi<128> simd_mask(mask);
-            const int integers = 4;
+            Simd::NativeI simd_mask(mask);
+            const int integers = sizeof(Simd::NativeI) / sizeof(int);
 
             unsigned w = 1;
             for (uint32_t tmpWidth = width + 1; tmpWidth < Config::ChunkSize; tmpWidth += integers)
@@ -259,7 +258,7 @@ namespace VCore
                 // for (size_t i = 0; i < rounds; i++)
                 //     buf[i] = bits.Bits[(tmpWidth + i) + ((1 - (int)isFront) * Config::ChunkSize)];
 
-                Simd::Simdi<128> simd_cols((int*)&bits.Bits[tmpWidth + ((1 - (int)isFront) * Config::ChunkSize)], integers);
+                Simd::NativeI simd_cols((int*)&bits.Bits[tmpWidth + ((1 - (int)isFront) * Config::ChunkSize)], integers);
 
                 auto result = (simd_mask & simd_cols) == simd_mask;
                 int mResult = result.MoveMask();
@@ -304,14 +303,14 @@ namespace VCore
                 }
             }
 
-            Math::Vec2f uv;
-            if(hasTexture)
-                uv = Math::Vec2f(((float)(_Voxel.Color + 0.5f)) / textureWidth, 0.5f);
+            // Math::Vec2f uv;
+            // if(hasTexture)
+            //     uv = Math::Vec2f(((float)(_Voxel.Color + 0.5f)) / textureWidth, 0.5f);
 
-            uint32_t idx1 = result.AddVertex(new SVertex(position, normal, uv));
-            uint32_t idx2 = result.AddVertex(new SVertex(position + du, normal, uv));
-            uint32_t idx3 = result.AddVertex(new SVertex(position + dv, normal, uv));
-            uint32_t idx4 = result.AddVertex(new SVertex(position + size, normal, uv));
+            uint32_t idx1 = result.AddVertex(new SVertex(position, normal, _Voxel.Color));
+            uint32_t idx2 = result.AddVertex(new SVertex(position + du, normal, _Voxel.Color));
+            uint32_t idx3 = result.AddVertex(new SVertex(position + dv, normal, _Voxel.Color));
+            uint32_t idx4 = result.AddVertex(new SVertex(position + size, normal, _Voxel.Color));
 
             if(isFront)
                 result.AddFace(idx1, idx2, idx3, idx4);
@@ -612,23 +611,24 @@ namespace VCore
                     }
                 }
 
-                Math::Vec2f uv;
-                if(m_GenerateTexture && !_Context.Model->Textures.empty())
-                {
-                    Math::Vec2ui textureSize(size.v[_Context.Axis.x] + 2, size.v[_Context.Axis.y] + 2);
-                    auto pos = position;
-                    if(!_IsFront)
-                        pos.v[_Context.Axis.z] -= 1;
+                // TODO: Currently no UVs! How to map Texture?
+                // Math::Vec2f uv;
+                // if(m_GenerateTexture && !_Context.Model->Textures.empty())
+                // {
+                //     Math::Vec2ui textureSize(size.v[_Context.Axis.x] + 2, size.v[_Context.Axis.y] + 2);
+                //     auto pos = position;
+                //     if(!_IsFront)
+                //         pos.v[_Context.Axis.z] -= 1;
 
-                    uv.x = AddTexture(pos, _Context.Axis, textureSize);
-                }
-                else if(_Context.Builder.GetTextures() && !_Context.Builder.GetTextures()->empty())
-                    uv = Math::Vec2f(((float)(voxel.Color + 0.5f)) / _Context.Builder.GetTextures()->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
+                //     uv.x = AddTexture(pos, _Context.Axis, textureSize);
+                // }
+                // else if(_Context.Builder.GetTextures() && !_Context.Builder.GetTextures()->empty())
+                //     uv = Math::Vec2f(((float)(voxel.Color + 0.5f)) / _Context.Builder.GetTextures()->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
 
-                uint32_t idx1 = _Context.Builder.AddVertex(new SVertex(position, normal, uv));
-                uint32_t idx2 = _Context.Builder.AddVertex(new SVertex(position + du, normal, uv));
-                uint32_t idx3 = _Context.Builder.AddVertex(new SVertex(position + dv, normal, uv));
-                uint32_t idx4 = _Context.Builder.AddVertex(new SVertex(position + size, normal, uv));
+                uint32_t idx1 = _Context.Builder.AddVertex(new SVertex(position, normal, voxel.Color));
+                uint32_t idx2 = _Context.Builder.AddVertex(new SVertex(position + du, normal, voxel.Color));
+                uint32_t idx3 = _Context.Builder.AddVertex(new SVertex(position + dv, normal, voxel.Color));
+                uint32_t idx4 = _Context.Builder.AddVertex(new SVertex(position + size, normal, voxel.Color));
 
                 if(_IsFront)
                     _Context.Builder.AddFace(idx1, idx2, idx3, idx4);

@@ -207,9 +207,9 @@ STBIWDEF unsigned char * stbi_zlib_compress(unsigned char *data, int data_len, i
    #endif
 #endif
 
-#ifndef STBI_WRITE_NO_STDIO
+// #ifndef STBI_WRITE_NO_STDIO
 #include <stdio.h>
-#endif // STBI_WRITE_NO_STDIO
+// #endif // STBI_WRITE_NO_STDIO
 
 #include <stdarg.h>
 #include <stdlib.h>

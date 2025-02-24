@@ -13,3 +13,6 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/../lib" VCore/)
 
 add_executable(${PROJECT_NAME} ${SRCS})
 target_link_libraries(${PROJECT_NAME} VCore)
+target_compile_options(${PROJECT_NAME} PRIVATE
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static -static-libgcc -static-libstdc++>
+)

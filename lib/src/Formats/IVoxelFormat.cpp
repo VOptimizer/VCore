@@ -28,13 +28,33 @@
 
 #include "../FileUtils.hpp"
 
+#ifndef VCORE_BUILD_NO_MAGICAVOXEL_IMPORTER
 #include "Implementations/MagicaVoxel/MagicaVoxelFormat.hpp"
+#endif
+
+#ifndef VCORE_BUILD_NO_KENSHAPE_IMPORTER
 #include "Implementations/KenshapeFormat.hpp"
-#include "Implementations/GoxelFormat.hpp"
+#endif
+
+#ifndef VCORE_BUILD_NO_GOXEL_IMPORTER
+#include "Implementations/Goxel/GoxelFormat.hpp"
+#endif
+
+#ifndef VCORE_BUILD_NO_QB_IMPORTER
 #include "Implementations/Qubicle/QubicleBinaryFormat.hpp"
+#endif
+
+#ifndef VCORE_BUILD_NO_QBT_IMPORTER
 #include "Implementations/Qubicle/QubicleBinaryTreeFormat.hpp"
+#endif
+
+#ifndef VCORE_BUILD_NO_QEF_IMPORTER
 #include "Implementations/Qubicle/QubicleExchangeFormat.hpp"
+#endif
+
+#ifndef VCORE_BUILD_NO_QBCL_IMPORTER
 #include "Implementations/Qubicle/QubicleFormat.hpp"
+#endif
 
 namespace VCore
 {
@@ -42,13 +62,33 @@ namespace VCore
     {
         switch (_Type)
         {
+            #ifndef VCORE_BUILD_NO_MAGICAVOXEL_IMPORTER
             case LoaderType::MAGICAVOXEL: return VoxelFormat(new CMagicaVoxelFormat());
+            #endif
+
+            #ifndef VCORE_BUILD_NO_GOXEL_IMPORTER
             case LoaderType::GOXEL: return VoxelFormat(new CGoxelFormat());
+            #endif
+
+            #ifndef VCORE_BUILD_NO_KENSHAPE_IMPORTER
             case LoaderType::KENSHAPE: return VoxelFormat(new CKenshapeFormat());
+            #endif
+
+            #ifndef VCORE_BUILD_NO_QB_IMPORTER
             case LoaderType::QUBICLE_BIN: return VoxelFormat(new CQubicleBinaryFormat());
+            #endif
+
+            #ifndef VCORE_BUILD_NO_QBT_IMPORTER
             case LoaderType::QUBICLE_BIN_TREE: return VoxelFormat(new CQubicleBinaryTreeFormat());
+            #endif
+
+            #ifndef VCORE_BUILD_NO_QEF_IMPORTER
             case LoaderType::QUBICLE_EXCHANGE: return VoxelFormat(new CQubicleExchangeFormat());
+            #endif
+
+            #ifndef VCORE_BUILD_NO_QBCL_IMPORTER
             case LoaderType::QUBICLE: return VoxelFormat(new CQubicleFormat());
+            #endif
 
             default: throw CVoxelLoaderException("Unknown file type!");
         }
@@ -115,9 +155,6 @@ namespace VCore
 
         openMode[pos++] = 'b';
         m_DataStream = m_IOHandler->Open(_File, openMode);
-
-        // ClearCache();
-        // ParseFormat();
     }
 
     void IVoxelFormat::Load()

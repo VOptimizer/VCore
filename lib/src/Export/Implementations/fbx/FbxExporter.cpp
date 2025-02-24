@@ -389,8 +389,9 @@ namespace VCore
                 normals.push_back(vertex.Normal.y);
                 normals.push_back(vertex.Normal.z);
 
-                uvs.push_back(vertex.UV.x);
-                uvs.push_back(vertex.UV.y);
+                // TODO: FIX
+                // uvs.push_back(vertex.UV.x);
+                // uvs.push_back(vertex.UV.y);
             }
 
             int currentMatIdx = 0;

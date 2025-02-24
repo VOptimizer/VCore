@@ -34,17 +34,16 @@ namespace VCore
     struct SVertex
     {
         SVertex() = default;
-        SVertex(const Math::Vec3f &_Pos, const Math::Vec3f &_Normal, const Math::Vec2f &_UV, uint8_t _AmbientOcclusionValue = 3) : Pos(_Pos), Normal(_Normal), UV(_UV), AmbientOcclusionValue(_AmbientOcclusionValue) {}
+        SVertex(const Math::Vec3f &_Pos, const Math::Vec3f &_Normal, const uint32_t _Color, const uint8_t _AmbientOcclusionValue = 3) : Pos(_Pos), Normal(_Normal), Color(_Color), AmbientOcclusionValue(_AmbientOcclusionValue) {}
         SVertex(SVertex &&) = default;
         SVertex(const SVertex &) = default;
 
         SVertex &operator=(SVertex &&) = default;
-
         SVertex &operator=(const SVertex &) = default;
 
         Math::Vec3f Pos;
         Math::Vec3f Normal;
-        Math::Vec2f UV;
+        uint32_t Color;
         uint8_t AmbientOcclusionValue;
 
         void *operator new(size_t)
@@ -59,7 +58,7 @@ namespace VCore
 
         inline bool operator==(const SVertex &_Vertex) const
         {
-            return _Vertex.Pos == Pos && _Vertex.Normal == Normal && _Vertex.UV == UV;
+            return _Vertex.Pos == Pos && _Vertex.Normal == Normal && _Vertex.Color == Color && _Vertex.AmbientOcclusionValue == AmbientOcclusionValue;
         }
 
         private:
@@ -73,13 +72,11 @@ namespace VCore
         size_t operator()(const SVertex &_Vertex) const
         {
             Math::Vec3fHasher v3fhasher;
-            Math::Vec2fHasher v2fhasher;
 
             size_t ph = v3fhasher(_Vertex.Pos);
             size_t nh = v3fhasher(_Vertex.Normal);
-            size_t uvh = v2fhasher(_Vertex.UV);
 
-            return ((ph * 73856093) ^ (nh * 19349663) ^ (uvh * 83492791));
+            return ((ph * 73856093) ^ (nh * 19349663) ^ (_Vertex.Color * 83492791) ^ (_Vertex.AmbientOcclusionValue * 5860394));
         }
     };
 } // namespace VCore

@@ -50,33 +50,48 @@ namespace VCore
             Config::bitmask_t m_Grid[Config::ChunkSize * Config::ChunkSize * 3] = {};
     };
 
-    class IChunk
+    class IChunkStorage
+    {
+        public:
+            /** Sets a voxel on a given position. */
+            virtual bool SetVoxel(const CVoxel &_Voxel, const Math::Vec3i &_Position) = 0;
+
+            /** 
+             * @return Returns either an instantiated or not instantiated voxel. 
+             */
+            virtual CVoxel GetVoxel(const Math::Vec3i &_Position) const = 0;
+
+            virtual ~IChunkStorage() = default;
+    };
+
+    class CChunk
     {
         public:
             using pair = std::pair<Math::Vec3i, CVoxel>;
             using iterator = CVoxelSpaceIterator;
 
             bool IsDirty;
-            CBitMaskChunk m_Mask;
+            CBitMaskChunk Mask;
 
-            IChunk() : IsDirty(false), m_InnerBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i()) { }
+            CChunk(CVoxelSpace *_Space) : IsDirty(false), m_Space(_Space), m_Storage(nullptr), m_InnerBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i()) { }
+            
 
             /**
              * @brief Upgrades this chunk to the next bigger one.
              * @return Returns the new chunk instance or null, if a upgrade is not possible.
              */
-            IChunk *Upgrade();
+            void Upgrade();
 
             /**
              * @brief Insert a new voxel.
              * @return Returns true on success and false, if the chunk needs to be upgraded.
              */
-            bool insert(CVoxelSpace *_Space, const pair &_pair);
+            bool insert(const pair &_pair);
 
             /**
              * @brief Removes a voxel.
              */
-            pair erase(CVoxelSpace *_Space, const iterator &_it);
+            pair erase(const iterator &_it);
 
             /**
              * @brief Returns the next voxel or null.
@@ -94,47 +109,28 @@ namespace VCore
                 return CBBox(m_InnerBBox.Beg + _Position, m_InnerBBox.End + _Position);
             }
 
-            virtual ~IChunk() = default;
+            virtual ~CChunk() = default;
 
         protected:
-            /** Sets a voxel on a given position. */
-            virtual bool SetVoxel(const CVoxel &_Voxel, const Math::Vec3i &_Position) = 0;
-
-            /**
-             * @return Returns either an instantiated or not instantiated voxel.
-             */
-            virtual CVoxel GetVoxel(const Math::Vec3i &_Position) const = 0;
-
+            CVoxelSpace *m_Space;
+            IChunkStorage *m_Storage;
             CBBox m_InnerBBox;
+        
         private:
             bool HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos);
-
             void UpdateNeighborChunks(CVoxelSpace *_Space, const Math::Vec3i &_GlobalPos);
     };
 
-    class CByteChunk : public IChunk
+    class CByteChunk : public IChunkStorage
     {
         public:
-            CByteChunk() : m_VoxelIndexSize(0) 
-            {
-                Clear();
-            }
+            CByteChunk() : m_VoxelIndexSize(0) { Clear(); }
 
-            // void *operator new(size_t n)
-            // {
-            //     // 59424
-            //     return m_Pool.allocate(n);
-            // }
-
-            // void operator delete(void *p)
-            // {
-            //     m_Pool.deallocate((CByteChunk*)p, sizeof(CByteChunk));
-            // }
+            bool SetVoxel(const CVoxel &_Voxel, const Math::Vec3i &_Position) override;
+            CVoxel GetVoxel(const Math::Vec3i &_Position) const override;
 
             virtual ~CByteChunk() { Clear(); }
-
         private:
-            // static CMemoryPool<CByteChunk> m_Pool;
             static constexpr int HASHMAP_SIZE = 254;
 
             struct VoxelRef
@@ -151,35 +147,17 @@ namespace VCore
 
             uint8_t AddAndGetVoxelIndex(const CVoxel &_Voxel);
             void Clear();
-
-        protected:
-            bool SetVoxel(const CVoxel &_Voxel, const Math::Vec3i &_Position) override;
-            CVoxel GetVoxel(const Math::Vec3i &_Position) const override;
     };
 
-    class CChunk : public IChunk
+    class CChunk32 : public IChunkStorage
     {
         public:
-            // void *operator new(size_t n)
-            // {
-            //     // 155696
-            //     return m_Pool.allocate(n);
-            // }
-
-            // void operator delete(void *p)
-            // {
-            //     m_Pool.deallocate((CChunk*)p, sizeof(CChunk));
-            // }
-
-            virtual ~CChunk() { Clear(); }
-
-        protected:
             bool SetVoxel(const CVoxel &_Voxel, const Math::Vec3i &_Position) override;
             CVoxel GetVoxel(const Math::Vec3i &_Position) const override;
 
-        private:
-            // static CMemoryPool<CChunk> m_Pool;
+            virtual ~CChunk32() { Clear(); }
 
+        private:
             void Clear();
             CVoxel m_Data[Config::ChunkSize * Config::ChunkSize * Config::ChunkSize];
     };
@@ -187,7 +165,7 @@ namespace VCore
     struct SChunkMeta
     {
         size_t UniqueId;            //!< Unique identifier of the chunks. Only changes, if the voxel mesh is resized.
-        const IChunk *Chunk;        //!< Chunk with is associated with this metadata.
+        const CChunk *Chunk;        //!< Chunk with is associated with this metadata.
         CBBox TotalBBox;            //!< The total bounding box of the chunk.
         CBBox InnerBBox;            //!< The bounding box of the model inside the chunk.
     };

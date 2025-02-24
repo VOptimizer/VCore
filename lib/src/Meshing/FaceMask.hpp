@@ -61,7 +61,7 @@ namespace VCore
             };
 
             void InternalGenerate();
-            void FillVoxelBits(Config::bitmask_t *_opaqueVoxels, Config::bitmask_t *_transparentVoxels, const IChunk *_Chunk, const Math::Vec3i &_Position, const int _Count);
+            void FillVoxelBits(Config::bitmask_t *_opaqueVoxels, Config::bitmask_t *_transparentVoxels, const CChunk *_Chunk, const Math::Vec3i &_Position, const int _Count);
             void GenerateMask(Config::bitmask_t *_Voxels, const Math::Vec3i &_Subpos, const int _Count);
             void FillSlice(Config::bitmask_t _Faces, const Math::Vec3i &_Subpos, const int _Column, const bool _Backface, ankerl::unordered_dense::map<uint32_t, Mask> &_Masks);
 

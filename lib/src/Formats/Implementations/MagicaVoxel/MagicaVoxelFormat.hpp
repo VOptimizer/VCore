@@ -100,7 +100,7 @@ namespace VCore
             fast_vector<SFrame> Models;
     };
 
-    struct SChunkHeader
+    struct SMagicaVoxelChunkHeader
     {
         char ID[4];
         int ChunkContentSize;
@@ -158,8 +158,6 @@ namespace VCore
             fast_vector<Node> m_MagicaSceneTree;
 
             // Maps
-            ankerl::unordered_dense::map<uint32_t, uint32_t> m_ColorMapping;
-            ankerl::unordered_dense::map<uint32_t, uint32_t> m_MaterialMapping;
             ankerl::unordered_dense::map<int, SceneNode> m_ModelSceneTreeMapping;
             ankerl::unordered_dense::map<uint32_t, uint8_t> m_VoxelIndexMap;
 
@@ -168,15 +166,11 @@ namespace VCore
 
             std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial>> m_NotDefaultMaterials;
 
-
             CColor m_ColorPalette[PALETTE_SIZE];
 
             // Index counters
             uint8_t m_VoxelIndex;
             uint32_t m_ModelCounter;
-            size_t m_UsedColorsPos;
-
-            bool m_HasEmission;
 
             uint64_t m_ColorpaletterPosition;
     };
