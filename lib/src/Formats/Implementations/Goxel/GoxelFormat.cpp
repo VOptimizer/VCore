@@ -25,7 +25,7 @@
 #include <stb_image.h>
 
 #include "GoxelFormat.hpp"
-#include <string.h>
+#include <cstring>
 #include <VCore/Misc/Exceptions.hpp>
 #include <VCore/Meshing/MaterialManager.hpp>
 
@@ -65,20 +65,18 @@ namespace VCore
         if(m_Mode == FileMode::STREAMED)
             m->SetStream(new CGoxelStreamable(m_IOHandler, m_DataStream->GetFilePath(), std::move(m_BL16Offsets), std::move(m_Materials), std::move(m_Chunks), m_BeginX, m_EndX));
 
-        m_Models.push_back(m);
         m_Chunks.clear();
-        m_SceneTree->Model = m;
         m_Materials.clear();
     }
 
-    void CGoxelFormat::CreateChunk(const Math::Vec3i &_ChunkPos, VoxelModel &_Model, CGoxelModelParser &_Parser)
+    void CGoxelFormat::CreateChunk(const Math::Vec3i &p_ChunkPos, VoxelModel &p_Model, CGoxelModelParser &p_Parser)
     {
-        auto chunk = _Model->getChunk(_ChunkPos);
+        auto chunk = p_Model->getChunk(p_ChunkPos);
         if(!chunk)
         {
-            chunk = _Model->createOrGetChunk(_ChunkPos);
+            chunk = p_Model->createOrGetChunk(p_ChunkPos);
             if(m_Mode != FileMode::STREAMED)
-                _Parser.FillChunk(_ChunkPos, chunk);
+                p_Parser.FillChunk(p_ChunkPos, chunk);
         }
     }
 
@@ -90,11 +88,11 @@ namespace VCore
 
         // Checks the file header
         if(signature != "GOX ")
-            throw CVoxelLoaderException("Unknown file format");
+            throw CVoxelFormatException("Unknown file format");
 
         int version = m_DataStream->Read<int>();
         if(version != 2)
-            throw CVoxelLoaderException("Version: " + std::to_string(version) + " is not supported");
+            throw CVoxelFormatException("Version: " + std::to_string(version) + " is not supported");
 
         while (!m_DataStream->Eof())
         {
@@ -111,9 +109,9 @@ namespace VCore
         }
     }
 
-    void CGoxelFormat::ProcessMaterial(const SGoxelChunkHeader &_Chunk)
+    void CGoxelFormat::ProcessMaterial(const SGoxelChunkHeader &p_Chunk)
     {
-        auto dict = ReadDict(_Chunk, m_DataStream->Tell());
+        auto dict = ReadDict(p_Chunk, m_DataStream->Tell());
 
         float c[4];
         memcpy(c, dict["color"].data(), 4 * sizeof(float));
@@ -128,14 +126,14 @@ namespace VCore
         m_DataStream->Seek(sizeof(int));
     }
 
-    void CGoxelFormat::ProcessLayer(const SGoxelChunkHeader &_Chunk)
+    void CGoxelFormat::ProcessLayer(const SGoxelChunkHeader &p_Chunk)
     {
         auto startPos = m_DataStream->Tell();
         uint32_t blocks = m_DataStream->Read<uint32_t>();
 
         // Skip to the metadata of the layer.
         m_DataStream->Seek(blocks * sizeof(int) * 5);
-        auto dict = ReadDict(_Chunk, startPos);
+        auto dict = ReadDict(p_Chunk, startPos);
         auto material = *((uint32_t*)(dict["material"].data()));
         auto visible = *((int*)(dict["visible"].data()));
         if(!visible)
@@ -165,20 +163,20 @@ namespace VCore
 
             m_Chunks[position].push_back(ChunkInfo {bl16Index, static_cast<uint8_t>(material)});
         }
-        m_DataStream->Seek(startPos + _Chunk.Size + sizeof(int), VCore::SeekOrigin::BEG);
+        m_DataStream->Seek(startPos + p_Chunk.Size + sizeof(int), VCore::SeekOrigin::BEG);
     }
 
-    void CGoxelFormat::ProcessBL16(const SGoxelChunkHeader &_Chunk)
+    void CGoxelFormat::ProcessBL16(const SGoxelChunkHeader &p_Chunk)
     {
-        m_BL16Offsets.push_back(m_DataStream->Tell() - sizeof(_Chunk));
-        m_DataStream->Seek(_Chunk.Size + sizeof(int));
+        m_BL16Offsets.push_back(m_DataStream->Tell() - sizeof(p_Chunk));
+        m_DataStream->Seek(p_Chunk.Size + sizeof(int));
     }
 
-    ankerl::unordered_dense::map<std::string, std::string> CGoxelFormat::ReadDict(const SGoxelChunkHeader &_Chunk, size_t _StartPos)
+    ankerl::unordered_dense::map<std::string, std::string> CGoxelFormat::ReadDict(const SGoxelChunkHeader &p_Chunk, size_t const p_StartPos)
     {
         ankerl::unordered_dense::map<std::string, std::string> ret;
 
-        while (m_DataStream->Tell() - _StartPos < (size_t)_Chunk.Size)
+        while (m_DataStream->Tell() - p_StartPos < (size_t)p_Chunk.Size)
         {
             auto size = m_DataStream->Read<uint32_t>();
             std::string key(size, '\0');

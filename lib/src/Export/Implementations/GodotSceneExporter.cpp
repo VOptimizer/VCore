@@ -69,28 +69,29 @@ namespace VCore
             {
                 os << "[sub_resource type=\"SpatialMaterial\" id=" << id << "]" << std::endl;
                 os << "albedo_texture = ExtResource( 1 )" << std::endl;
-                os << "metallic = " << surface->FaceMaterial->Metallic << std::endl;
-                os << "metallic_specular = " << surface->FaceMaterial->Specular << std::endl;
-                os << "roughness = " << surface->FaceMaterial->Roughness << std::endl;
+                // TODO: FIX
+                // os << "metallic = " << surface->FaceMaterial->Metallic << std::endl;
+                // os << "metallic_specular = " << surface->FaceMaterial->Specular << std::endl;
+                // os << "roughness = " << surface->FaceMaterial->Roughness << std::endl;
 
-                if(surface->FaceMaterial->Power != 0)
-                {
-                    os << "emission_enabled = true" << std::endl;
-                    os << "emission_energy = " << surface->FaceMaterial->Power << std::endl;
-                    os << "emission_texture = ExtResource( 2 )" << std::endl;
-                }
+                // if(surface->FaceMaterial->Power != 0)
+                // {
+                //     os << "emission_enabled = true" << std::endl;
+                //     os << "emission_energy = " << surface->FaceMaterial->Power << std::endl;
+                //     os << "emission_texture = ExtResource( 2 )" << std::endl;
+                // }
 
-                if(surface->FaceMaterial->IOR != 0)
-                {
-                    os << "refraction_enabled = true" << std::endl;
-                    os << "refraction_energy = " << surface->FaceMaterial->IOR << std::endl;
-                }
+                // if(surface->FaceMaterial->IOR != 0)
+                // {
+                //     os << "refraction_enabled = true" << std::endl;
+                //     os << "refraction_energy = " << surface->FaceMaterial->IOR << std::endl;
+                // }
 
-                if(surface->FaceMaterial->Transparency != 0.0)
-                {
-                    os << "flags_transparent = true" << std::endl;
-                    os << "albedo_color = Color( 1, 1, 1, " << 1.f - surface->FaceMaterial->Transparency << ")" << std::endl;
-                }
+                // if(surface->FaceMaterial->Transparency != 0.0)
+                // {
+                //     os << "flags_transparent = true" << std::endl;
+                //     os << "albedo_color = Color( 1, 1, 1, " << 1.f - surface->FaceMaterial->Transparency << ")" << std::endl;
+                // }
 
                 arrayMesh << "surfaces/" << surfaceIdx << "= {" << std::endl;
                 arrayMesh << "\t\"material\":SubResource(" << id << ")," << std::endl;

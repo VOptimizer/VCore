@@ -23,17 +23,16 @@
  */
 
 #include "MagicaVoxelStreamable.hpp"
-#include "MagicaVoxelModelParser.hpp"
 
 namespace VCore
 {
-    bool CMagicaVoxelStreamable::ReadVoxelSpace(CVoxelSpace &_Space)
+    bool CMagicaVoxelStreamable::ReadVoxelSpace(CVoxelSpace &p_Space)
     {
         auto stream = m_IOHandler->Open(m_FilePath, "rb");
         if(stream)
         {
-            CMagicaVoxelModelParser parser(stream, m_ColorpalettePosition, m_ModelPosition, m_NotDefaultMaterials);
-            parser.FillVoxelSpace(_Space);
+            CMagicaVoxelModelParser parser(stream, m_Colorpalette, m_ModelPosition, m_NotDefaultMaterials);
+            parser.FillVoxelSpace(p_Space);
 
             m_IOHandler->Close(stream);
             return true;

@@ -25,30 +25,47 @@
 #ifndef SCENENODE_HPP
 #define SCENENODE_HPP
 
+#include <VCore/Misc/fast_vector.hpp>
 #include <VCore/Voxel/VoxelModel.hpp>
-#include <VCore/Voxel/VoxelAnimation.hpp>
+
+#include <VCore/Meshing/Mesh/Mesh.hpp>
 #include <VCore/Math/Mat4x4.hpp>
+#include <cstdint>
+#include <memory>
+#include <utility>
 
 namespace VCore
 {
-    class CSceneNode;
-    using SceneNode = std::shared_ptr<CSceneNode>;
-
-    class CSceneNode
+    class CSceneNodeBase
     {
         public:
-            using SceneNodes = std::vector<SceneNode>;
+            using Children = fast_vector<CSceneNodeBase*>;
 
-            CSceneNode() : Visible(true), Scale(1, 1, 1), m_Parent(nullptr) {}
+            CSceneNodeBase() = default;
 
-            bool Visible;
+            std::string Name;
             Math::Vec3f Position;
             Math::Vec3f Rotation;
-            Math::Vec3f Scale;
-            std::string Name;
+            Math::Vec3f Scale{1,1,1};
 
-            VoxelModel Model;            //!< A scene node can either have a model or an animation
-            VoxelAnimation Animation;   //!< A scene node can either have a model or an animation
+            bool Visible{true};
+
+            /** Foreach accessors. */
+
+            virtual Children::iterator begin() = 0;
+            virtual Children::iterator end() = 0;
+
+            virtual Children::const_iterator begin() const = 0;
+            virtual Children::const_iterator end() const = 0;
+
+            /**
+             * @brief Adds a new child to this node.
+             * @param p_Node New node to add.
+             */
+            virtual void AddChild(CSceneNodeBase *p_Node) = 0;
+
+            /** @return Gets the current children count of this node. */
+            virtual uint32_t GetChildrenCount() const = 0;
 
             inline Math::Mat4x4 GetModelMatrix() const
             {
@@ -62,53 +79,158 @@ namespace VCore
                 return Math::Mat4x4::Translation(Position) * mm;
             }
 
-            SceneNodes::iterator begin()
-            {
-                return m_Children.begin();
-            }
+            virtual ~CSceneNodeBase() = default;
+    };
 
-            SceneNodes::iterator end()
-            {
-                return m_Children.end();
-            }
+    class CSceneNode : public CSceneNodeBase
+    {
+        public:
+            CSceneNode() = default;
 
-            SceneNodes::const_iterator begin() const
-            {
-                return m_Children.begin();
-            }
+            /** Foreach accessors. */
 
-            SceneNodes::const_iterator end() const
-            {
-                return m_Children.end();
-            }
+            inline Children::iterator begin() override { return m_Children.begin(); }
+            inline Children::iterator end() override { return m_Children.end(); }
 
-            SceneNode operator[](size_t _Index)
-            {
-                if(_Index > m_Children.size())
-                    return nullptr;
+            inline Children::const_iterator begin() const override { return m_Children.begin(); }
+            inline Children::const_iterator end() const override { return m_Children.end(); }
 
-                return m_Children[_Index];
-            }
+            /**
+             * @brief Adds a new child to this node.
+             * @param p_Node New node to add.
+             */
+            inline void AddChild(CSceneNodeBase *p_Node) override { m_Children.push_back(p_Node); }
 
-            void AddChild(SceneNode node)
-            {
-                node->m_Parent = this;
-                m_Children.push_back(node);
-            }
+            /** @return Gets the current children count of this node. */
+            inline uint32_t GetChildrenCount() const override { return m_Children.size(); }
 
-            CSceneNode *GetParent()
+            virtual ~CSceneNode() override
             {
-                return m_Parent;
-            }
-
-            uint32_t GetChildrenCount() const
-            {
-                return m_Children.size();
+                for (auto &&child : m_Children)
+                    delete child;
             }
         private:
-            CSceneNode* m_Parent;
-            SceneNodes m_Children;
+            Children m_Children;
     };
+
+    class CSceneModelNode : public CSceneNode
+    {
+        public:
+            CSceneModelNode(const uint64_t p_ModelId) : CSceneNode(), ModelId(p_ModelId) {}
+
+            uint64_t ModelId;
+
+            ~CSceneModelNode() override = default;
+    };
+
+    class CSceneAnimationNode : public CSceneNode
+    {
+        public:
+            struct SFrame
+            {
+                uint32_t ModelId;
+                uint32_t FrameIdx;
+            };
+
+            CSceneAnimationNode(fast_vector<SFrame> &&p_Frames) : Frames(std::move(p_Frames)) {}
+
+            fast_vector<SFrame> Frames;
+
+            ~CSceneAnimationNode() override = default;
+    };
+
+    /** Root of a scene tree */
+    template<class T>
+    class TSceneTree : public CSceneNodeBase
+    {
+        public:
+            TSceneTree() = default;
+            TSceneTree(std::shared_ptr<CSceneNode::Children> p_Children) : m_Children(p_Children) {}
+
+            /** Foreach accessors. */
+
+            inline CSceneNode::Children::iterator begin() override { return m_Children->begin(); }
+            inline CSceneNode::Children::iterator end() override { return m_Children->end(); }
+
+            inline CSceneNode::Children::const_iterator begin() const override { return m_Children->begin(); }
+            inline CSceneNode::Children::const_iterator end() const override { return m_Children->end(); }
+
+            /**
+             * @brief Adds a new child to this scene tree.
+             * @param p_Node New node to add.
+             */
+            inline void AddChild(CSceneNodeBase *p_Node) override
+            { 
+                if(p_Node == this) [[unlikely]]
+                    return;
+
+                if(!m_Children)
+                    m_Children = std::make_shared<CSceneNode::Children>();
+
+                m_Children->push_back(p_Node); 
+            }
+
+            /** @brief Adds a new model to this scene tree */
+            inline void AddModel(T p_Model) { m_Models.push_back(p_Model); }
+
+            const fast_vector<T> GetModels() const { return m_Models; }
+
+            /** @return Gets the current children count of this node. */
+            inline uint32_t GetChildrenCount() const override { return m_Children->size(); }
+
+            inline const std::shared_ptr<CSceneNode::Children> GetChildren() const
+            {
+                return m_Children;
+            }
+
+            ~TSceneTree() override = default;
+        private:
+            struct ChildrenDeleter
+            {
+                void operator()(CSceneNode::Children* p_Children) const
+                {
+                    for (auto &&child : *p_Children)
+                        delete child;
+
+                    delete p_Children;
+                }
+            };
+
+            fast_vector<T> m_Models;
+            std::shared_ptr<CSceneNode::Children> m_Children;
+    };
+
+    template <class T>
+    class ISceneTreeVisitor
+    {
+        public:
+            ISceneTreeVisitor() = default;
+            ISceneTreeVisitor(const std::shared_ptr<TSceneTree<T>> &p_SceneTree) : m_SceneTree(p_SceneTree) {}
+
+            virtual ~ISceneTreeVisitor() = default;
+        protected:
+            /** Traverses the complete scene tree */
+            virtual void TraverseTree() { TraverseNode(m_SceneTree.get()); }
+
+            virtual void TraverseNode(const CSceneNodeBase *p_Node)
+            {
+                EnterSceneNode(p_Node);
+                for (auto &&scenenode: *p_Node)
+                    TraverseNode(scenenode);
+                LeaveSceneNode(p_Node);
+            }
+
+            virtual void EnterSceneNode(const CSceneNodeBase *p_Node) = 0;
+            virtual void LeaveSceneNode(const CSceneNodeBase *p_Node) = 0;
+
+            std::shared_ptr<TSceneTree<T>> m_SceneTree;
+    };
+
+    using VoxelSceneTree_t = TSceneTree<VoxelModel>;
+    using VoxelSceneTree = std::shared_ptr<VoxelSceneTree_t>;
+
+    using RenderSceneTree_t = TSceneTree<Mesh>;
+    using RenderSceneTree = std::shared_ptr<RenderSceneTree_t>;
 }
 
 

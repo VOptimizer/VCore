@@ -54,7 +54,6 @@
 
 // Voxel
 #include <VCore/Voxel/BBox.hpp>
-#include <VCore/Voxel/VoxelAnimation.hpp>
 #include <VCore/Voxel/PlanesVoxelizer.hpp>
 #include <VCore/Voxel/Frustum.hpp>
 

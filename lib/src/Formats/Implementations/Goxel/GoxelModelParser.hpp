@@ -51,14 +51,14 @@ namespace VCore
     {
         public:
             CGoxelModelParser(
-                IFileStream *_Stream,
-                const fast_vector<uint64_t> &_BL16Offsets,
-                const fast_vector<CMaterial> &_Materials,
-                const ankerl::unordered_dense::map<Math::Vec3i, fast_vector<ChunkInfo>, Math::Vec3iHasher> &_Chunks,
-                int _BeginX, int _EndX
-            ) : m_Stream(_Stream), m_BL16Offsets(_BL16Offsets), m_Materials(_Materials), m_Chunks(_Chunks), m_BeginX(_BeginX), m_EndX(_EndX) {}
+                IFileStream *p_Stream,
+                const fast_vector<uint64_t> &p_BL16Offsets,
+                const fast_vector<CMaterial> &p_Materials,
+                const ankerl::unordered_dense::map<Math::Vec3i, fast_vector<ChunkInfo>, Math::Vec3iHasher> &p_Chunks,
+                int p_BeginX, int p_EndX
+            ) : m_Stream(p_Stream), m_BL16Offsets(p_BL16Offsets), m_Materials(p_Materials), m_Chunks(p_Chunks), m_BeginX(p_BeginX), m_EndX(p_EndX) {}
             
-            void FillChunk(const Math::Vec3i &_Position, CChunk *_Chunk);
+            void FillChunk(const Math::Vec3i &p_Position, CChunk *p_Chunk);
             
             ~CGoxelModelParser() {}
         private:

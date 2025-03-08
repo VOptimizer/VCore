@@ -24,44 +24,77 @@
 
 #include "../FileUtils.hpp"
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <stdexcept>
-#include "Implementations/glTF/GLTFExporter.hpp"
-#include "Implementations/GodotSceneExporter.hpp"
 #include <VCore/Export/IExporter.hpp>
-#include "Implementations/WavefrontObjExporter.hpp"
+
+#define  VCORE_BUILD_NO_OBJ_EXPORTER
+#define  VCORE_BUILD_NO_GODOT3_EXPORTER
+#define  VCORE_BUILD_NO_PLY_EXPORTER
+#define  VCORE_BUILD_NO_FBX_EXPORTER
+
+#ifndef VCORE_BUILD_NO_GLTF_EXPORTER
+#include "Implementations/glTF/GLTFExporter.hpp"
+#endif
+
+#ifndef VCORE_BUILD_NO_OBJ_EXPORTER
+#include "Implementations/obj/WavefrontObjExporter.hpp"
+#endif
+
+#ifndef VCORE_BUILD_NO_GODOT3_EXPORTER
+#include "Implementations/GodotSceneExporter.hpp"
+#endif
+
+#ifndef VCORE_BUILD_NO_PLY_EXPORTER
 #include "Implementations/PLYExporter.hpp"
+#endif
+
+#ifndef VCORE_BUILD_NO_FBX_EXPORTER
 #include "Implementations/fbx/FbxExporter.hpp"
+#endif
 
 namespace VCore
 {
-    Exporter IExporter::Create(ExporterType _Type)
+    Exporter IExporter::Create(ExporterType p_Type)
     {
-        switch (_Type)
+        switch (p_Type)
         {
+            #ifndef VCORE_BUILD_NO_OBJ_EXPORTER
             case ExporterType::OBJ: return Exporter(new CWavefrontObjExporter());
+            #endif
 
+            #ifndef VCORE_BUILD_NO_FBX_EXPORTER
             case ExporterType::FBX: return Exporter(new CFbxExporter());
+            #endif
 
+            #ifndef VCORE_BUILD_NO_GLTF_EXPORTER
             case ExporterType::GLTF: 
             case ExporterType::GLB:
             {
                 auto tmp = Exporter(new CGLTFExporter());
-                tmp->Settings->Binary = _Type == ExporterType::GLB;
+                tmp->Settings->Binary = p_Type == ExporterType::GLB;
 
                 return tmp;
             } 
+            #endif
 
+            #ifndef VCORE_BUILD_NO_PLY_EXPORTER
             case ExporterType::PLY: return Exporter(new CPLYExporter());
+            #endif
+
+            #ifndef VCORE_BUILD_NO_GODOT3_EXPORTER
             case ExporterType::ESCN: return Exporter(new CGodotSceneExporter());
+            #endif
 
             default:
                 throw std::runtime_error("Invalid export type!");
         }
     }
 
-    ExporterType IExporter::GetType(const std::string &_Filename)
+    ExporterType IExporter::GetType(const std::string &p_Filename)
     {
-        std::string ext = GetFileExt(_Filename);
+        std::string ext = GetFileExt(p_Filename);
         ExporterType type = ExporterType::UNKNOWN;
         
         if(ext == "obj")
@@ -80,47 +113,117 @@ namespace VCore
         return type;
     }
 
-    IExporter::IExporter() : Settings(new CExportSettings())
-    {
+    IExporter::IExporter() : ISceneTreeVisitor<Mesh>(), Settings(new CExportSettings())
+    { }
 
+    void IExporter::Save(IIOHandler *p_Handler, const std::string &p_Path, Mesh p_Mesh)
+    {
+        Save(p_Handler, p_Path, fast_vector<Mesh>() = { p_Mesh });
     }
 
-    void IExporter::Save(IIOHandler *_Handler, const std::string &_Path, Mesh _Mesh)
-    {
-        Save(_Handler, _Path, std::vector<Mesh>() = { _Mesh });
-    }
-
-    void IExporter::Save(IIOHandler *_Handler, const std::string &_Path, const std::vector<Mesh> &_Meshes)
+    void IExporter::Save(IIOHandler *p_Handler, const std::string &p_Path, const fast_vector<Mesh> &p_Meshes)
     {
         // Names all files like the output file.
         // m_ExternalFilenames = GetFilenameWithoutExt(_Path);
         // std::string PathWithoutExt = GetPathWithoutExt(_Path);
         DeleteFileStream();
-        m_IOHandler = _Handler;
-        WriteData(_Path, _Meshes);
+        m_IOHandler = p_Handler;
+        m_Path = p_Path;
+
+        WriteHeaderData();
+        WriteMeshes(p_Meshes);
+        WriteFooterData();
+
+        // WriteData(p_Path, p_Meshes);
     }
 
-    std::string IExporter::GetMeshName(Mesh _Mesh, const std::string & _Default)
+    void IExporter::Save(IIOHandler *p_Handler, const std::string &p_Path, const RenderSceneTree &p_RenderTree)
     {
-        auto name = _Mesh->Name.empty() ? _Default : _Mesh->Name;
-        if(_Mesh->FrameTime != 0)
-            name += "_" + std::to_string(_Mesh->FrameTime);
+        DeleteFileStream();
+        m_IOHandler = p_Handler;
+        m_Path = p_Path;
+        m_SceneTree = p_RenderTree;
+
+        WriteHeaderData();
+        if(SupportsSceneTree())
+        {
+            WriteMeshes(p_RenderTree->GetModels());
+            TraverseTree();
+        }
+        WriteFooterData();
+
+        m_SceneTree = nullptr;
+    }
+
+    void IExporter::CalculateModelDec(uint32_t p_ModelId)
+    {
+        for (uint64_t i = 0; i < m_NullModels.size(); i++, m_ModelIdDec++) 
+        {
+            if(p_ModelId < m_NullModels[i])
+                return;
+        }
+    }
+
+    void IExporter::TraverseTree()
+    {
+        ISceneTreeVisitor<Mesh>::TraverseTree();
+        m_NullModels.clear();
+    }
+
+    void IExporter::TraverseNode(const CSceneNodeBase *p_Node)
+    {
+        m_ModelIdDec = 0;
+        const CSceneModelNode *modelNode = dynamic_cast<const CSceneModelNode*>(p_Node);
+        if(modelNode)
+        {
+            auto meshes = m_SceneTree->GetModels();
+
+            if(modelNode->ModelId >= meshes.size())
+                return;
+
+            if(!meshes[modelNode->ModelId])
+            {
+                m_NullModels.push_back(modelNode->ModelId);
+                std::sort(m_NullModels.begin(), m_NullModels.end());
+                return;
+            }
+
+            CalculateModelDec(modelNode->ModelId);
+        }
+
+        ISceneTreeVisitor<Mesh>::TraverseNode(p_Node);
+    }
+
+    void IExporter::WriteMeshes(const fast_vector<Mesh> &p_Meshes)
+    {
+        for (auto &&mesh : p_Meshes)
+        {
+            if(mesh) [[likely]]
+                WriteMeshData(mesh);
+        }
+    }
+    
+    std::string IExporter::GetMeshName(Mesh p_Mesh, const std::string & p_Default)
+    {
+        auto name = p_Mesh->Name.empty() ? p_Default : p_Mesh->Name;
+        if(p_Mesh->FrameTime != 0)
+            name += "_" + std::to_string(p_Mesh->FrameTime);
 
         return name;
     }
 
-    void IExporter::SaveTexture(const Texture &_Texture, const std::string &_Path, const std::string &_Suffix)
+    void IExporter::SaveTexture(const Texture &p_Texture, const std::string &p_Path, const std::string &p_Suffix)
     {
-        auto path = _Path;
-        if(!_Suffix.empty())
+        auto path = p_Path;
+        if(!p_Suffix.empty())
         {
             path = GetPathWithoutExt(path);
-            path += "." + _Suffix + ".png";
+            path += "." + p_Suffix + ".png";
         }
 
         auto strm = m_IOHandler->Open(path, "wb");
 
-        auto data = _Texture->AsPNG();
+        auto data = p_Texture->AsPNG();
         strm->Write(data.data(), data.size());
 
         m_IOHandler->Close(strm);

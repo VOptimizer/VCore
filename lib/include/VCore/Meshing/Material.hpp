@@ -25,7 +25,6 @@
 #ifndef MATERIAL_HPP
 #define MATERIAL_HPP
 
-#include <memory>
 #include <string>
 #include <VCore/Meshing/Color.hpp>
 
@@ -35,7 +34,7 @@ namespace VCore
     {
         public:
             CMaterial() : Name(), Metallic(0), Specular(0), Roughness(1), IOR(0), Emission(0), Power(0), Transparency(0) {}
-            CMaterial(const CMaterial &_Material) { *this = _Material; }
+            CMaterial(const CMaterial &p_Material) { *this = p_Material; }
 
             std::string Name;
             float Metallic;
@@ -46,39 +45,36 @@ namespace VCore
             float Power;    //!< For emissive.
             float Transparency;
 
-            inline CMaterial& operator=(const CMaterial &_Material)
+            inline CMaterial& operator=(const CMaterial &p_Material)
             {
-                Name = _Material.Name;
-                Metallic = _Material.Metallic;
-                Specular = _Material.Specular;
-                Roughness = _Material.Roughness;
-                IOR = _Material.IOR;
-                Emission = _Material.Emission;
-                Power = _Material.Power;
-                Transparency = _Material.Transparency;
+                Name = p_Material.Name;
+                Metallic = p_Material.Metallic;
+                Specular = p_Material.Specular;
+                Roughness = p_Material.Roughness;
+                IOR = p_Material.IOR;
+                Emission = p_Material.Emission;
+                Power = p_Material.Power;
+                Transparency = p_Material.Transparency;
 
                 return *this;
             }
 
-            inline bool operator==(const CMaterial &other)
+            inline bool operator==(const CMaterial &p_Other) const
             {
                 bool equal = false;
-                equal = Name == other.Name;
-                equal = Metallic == other.Metallic && equal;
-                equal = Specular == other.Specular && equal;
-                equal = Roughness == other.Roughness && equal;
-                equal = IOR == other.IOR && equal;
-                equal = Emission == other.Emission && equal;
-                equal = Power == other.Power && equal;
-                equal = Transparency == other.Transparency && equal;
+                equal = Name == p_Other.Name;
+                equal = Metallic == p_Other.Metallic && equal;
+                equal = Specular == p_Other.Specular && equal;
+                equal = Roughness == p_Other.Roughness && equal;
+                equal = IOR == p_Other.IOR && equal;
+                equal = Emission == p_Other.Emission && equal;
+                equal = Power == p_Other.Power && equal;
+                equal = Transparency == p_Other.Transparency && equal;
 
                 return equal;
             }
 
-            inline bool operator!=(const CMaterial &other)
-            {
-                return !operator==(other);
-            }
+            inline bool operator!=(const CMaterial &p_Other) const { return !operator==(p_Other); }
 
             ~CMaterial() = default;
     };

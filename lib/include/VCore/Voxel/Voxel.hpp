@@ -34,17 +34,16 @@ namespace VCore
     class CVoxel
     {
         public:
-            CVoxel() : Color(0xFFFFFF), Material(0xFF) { }
-            CVoxel(uint32_t _Color, uint32_t _Material) : Color(_Color), Material(_Material) { }
+            CVoxel() : m_Value(0xFFFFFFFF) { }
+            CVoxel(uint32_t _Color, uint32_t _Material) : m_Value((_Color & 0xFFFFFF) | ((_Material & 0xFF) << 24)) { }
             CVoxel(const CVoxel &_Other) { *this = _Other; }
 
-            uint32_t Color      : 24;               //!< Index of the color.
-            uint32_t Material    : 8;               //!< Index of the material.
+            inline uint8_t GetMaterial() const { return (m_Value >> 24) & 0xFF; }
+            inline uint32_t GetColor() const { return m_Value & 0xFFFFFF; }
 
             inline CVoxel &operator=(const CVoxel &_Other)
             {
-                Color = _Other.Color;
-                Material = _Other.Material;
+                m_Value = _Other.m_Value;
                 return *this;
             }
 
@@ -53,25 +52,31 @@ namespace VCore
              */
             inline bool IsInstantiated() const
             {
-                return *((uint32_t*)this) != 0xFFFFFFFF;
+                return m_Value != 0xFFFFFFFF;
             }
 
             inline operator uint32_t() const
             {
-                return *((uint32_t*)this);
+                return m_Value;
             };
 
             inline bool operator==(const CVoxel &_rhs) const
             {
-                return *((uint32_t*)this) == *((uint32_t*)&_rhs);
+                return m_Value == _rhs.m_Value;
             }
 
             inline bool operator!=(const CVoxel &_rhs) const
             {
-                return *((uint32_t*)this) != *((uint32_t*)&_rhs);
+                return m_Value != _rhs.m_Value;
             }
 
             ~CVoxel() = default;
+
+        private:
+            // m_Value combines the color and the material of a voxel
+            // The top most byte is the material index and the rest 
+            // is the RGB color of the voxel.
+            uint32_t m_Value;
     };
 }
 

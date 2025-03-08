@@ -51,9 +51,9 @@ namespace VCore
                 using pointer = SChunkMeta*;
 
                 CChunkQueryIterator() : m_Parent(nullptr) {}
-                CChunkQueryIterator(const CChunkQueryList *_Parent, ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher>::const_iterator _Iterator) : m_Parent(_Parent), m_Iterator(_Iterator) {}
-                CChunkQueryIterator(CChunkQueryIterator &&_Other) { *this = std::move(_Other); }
-                CChunkQueryIterator(const CChunkQueryIterator &_Other) { *this = _Other; }
+                CChunkQueryIterator(const CChunkQueryList *p_Parent, ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher>::const_iterator p_Iterator) : m_Parent(p_Parent), m_Iterator(p_Iterator) {}
+                CChunkQueryIterator(CChunkQueryIterator &&p_Other) { *this = std::move(p_Other); }
+                CChunkQueryIterator(const CChunkQueryIterator &p_Other) { *this = p_Other; }
 
                 reference operator*() const;
                 pointer operator->() const;
@@ -61,11 +61,11 @@ namespace VCore
                 CChunkQueryIterator& operator++();
                 CChunkQueryIterator& operator++(int);
 
-                bool operator!=(const CChunkQueryIterator &_Rhs);
-                bool operator==(const CChunkQueryIterator &_Rhs);
+                bool operator!=(const CChunkQueryIterator &p_Rhs);
+                bool operator==(const CChunkQueryIterator &p_Rhs);
 
-                CChunkQueryIterator& operator=(const CChunkQueryIterator &_Other);
-                CChunkQueryIterator& operator=(CChunkQueryIterator &&_Other);
+                CChunkQueryIterator& operator=(const CChunkQueryIterator &p_Other);
+                CChunkQueryIterator& operator=(CChunkQueryIterator &&p_Other);
             private:
                 void InitFilter();
 
@@ -77,12 +77,12 @@ namespace VCore
 
         public:
             using iterator = CChunkQueryIterator;
-            using FilterFunction = bool (*)(const CBBox &_BBox, const CChunk *_Chunk, void *_Userdata);
+            using FilterFunction = bool (*)(const CBBox &p_BBox, const CChunk *p_Chunk, void *p_Userdata);
 
             CChunkQueryList() : m_FilterFunction(nullptr), m_Chunks(nullptr) {}
-            CChunkQueryList(const ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher> &_Chunks, FilterFunction _FilterFn = nullptr, void *_Userdata = nullptr) : m_FilterFunction(_FilterFn), m_Chunks(&_Chunks), m_Userdata(_Userdata) {}
-            CChunkQueryList(const CChunkQueryList &_Other) { *this = _Other; }
-            CChunkQueryList(CChunkQueryList &&_Other) { *this = std::move(_Other); }
+            CChunkQueryList(const ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher> &p_Chunks, FilterFunction p_FilterFn = nullptr, void *p_Userdata = nullptr) : m_FilterFunction(p_FilterFn), m_Chunks(&p_Chunks), m_Userdata(p_Userdata) {}
+            CChunkQueryList(const CChunkQueryList &p_Other) { *this = p_Other; }
+            CChunkQueryList(CChunkQueryList &&p_Other) { *this = std::move(p_Other); }
 
             iterator begin();
             iterator end();
@@ -92,12 +92,12 @@ namespace VCore
 
             operator std::vector<SChunkMeta>() const;
 
-            CChunkQueryList &operator=(const CChunkQueryList &_Other);
-            CChunkQueryList &operator=(CChunkQueryList &&_Other);
+            CChunkQueryList &operator=(const CChunkQueryList &p_Other);
+            CChunkQueryList &operator=(CChunkQueryList &&p_Other);
 
         private:
-            bool ApplyFilter(ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher>::const_iterator &_Iterator, SChunkMeta &_ChunkMeta) const;
-            SChunkMeta FilterNext(ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher>::const_iterator &_Iterator) const;
+            bool ApplyFilter(ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher>::const_iterator &p_Iterator, SChunkMeta &p_ChunkMeta) const;
+            SChunkMeta FilterNext(ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher>::const_iterator &p_Iterator) const;
 
             FilterFunction m_FilterFunction;
             const ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher> *m_Chunks;
@@ -114,28 +114,27 @@ namespace VCore
             using iterator = CVoxelSpaceIterator;
             using querylist = CChunkQueryList;
 
-            ankerl::unordered_dense::map<TextureType, Texture> Textures;   //!< Used colors
-            std::string Name; //!< Name of this model.
+            Math::Vec3f Origin;
 
-            CVoxelSpace(IStreamable *_Stream = nullptr);
-            CVoxelSpace(const CVoxelSpace &_Other) = delete;
-            CVoxelSpace(CVoxelSpace &&_Other);
+            CVoxelSpace(IStreamable *p_Stream = nullptr);
+            CVoxelSpace(const CVoxelSpace &p_Other) = delete;
+            CVoxelSpace(CVoxelSpace &&p_Other);
 
             /**
              * @brief Insert a new voxel.
              */
-            void insert(const pair &_pair);
+            void insert(const pair &p_pair);
 
             /**
              * @brief Removes a voxel.
              */
-            iterator erase(const iterator &_it);
+            iterator erase(const iterator &p_it);
 
             /**
              * @brief Tries to find a voxel.
              * @return Returns an iterator to the voxel or ::end()
              */
-            iterator find(const Math::Vec3i &_v) const;
+            iterator find(const Math::Vec3i &p_v) const;
 
             /**
              * @return Gets a list of all chunks which has been modified.
@@ -146,7 +145,7 @@ namespace VCore
             /**
              * @brief Marks a dirty chunks as clean.
              */
-            void markAsProcessed(const SChunkMeta &_Chunk);
+            void markAsProcessed(const SChunkMeta &p_Chunk);
 
             /**
              * @return Returns all chunks.
@@ -156,7 +155,7 @@ namespace VCore
             /**
              * @return Returns a list of all chunks which are falling inside the given frustum.
              */
-            querylist queryChunks(const CFrustum *_Frustum) const;
+            querylist queryChunks(const CFrustum *p_Frustum) const;
 
             /**
              * @return Gets the voxel count.
@@ -168,25 +167,28 @@ namespace VCore
 
             CBBox calculateBBox() const;
 
-            CChunk* createOrGetChunk(const Math::Vec3i &_Position);
+            CChunk* createOrGetChunk(const Math::Vec3i &p_Position);
 
-            inline CChunk *getChunk(const Math::Vec3i &_Position) const
+            inline CChunk *getChunk(const Math::Vec3i &p_Position) const
             {
-                return GetChunk(_Position);
+                return GetChunk(p_Position);
             }
 
             void clear();
 
-            CVoxelSpace &operator=(const CVoxelSpace &_Other) = delete;
-            CVoxelSpace &operator=(CVoxelSpace &&_Other);
+            CVoxelSpace &operator=(const CVoxelSpace &p_Other) = delete;
+            CVoxelSpace &operator=(CVoxelSpace &&p_Other);
 
-            void SetStream(IStreamable *_Strm);
+            void SetStream(IStreamable *p_Strm);
+
+            /** Unloads this model. */
+            void Unload();
 
             ~CVoxelSpace();
 
         private:
-            CChunk *GetChunk(const Math::Vec3i &_Position) const;
-            iterator next(const Math::Vec3i &_FromPosition) const;
+            CChunk *GetChunk(const Math::Vec3i &p_Position) const;
+            iterator next(const Math::Vec3i &p_FromPosition) const;
 
             // Checks if the whole model needs to be loaded.
             void CheckLoadModel();
@@ -197,6 +199,7 @@ namespace VCore
             // Allows to stream content from and to disk or other storage devices.
             IStreamable *m_Stream;
             bool m_ModelLoaded;
+            std::pair<Math::Vec3i, CChunk*> m_ChunkCache;
     };
 
     using VoxelModel = std::shared_ptr<CVoxelSpace>;

@@ -27,53 +27,57 @@
 
 #include <algorithm>
 #include <string>
+#include <utility>
 
 namespace VCore
 {
-    inline std::string GetFileExt(std::string Path)
+    inline std::string GetFileExt(std::string p_Path)
     {
         // Removes the file name.
-        size_t Pos = Path.find_last_of(".");
+        size_t Pos = p_Path.find_last_of(".");
         if(Pos != std::string::npos)
-            Path = Path.erase(0, Pos + 1);
+            p_Path = p_Path.erase(0, Pos + 1);
 
-        std::transform(Path.begin(), Path.end(), Path.begin(), ::tolower);
+        std::transform(p_Path.begin(), p_Path.end(), p_Path.begin(), ::tolower);
 
-        return Path;
+        return p_Path;
     }
 
-    inline std::string GetBasename(std::string Path)
+    inline std::string GetBasename(std::string p_Path)
     {
         // Replaces all '\' to '/'
-        std::replace(Path.begin(), Path.end(), '\\', '/');
+        std::replace(p_Path.begin(), p_Path.end(), '\\', '/');
 
-        size_t Pos = Path.find_last_of("/");
-        return Path.substr(0, Pos);
+        size_t Pos = p_Path.find_last_of("/");
+        return p_Path.substr(0, Pos);
     }
 
-    inline std::string GetPathWithoutExt(std::string Path)
+    inline std::string GetPathWithoutExt(std::string p_Path)
     {
         // Removes the file extension.
-        size_t Pos = Path.find_last_of(".");
+        size_t Pos = p_Path.find_last_of(".");
         if(Pos != std::string::npos)
-            Path = Path.erase(Pos);
+            p_Path = p_Path.erase(Pos);
 
-        return Path;
+        return p_Path;
     }
 
-    inline std::string GetFilenameWithoutExt(std::string Path)
+    inline std::string GetFilename(std::string p_Path)
     {
-        Path = GetPathWithoutExt(Path);
-
         // Replaces all '\' to '/'
-        std::replace(Path.begin(), Path.end(), '\\', '/');
+        std::replace(p_Path.begin(), p_Path.end(), '\\', '/');
 
         // Deletes the path.
-        size_t Pos = Path.find_last_of("/");
+        size_t Pos = p_Path.find_last_of("/");
         if(Pos != std::string::npos)
-            Path = Path.substr(Pos + 1);
+            p_Path = p_Path.substr(Pos + 1);
 
-        return Path;
+        return p_Path;
+    }
+
+    inline std::string GetFilenameWithoutExt(std::string p_Path)
+    {
+        return GetFilename(GetPathWithoutExt(std::move(p_Path)));
     }
 }
 

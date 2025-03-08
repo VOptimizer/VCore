@@ -22,292 +22,322 @@
  * SOFTWARE.
  */
 
-#include <algorithm>
-#include <fstream>
-#include "Nodes.hpp"
-#include <sstream>
-#include <string.h>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
 #include "GLTFExporter.hpp"
+#include "Nodes.hpp"
 #include "../../../FileUtils.hpp"
+#include <VCore/Math/Vector.hpp>
+#include <VCore/Misc/fast_vector.hpp>
+#include <VCore/Misc/FileStream.hpp>
+#include <VCore/Meshing/MaterialManager.hpp>
 
 namespace VCore
 {
-    void CGLTFExporter::WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes)
+    /**
+     * Size of one vertex, this must be changed, if there are more or less attributes.
+     * Currently the layout is as follows:
+     * - Math::Vec3f Position
+     * - Math::Vec3f Normal
+     * - Math::Vec4f Color
+     */
+    constexpr static int VertexSize = (sizeof(Math::Vec3f) * 2) + 4; //sizeof(Math::Vec4f);
+
+    //////////////////////////////////////////////////
+    // GLTF::CMesh functions
+    //////////////////////////////////////////////////
+
+    void GLTF::CMesh::AddPrimitive(uint64_t p_MaterialHandle, const fast_vector<AccessorValue> &p_Accessors)
     {
-        auto filenameWithoutExt = GetFilenameWithoutExt(_Path);
+        auto &primitive = m_Primitives.emplace_back(p_MaterialHandle);
+        uint64_t offset = 0;
 
-        std::vector<GLTF::CBufferView> bufferViews;
-        std::vector<GLTF::CAccessor> accessors;
-        std::vector<GLTF::CMaterial> materials;
-
-        std::vector<char> binary;
-
-        std::vector<GLTF::CNode> nodes;
-        std::vector<GLTF::CMesh> glTFMeshes;
-        std::vector<int> rootNodes;
-        size_t matId = 0;
-
-        size_t animationRootIdx = -1;
-
-        for (auto &&mesh : _Meshes)
+        for (auto &&value : p_Accessors) 
         {
-            GLTF::CMesh GLTFMesh;
-            if(mesh->FrameTime != 0)
-            {
-                if(animationRootIdx == ((size_t)-1))
-                {
-                    animationRootIdx = nodes.size();
-                    nodes.push_back(GLTF::CNode(mesh->Name + "_Anim"));
-                    rootNodes.push_back(animationRootIdx);
-                }
-
-                nodes[animationRootIdx].AddChild(nodes.size());
-            }
+            // None standard name for the indices accessor.
+            if(strcmp(value.first, "INDICES") == 0)
+                primitive.IndicesAccessor = m_DocumentRef->AddAccessor(value.second);
             else
             {
-                animationRootIdx = -1;
-                rootNodes.push_back(nodes.size());
+                value.second.Offset = offset;
+
+                // Increments the offset, by the type of the current accessor.
+                offset += GetTypeSize(value.second);
+    
+                auto accessorHandle = m_DocumentRef->AddAccessor(value.second);
+                primitive.AddAttribute(value.first, accessorHandle);
             }
-
-            nodes.push_back(GLTF::CNode(GetMeshName(mesh), glTFMeshes.size(), Settings->WorldSpace ? mesh->ModelMatrix : Math::Mat4x4()));
-
-            for (auto &&surface : mesh->Surfaces)
-            {
-                Math::Vec3f max, min(10000, 10000, 10000);
-
-                GLTF::CMaterial Mat;
-                Mat.Name = "Mat" + std::to_string(matId + 1);
-                Mat.Metallic = surface->FaceMaterial->Metallic;
-                Mat.Roughness = surface->FaceMaterial->Roughness;
-                Mat.Emissive = surface->FaceMaterial->Power;
-                Mat.Transparency = surface->FaceMaterial->Transparency;
-                materials.push_back(Mat);
-
-                GLTF::CBufferView surfaceVerticesView, indexView;
-
-                const auto vertexSize = (sizeof(Math::Vec3f) * 2 /*+ sizeof(Math::Vec2f)*/ + sizeof(Math::Vec4f));
-                surfaceVerticesView.Size = surface->GetVertexCount() * vertexSize;
-                surfaceVerticesView.Target = GLTF::BufferTarget::ARRAY_BUFFER;
-                surfaceVerticesView.ByteStride = vertexSize;//sizeof(SVertex);
-                surfaceVerticesView.Offset = binary.size();
-
-                indexView.Offset = surfaceVerticesView.Offset + surfaceVerticesView.Size;//uv.Size;
-                indexView.Size = (surface->GetFaceCount() * 3) * sizeof(int);
-                indexView.Target = GLTF::BufferTarget::ELEMENT_ARRAY_BUFFER;
-
-                for(uint64_t i = 0; i < surface->GetVertexCount(); i++)
-                {
-                    auto v = surface->GetVertex(i);
-                    max = v.Pos.max(max);
-                    min = v.Pos.min(min);
-                }
-
-                GLTF::CAccessor positionAccessor, normalAccessor, /*uvAccessor,*/ colorAccesor, indexAccessor;
-                positionAccessor.BufferView = bufferViews.size();
-                positionAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
-                positionAccessor.Count = surface->GetVertexCount();
-                positionAccessor.Type = "VEC3";
-                positionAccessor.SetMin(min);
-                positionAccessor.SetMax(max);
-
-                normalAccessor.BufferView = bufferViews.size();
-                normalAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
-                normalAccessor.Count = surface->GetVertexCount();
-                normalAccessor.Type = "VEC3";
-                normalAccessor.Offset = sizeof(Math::Vec3f);
-
-                // uvAccessor.BufferView = bufferViews.size();
-                // uvAccessor.ComponentType = GLTF::GLTFTypes::FLOAT;
-                // uvAccessor.Count = surface->GetVertexCount();
-                // uvAccessor.Type = "VEC2";
-                // uvAccessor.Offset = normalAccessor.Offset + sizeof(Math::Vec3f);
-
-                colorAccesor.BufferView = bufferViews.size();
-                colorAccesor.ComponentType = GLTF::GLTFTypes::FLOAT;
-                colorAccesor.Count = surface->GetVertexCount();
-                colorAccesor.Type = "VEC4";
-                colorAccesor.Offset = /*uvAccessor.Offset*/ normalAccessor.Offset + sizeof(Math::Vec3f);
-
-                indexAccessor.BufferView = bufferViews.size() + 1;
-                indexAccessor.ComponentType = GLTF::GLTFTypes::INT;
-                indexAccessor.Count = (surface->GetFaceCount() * 3);
-                indexAccessor.Type = "SCALAR";
-
-                GLTF::CPrimitive Primitive;
-                Primitive.PositionAccessor = accessors.size();
-                Primitive.NormalAccessor = accessors.size() + 1;
-                // Primitive.TextCoordAccessor = accessors.size() + 2;
-                Primitive.ColorAccessor = accessors.size() + 2;
-                Primitive.IndicesAccessor = accessors.size() + 3;
-                Primitive.Material = matId;
-                matId++;
-
-                GLTFMesh.Primitives.push_back(Primitive);
-
-                bufferViews.push_back(surfaceVerticesView);
-                bufferViews.push_back(indexView);
-
-                accessors.push_back(positionAccessor);
-                accessors.push_back(normalAccessor);
-                // accessors.push_back(uvAccessor);
-                accessors.push_back(colorAccesor);
-                accessors.push_back(indexAccessor);
-
-                size_t pos = binary.size();
-
-                binary.resize(binary.size() + surfaceVerticesView.Size + indexView.Size);
-
-                for (size_t i = 0; i < surface->GetVertexCount(); i++)
-                {
-                    auto vertex = surface->GetVertex(i);
-                    memcpy(binary.data() + pos, &vertex.Pos, sizeof(Math::Vec3f));
-                    pos += sizeof(Math::Vec3f);
-
-                    memcpy(binary.data() + pos, &vertex.Normal, sizeof(Math::Vec3f));
-                    pos += sizeof(Math::Vec3f);
-
-                    // memcpy(binary.data() + pos, &vertex.UV, sizeof(Math::Vec2f));
-                    // pos += sizeof(Math::Vec2f);
-
-                    CColor c(vertex.Color);
-
-                    Math::Vec4f color(pow(c.R / 255.f, 2.2f), pow(c.G / 255.f, 2.2f), pow(c.B / 255.f, 2.2f), 0.8);
-                    if(vertex.AmbientOcclusionValue != 0)
-                        color.w = 1.0f - (vertex.AmbientOcclusionValue / 3.0);
-
-                    // auto color = c.AsRGBA();
-                    memcpy(binary.data() + pos, &color, sizeof(color));
-                    pos += sizeof(color);
-                }
-
-                memcpy(binary.data() + pos, surface->GetRawIndexPointer(), indexView.Size);
-            }
-        
-            glTFMeshes.push_back(GLTFMesh);
         }
-        
-        // std::vector<GLTF::CImage> Images;
-        GLTF::CBuffer Buffer;
+    }
 
-        // auto textures = _Meshes[0]->Textures;
+    //////////////////////////////////////////////////
+    // CGLTFExporter functions
+    //////////////////////////////////////////////////
 
-        // For glb add padding to satisfy the 4 Byte boundary.
-        if(Settings->Binary)
-        {          
-            // std::vector<char> diffuse, emission;
-            // diffuse = textures[TextureType::DIFFIUSE]->AsPNG();
+    void CGLTFExporter::CloseStream()
+    {
+        m_IOHandler->Close(m_BinaryStream);
+        m_BinaryStream = nullptr;
+    }
 
-            // if(textures.find(TextureType::EMISSION) != textures.end())
-            //     emission = textures[TextureType::EMISSION]->AsPNG();
+    void CGLTFExporter::WriteHeaderData()
+    {
+        const auto binaryFilename = GetPathWithoutExt(m_Path) + ".bin";
+        m_BinaryStream = m_IOHandler->Open(binaryFilename, "wb");
+    }
 
-            size_t Size = binary.size();
-            int Padding = 4 - ((binary.size() /*+ diffuse.size() + emission.size()*/) % 4);
+    void CGLTFExporter::EnterSceneNode(const CSceneNodeBase *p_Node)
+    {
+        uint64_t rootIdx = static_cast<uint64_t>(-1);
+        if(!m_Nodes.empty())
+            rootIdx = m_Nodes.top();
 
-            binary.resize(binary.size() + Padding, '\0');
-            // binary.resize(binary.size() + diffuse.size() + emission.size() + Padding, '\0');
-            // memcpy(binary.data() + Size, diffuse.data(), diffuse.size());
-            // memcpy(binary.data() + Size + diffuse.size(), emission.data(), emission.size());
+        m_Nodes.push(m_Document.CreateNode(p_Node, m_ModelIdDec, rootIdx));
+    }
 
-            // GLTF::CBufferView ImageView;
-            // ImageView.Offset = Size;
-            // ImageView.Size = diffuse.size();
+    void CGLTFExporter::LeaveSceneNode(const CSceneNodeBase *)
+    {
+        m_Nodes.pop();
+    }
 
-            // GLTF::CImage Image;
-            // Image.BufferView = bufferViews.size();
-            // bufferViews.push_back(ImageView);
-            // Images.push_back(Image);
-
-            // if(!emission.empty())
-            // {
-            //     GLTF::CBufferView ImageView;
-            //     ImageView.Offset = Size + diffuse.size();
-            //     ImageView.Size = emission.size();
-
-            //     GLTF::CImage Image;
-            //     Image.BufferView = bufferViews.size();
-            //     bufferViews.push_back(ImageView);
-            //     Images.push_back(Image);
-            // }
-        }
-        else
+    void CGLTFExporter::WriteMeshData(const Mesh &p_Mesh)
+    {
+        auto &mesh = m_Document.CreateMesh();
+        for (auto &&surface : p_Mesh->Surfaces) 
         {
-            // GLTF::CImage Image;
-            // Image.Uri = filenameWithoutExt + ".albedo.png";
-            // Images.push_back(Image);
+            // Firstly create two buffer views for the vertex data and the index data
+            const auto vertexBufferSize = surface->GetVertexCount() * VertexSize;
+            const auto indexBufferSize = (surface->GetFaceCount() * 3) * sizeof(int);
 
-            // if(textures.find(TextureType::EMISSION) != textures.end())
-            // {
-            //     GLTF::CImage Image;
-            //     Image.Uri = filenameWithoutExt + ".emission.png";
-            //     Images.push_back(Image);
-            // }
+            const auto vertexBufferView = m_Document.CreateBufferView(vertexBufferSize, m_BinaryStream->Tell(), GLTF::BufferTarget::ARRAY_BUFFER, VertexSize);
+            const auto indicesBufferView = m_Document.CreateBufferView(indexBufferSize, m_BinaryStream->Tell() + vertexBufferSize, GLTF::BufferTarget::ELEMENT_ARRAY_BUFFER, 0);
 
-            Buffer.Uri = filenameWithoutExt + ".bin";
+            GLTF::CAccessor positionAccessor(vertexBufferView, GLTF::GLTFTypes::FLOAT, "VEC3", surface->GetVertexCount());
+
+            Math::Vec3f max;
+            Math::Vec3f min(INFINITY, INFINITY, INFINITY);
+
+            // Write the data to the blob
+            for (size_t i = 0; i < surface->GetVertexCount(); i++)
+            {
+                auto vertex = surface->GetVertex(i);
+
+                // For the position accessor it is neccessary to know the bounding box.
+                max = vertex.Pos.max(max);
+                min = vertex.Pos.min(min);
+
+                m_BinaryStream->Write(vertex.Pos);
+                m_BinaryStream->Write(vertex.Normal);
+
+                CColor c(vertex.Color);
+                uint8_t color[4] = {
+                    // Converts the RGB value from sRGB to linear colorspace.
+                    static_cast<uint8_t>(pow(static_cast<float>(c.R) / 255.f, 2.2f) * 255.f), 
+                    static_cast<uint8_t>(pow(static_cast<float>(c.G) / 255.f, 2.2f) * 255.f), 
+                    static_cast<uint8_t>(pow(static_cast<float>(c.B) / 255.f, 2.2f) * 255.f),
+
+                    // Stores the ambient occlussion value inside the alpha channel.
+                    // This must be later used in a shader in order to get the ambient occlusion to show.
+                    static_cast<uint8_t>((1.0f - (vertex.AmbientOcclusionValue / 3.0)) * 255.f)
+                };
+                m_BinaryStream->Write(reinterpret_cast<char*>(color), sizeof(color));
+            }
+
+            // Writes the index informations.
+            m_BinaryStream->Write(static_cast<const char*>(surface->GetRawIndexPointer()), indexBufferSize);
+
+            positionAccessor.SetMin(min);
+            positionAccessor.SetMax(max);
+
+            // Create the surface, and sets all needed accessors.
+            mesh.AddPrimitive(GetGLTFMaterialHandle(surface->MaterialHandle), {
+                { "POSITION",  positionAccessor },
+                { "NORMAL", GLTF::CAccessor(vertexBufferView, GLTF::GLTFTypes::FLOAT, "VEC3", surface->GetVertexCount()) },
+                { "COLOR_0", GLTF::CAccessor(vertexBufferView, GLTF::GLTFTypes::UNSIGNED_BYTE, "VEC4", surface->GetVertexCount()) },
+                { "INDICES", GLTF::CAccessor(indicesBufferView, GLTF::GLTFTypes::INT, "SCALAR", surface->GetFaceCount() * 3) }
+            });
         }
-            
+    }
 
-        Buffer.Size = binary.size(); 
+    void CGLTFExporter::WriteFooterData()
+    {
+        // Writes padding bytes to the stream, if needed.
+        if(Settings->Binary)
+        {
+            uint64_t padding = 4 - (m_BinaryStream->Tell() % 4);
+            for (uint64_t i = 0; i < padding; i++) 
+                m_BinaryStream->Write(static_cast<uint8_t>(0));
+        }
+
+        const auto binaryFilename = m_BinaryStream->GetFilePath();
+        m_Document.AddBuffer(m_BinaryStream->Tell(), Settings->Binary ? "" : GetFilename(binaryFilename));
+
+        // Closes the old binary stream.
+        CloseStream();
 
         CJSON json;
-        json.AddPair("asset", GLTF::CAsset());
-        json.AddPair("scene", 0);
-        json.AddPair("scenes", std::vector<GLTF::CScene>() = { GLTF::CScene(std::move(rootNodes)) });
-        json.AddPair("nodes", nodes);
+        auto documentJson = json.Serialize(m_Document);
+        m_Document.Clear();
 
-        json.AddPair("meshes", glTFMeshes);
-        json.AddPair("accessors", accessors);
-        json.AddPair("bufferViews", bufferViews);
-        json.AddPair("materials", materials);        
-
-        // json.AddPair("images", Images);
-
-        // std::vector<GLTF::CTexture> gltfTextures = { GLTF::CTexture() };
-        // if(textures.find(TextureType::EMISSION) != textures.end())
-        //     gltfTextures.push_back(GLTF::CTexture(1));
-
-        // json.AddPair("textures", gltfTextures);   
-        json.AddPair("buffers", std::vector<GLTF::CBuffer>() = { Buffer });
-        
-        std::string JS = json.Serialize();
         if(!Settings->Binary)
         {
-            auto strm = m_IOHandler->Open(_Path, "wb");
-            strm->Write(JS);
+            auto *strm = m_IOHandler->Open(m_Path, "wb");
+            strm->Write(documentJson);
             m_IOHandler->Close(strm);
-
-            strm = m_IOHandler->Open(GetPathWithoutExt(_Path) + ".bin", "wb");
-            strm->Write(binary.data(), binary.size());
-            m_IOHandler->Close(strm);
-
-            // SaveTexture(textures[TextureType::DIFFIUSE], _Path, "albedo");
-            // if(textures.find(TextureType::EMISSION) != textures.end())
-            //     SaveTexture(textures[TextureType::EMISSION], _Path, "emission");
         }
         else
         {
             // Adds padding to the json, so its a multiple of 4.
-            int Padding = 4 - (JS.size() % 4);
-            for (int i = 0; i < Padding; i++)
-                JS += ' ';
+            uint64_t padding = 4 - (documentJson.size() % 4);
+            for (uint64_t i = 0; i < padding; i++)
+                documentJson += ' ';
 
-            auto strm = m_IOHandler->Open(_Path, "wb");
+            auto *strm = m_IOHandler->Open(m_Path, "wb");
 
             // File header
-            strm->Write((uint32_t)0x46546C67);  // GLTF in ASCII
-            strm->Write((uint32_t)2);  // Version
-            strm->Write((uint32_t)(sizeof(uint32_t) * 3 + sizeof(uint32_t) * 2 + JS.size() + sizeof(uint32_t) * 2 + binary.size())); // Total file size.
+            strm->Write(static_cast<uint32_t>(0x46546C67));                 // GLTF in ASCII
+            strm->Write(static_cast<uint32_t>(2));                          // Version
+            strm->Write(static_cast<uint32_t>(0));                          // Size of the file, in bytes. Will be patched at the end.
 
             // Json data
-            strm->Write((uint32_t)JS.size());   // Chunk length
-            strm->Write((uint32_t)0x4E4F534A);  // JSON in ASCII
-            strm->Write(JS);                    // JSON Data
+            strm->Write(static_cast<uint32_t>(documentJson.size()));        // Chunk length
+            strm->Write(static_cast<uint32_t>(0x4E4F534A));                 // JSON in ASCII
+            strm->Write(documentJson);                                      // JSON Data
+
+            m_BinaryStream = m_IOHandler->Open(binaryFilename, "rb");
 
             // Binary blob
-            strm->Write((uint32_t)binary.size());   // Chunk length
-            strm->Write((uint32_t)0x004E4942);  // Bin in ASCII
-            strm->Write(binary.data(), binary.size()); // Bin Data
+            strm->Write(static_cast<uint32_t>(m_BinaryStream->Size()));     // Chunk length
+            strm->Write(static_cast<uint32_t>(0x004E4942));                 // Bin in ASCII
+
+            // Reads the .bin file and writes it's content to the glb file.
+            char buffer[4096];
+            while (!m_BinaryStream->Eof()) 
+            {
+                const auto readed = m_BinaryStream->Read(static_cast<char*>(buffer), sizeof(buffer));
+                strm->Write(static_cast<char*>(buffer), readed);
+            }
+
+            CloseStream();
+
+            // Patches the size of the file, with the real file size.
+            auto size = strm->Tell();
+            strm->Seek(sizeof(uint32_t) * 2, SeekOrigin::BEG);
+            strm->Write(static_cast<uint32_t>(size));
 
             m_IOHandler->Close(strm);
+            m_IOHandler->Delete(binaryFilename);
         }
+
+        m_MaterialHandleMapper.clear();
     }
-}
+
+    uint64_t CGLTFExporter::GetGLTFMaterialHandle(const uint8_t p_MaterialHandle)
+    {
+        auto it = m_MaterialHandleMapper.find(p_MaterialHandle);
+        if(it == m_MaterialHandleMapper.end())
+        {
+            auto material = MaterialManager::GetMaterial(p_MaterialHandle);
+            if(!material)
+                material = MaterialManager::GetMaterial(0);
+
+            it = m_MaterialHandleMapper.insert({p_MaterialHandle, m_Document.AddMaterial(material)}).first;
+        }
+
+        return it->second;
+    }
+
+    // void CGLTFExporter::WriteData(const std::string &p_Path, const std::vector<Mesh> &p_Meshes)
+    // {
+    //     const auto binaryFilename = GetPathWithoutExt(p_Path) + ".bin";
+    //     m_BinaryStream = m_IOHandler->Open(binaryFilename, "wb");
+
+    //     uint64_t animationRootIdx = -1;
+    //     for (auto &&mesh : p_Meshes) 
+    //     {
+    //         if(mesh->Surfaces.empty())
+    //             continue;
+
+    //         if(mesh->FrameTime != 0)
+    //         {
+    //             if(animationRootIdx == static_cast<uint64_t>(-1))
+    //                 animationRootIdx = m_Document.CreateNode(GetMeshName(mesh) + "_Anim", -1, Math::Mat4x4(), -1);
+    //         }
+    //         else
+    //             animationRootIdx = -1;
+
+    //         auto meshHandle = WriteMeshData(mesh);
+    //         m_Document.CreateNode(GetMeshName(mesh), meshHandle, Settings->WorldSpace ? mesh->ModelMatrix : Math::Mat4x4(), animationRootIdx);
+    //     }
+
+    //     // Writes padding bytes to the stream, if needed.
+    //     if(Settings->Binary)
+    //     {
+    //         uint64_t padding = 4 - (m_BinaryStream->Tell() % 4);
+    //         for (uint64_t i = 0; i < padding; i++) 
+    //             m_BinaryStream->Write(static_cast<uint8_t>(0));
+    //     }
+
+    //     m_Document.AddBuffer(m_BinaryStream->Tell(), Settings->Binary ? "" : GetFilename(binaryFilename));
+
+    //     // Closes the old binary stream.
+    //     CloseStream();
+
+    //     CJSON json;
+    //     auto documentJson = json.Serialize(m_Document);
+    //     m_Document.Clear();
+
+    //     if(!Settings->Binary)
+    //     {
+    //         auto *strm = m_IOHandler->Open(p_Path, "wb");
+    //         strm->Write(documentJson);
+    //         m_IOHandler->Close(strm);
+    //     }
+    //     else
+    //     {
+    //         // Adds padding to the json, so its a multiple of 4.
+    //         uint64_t padding = 4 - (documentJson.size() % 4);
+    //         for (uint64_t i = 0; i < padding; i++)
+    //             documentJson += ' ';
+
+    //         auto *strm = m_IOHandler->Open(p_Path, "wb");
+
+    //         // File header
+    //         strm->Write(static_cast<uint32_t>(0x46546C67));                 // GLTF in ASCII
+    //         strm->Write(static_cast<uint32_t>(2));                          // Version
+    //         strm->Write(static_cast<uint32_t>(0));                          // Size of the file, in bytes. Will be patched at the end.
+
+    //         // Json data
+    //         strm->Write(static_cast<uint32_t>(documentJson.size()));        // Chunk length
+    //         strm->Write(static_cast<uint32_t>(0x4E4F534A));                 // JSON in ASCII
+    //         strm->Write(documentJson);                                      // JSON Data
+
+    //         m_BinaryStream = m_IOHandler->Open(binaryFilename, "rb");
+
+    //         // Binary blob
+    //         strm->Write(static_cast<uint32_t>(m_BinaryStream->Size()));     // Chunk length
+    //         strm->Write(static_cast<uint32_t>(0x004E4942));                 // Bin in ASCII
+
+    //         // Reads the .bin file and writes it's content to the glb file.
+    //         char buffer[4096];
+    //         while (!m_BinaryStream->Eof()) 
+    //         {
+    //             const auto readed = m_BinaryStream->Read(static_cast<char*>(buffer), sizeof(buffer));
+    //             strm->Write(static_cast<char*>(buffer), readed);
+    //         }
+
+    //         CloseStream();
+
+    //         // Patches the size of the file, with the real file size.
+    //         auto size = strm->Tell();
+    //         strm->Seek(sizeof(uint32_t) * 2, SeekOrigin::BEG);
+    //         strm->Write(static_cast<uint32_t>(size));
+
+    //         m_IOHandler->Close(strm);
+    //         m_IOHandler->Delete(binaryFilename);
+    //     }
+
+    //     m_MaterialHandleMapper.clear();
+    // }
+}  // namespace VCore

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5.0)
 project(VCore VERSION 0.1.0 LANGUAGES CXX C)
 
 # Basic compiler setup
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -14,7 +14,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(VCORE_BUILD_ALL_IMPORTERS_BY_DEFAULT ON CACHE BOOL "Builds all voxel format importes")
 set(VCORE_BUILD_ALL_EXPORTERS_BY_DEFAULT ON CACHE BOOL "Builds all exporters")
 
-set(CORE_SRCS "${PROJECT_SOURCE_DIR}/src/Voxel/VoxelAnimation.cpp"
+set(CORE_SRCS
              "${PROJECT_SOURCE_DIR}/src/Voxel/Storage/VoxelSpace.cpp"
              "${PROJECT_SOURCE_DIR}/src/Voxel/Storage/Iterator.cpp"
              "${PROJECT_SOURCE_DIR}/src/Voxel/Storage/Chunk.cpp"
@@ -53,7 +53,7 @@ macro(ADD_IMPORTER name)
   else()
     add_definitions(-DVCORE_BUILD_NO_${name}_IMPORTER)
   endif()
-endmacro(ADD_FEATURE)
+endmacro(ADD_IMPORTER)
 
 ADD_IMPORTER(MAGICAVOXEL "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/MagicaVoxel/MagicaVoxelFormat.cpp"
                          "${PROJECT_SOURCE_DIR}/src/Formats/Implementations/MagicaVoxel/MagicaVoxelModelParser.cpp"
@@ -85,9 +85,9 @@ macro(ADD_EXPORTER name)
   else()
     add_definitions(-DVCORE_BUILD_NO_${name}_EXPORTER)
   endif()
-endmacro(ADD_FEATURE)   
+endmacro(ADD_EXPORTER)   
 
-ADD_EXPORTER(OBJ "${PROJECT_SOURCE_DIR}/src/Export/Implementations/WavefrontObjExporter.cpp")
+ADD_EXPORTER(OBJ "${PROJECT_SOURCE_DIR}/src/Export/Implementations/obj/WavefrontObjExporter.cpp")
 ADD_EXPORTER(SPRITESTACKING "${PROJECT_SOURCE_DIR}/src/Export/Implementations/SpriteStackingExporter.cpp")
 ADD_EXPORTER(GODOT3 "${PROJECT_SOURCE_DIR}/src/Export/Implementations/GodotSceneExporter.cpp")
 ADD_EXPORTER(GLTF "${PROJECT_SOURCE_DIR}/src/Export/Implementations/glTF/GLTFExporter.cpp")

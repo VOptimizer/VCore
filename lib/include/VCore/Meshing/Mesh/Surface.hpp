@@ -25,15 +25,14 @@
 #ifndef SURFACE_HPP
 #define SURFACE_HPP
 
+#include "VCore/Math/Vector.hpp"
 #include "Vertex.hpp"
 #include <VCore/Meshing/Material.hpp>
 #include <VCore/VPlatform.hpp>
 #include <VCore/Misc/fast_vector.hpp>
-#include <climits>
 
 #ifdef VCORE_RTTI_ENABLED
 #include <stdexcept>
-#include <typeinfo>
 #include <typeindex>
 #endif
 
@@ -41,19 +40,19 @@ namespace VCore
 {
     class ISurface
     {
-        public:
-            Material FaceMaterial;          //!< Material of this surface
+        public:        
+            uint8_t MaterialHandle; //!< Material of this surface
 
             /**
              * @brief Adds a new Vertex to the surface.
              * @return Returns the index of the vertex.
              */
-            virtual uint32_t AddVertex(const SVertex *_Vertex) = 0;
+            virtual uint32_t AddVertex(const SVertex *p_Vertex) = 0;
 
             /**
              * @brief Adds a face to the surface. The order must be counter clockwise.
              */
-            virtual void AddFace(uint32_t _Idx1, uint32_t _Idx2, uint32_t _Idx3) = 0;
+            virtual void AddFace(uint32_t p_Idx1, uint32_t p_Idx2, uint32_t p_Idx3) = 0;
 
             /**
              * @return Returns the vertex count, which this surface holds. 
@@ -68,27 +67,27 @@ namespace VCore
             /**
              * @brief Updates a vertex at a given index.
              */
-            virtual void UpdateVertex(uint64_t _Idx, const SVertex &_Vertex) = 0;
+            virtual void UpdateVertex(uint64_t p_Idx, const SVertex &p_Vertex) = 0;
 
             /**
              * @return Returns a vertex at the given index.
              */
-            virtual SVertex GetVertex(uint64_t _Idx) const = 0;
+            virtual SVertex GetVertex(uint64_t p_Idx) const = 0;
 
             /**
              * @return Returns an index at the given index.
              */
-            virtual uint32_t GetIndex(uint64_t _Idx) const = 0;
+            virtual uint32_t GetIndex(uint64_t p_Idx) const = 0;
 
             /**
              * @brief Reserve memory for the given _Size of vertices.
              */
-            virtual void ReserveVertices(uint64_t _Size) = 0;
+            virtual void ReserveVertices(uint64_t p_Size) = 0;
 
             /**
              * @brief Reserve memory for the given _Size of faces. (_Size * 3) = index count.
              */
-            virtual void ReserveFaces(uint64_t _Size) = 0;
+            virtual void ReserveFaces(uint64_t p_Size) = 0;
 
             /**
              * @return Returns the underlying raw pointer of the continous memory stream of the vertices.
@@ -108,7 +107,7 @@ namespace VCore
             /**
              * @brief Merges two surfaces together.
              */
-            virtual void MergeSurface(ISurface *_Surface) = 0;
+            virtual void MergeSurface(ISurface *p_Surface) = 0;
 
             template<class T>
             const T &GetVertexReference() const
@@ -158,17 +157,17 @@ namespace VCore
                 m_Vertices.clear();
             }
 
-            uint32_t AddVertex(const SVertex *_Vertex) override
+            uint32_t AddVertex(const SVertex *p_Vertex) override
             {
-                m_Vertices.push_back(const_cast<SVertex*>(_Vertex));
+                m_Vertices.push_back(const_cast<SVertex*>(p_Vertex));
                 return m_Vertices.size() - 1;
             }
 
-            void AddFace(uint32_t _Idx1, uint32_t _Idx2, uint32_t _Idx3) override
+            void AddFace(uint32_t p_Idx1, uint32_t p_Idx2, uint32_t p_Idx3) override
             {
-                m_Indices.push_back(_Idx1);
-                m_Indices.push_back(_Idx2);
-                m_Indices.push_back(_Idx3);
+                m_Indices.push_back(p_Idx1);
+                m_Indices.push_back(p_Idx2);
+                m_Indices.push_back(p_Idx3);
             }
 
             uint64_t GetVertexCount() const override
@@ -181,30 +180,30 @@ namespace VCore
                 return (uint64_t)(m_Indices.size() / 3);
             }
 
-            void UpdateVertex(uint64_t _Idx, const SVertex &_Vertex) override
+            void UpdateVertex(uint64_t p_Idx, const SVertex &p_Vertex) override
             {
-                if(_Idx < m_Vertices.size())
-                    *m_Vertices[_Idx] = _Vertex;
+                if(p_Idx < m_Vertices.size())
+                    *m_Vertices[p_Idx] = p_Vertex;
             }
 
-            SVertex GetVertex(uint64_t _Idx) const override
+            SVertex GetVertex(uint64_t p_Idx) const override
             {
-                return *m_Vertices[_Idx];
+                return *m_Vertices[p_Idx];
             }
 
-            uint32_t GetIndex(uint64_t _Idx) const override
+            uint32_t GetIndex(uint64_t p_Idx) const override
             {
-                return m_Indices[_Idx];
+                return m_Indices[p_Idx];
             }
 
-            void ReserveVertices(uint64_t _Size) override
+            void ReserveVertices(uint64_t p_Size) override
             {
-                m_Vertices.reserve(_Size);
+                m_Vertices.reserve(p_Size);
             }
 
-            void ReserveFaces(uint64_t _Size) override
+            void ReserveFaces(uint64_t p_Size) override
             {
-                m_Indices.reserve(_Size * 3);
+                m_Indices.reserve(p_Size * 3);
             }
 
             const SVertex* GetRawVertexPointer() const override
@@ -222,13 +221,13 @@ namespace VCore
                 return (IndexMax - m_Vertices.size()) > 3;
             }
 
-            void MergeSurface(ISurface *_Surface) override
+            void MergeSurface(ISurface *p_Surface) override
             {
-                ReserveVertices(_Surface->GetVertexCount() + GetVertexCount());
-                ReserveFaces(_Surface->GetFaceCount() + GetFaceCount());
+                ReserveVertices(p_Surface->GetVertexCount() + GetVertexCount());
+                ReserveFaces(p_Surface->GetFaceCount() + GetFaceCount());
 
-                auto &otherVertices = _Surface->GetVertexReference<VertexArray>();
-                auto &otherIndices = _Surface->GetIndexReference<IndexArray>();
+                auto &otherVertices = p_Surface->GetVertexReference<VertexArray>();
+                auto &otherIndices = p_Surface->GetIndexReference<IndexArray>();
 
                 auto startIdx = m_Vertices.size();
                 m_Vertices.insert(m_Vertices.end(), otherVertices.begin(), otherVertices.end());
@@ -236,7 +235,7 @@ namespace VCore
                 for (auto &&i : otherIndices)
                     m_Indices.push_back(startIdx + i);
 
-                _Surface->ClaimVertices();
+                p_Surface->ClaimVertices();
             }
 
             void ClaimVertices() override
@@ -270,6 +269,150 @@ namespace VCore
             VertexArray m_Vertices;
             IndexArray m_Indices;
     };
+
+//     class CArraySurface : public ISurface
+//     {
+//         public:
+//             virtual ~CArraySurface()
+//             {
+//                 // for (auto &&v : m_Vertices)
+//                 //     delete v;
+
+//                 // m_Vertices.clear();
+//             }
+
+//             uint32_t AddVertex(const SVertex *p_Vertex) override
+//             {
+//                 m_Positions.push_back(p_Vertex->Pos);
+//                 m_Normals.push_back(p_Vertex->Normal);
+//                 m_Colors.push_back(p_Vertex->Color);
+
+//                 delete p_Vertex;
+
+//                 // m_Vertices.push_back(const_cast<SVertex*>(p_Vertex));
+//                 return m_Positions.size() - 1;
+//             }
+
+//             void AddFace(uint32_t p_Idx1, uint32_t p_Idx2, uint32_t p_Idx3) override
+//             {
+//                 m_Indices.push_back(p_Idx1);
+//                 m_Indices.push_back(p_Idx2);
+//                 m_Indices.push_back(p_Idx3);
+//             }
+
+//             uint64_t GetVertexCount() const override
+//             {
+//                 return (uint64_t)m_Positions.size();
+//             }
+
+//             uint64_t GetFaceCount() const override
+//             {
+//                 return (uint64_t)(m_Indices.size() / 3);
+//             }
+
+//             void UpdateVertex(uint64_t p_Idx, const SVertex &p_Vertex) override
+//             {
+//                 if(p_Idx < m_Positions.size())
+//                 {
+//                     m_Positions[p_Idx] = p_Vertex.Pos;
+//                     m_Normals[p_Idx] = p_Vertex.Normal;
+//                     m_Colors[p_Idx] = p_Vertex.Color;
+//                 }
+//             }
+
+//             SVertex GetVertex(uint64_t p_Idx) const override
+//             {
+//                 return SVertex(m_Positions[p_Idx], m_Normals[p_Idx], m_Colors[p_Idx]);
+//             }
+
+//             uint32_t GetIndex(uint64_t p_Idx) const override
+//             {
+//                 return m_Indices[p_Idx];
+//             }
+
+//             void ReserveVertices(uint64_t p_Size) override
+//             {
+//                 m_Positions.reserve(p_Size);
+//                 m_Normals.reserve(p_Size);
+//                 m_Colors.reserve(p_Size);
+//             }
+
+//             void ReserveFaces(uint64_t p_Size) override
+//             {
+//                 m_Indices.reserve(p_Size * 3);
+//             }
+
+//             const SVertex* GetRawVertexPointer() const override
+//             {
+//                 return nullptr; //m_Vertices.data();
+//             }
+
+//             const void* GetRawIndexPointer() const override
+//             {
+//                 return m_Indices.data();
+//             }
+
+//             bool IsFaceCountMaxReached() const override
+//             {
+//                 return (UINT32_MAX - m_Positions.size()) > 3;
+//             }
+
+//             void MergeSurface(ISurface *p_Surface) override
+//             {
+//                 ReserveVertices(p_Surface->GetVertexCount() + GetVertexCount());
+//                 ReserveFaces(p_Surface->GetFaceCount() + GetFaceCount());
+
+//                 auto other = dynamic_cast<CArraySurface*>(p_Surface);
+
+//                 auto &otherIndices = other->m_Indices;
+
+//                 auto startIdx = m_Positions.size();
+//                 m_Positions.insert(m_Positions.end(), other->m_Positions.begin(), other->m_Positions.end());
+//                 m_Normals.insert(m_Normals.end(), other->m_Normals.begin(), other->m_Normals.end());
+//                 m_Colors.insert(m_Colors.end(), other->m_Colors.begin(), other->m_Colors.end());
+
+//                 for (auto &&i : otherIndices)
+//                     m_Indices.push_back(startIdx + i);
+
+//                 p_Surface->ClaimVertices();
+//             }
+
+//             void ClaimVertices() override
+//             {
+//                 m_Positions.clear();
+//                 m_Normals.clear();
+//                 m_Colors.clear();
+//                 m_Indices.clear();
+//             }
+//         protected:
+//             const void *GetUnderlyingVertexReference() const override
+//             {
+//                 return nullptr; //&m_Vertices;
+//             }
+
+//             const void *GetUnderlyingIndexReference() const override
+//             {
+//                 return &m_Indices;
+//             }
+
+// #ifdef VCORE_RTTI_ENABLED
+//             std::type_index GetUnderlyingVertexType() const override
+//             {
+//                 return typeid(int);
+//             }
+
+//             std::type_index GetUnderlyingIndexType() const override
+//             {
+//                 return typeid(m_Indices);
+//             }
+// #endif
+//         private:
+//             fast_vector<Math::Vec3f> m_Positions;
+//             fast_vector<Math::Vec3f> m_Normals;
+//             fast_vector<uint32_t> m_Colors;
+//             // VertexArray m_Vertices;
+//             fast_vector<uint32_t> m_Indices;
+//     };
 
     using SurfaceFactory = ISurface* (*)();
     using DefaultSurface = TSurface<fast_vector<SVertex*>, fast_vector<uint32_t>, UINT32_MAX>;

@@ -47,26 +47,26 @@ namespace VCore
 
             CColor() : R(255), G(255), B(255), A(255) {}
 
-            CColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : R(r), G(g), B(b), A(a) {}
-            CColor(uint32_t _color)
+            CColor(unsigned char p_Red, unsigned char p_Green, unsigned char p_Blue, unsigned char p_Alpha) : R(p_Red), G(p_Green), B(p_Blue), A(p_Alpha) {}
+            CColor(uint32_t p_color)
             {
-                FromRGBA(_color);
+                FromABGR(p_color);
             }
 
-            inline void FromRGBA(uint32_t color)
+            inline void FromABGR(uint32_t p_color)
             {
-                R = color & 0xFF;
-                G = (color & 0xFF00) >> 8;
-                B = (color & 0xFF0000) >> 16;
-                A = (color & 0xFF000000) >> 24;
+                R = p_color & 0xFF;
+                G = (p_color & 0xFF00) >> 8;
+                B = (p_color & 0xFF0000) >> 16;
+                A = (p_color & 0xFF000000) >> 24;
             }
 
-            inline void FromBGRA(uint32_t color)
+            inline void FromARGB(uint32_t p_color)
             {
-                R = (color & 0xFF0000) >> 16;
-                G = (color & 0xFF00) >> 8;
-                B = color & 0xFF;
-                A = (color & 0xFF000000) >> 24;
+                R = (p_color & 0xFF0000) >> 16;
+                G = (p_color & 0xFF00) >> 8;
+                B = p_color & 0xFF;
+                A = (p_color & 0xFF000000) >> 24;
             }
 
             inline uint32_t AsRGBA() const

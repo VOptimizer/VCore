@@ -26,17 +26,15 @@
 #define IVOXELFORMAT_HPP
 
 #include <string>
-#include <vector>
 #include <VCore/Formats/SceneNode.hpp>
 #include <VCore/Voxel/VoxelModel.hpp>
-#include <VCore/Voxel/VoxelAnimation.hpp>
 #include <VCore/Misc/FileStream.hpp>
 
 #include <VCore/Meshing/Material.hpp>
 
 namespace VCore
 {
-    enum class LoaderType
+    enum class VoxelFormatType
     {
         UNKNOWN = -1,
         MAGICAVOXEL,
@@ -62,125 +60,80 @@ namespace VCore
     class IVoxelFormat
     {
         public:
+            VoxelSceneTree SceneTree; //!< Scene tree of this voxel file.
+
             IVoxelFormat() : m_Mode(FileMode::CLOSED), m_IOHandler(nullptr), m_DataStream(nullptr) {}
 
+            /**
+             * @brief Creates an instance for a voxel format.
+             * The underlying loader is determined by the given file.
+             * 
+             * @tparam IOHandler: Type of an io loader which extends ::IIOHandler
+             * @param p_Filename: Path to a voxel file
+             * @param p_Mode: Mode to open the given file. See ::FileMode for more informations
+             * @throw CVoxelFormatException: If no loader is found
+             */
             template<class IOHandler = CDefaultIOHandler>
-            static VoxelFormat CreateAndOpen(const std::string &_Filename, FileMode _Mode)
+            static VoxelFormat CreateAndOpen(const std::string &p_Filename, FileMode p_Mode)
             {
-                auto loader = Create(GetType(_Filename));
-                loader->Open<IOHandler>(_Filename, _Mode);
+                auto loader = Create(GetType(p_Filename));
+                loader->Open<IOHandler>(p_Filename, p_Mode);
 
                 return loader;
             }
       
-            template<class IOHandler = CDefaultIOHandler>
-            void Open(const std::string &_File, FileMode _Mode)
-            {
-                Open(new IOHandler(), _File, _Mode);
-            }
-
-            virtual void Open(IIOHandler *_IOHandler, const std::string _File, FileMode _Mode);
-
-            virtual void Load();
-            virtual void Save();
-
-            virtual void Close();
-
             /**
-             * @brief Creates an instance of a loader, which then loads the given file.
+             * @brief Opens a voxel file
              * 
-             * @throws CVoxelLoaderException If there is no loader for the given file or the file couldn't be load.
+             * @tparam IOHandler: Type of an io loader which extends ::IIOHandler
+             * @param p_Filename: Path to a voxel file
+             * @param p_Mode: Mode to open the given file. See ::FileMode for more informations
              */
             template<class IOHandler = CDefaultIOHandler>
-            static VoxelFormat CreateAndLoad(const std::string &_Filename)
+            void Open(const std::string &p_File, FileMode p_Mode)
             {
-                auto loader = Create(GetType(_Filename));
-                loader->Load<IOHandler>(_Filename);
-
-                return loader;
+                Open(new IOHandler(), p_File, p_Mode);
             }
+
+            /**
+             * @brief Opens a voxel file
+             * 
+             * @param p_IOHandler: IOHandler instance, which is used to create file streams.
+             * @param p_Filename: Path to a voxel file
+             * @param p_Mode: Mode to open the given file. See ::FileMode for more informations
+             */
+            virtual void Open(IIOHandler *p_IOHandler, const std::string p_File, FileMode p_Mode);
+
+            /** Loads the voxel file */
+            virtual void Load();
+
+            /** Write the SceneTree to file. */
+            virtual void Save();
+
+            /** Closes the file */
+            virtual void Close();
 
             /**
              * @return Returns the loader type of a given file.
              */
-            static LoaderType GetType(const std::string &_Filename);
+            static VoxelFormatType GetType(const std::string &p_Filename);
 
             /**
              * @brief Creates an instance of a the given loader;
+             *
+             * @throw CVoxelFormatException: If no loader is found
              */
-            static VoxelFormat Create(LoaderType _Type);
-
-            /**
-             * @brief Loads a voxel file from disk.
-             * 
-             * @param _File: Path to the voxel file.
-             * @throws CVoxelLoaderException If the file couldn't be load.
-             */
-            template<class IOHandler = CDefaultIOHandler>
-            void Load(const std::string &_File)
-            {
-                Load(new IOHandler(), _File);
-            }
-
-            /**
-             * @brief Loads a voxel file using a given io handler.
-             * The loader takes the ownership of the _Strm instance, and will free it properly.
-             * 
-             * @param _IOHandler: IOHandler to use.
-             * @param _File: File to load.
-             * @throws CVoxelLoaderException If the file couldn't be load.
-             */
-            virtual void Load(IIOHandler *_IOHandler, const std::string _File);
-
-            std::vector<VoxelModel> m_Models;
-
-            /**
-             * @return Gets a list with all models inside the voxel file.
-             */
-            inline std::vector<VoxelModel> GetModels() const
-            {
-                return m_Models;
-            }
-
-            /**
-             * @return Gets a list with all animations of the voxel file.
-             */
-            inline std::vector<VoxelAnimation> GetAnimations() const
-            {
-                return m_Animations;
-            }
-
-            /**
-             * @return Gets the scene tree of this file.
-             */
-            inline SceneNode GetSceneTree() const
-            {
-                return m_SceneTree;
-            }
-
-            /**
-             * @brief Sets the scene tree.
-             */
-            inline void SetSceneTree(SceneNode _Tree)
-            {
-                m_SceneTree = _Tree;
-            }
+            static VoxelFormat Create(VoxelFormatType p_Type);
 
             virtual ~IVoxelFormat() { ClearCache(); DeleteFileStream(); }
         protected:
             virtual void ClearCache();
             void DeleteFileStream();
 
-            SceneNode m_SceneTree;
             FileMode m_Mode;
 
             std::shared_ptr<IIOHandler> m_IOHandler;
             IFileStream *m_DataStream;
-
-            
-            std::vector<VoxelAnimation> m_Animations;
-            std::vector<Material> m_Materials;
-            ankerl::unordered_dense::map<TextureType, Texture> m_Textures;
 
             virtual void ParseFormat() = 0;
             virtual void WriteFormat() {}

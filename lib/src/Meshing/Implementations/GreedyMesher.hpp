@@ -32,30 +32,29 @@
 #include "../FaceMask.hpp"
 
 #include <atomic>
-#include <mutex>
 
 namespace VCore
 {
     class CGreedyMesher : public IMesher
     {
         public:
-            CGreedyMesher(bool _GenerateTexture = false, bool _GenerateSingleChunks = false) : 
+            CGreedyMesher(bool p_GenerateTexture = false, bool p_GenerateSingleChunks = false) : 
                 IMesher(), 
                 m_NextId(0),
                 m_Head(nullptr),
-                m_GenerateTexture(_GenerateTexture), 
-                m_GenerateSingleChunks(_GenerateSingleChunks) {}
+                m_GenerateTexture(p_GenerateTexture), 
+                m_GenerateSingleChunks(p_GenerateSingleChunks) {}
 
-            std::vector<SMeshChunk> GenerateChunks(VoxelModel _Mesh, bool _OnlyDirty = false) override;
+            // std::vector<SMeshChunk> GenerateChunks(VoxelModel p_Mesh, bool p_OnlyDirty = false) override;
 
             virtual ~CGreedyMesher() { ClearTextures(); }
         protected:
             using MaskCollection = ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>>;            
             struct MeshSlicerContext
             {
-                MeshSlicerContext(const VoxelModel &_Model, const CBBox &_ModelBBox, SurfaceFactory _Factory) : Model(_Model), Builder(_Factory), ModelBBox(_ModelBBox)
+                MeshSlicerContext(const VoxelModel &p_Model, const CBBox &p_ModelBBox, SurfaceFactory p_Factory) : Model(p_Model), Builder(p_Factory), ModelBBox(p_ModelBBox)
                 {
-                    Builder.AddTextures(Model->Textures);
+                    // Builder.AddTextures(Model->Textures);
                 }   
 
                 const VoxelModel &Model;
@@ -71,7 +70,7 @@ namespace VCore
             struct TextureInfo
             {
                 TextureInfo() = default;
-                TextureInfo(uint32_t _Id, const Math::Vec3i &_Position, const Math::Vec3i &_Axis, const Math::Vec2ui &_Size) : Id(_Id), Position(_Position), Axis(_Axis), Size(_Size) {}
+                TextureInfo(uint32_t _Id, const Math::Vec3i &p_Position, const Math::Vec3i &p_Axis, const Math::Vec2ui &p_Size) : Id(_Id), Position(p_Position), Axis(p_Axis), Size(p_Size) {}
                 TextureInfo(TextureInfo &&) = default;
                 TextureInfo(const TextureInfo &) = default;
 
@@ -86,15 +85,15 @@ namespace VCore
 
             struct TextureNode
             {
-                TextureNode(uint32_t _Id, const Math::Vec3i &_Position, const Math::Vec3i &_Axis, const Math::Vec2ui &_Size) : Info(_Id, _Position, _Axis, _Size), Next(nullptr) {}
+                TextureNode(uint32_t p_Id, const Math::Vec3i &p_Position, const Math::Vec3i &p_Axis, const Math::Vec2ui &p_Size) : Info(p_Id, p_Position, p_Axis, p_Size), Next(nullptr) {}
 
                 TextureInfo Info;
                 TextureNode *Next;
             };
-            uint32_t AddTexture(const Math::Vec3i &_Position, const Math::Vec3i &_Axis, const Math::Vec2ui &_Size);
+            uint32_t AddTexture(const Math::Vec3i &p_Position, const Math::Vec3i &p_Axis, const Math::Vec2ui &p_Size);
             void ClearTextures();
 
-            void CopyToAtlas(Texture &_Atlas, const VoxelModel &_Model, const Math::Vec2ui &_Position, const TextureInfo &_Info);
+            void CopyToAtlas(Texture &p_Atlas, const VoxelModel &p_Model, const Math::Vec2ui &p_Position, const TextureInfo &p_Info);
 
             std::atomic<uint32_t> m_NextId;
             std::atomic<TextureNode*> m_Head;
@@ -108,8 +107,8 @@ namespace VCore
 
             SMeshChunk GenerateMeshChunk(VoxelModel, const SChunkMeta&, bool) override;
 
-            Mesh GenerateMeshSlices(const VoxelModel &_Model, const CBBox &_ModelBBox, int _RunAxis, int _AxisPos);
-            void GenerateMeshSlice(MeshSlicerContext &_Context, Config::bitmask_t _Faces, bool _IsFront);
+            Mesh GenerateMeshSlices(const VoxelModel &p_Model, const CBBox &p_ModelBBox, int p_RunAxis, int p_AxisPos);
+            void GenerateMeshSlice(MeshSlicerContext &p_Context, Config::bitmask_t p_Faces, bool p_IsFront);
 
             /**
              * Gets a column of faces for a given chunkpos. If the chunk isn't indexed,
@@ -124,14 +123,14 @@ namespace VCore
              * 
              * @return Returns the faces column.
              */
-            Config::bitmask_t *GetFaces(MeshSlicerContext &_Context, const Math::Vec3i &_Chunkpos, int d, int x, bool _IsFront);
+            Config::bitmask_t *GetFaces(MeshSlicerContext &p_Context, const Math::Vec3i &p_Chunkpos, int p_Depth, int p_XPos, bool p_IsFront);
 
-            CFaceMask::Mask *GetFaceMask(MeshSlicerContext &_Context, const Math::Vec3i &_Chunkpos, int d);
+            CFaceMask::Mask *GetFaceMask(MeshSlicerContext &p_Context, const Math::Vec3i &p_Chunkpos, int p_Depth);
 
             bool m_GenerateTexture;
             bool m_GenerateSingleChunks;
 
-            void GenerateQuad(CMeshBuilder &result, Config::bitmask_t faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const CVoxel& _Voxel);
+            void GenerateQuad(CMeshBuilder &p_Result, Config::bitmask_t p_Faces, CFaceMask::Mask &p_Bits, int p_Width, int p_Depth, bool p_IsFront, const Math::Vec3i &p_Origin, const Math::Vec3i &p_Axis, const SChunkMeta &p_Chunk, const CVoxel& p_Voxel);
     };
 }
 

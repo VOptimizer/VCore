@@ -32,15 +32,15 @@ namespace VCore
     constexpr static uint32_t GoxelChunkSize = 16;
 
     // Goxel uses 16x16x16 chunk sizes, V-Core is configureabel and can have chunks sizes 8, 16, 32, and 64.
-    inline Math::Vec3i GetGoxelChunkpos16(const Math::Vec3i &_Position)
+    inline Math::Vec3i GetGoxelChunkpos16(const Math::Vec3i &p_Position)
     {
-        return _Position & ~(GoxelChunkSize - 1);
+        return p_Position & ~(GoxelChunkSize - 1);
     }
 
-    void CGoxelModelParser::FillChunk(const Math::Vec3i &_Position, CChunk *_Chunk)
+    void CGoxelModelParser::FillChunk(const Math::Vec3i &p_Position, CChunk *p_Chunk)
     {
-        auto goxelPos = GetChunkpos(Math::Vec3i(abs(m_EndX - m_BeginX) - 1, 0, 0) - (_Position - Math::Vec3i(m_BeginX, 0, 0)) + Math::Vec3i(m_BeginX, 0, 0));
-        auto innerStartPos = _Position & (GoxelChunkSize - 1);
+        auto goxelPos = GetChunkpos(Math::Vec3i(abs(m_EndX - m_BeginX) - 1, 0, 0) - (p_Position - Math::Vec3i(m_BeginX, 0, 0)) + Math::Vec3i(m_BeginX, 0, 0));
+        auto innerStartPos = p_Position & (GoxelChunkSize - 1);
 
         // TODO: 8 Chunk Path
         for (int cx = goxelPos.x; cx < static_cast<int>(goxelPos.x + Config::ChunkSize); cx += GoxelChunkSize)
@@ -89,7 +89,7 @@ namespace VCore
                                                 }
             
                                                 auto insertPos = Math::Vec3i(cx + x, cy + y, cz + z);
-                                                _Chunk->insert({insertPos, CVoxel(p, matIdx)});
+                                                p_Chunk->insert({insertPos, CVoxel(p, matIdx)});
                                             }
                                         }
                                     }

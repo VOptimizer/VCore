@@ -32,10 +32,10 @@ namespace VCore
     void CQubicleExchangeFormat::ParseFormat()
     {
         if(ReadLine() != "Qubicle Exchange Format")
-            throw CVoxelLoaderException("Unknown file format");
+            throw CVoxelFormatException("Unknown file format");
 
         if(ReadLine() != "Version 0.2")
-            throw CVoxelLoaderException("Unsupported version!");
+            throw CVoxelFormatException("Unsupported version!");
 
         ReadLine();
 

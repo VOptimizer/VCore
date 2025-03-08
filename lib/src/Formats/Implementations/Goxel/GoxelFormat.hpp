@@ -59,12 +59,12 @@ namespace VCore
 
             /** Reads the file structure. */
             void ReadFile();
-            void ProcessMaterial(const SGoxelChunkHeader &_Chunk);
-            void ProcessLayer(const SGoxelChunkHeader &_Chunk);
-            void ProcessBL16(const SGoxelChunkHeader &_Chunk);
-            ankerl::unordered_dense::map<std::string, std::string> ReadDict(const SGoxelChunkHeader &_Chunk, size_t _StartPos);
+            void ProcessMaterial(const SGoxelChunkHeader &p_Chunk);
+            void ProcessLayer(const SGoxelChunkHeader &p_Chunk);
+            void ProcessBL16(const SGoxelChunkHeader &p_Chunk);
+            ankerl::unordered_dense::map<std::string, std::string> ReadDict(const SGoxelChunkHeader &p_Chunk, const size_t p_StartPos);
 
-            void CreateChunk(const Math::Vec3i &_ChunkPos, VoxelModel &_Model, CGoxelModelParser &_Parser);
+            void CreateChunk(const Math::Vec3i &p_ChunkPos, VoxelModel &p_Model, CGoxelModelParser &p_Parser);
     };
 }
 

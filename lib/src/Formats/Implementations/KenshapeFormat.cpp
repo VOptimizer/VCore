@@ -34,7 +34,7 @@ namespace VCore
     {
         // Quick'n dirty gzip check.
         if(m_DataStream->Read<uint8_t>() != 0x1f || m_DataStream->Read<uint8_t>() != 0x8b || m_DataStream->Read<uint8_t>() != 8)
-            throw CVoxelLoaderException("Invalid file format!");
+            throw CVoxelFormatException("Invalid file format!");
 
         m_DataStream->Seek(7);
 
@@ -58,7 +58,7 @@ namespace VCore
         catch(const std::exception& e)
         {
             free(Data);
-            throw CVoxelLoaderException("Invalid file format!");
+            throw CVoxelFormatException("Invalid file format!");
         }
 
         VoxelModel m = std::make_shared<CVoxelSpace>();

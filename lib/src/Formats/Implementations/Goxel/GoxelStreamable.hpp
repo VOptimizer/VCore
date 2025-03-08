@@ -38,23 +38,23 @@ namespace VCore
     {
         public:
             CGoxelStreamable(
-                const std::shared_ptr<IIOHandler> &_IOHandler,
-                const std::string &_FilePath,
-                fast_vector<uint64_t> &&_BL16Offsets, 
-                fast_vector<CMaterial> &&_Materials, 
-                ankerl::unordered_dense::map<Math::Vec3i, fast_vector<ChunkInfo>, Math::Vec3iHasher> &&_Chunks,
-                int _BeginX, int _EndX) :
+                const std::shared_ptr<IIOHandler> &p_IOHandler,
+                const std::string &p_FilePath,
+                fast_vector<uint64_t> &&p_BL16Offsets, 
+                fast_vector<CMaterial> &&p_Materials, 
+                ankerl::unordered_dense::map<Math::Vec3i, fast_vector<ChunkInfo>, Math::Vec3iHasher> &&p_Chunks,
+                int p_BeginX, int p_EndX) :
                 IStreamable(),
-                m_IOHandler(_IOHandler),
-                m_FilePath(_FilePath),
-                m_BL16Offsets(std::move(_BL16Offsets)),
-                m_Materials(std::move(_Materials)),
-                m_Chunks(std::move(_Chunks)),
-                m_BeginX(_BeginX), m_EndX(_EndX) {}
+                m_IOHandler(p_IOHandler),
+                m_FilePath(p_FilePath),
+                m_BL16Offsets(std::move(p_BL16Offsets)),
+                m_Materials(std::move(p_Materials)),
+                m_Chunks(std::move(p_Chunks)),
+                m_BeginX(p_BeginX), m_EndX(p_EndX) {}
 
             bool SupportsChunkOffloading() const override { return true; }
 
-            bool ReadChunk(const Math::Vec3i &_Position, CChunk *_Chunk) override;
+            bool ReadChunk(const Math::Vec3i &p_Position, CChunk *p_Chunk) override;
         private:
             std::shared_ptr<IIOHandler> m_IOHandler;
             const std::string m_FilePath;

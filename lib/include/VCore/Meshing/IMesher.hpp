@@ -25,9 +25,9 @@
 #ifndef IMESHER_HPP
 #define IMESHER_HPP
 
+#include <VCore/Misc/fast_vector.hpp>
 #include <VCore/Meshing/Material.hpp>
 #include <VCore/Voxel/VoxelModel.hpp>
-#include <VCore/Voxel/VoxelAnimation.hpp>
 #include <VCore/Meshing/Mesh/Mesh.hpp>
 #include <VCore/Formats/SceneNode.hpp>
 
@@ -58,9 +58,9 @@ namespace VCore
              * @brief Creates a new mesher instance.
              */
             template<class SurfaceType>
-            static Mesher Create(MesherTypes type)
+            static Mesher Create(MesherTypes p_Type)
             {
-                auto result = Create(type);
+                auto result = Create(p_Type);
                 result->SetSurfaceFactory([]() -> ISurface* {
                     return new SurfaceType();
                 });
@@ -71,27 +71,22 @@ namespace VCore
             /**
              * @brief Generates the scene
              */
-            std::vector<Mesh> GenerateScene(SceneNode sceneTree, bool mergeChilds = false);
-
-            /**
-             * @return Returns a list of all frames, of the animation.
-             */
-            std::vector<Mesh> GenerateAnimation(VoxelAnimation _Anim);
+            RenderSceneTree GenerateScene(VoxelSceneTree p_SceneTree);
 
             /**
              * @return Returns the voxel mesh as triangulated vertices mesh.
              */
-            Mesh GenerateMesh(VoxelModel m);
+            Mesh GenerateMesh(VoxelModel p_Model);
 
             /**
              * @brief Sets a frustum, for culling.
              */
-            void SetFrustum(const CFrustum *_Frustum);
+            void SetFrustum(const CFrustum *p_Frustum);
 
             /**
              * @brief Sets a function for surface instantiation.
              */
-            inline void SetSurfaceFactory(SurfaceFactory _Factory) { m_SurfaceFactory = _Factory; }
+            inline void SetSurfaceFactory(SurfaceFactory p_Factory) { m_SurfaceFactory = p_Factory; }
 
             /**
              * @brief Generates list of meshed chunks.
@@ -100,25 +95,25 @@ namespace VCore
              * @param _OnlyDirty: Meshes only dirty chunks.
              * @param _ChunkCount: Count of chunks to meshify.
              */
-            virtual std::vector<SMeshChunk> GenerateChunks(VoxelModel _Mesh, bool _OnlyDirty = false);
+            virtual fast_vector<SMeshChunk> GenerateChunks(VoxelModel p_Mesh, bool p_OnlyDirty = false);
 
             virtual ~IMesher();
         protected:
             /**
              * @brief Creates a new mesher instance.
              */
-            static Mesher Create(MesherTypes type);
+            static Mesher Create(MesherTypes p_Type);
 
-            /// @brief Called inside ::GenerateChunks for every chunk using multiple threads.
-            /// @param _Model: The VoxelModel which is currently processed.
-            /// @param _Chunk: Assigned chunk data which needs to be meshed.
-            /// @param Deprecated
-            /// @return Returns the _Chunk + its generated mesh.
+            /**
+             * @brief Called inside ::GenerateChunks for every chunk using multiple threads.
+             * @param _Model: The VoxelModel which is currently processed.
+             * @param _Chunk: Assigned chunk data which needs to be meshed.
+             * @param Deprecated
+             * @return Returns the _Chunk + its generated mesh.
+             */
             virtual SMeshChunk GenerateMeshChunk(VoxelModel, const SChunkMeta&, bool) { return {}; }
 
-            std::vector<Mesh> GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds = false);
             CFrustum *m_Frustum;
-
             SurfaceFactory m_SurfaceFactory;
     };
 }

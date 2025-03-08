@@ -30,11 +30,11 @@
 
 namespace VCore
 {
-    class CVoxelLoaderException : public std::exception
+    class CVoxelFormatException : public std::exception
     {
         public:
-            CVoxelLoaderException() {}
-            CVoxelLoaderException(const std::string &Msg) : m_Msg(Msg) {}
+            CVoxelFormatException() {}
+            CVoxelFormatException(const std::string &p_Msg) : m_Msg(p_Msg) {}
     
             const char *what() const noexcept override
             {

@@ -25,6 +25,7 @@
 #ifndef VECTOR_HPP
 #define VECTOR_HPP
 
+#include <cmath>
 #include <math.h>
 #include <VCore/Misc/unordered_dense.h>
 
@@ -491,14 +492,19 @@ namespace VCore
             return vr * scalar;
         }
 
-        inline Vec3f floor(const Vec3f &_Vec)
+        inline Vec3f floor(const Vec3f &p_Vec)
         {
-            return Vec3f(floorf(_Vec.x), floorf(_Vec.y), floorf(_Vec.z));
+            return Vec3f(floorf(p_Vec.x), floorf(p_Vec.y), floorf(p_Vec.z));
         }
 
-        inline Vec3f fract(const Vec3f &_Vec)
+        inline Vec3f round(const Vec3f &p_Vec)
         {
-            return Vec3f(_Vec.x - (int)_Vec.x, _Vec.y - (int)_Vec.y, _Vec.z - (int)_Vec.z);
+            return Vec3f(roundf(p_Vec.x), roundf(p_Vec.y), roundf(p_Vec.z));
+        }
+
+        inline Vec3f fract(const Vec3f &p_Vec)
+        {
+            return Vec3f(p_Vec.x - (int)p_Vec.x, p_Vec.y - (int)p_Vec.y, p_Vec.z - (int)p_Vec.z);
         }
 
         class Vec2fHasher

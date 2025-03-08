@@ -22,11 +22,15 @@
  * SOFTWARE.
  */
 
+#include <exception>
+#include <memory>
 #include <stdexcept>
 #include "Implementations/GreedyMesher.hpp"
 #include <VCore/Meshing/IMesher.hpp>
 #include <VCore/Meshing/Mesh/MeshBuilder.hpp>
 #include "Implementations/SimpleMesher.hpp"
+#include "VCore/Formats/SceneNode.hpp"
+#include "VCore/Meshing/Mesh/Mesh.hpp"
 #include <future>
 
 namespace VCore
@@ -35,48 +39,41 @@ namespace VCore
     bool is_ready(std::future<R> const& f)
     { return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }
 
-    std::vector<Mesh> IMesher::GenerateScene(SceneNode sceneTree, bool mergeChilds)
+    RenderSceneTree IMesher::GenerateScene(VoxelSceneTree p_SceneTree)
     {
-        return GenerateScene(sceneTree, Math::Mat4x4(), mergeChilds);
-    }
+        auto result = std::make_shared<RenderSceneTree_t>(p_SceneTree->GetChildren());
 
-    std::vector<Mesh> IMesher::GenerateAnimation(VoxelAnimation _Anim)
-    {
-        std::vector<Mesh> ret;
-
-        for (size_t i = 0; i < _Anim->GetFrameCount(); i++)
+        auto models = p_SceneTree->GetModels();
+        for (auto &&model : models) 
         {
-            auto voxelFrame = _Anim->GetFrame(i);
-
-            auto mesh = GenerateMesh(voxelFrame.Model);
-            mesh->FrameTime = voxelFrame.FrameTime;
-
-            ret.push_back(mesh);
+            auto mesh = GenerateMesh(model);
+            result->AddModel(mesh);
+            model->Unload();
         }
 
-        return ret;
+        return result;
     }
 
-    std::vector<SMeshChunk> IMesher::GenerateChunks(VoxelModel _Mesh, bool _OnlyDirty)
+    fast_vector<SMeshChunk> IMesher::GenerateChunks(VoxelModel p_Mesh, bool p_OnlyDirty)
     {
-        std::vector<SMeshChunk> ret;
+        fast_vector<SMeshChunk> ret;
 
         CVoxelSpace::querylist chunks;
         if(m_Frustum)
-            chunks = _Mesh->queryChunks(m_Frustum);
+            chunks = p_Mesh->queryChunks(m_Frustum);
         else
         {
-            if(!_OnlyDirty)
-                chunks = _Mesh->queryChunks();
+            if(!p_OnlyDirty)
+                chunks = p_Mesh->queryChunks();
             else
-                chunks = _Mesh->queryDirtyChunks();
+                chunks = p_Mesh->queryDirtyChunks();
         }
 
         std::vector<std::future<SMeshChunk>> futures;
         for (auto &&c : chunks)
         {
-            _Mesh->markAsProcessed(c);
-            futures.push_back(std::async(&IMesher::GenerateMeshChunk, this, _Mesh, c, true));
+            p_Mesh->markAsProcessed(c);
+            futures.push_back(std::async(&IMesher::GenerateMeshChunk, this, p_Mesh, c, true));
             while(futures.size() >= std::thread::hardware_concurrency())
             {
                 auto it = futures.begin();
@@ -108,9 +105,9 @@ namespace VCore
         return ret;
     }
 
-    Mesh IMesher::GenerateMesh(VoxelModel m)
+    Mesh IMesher::GenerateMesh(VoxelModel p_Model)
     {
-        auto chunks = GenerateChunks(m);
+        auto chunks = GenerateChunks(p_Model);
         if(chunks.empty())
             return nullptr;
         else if(chunks.size() == 1)
@@ -118,7 +115,7 @@ namespace VCore
             auto ret = chunks[0].MeshData;
             if(ret)
             {
-                ret->Name = m->Name;
+                // ret->Name = p_Model->Name;
                 ret->FrameTime = 0;
             }
 
@@ -142,70 +139,18 @@ namespace VCore
 
         CMeshBuilder builder(m_SurfaceFactory);
         ret = builder.Merge(ret, meshes);
-        ret->Name = m->Name;
+        // ret->Name = p_Model->Name;
         ret->FrameTime = 0;
 
         return ret;
     }
 
-    std::vector<Mesh> IMesher::GenerateScene(SceneNode sceneTree, Math::Mat4x4 modelMatrix, bool mergeChilds)
+    void IMesher::SetFrustum(const CFrustum *p_Frustum)
     {
-        std::vector<Mesh> ret;
-
-        if(!mergeChilds)
-            modelMatrix = modelMatrix * sceneTree->GetModelMatrix();
-        else
-            modelMatrix = sceneTree->GetModelMatrix();
-
-        if(sceneTree->Model)
-        {
-            auto mesh = GenerateMesh(sceneTree->Model);
-            if(mesh)
-            {
-                mesh->ModelMatrix = modelMatrix;
-                ret.push_back(mesh);
-            }
-        }
-        else if(sceneTree->Animation)
-        {
-            auto meshes = GenerateAnimation(sceneTree->Animation);
-            for (auto &&m : meshes)
-            {
-                m->ModelMatrix = modelMatrix;
-                ret.push_back(m);
-            }
-        }
-
-        for (auto &&node : *sceneTree)
-        {
-            auto res = GenerateScene(node, modelMatrix, mergeChilds);
-
-            if(!mergeChilds /*|| !sceneTree->Mesh*/)
-                ret.insert(ret.end(), res.begin(), res.end());
-            else
-            {
-                CMeshBuilder builder(m_SurfaceFactory);
-
-                std::vector<Mesh> meshes;
-                for (auto &&m : res)
-                    meshes.push_back(m);
-
-                if(ret.empty())
-                    ret.push_back(builder.Merge(nullptr, meshes, true));
-                else
-                    ret.back() = builder.Merge(ret.back(), meshes, true);
-            }
-        }
-
-        return ret;
-    }
-
-    void IMesher::SetFrustum(const CFrustum *_Frustum)
-    {
-        if(_Frustum && !m_Frustum)
-            m_Frustum = new CFrustum(*_Frustum);
-        else if(_Frustum)
-            *m_Frustum = *_Frustum;
+        if(p_Frustum && !m_Frustum)
+            m_Frustum = new CFrustum(*p_Frustum);
+        else if(p_Frustum)
+            *m_Frustum = *p_Frustum;
         else
         {
             if(m_Frustum)
@@ -220,9 +165,9 @@ namespace VCore
             delete m_Frustum;
     }
 
-    Mesher IMesher::Create(MesherTypes type)
+    Mesher IMesher::Create(MesherTypes p_Type)
     {
-        switch (type)
+        switch (p_Type)
         {
             case MesherTypes::SIMPLE: return std::make_shared<CSimpleMesher>();
             case MesherTypes::GREEDY: return std::make_shared<CGreedyMesher>();

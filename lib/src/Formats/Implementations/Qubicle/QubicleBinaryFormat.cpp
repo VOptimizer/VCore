@@ -36,7 +36,7 @@ namespace VCore
     {
         m_Header = m_DataStream->Read<SQubicleBinaryHeader>();
         if(m_Header.Version[0] != 1 || m_Header.Version[1] != 1 || m_Header.Version[2] != 0 || m_Header.Version[3] != 0)
-            throw CVoxelLoaderException("Version: " + std::to_string(m_Header.Version[0]) + "." + std::to_string(m_Header.Version[1]) + "." + std::to_string(m_Header.Version[2]) + "." + std::to_string(m_Header.Version[3]) + " is not supported");
+            throw CVoxelFormatException("Version: " + std::to_string(m_Header.Version[0]) + "." + std::to_string(m_Header.Version[1]) + "." + std::to_string(m_Header.Version[2]) + "." + std::to_string(m_Header.Version[3]) + " is not supported");
 
         m_Materials.push_back(MaterialManager::GetMaterial(0));
 
@@ -166,9 +166,9 @@ namespace VCore
         int ret = 0;
         CColor c;
         if(m_Header.ColorFormat == 0)
-            c.FromRGBA(color);
+            c.FromARGB(color);
         else
-            c.FromBGRA(color);
+            c.FromABGR(color);
 
         if(c.A == 0)
             return -1;

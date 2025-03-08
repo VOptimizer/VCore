@@ -27,122 +27,26 @@
 
 namespace VCore
 {
-    // CObjectPool<SVertex, 1000> SVertex::s_Pool;
-
-    // template <class T, size_t Elements>
-    // thread_local typename CObjectPool<T, Elements>::CLocalStoragePointer CObjectPool<T, Elements>::s_Storage;
-
-    void CMeshBuilder::AddTextures(const ankerl::unordered_dense::map<TextureType, Texture> &_textures)
+    void CMeshBuilder::AddTextures(const ankerl::unordered_dense::map<TextureType, Texture> &p_Textures)
     {
-        m_Textures = &_textures;
+        m_Textures = &p_Textures;
     }
 
-    int CMeshBuilder::AddVertex(const SVertex &_Vertex, SIndexedSurface &_Surface)
+    int CMeshBuilder::AddVertex(const SVertex &p_Vertex, SIndexedSurface &p_Surface)
     {
-        // const static unsigned int mask = ~((Config::ChunkSize >> 1) - 1);
-
-        // auto cell = Math::Vec3i(_Vertex.Pos); //Math::Vec3i(_Vertex.Pos / (Config::ChunkSize + 1));
-        // cell.x &= mask;
-        // cell.y &= mask;
-        // cell.z &= mask;
-
-        // auto it = _Surface.Index2.find(cell);
-        // if(it == _Surface.Index2.end())
-        //     it = _Surface.Index2.insert({cell, {}}).first;
-
-        // auto it2 = it->second.find(_Vertex);
-        // if(it2 == it->second.end())
-        // {
-        //     int idx = _Surface.Surface->GetVertexCount();
-        //     _Surface.Surface->AddVertex(_Vertex);
-        //     it->second.insert({_Vertex, idx});
-        //     // _Surface.Index.insert({_Vertex, idx});
-        //     return idx;
-        // }
-
-        // return it2->second;
-
         // TODO: How to index for simple mesher. Greedy not neccessary because of "random" distribution
         // FIXME: The old me is stupid.
-        auto it = _Surface.Index.find(_Vertex);
-        if(it == _Surface.Index.end())
+        auto it = p_Surface.Index.find(p_Vertex);
+        if(it == p_Surface.Index.end())
         {
-            int idx = _Surface.Surface->GetVertexCount();
+            int idx = p_Surface.Surface->GetVertexCount();
             // TODO:
             // _Surface.Surface->AddVertex(_Vertex);
-            _Surface.Index.insert({_Vertex, idx});
+            p_Surface.Index.insert({p_Vertex, idx});
             return idx;
         }
 
         return it->second;
-    }
-
-    void CMeshBuilder::AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, const Material &_material)
-    {
-        auto it = m_Surfaces.find((uintptr_t)_material);
-        if(it == m_Surfaces.end())
-        {
-            SIndexedSurface surface(m_SurfaceFactory());
-            surface.Surface->FaceMaterial = _material;
-            it = m_Surfaces.insert({(uintptr_t)_material, surface}).first;
-        }
-
-        auto surface = &it->second;
-
-        Math::Vec3f faceNormal = (_v2 - _v1).cross(_v3 - _v1).normalize();
-
-        // 4 UVs are needed for the case, that no colorpalette is available.
-        Math::Vec2f uv1, uv2, uv3, uv4;
-        
-        if(m_Textures && !m_Textures->empty())
-            uv1 = uv2 = uv3 = uv4 = Math::Vec2f(((float)(_color + 0.5f)) / m_Textures->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
-        else
-        {
-            uv1 = Math::Vec2f(_color, 0);
-            uv2 = Math::Vec2f(_color, 2);
-            uv3 = Math::Vec2f(_color, 1);
-            uv4 = Math::Vec2f(_color, 3);
-        }
-
-        int i1, i2, i3, i4;
-
-        // TODO :FIX
-        // i1 = AddVertex(SVertex(_v1, _normal, uv1), *surface);
-        // i2 = AddVertex(SVertex(_v2, _normal, uv2), *surface);
-        // i3 = AddVertex(SVertex(_v3, _normal, uv3), *surface);
-        // i4 = AddVertex(SVertex(_v4, _normal, uv4), *surface);
-
-        surface->Surface->ReserveFaces(surface->Surface->GetFaceCount() + 2);
-
-        // Checks the direction of the face.
-        if(faceNormal == _normal)
-        {
-            surface->Surface->AddFace(i1, i2, i3);
-            surface->Surface->AddFace(i2, i4, i3);
-        }
-        else
-        {
-            surface->Surface->AddFace(i3, i2, i1);
-            surface->Surface->AddFace(i3, i4, i2);
-        }
-    }
-   
-    void CMeshBuilder::AddFace(SVertex v1, SVertex v2, SVertex v3, const Material &_material)
-    {        
-        auto it = m_Surfaces.find((uintptr_t)_material);
-        if(it == m_Surfaces.end())
-        {
-            SIndexedSurface surface(m_SurfaceFactory());
-            surface.Surface->FaceMaterial = _material;
-            it = m_Surfaces.insert({(uintptr_t)_material, surface}).first;
-        }
-
-        int i1, i2, i3;
-        i1 = AddVertex(v1, it->second);
-        i2 = AddVertex(v2, it->second);
-        i3 = AddVertex(v3, it->second);
-
-        it->second.Surface->AddFace(i1, i2, i3);
     }
 
     Mesh CMeshBuilder::Build()
@@ -150,9 +54,6 @@ namespace VCore
         auto ret = std::make_shared<SMesh>();
         for (auto &&surface : m_Surfaces)
             ret->Surfaces.push_back(std::move(surface.second.Surface));
-
-        ret->Textures = *m_Textures;
-        m_Textures = nullptr;
         
         // Clears the cache.
         m_Surfaces.clear();
@@ -160,43 +61,43 @@ namespace VCore
         return ret;
     }
 
-    void CMeshBuilder::SelectSurface(const Material &_Material)
+    void CMeshBuilder::SelectSurface(const uint8_t p_MaterialHandle)
     {
-        auto it = m_Surfaces.find((uintptr_t)_Material);
+        auto it = m_Surfaces.find(p_MaterialHandle);
         if(it == m_Surfaces.end())
         {
             SIndexedSurface surface(m_SurfaceFactory());
-            surface.Surface->FaceMaterial = _Material;
-            it = m_Surfaces.insert({(uintptr_t)_Material, surface}).first;
+            surface.Surface->MaterialHandle = p_MaterialHandle;
+            it = m_Surfaces.insert({p_MaterialHandle, surface}).first;
         }
 
         m_CurrentSurface = it->second.Surface;
     }
 
-    uint32_t CMeshBuilder::AddVertex(const SVertex* _Vertex)
+    uint32_t CMeshBuilder::AddVertex(const SVertex* p_Vertex)
     {
-        return m_CurrentSurface->AddVertex(_Vertex);
+        return m_CurrentSurface->AddVertex(p_Vertex);
     }
 
-    void CMeshBuilder::AddFace(uint32_t _Idx1, uint32_t _Idx2, uint32_t _Idx3, uint32_t _Idx4)
+    void CMeshBuilder::AddFace(uint32_t p_Idx1, uint32_t p_Idx2, uint32_t p_Idx3, uint32_t p_Idx4)
     {
-        m_CurrentSurface->AddFace(_Idx1, _Idx2, _Idx3);
-        m_CurrentSurface->AddFace(_Idx2, _Idx4, _Idx3);
+        m_CurrentSurface->AddFace(p_Idx1, p_Idx2, p_Idx3);
+        m_CurrentSurface->AddFace(p_Idx2, p_Idx4, p_Idx3);
     }
 
-    Mesh CMeshBuilder::Merge(Mesh _MergeInto, const std::vector<Mesh> &_Meshes, bool _ApplyModelMatrix)
+    Mesh CMeshBuilder::Merge(Mesh p_MergeInto, const std::vector<Mesh> &p_Meshes, bool p_ApplyModelMatrix)
     {
         Mesh ret;
-        if(_MergeInto)
+        if(p_MergeInto)
         {
-            GenerateCache(_MergeInto);
-            ret = _MergeInto;
+            GenerateCache(p_MergeInto);
+            ret = p_MergeInto;
         }
         else
         {
             ret = std::make_shared<SMesh>();
-            if(!_Meshes.empty())
-                ret->Textures = _Meshes[0]->Textures;
+            if(!p_Meshes.empty())
+                ret->Textures = p_Meshes[0]->Textures;
         }
 
         // for (auto &&m : _Meshes)
@@ -213,8 +114,8 @@ namespace VCore
 
         // }
 
-        for (auto &&m : _Meshes)       
-            MergeIntoThis(m, _ApplyModelMatrix);
+        for (auto &&m : p_Meshes)       
+            MergeIntoThis(m, p_ApplyModelMatrix);
 
         ret->Surfaces.clear();
         for (auto &&surface : m_Surfaces)
@@ -226,11 +127,11 @@ namespace VCore
         return ret;
     }
 
-    bool CMeshBuilder::IsOnBorder(const Math::Vec3f &_Pos)
+    bool CMeshBuilder::IsOnBorder(const Math::Vec3f &p_Pos)
     {
         for (size_t i = 0; i < 3; i++)
         {
-            int pos = _Pos.v[i] - ((int)(_Pos.v[i] / (float)Config::ChunkSize) * Config::ChunkSize);
+            int pos = p_Pos.v[i] - ((int)(p_Pos.v[i] / (float)Config::ChunkSize) * Config::ChunkSize);
 
             // TODO: Should I ever make the chunk size dynamically, than must this be also dynamic.
             if(pos == 0 || pos == Config::InnerChunkMask)
@@ -240,15 +141,15 @@ namespace VCore
         return false;
     }
 
-    void CMeshBuilder::GenerateCache(Mesh _MergeInto)
+    void CMeshBuilder::GenerateCache(Mesh p_MergeInto)
     {
-        m_Textures = &_MergeInto->Textures;
+        m_Textures = &p_MergeInto->Textures;
 
-        for (auto &&surface : _MergeInto->Surfaces)
+        for (auto &&surface : p_MergeInto->Surfaces)
         {
-            auto it = m_Surfaces.find((uintptr_t)surface->FaceMaterial);
+            auto it = m_Surfaces.find(surface->MaterialHandle);
             if(it == m_Surfaces.end())
-                it = m_Surfaces.insert({(uintptr_t)surface->FaceMaterial, SIndexedSurface(nullptr)}).first;
+                it = m_Surfaces.insert({surface->MaterialHandle, SIndexedSurface(nullptr)}).first;
             
             it->second.Surface = std::move(surface);
             for (uint64_t i = 0; i < it->second.Surface->GetVertexCount(); i++)
@@ -263,54 +164,54 @@ namespace VCore
         }       
     }
 
-    uint32_t CMeshBuilder::AddMergeVertex(const SVertex &_Vertex, SIndexedSurface &_Surface, ankerl::unordered_dense::map<SVertex, int, VertexHasher> &_Index)
+    uint32_t CMeshBuilder::AddMergeVertex(const SVertex &p_Vertex, SIndexedSurface &p_Surface, ankerl::unordered_dense::map<SVertex, int, VertexHasher> &p_Index)
     {
         int idx;
-        if(IsOnBorder(_Vertex.Pos))
-            idx = AddVertex(_Vertex, _Surface);
+        if(IsOnBorder(p_Vertex.Pos))
+            idx = AddVertex(p_Vertex, p_Surface);
         else
         {
-            auto it = _Index.find(_Vertex);
-            if(it != _Index.end())
+            auto it = p_Index.find(p_Vertex);
+            if(it != p_Index.end())
                 idx = it->second;
             else
             {
-                idx = _Surface.Surface->GetVertexCount();
+                idx = p_Surface.Surface->GetVertexCount();
                 // TODO:
                 // _Surface.Surface->AddVertex(_Vertex);
-                _Index.insert({_Vertex, idx});
+                p_Index.insert({p_Vertex, idx});
             }
         }
 
         return idx;
     }
 
-    void CMeshBuilder::MergeIntoThis(Mesh m, bool _ApplyModelMatrix)
+    void CMeshBuilder::MergeIntoThis(Mesh p_Mesh, bool p_ApplyModelMatrix)
     {
         Math::Mat4x4 rotation;
         static ankerl::unordered_dense::map<SVertex, int, VertexHasher> localIndex;
 
-        if(_ApplyModelMatrix)
+        if(p_ApplyModelMatrix)
         {
-            auto euler = m->ModelMatrix.GetEuler();
+            auto euler = p_Mesh->ModelMatrix.GetEuler();
             rotation
                 .Rotate(Math::Vec3f(0, 0, 1), euler.z)
                 .Rotate(Math::Vec3f(1, 0, 0), euler.x)
                 .Rotate(Math::Vec3f(0, 1, 0), euler.y);
         }
 
-        for (auto &&surface : m->Surfaces)
+        for (auto &&surface : p_Mesh->Surfaces)
         {
-            auto it = m_Surfaces.find((uintptr_t)surface->FaceMaterial);
+            auto it = m_Surfaces.find(surface->MaterialHandle);
             if(it == m_Surfaces.end())
             {
                 auto newSurface = m_SurfaceFactory();
-                newSurface->FaceMaterial = surface->FaceMaterial;
+                newSurface->MaterialHandle = surface->MaterialHandle;
 
-                it = m_Surfaces.insert({(uintptr_t)surface->FaceMaterial, SIndexedSurface(newSurface)}).first;
+                it = m_Surfaces.insert({surface->MaterialHandle, SIndexedSurface(newSurface)}).first;
             }
 
-            if(!_ApplyModelMatrix)
+            if(!p_ApplyModelMatrix)
                 it->second.Surface->MergeSurface(surface);
             else
             {
@@ -323,15 +224,15 @@ namespace VCore
                     SVertex v2 = surface->GetVertex(surface->GetIndex(i * 3 + 1));
                     SVertex v3 = surface->GetVertex(surface->GetIndex(i * 3) + 2);
 
-                    if(_ApplyModelMatrix)
+                    if(p_ApplyModelMatrix)
                     {
-                        v1.Pos = m->ModelMatrix * v1.Pos;
+                        v1.Pos = p_Mesh->ModelMatrix * v1.Pos;
                         v1.Normal = rotation * v1.Normal;
 
-                        v2.Pos = m->ModelMatrix * v2.Pos;
+                        v2.Pos = p_Mesh->ModelMatrix * v2.Pos;
                         v2.Normal = rotation * v2.Normal;
 
-                        v3.Pos = m->ModelMatrix * v3.Pos;
+                        v3.Pos = p_Mesh->ModelMatrix * v3.Pos;
                         v3.Normal = rotation * v3.Normal;
                     }
                     AddMergeVertex(v1, it->second, localIndex);

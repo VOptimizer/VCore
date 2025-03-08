@@ -25,8 +25,7 @@
 #ifndef MESHBUILDER_HPP
 #define MESHBUILDER_HPP
 
-#include <map>
-#include <memory>
+#include <cstdint>
 #include <vector>
 #include <VCore/Formats/IVoxelFormat.hpp>
 #include <VCore/Meshing/Mesh/Mesh.hpp>
@@ -36,70 +35,50 @@ namespace VCore
     class CMeshBuilder
     {
         public:
-            CMeshBuilder(SurfaceFactory _Factory) : m_SurfaceFactory(_Factory) {}
+            CMeshBuilder(SurfaceFactory p_Factory) : m_SurfaceFactory(p_Factory) {}
 
-            inline const ankerl::unordered_dense::map<TextureType, Texture> *GetTextures() const
-            {
-                return m_Textures;
-            } 
+            // inline const ankerl::unordered_dense::map<TextureType, Texture> *GetTextures() const
+            // {
+            //     return m_Textures;
+            // } 
 
             /**
              * @brief Adds all needed textures to the mesh. This must be called before AddFace
              * 
              * @param _textures: Textures of the mesh.
              */
-            void AddTextures(const ankerl::unordered_dense::map<TextureType, Texture> &_textures);
-
-            /**
-             * @brief Adds a new quad to the mesh.
-             * 
-             * @param _v1: Left top
-             * @param _v2: Right top
-             * @param _v3: Right bottom
-             * @param _v4: Left bottom
-             * @param _normal: Face normal
-             * @param _color: Color index of the face
-             * @param _material: Material of the face
-             * 
-             * @throws CMeshBuilderException If AddTextures has not been previously called.
-             */
-            void AddFace(Math::Vec3f _v1, Math::Vec3f _v2, Math::Vec3f _v3, Math::Vec3f _v4, Math::Vec3f _normal, int _color, const Material &_material);
-
-            /**
-             * @brief Adds a new triangle to the mesh.
-             */
-            void AddFace(SVertex v1, SVertex v2, SVertex v3, const Material &_material);
+            void AddTextures(const ankerl::unordered_dense::map<TextureType, Texture> &p_Textures);
 
             /**
              * @brief Merges a list of meshes into one.
              * @return Returns the _MergeInto mesh or a new one, if _MergeInto is null. 
              */
-            Mesh Merge(Mesh _MergeInto, const std::vector<Mesh> &_Meshes, bool _ApplyModelMatrix = false);
+            Mesh Merge(Mesh p_MergeInto, const std::vector<Mesh> &p_Meshes, bool p_ApplyModelMatrix = false);
 
             /**
              * @brief Generates the new mesh.
              */
             Mesh Build();
 
-            void SelectSurface(const Material &_Material);
+            void SelectSurface(const uint8_t p_MaterialHandle);
 
             /**
              * @brief Adds a new vertex to the currently selected surface.
              * @param _Vertex: New vertex to add.
              * @return Returns a new unique id for the new vertex.
              */
-            uint32_t AddVertex(const SVertex* _Vertex);
+            uint32_t AddVertex(const SVertex* p_Vertex);
 
-            void AddFace(uint32_t _Idx1, uint32_t _Idx2, uint32_t _Idx3, uint32_t _Idx4);
+            void AddFace(uint32_t p_Idx1, uint32_t p_Idx2, uint32_t p_Idx3, uint32_t p_Idx4);
 
             ~CMeshBuilder() = default;
         private:
-            Material FaceMaterial;
+            Material m_FaceMaterial;
             ISurface *m_CurrentSurface;
 
             struct SIndexedSurface
             {
-                SIndexedSurface(ISurface *_Surface) : Surface(_Surface)
+                SIndexedSurface(ISurface *p_Surface) : Surface(p_Surface)
                 { }
 
                 SIndexedSurface(const SIndexedSurface&) = default;
@@ -113,16 +92,16 @@ namespace VCore
                 ISurface *Surface;
             };
 
-            int AddVertex(const SVertex &_Vertex, SIndexedSurface &_Surface);
-            uint32_t AddMergeVertex(const SVertex &_Vertex, SIndexedSurface &_Surface, ankerl::unordered_dense::map<SVertex, int, VertexHasher> &_Index);
+            int AddVertex(const SVertex &p_Vertex, SIndexedSurface &p_Surface);
+            uint32_t AddMergeVertex(const SVertex &p_Vertex, SIndexedSurface &p_Surface, ankerl::unordered_dense::map<SVertex, int, VertexHasher> &p_Index);
 
-            bool IsOnBorder(const Math::Vec3f &_Pos);
+            bool IsOnBorder(const Math::Vec3f &p_Pos);
 
-            void MergeIntoThis(Mesh m, bool _ApplyModelMatrix);
-            void GenerateCache(Mesh _MergeInto);
+            void MergeIntoThis(Mesh p_Mesh, bool p_ApplyModelMatrix);
+            void GenerateCache(Mesh p_MergeInto);
 
             const ankerl::unordered_dense::map<TextureType, Texture> *m_Textures;
-            ankerl::unordered_dense::map<uintptr_t, SIndexedSurface> m_Surfaces;
+            ankerl::unordered_dense::map<uint8_t, SIndexedSurface> m_Surfaces;
             Mesh m_MergerMesh;
 
             SurfaceFactory m_SurfaceFactory;

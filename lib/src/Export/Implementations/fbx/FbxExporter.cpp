@@ -394,22 +394,23 @@ namespace VCore
                 // uvs.push_back(vertex.UV.y);
             }
 
+            // TODO: FIX
             int currentMatIdx = 0;
-            auto it = materialIndexMap.find((uint64_t)surface->FaceMaterial);
-            if(it == materialIndexMap.end())
-            {
-                AddMaterial(_Objects, surface->FaceMaterial);
+            // auto it = materialIndexMap.find((uint64_t)surface->FaceMaterial);
+            // if(it == materialIndexMap.end())
+            // {
+            //     AddMaterial(_Objects, surface->FaceMaterial);
 
-                // Connects the material with the mesh.
-                _Connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty((int64_t)surface->FaceMaterial), CFbxProperty(((int64_t)_Mesh.get()) + 1) });
+            //     // Connects the material with the mesh.
+            //     _Connections.AddSubNode("C", { CFbxProperty("OO"), CFbxProperty((int64_t)surface->FaceMaterial), CFbxProperty(((int64_t)_Mesh.get()) + 1) });
             
-                currentMatIdx = materialIndex;
-                materialIndexMap[(uint64_t)surface->FaceMaterial] = materialIndex++;
+            //     currentMatIdx = materialIndex;
+            //     materialIndexMap[(uint64_t)surface->FaceMaterial] = materialIndex++;
 
-                ConnectTextures(_Connections, surface->FaceMaterial, _Mesh->Textures);
-            }
-            else
-                currentMatIdx = it->second;
+            //     ConnectTextures(_Connections, surface->FaceMaterial, _Mesh->Textures);
+            // }
+            // else
+            //     currentMatIdx = it->second;
             
             int counter = 1;
             // for(auto &&i: surface.Indices)

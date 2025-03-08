@@ -33,13 +33,13 @@ namespace VCore
     void CQubicleBinaryTreeFormat::ParseFormat()
     {
         if(m_DataStream->Read<int>() != 0x32204251)
-            throw CVoxelLoaderException("Unknown file format");
+            throw CVoxelFormatException("Unknown file format");
 
         char major = m_DataStream->Read<char>();
         char minor = m_DataStream->Read<char>();
 
         if(major != 1 && minor != 0)
-            throw CVoxelLoaderException("Unsupported version!");
+            throw CVoxelFormatException("Unsupported version!");
 
         // m_Materials.push_back(MaterialManager::GetMaterial(0));
 
@@ -63,7 +63,7 @@ namespace VCore
         for (int i = 0; i < count; i++)
         {
             CColor c;
-            c.FromRGBA(m_DataStream->Read<uint32_t>());
+            c.FromARGB(m_DataStream->Read<uint32_t>());
 
             auto texIT = m_Textures.find(TextureType::DIFFIUSE);
             if(texIT == m_Textures.end())
@@ -247,7 +247,7 @@ namespace VCore
     {
         int ret = 0;
         CColor c;
-        c.FromRGBA(color);
+        c.FromARGB(color);
 
         if(c.A == 0)
             return -1;

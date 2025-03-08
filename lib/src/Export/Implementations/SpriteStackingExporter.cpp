@@ -54,7 +54,7 @@ namespace VCore
                 {
                     auto voxIt = m->find(Math::Vec3f(x, y, z));
                     if(voxIt != m->end())
-                        Pixels[x + (size_t)Size.x * z + (size_t)Size.x * (size_t)Size.z * y] = diffuse->GetPixel(Math::Vec2ui(voxIt->second.Color, 0));
+                        Pixels[x + (size_t)Size.x * z + (size_t)Size.x * (size_t)Size.z * y] = diffuse->GetPixel(Math::Vec2ui(voxIt->second.GetColor(), 0));
                 }
             }
         }

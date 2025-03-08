@@ -53,13 +53,13 @@ namespace VCore
 
         // Checks the file header
         if(Signature != "QBCL")
-            throw CVoxelLoaderException("Unknown file format");
+            throw CVoxelFormatException("Unknown file format");
 
         m_DataStream->Seek(4);    // Program version e.g. 3.1.2.0
 
         int version = m_DataStream->Read<int>();
         if(version != 2)   // Version 2.0
-            throw CVoxelLoaderException("Unsupported version!");
+            throw CVoxelFormatException("Unsupported version!");
 
         //Thumbnail size
         uint32_t width = m_DataStream->Read<uint32_t>();
@@ -103,7 +103,7 @@ namespace VCore
         
             default:
             {
-                throw CVoxelLoaderException("Unknown type: " + std::to_string(type));
+                throw CVoxelFormatException("Unknown type: " + std::to_string(type));
                 // m_DataStream->Seek(size);
             } break;
         }
@@ -166,7 +166,7 @@ namespace VCore
                 strmPos += sizeof(uint32_t);
 
                 CColor c;
-                c.FromRGBA(data);
+                c.FromARGB(data);
                 if(c.A == 2)    //RLE
                 {
                     memcpy(&data, Data + strmPos, sizeof(uint32_t));
@@ -226,7 +226,7 @@ namespace VCore
     {
         uint32_t ret = 0;
         CColor c;
-        c.FromRGBA(color);
+        c.FromARGB(color);
 
         if(c.A == 0)
             return -1;

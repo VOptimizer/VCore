@@ -208,8 +208,8 @@ namespace VCore
     // CVoxelSpace functions
     //////////////////////////////////////////////////
 
-    CVoxelSpace::CVoxelSpace(IStreamable *_Stream) : m_VoxelsCount(0), m_Stream(_Stream), m_ModelLoaded(false) {}
-    CVoxelSpace::CVoxelSpace(CVoxelSpace &&_Other) { *this = std::move(_Other); }
+    CVoxelSpace::CVoxelSpace(IStreamable *_Stream) : m_VoxelsCount(0), m_Stream(_Stream), m_ModelLoaded(false), m_ChunkCache(Math::Vec3i(), nullptr) {}
+    CVoxelSpace::CVoxelSpace(CVoxelSpace &&_Other) : m_ChunkCache(Math::Vec3i(), nullptr) { *this = std::move(_Other); }
 
     CVoxelSpace::~CVoxelSpace() 
     { 
@@ -223,17 +223,22 @@ namespace VCore
         CheckLoadModel();
 
         Math::Vec3i position = GetChunkpos(_pair.first);
-        auto it = m_Chunks.find(position);
+        if(!m_ChunkCache.second || m_ChunkCache.first != position)
+        {
+            auto it = m_Chunks.find(position);
 
-        // Creates a new chunk, if neccessary
-        if(it == m_Chunks.end())
-            it = m_Chunks.insert({position, new CChunk(this)}).first;
+            // Creates a new chunk, if neccessary
+            if(it == m_Chunks.end())
+                it = m_Chunks.insert({position, new CChunk(this)}).first;
+
+            m_ChunkCache = *it;
+        }
 
         // Time to upgrade
-        if(!it->second->insert(_pair))
+        if(!m_ChunkCache.second->insert(_pair)) [[unlikely]]
         {
-            it->second->Upgrade();
-            it->second->insert(_pair);
+            m_ChunkCache.second->Upgrade();
+            m_ChunkCache.second->insert(_pair);
         }
 
         m_VoxelsCount++;
@@ -429,6 +434,12 @@ namespace VCore
             delete m_Stream;
 
         m_Stream = _Strm;
+    }
+
+    void CVoxelSpace::Unload()
+    {
+        if(m_Stream && m_ModelLoaded && !m_Stream->SupportsChunkOffloading())
+            clear();
     }
 
     CChunk *CVoxelSpace::GetChunk(const Math::Vec3i &_Position) const

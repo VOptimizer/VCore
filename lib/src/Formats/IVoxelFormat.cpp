@@ -22,11 +22,18 @@
  * SOFTWARE.
  */
 
-#include <stdexcept>
 #include <VCore/Misc/Exceptions.hpp>
 #include <VCore/Formats/IVoxelFormat.hpp>
 
 #include "../FileUtils.hpp"
+#include <VCore/Formats/SceneNode.hpp>
+#include <VCore/Voxel/Storage/VoxelSpace.hpp>
+
+#define VCORE_BUILD_NO_KENSHAPE_IMPORTER
+#define VCORE_BUILD_NO_QB_IMPORTER
+#define VCORE_BUILD_NO_QBT_IMPORTER
+#define VCORE_BUILD_NO_QEF_IMPORTER
+#define VCORE_BUILD_NO_QBCL_IMPORTER
 
 #ifndef VCORE_BUILD_NO_MAGICAVOXEL_IMPORTER
 #include "Implementations/MagicaVoxel/MagicaVoxelFormat.hpp"
@@ -58,109 +65,95 @@
 
 namespace VCore
 {
-    VoxelFormat IVoxelFormat::Create(LoaderType _Type)
+    VoxelFormat IVoxelFormat::Create(VoxelFormatType p_Type)
     {
-        switch (_Type)
+        switch (p_Type)
         {
             #ifndef VCORE_BUILD_NO_MAGICAVOXEL_IMPORTER
-            case LoaderType::MAGICAVOXEL: return VoxelFormat(new CMagicaVoxelFormat());
+            case VoxelFormatType::MAGICAVOXEL: return VoxelFormat(new CMagicaVoxelFormat());
             #endif
 
             #ifndef VCORE_BUILD_NO_GOXEL_IMPORTER
-            case LoaderType::GOXEL: return VoxelFormat(new CGoxelFormat());
+            case VoxelFormatType::GOXEL: return VoxelFormat(new CGoxelFormat());
             #endif
 
             #ifndef VCORE_BUILD_NO_KENSHAPE_IMPORTER
-            case LoaderType::KENSHAPE: return VoxelFormat(new CKenshapeFormat());
+            case VoxelFormatType::KENSHAPE: return VoxelFormat(new CKenshapeFormat());
             #endif
 
             #ifndef VCORE_BUILD_NO_QB_IMPORTER
-            case LoaderType::QUBICLE_BIN: return VoxelFormat(new CQubicleBinaryFormat());
+            case VoxelFormatType::QUBICLE_BIN: return VoxelFormat(new CQubicleBinaryFormat());
             #endif
 
             #ifndef VCORE_BUILD_NO_QBT_IMPORTER
-            case LoaderType::QUBICLE_BIN_TREE: return VoxelFormat(new CQubicleBinaryTreeFormat());
+            case VoxelFormatType::QUBICLE_BIN_TREE: return VoxelFormat(new CQubicleBinaryTreeFormat());
             #endif
 
             #ifndef VCORE_BUILD_NO_QEF_IMPORTER
-            case LoaderType::QUBICLE_EXCHANGE: return VoxelFormat(new CQubicleExchangeFormat());
+            case VoxelFormatType::QUBICLE_EXCHANGE: return VoxelFormat(new CQubicleExchangeFormat());
             #endif
 
             #ifndef VCORE_BUILD_NO_QBCL_IMPORTER
-            case LoaderType::QUBICLE: return VoxelFormat(new CQubicleFormat());
+            case VoxelFormatType::QUBICLE: return VoxelFormat(new CQubicleFormat());
             #endif
 
-            default: throw CVoxelLoaderException("Unknown file type!");
+            default: throw CVoxelFormatException("Unknown file type!");
         }
     }
 
     void IVoxelFormat::ClearCache()
     {
-        m_Models.clear();
-        m_Materials.clear();
-        m_Textures.clear();
-
-        m_SceneTree = std::make_shared<CSceneNode>();
+        SceneTree = std::make_shared<VoxelSceneTree_t>();
     }
 
-    LoaderType IVoxelFormat::GetType(const std::string &_Filename)
+    VoxelFormatType IVoxelFormat::GetType(const std::string &p_Filename)
     {
-        std::string ext = GetFileExt(_Filename);
-        LoaderType type = LoaderType::UNKNOWN;
+        std::string ext = GetFileExt(p_Filename);
+        VoxelFormatType type = VoxelFormatType::UNKNOWN;
         
         if(ext == "vox")
-            type = LoaderType::MAGICAVOXEL;
+            type = VoxelFormatType::MAGICAVOXEL;
         else if(ext == "gox")
-            type = LoaderType::GOXEL;
+            type = VoxelFormatType::GOXEL;
         else if(ext == "kenshape")
-            type = LoaderType::KENSHAPE;
+            type = VoxelFormatType::KENSHAPE;
         else if(ext == "qb")
-            type = LoaderType::QUBICLE_BIN;
+            type = VoxelFormatType::QUBICLE_BIN;
         else if(ext == "qbt")
-            type = LoaderType::QUBICLE_BIN_TREE;
+            type = VoxelFormatType::QUBICLE_BIN_TREE;
         else if(ext == "qef")
-            type = LoaderType::QUBICLE_EXCHANGE;
+            type = VoxelFormatType::QUBICLE_EXCHANGE;
         else if(ext == "qbcl")
-            type = LoaderType::QUBICLE;
+            type = VoxelFormatType::QUBICLE;
 
         return type;
     }
 
-    void IVoxelFormat::Load(IIOHandler *_IOHandler, const std::string _File)
+    void IVoxelFormat::Open(IIOHandler *p_IOHandler, const std::string p_File, FileMode p_Mode)
     {
-        DeleteFileStream();
-        m_IOHandler = std::shared_ptr<IIOHandler>(_IOHandler);
-        m_DataStream = m_IOHandler->Open(_File, "rb");
-
-        ClearCache();
-        ParseFormat();
-    }
-
-    void IVoxelFormat::Open(IIOHandler *_IOHandler, const std::string _File, FileMode _Mode)
-    {
-        if(_Mode == FileMode::CLOSED)
-            throw CVoxelLoaderException("Can't open file in closed mode!");
+        if(p_Mode == FileMode::CLOSED)
+            throw CVoxelFormatException("Can't open file in closed mode!");
 
         DeleteFileStream();
-        m_IOHandler = std::shared_ptr<IIOHandler>(_IOHandler);
-        m_Mode = _Mode;
+        m_IOHandler = std::shared_ptr<IIOHandler>(p_IOHandler);
+        m_Mode = p_Mode;
 
         char openMode[4] = {};
         uint8_t pos = 0;
-        if((static_cast<int>(_Mode) & static_cast<int>(FileMode::READ)) || (static_cast<int>(_Mode) & static_cast<int>(FileMode::STREAMED)))
+        if((static_cast<int>(p_Mode) & static_cast<int>(FileMode::READ)) || (static_cast<int>(p_Mode) & static_cast<int>(FileMode::STREAMED)))
             openMode[pos++] = 'r';
 
-        if((static_cast<int>(_Mode) & static_cast<int>(FileMode::WRITE)))
+        if((static_cast<int>(p_Mode) & static_cast<int>(FileMode::WRITE)))
             openMode[pos++] = 'w';
 
         openMode[pos++] = 'b';
-        m_DataStream = m_IOHandler->Open(_File, openMode);
+        m_DataStream = m_IOHandler->Open(p_File, openMode);
     }
 
     void IVoxelFormat::Load()
     {
         if((m_Mode != FileMode::READ) && (m_Mode != FileMode::STREAMED))
-            throw CVoxelLoaderException("Can't read file which isn't opened in read mode!");
+            throw CVoxelFormatException("Can't read file which isn't opened in read mode!");
 
         ClearCache();
         ParseFormat();
@@ -169,7 +162,7 @@ namespace VCore
     void IVoxelFormat::Save()
     {
         if(m_Mode != FileMode::WRITE)
-            throw CVoxelLoaderException("Can't save to file which isn't opened in write mode!");
+            throw CVoxelFormatException("Can't save to file which isn't opened in write mode!");
 
         WriteFormat();
     }

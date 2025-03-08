@@ -26,6 +26,12 @@
 #define GLTFEXPORTER_HPP
 
 #include <VCore/Export/IExporter.hpp>
+#include <cstdint>
+#include "Nodes.hpp"
+#include <VCore/Meshing/Mesh/Mesh.hpp>
+#include <VCore/Misc/FileStream.hpp>
+#include <VCore/Misc/unordered_dense.h>
+#include <stack>
 
 namespace VCore
 {
@@ -33,9 +39,27 @@ namespace VCore
     {
         public:
             CGLTFExporter() = default;
-            virtual ~CGLTFExporter() = default;
+            ~CGLTFExporter() override = default;
         protected:
-            void WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes) override;
+            GLTF::GLTFDocument m_Document;
+            IFileStream *m_BinaryStream{};
+            ankerl::unordered_dense::map<uint8_t, uint64_t> m_MaterialHandleMapper;
+            std::stack<uint64_t> m_Nodes;
+
+            void WriteHeaderData() override;
+
+            bool SupportsSceneTree() override { return true; }
+
+            void EnterSceneNode(const CSceneNodeBase *p_Node) override;
+            void LeaveSceneNode(const CSceneNodeBase *p_Node) override;
+
+            void WriteMeshData(const Mesh &p_Mesh) override;
+
+            void WriteFooterData() override;
+
+            uint64_t GetGLTFMaterialHandle(const uint8_t p_MaterialHandle);
+
+            void CloseStream();
     };
 }
 

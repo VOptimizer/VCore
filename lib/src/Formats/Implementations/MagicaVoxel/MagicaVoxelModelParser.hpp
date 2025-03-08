@@ -22,6 +22,9 @@
  * SOFTWARE.
  */
 
+#ifndef MAGICAVOXELMODELPARSER_HPP
+#define MAGICAVOXELMODELPARSER_HPP
+
 #include <VCore/Misc/FileStream.hpp>
 #include <VCore/Voxel/Storage/VoxelSpace.hpp>
 #include <VCore/Meshing/Texture.hpp>
@@ -31,35 +34,54 @@ namespace VCore
 {
     extern const unsigned int DefaultPalette[256];
 
+    [[nodiscard]]
+    constexpr uint32_t MakeChunkId(char p_c1, char p_c2, char p_c3, char p_c4)
+    {
+        return (static_cast<uint32_t>(p_c1)) |
+               (static_cast<uint32_t>(p_c2) << 8) |
+               (static_cast<uint32_t>(p_c3) << 16) |
+               (static_cast<uint32_t>(p_c4) << 24);
+    }
+
+    struct Uint8Hasher
+    {
+        std::size_t operator()(uint8_t const& p_Value) const noexcept
+        {
+            return static_cast<std::size_t>(p_Value);
+        }
+    };
+
     class CMagicaVoxelModelParser
     {
         public:
             CMagicaVoxelModelParser(
-                IFileStream *_Stream, 
-                uint64_t _ColorpalettePosition, 
-                uint64_t _ModelPosition,
-                const std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial>> &_NotDefaultMaterials) 
-            : m_Stream(_Stream), m_ColorpalettePosition(_ColorpalettePosition), 
-            m_ModelPosition(_ModelPosition), m_NotDefaultMaterials(_NotDefaultMaterials) {}
+                IFileStream *p_Stream, 
+                const std::shared_ptr<uint32_t[]> &p_Colorpalette,
+                uint64_t p_ModelPosition,
+                const std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial, Uint8Hasher>> &p_NotDefaultMaterials) 
+            : m_Stream(p_Stream), m_Colorpalette(p_Colorpalette), 
+            m_ModelPosition(p_ModelPosition), m_NotDefaultMaterials(p_NotDefaultMaterials) {}
 
             /**
              * @brief Fills a given voxel space with voxel data
              */
-            void FillVoxelSpace(CVoxelSpace &_Space);
+            void FillVoxelSpace(CVoxelSpace &p_Space);
 
             Math::Vec3i GetSize() const { return m_Size; }
 
-            static Math::Vec3i ProcessSize(IFileStream *_Stream);
+            static Math::Vec3i ProcessSize(IFileStream *p_Stream);
 
             ~CMagicaVoxelModelParser() = default;
         private:
-            uint32_t GetColor(uint8_t _ColorIdx);
-            uint8_t GetMaterial(uint8_t _MaterialIdx);
+            uint32_t GetColor(uint8_t p_ColorIdx);
+            uint8_t GetMaterial(uint8_t p_MaterialIdx);
 
             IFileStream *m_Stream;
-            uint64_t m_ColorpalettePosition;
+            std::shared_ptr<uint32_t[]> m_Colorpalette;
             uint64_t m_ModelPosition;
-            std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial>> m_NotDefaultMaterials;
+            std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial, Uint8Hasher>> m_NotDefaultMaterials;
             Math::Vec3i m_Size;
     };
 } // namespace VCore
+
+#endif

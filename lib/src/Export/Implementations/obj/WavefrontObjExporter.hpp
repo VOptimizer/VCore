@@ -25,7 +25,12 @@
 #ifndef WAVEFRONTOBJEXPORTER_HPP
 #define WAVEFRONTOBJEXPORTER_HPP
 
+#include "VCore/Misc/unordered_dense.h"
 #include <VCore/Export/IExporter.hpp>
+#include <VCore/Misc/FileStream.hpp>
+#include <VCore/Misc/unordered_dense.h>
+#include <cstdint>
+
 namespace VCore 
 {
   class CWavefrontObjExporter : public IExporter 
@@ -34,7 +39,20 @@ namespace VCore
       CWavefrontObjExporter() = default;
       ~CWavefrontObjExporter() = default;
     private:
-      void WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes) override;
+      IFileStream *m_ObjFile{};
+      IFileStream *m_MtlFile{};
+      ankerl::unordered_dense::set<uint32_t> m_Colors;
+      ankerl::unordered_dense::map<uint8_t, uint8_t> m_Materials;
+      std::string m_FilenameWithoutExt;
+      uint64_t m_IndexOffset{};
+
+      void WriteData(const std::string &p_Path, const std::vector<Mesh> &p_Meshes) override;
+
+      void WriteMeshData(const Mesh &p_Mesh);
+      std::string GetObjMaterial(const uint8_t p_MaterialHandle);
+
+      void GenerateTextureAndPatchUV();
+      uint64_t GetTextureSizeP2();
   };
 }
 

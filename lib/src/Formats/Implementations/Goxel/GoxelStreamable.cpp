@@ -26,13 +26,13 @@
 
 namespace VCore
 {
-    bool CGoxelStreamable::ReadChunk(const Math::Vec3i &_Position, CChunk *_Chunk)
+    bool CGoxelStreamable::ReadChunk(const Math::Vec3i &p_Position, CChunk *p_Chunk)
     {
         auto strm = m_IOHandler->Open(m_FilePath, "rb");
         if(strm)
         {
             CGoxelModelParser parser(strm, m_BL16Offsets, m_Materials, m_Chunks, m_BeginX, m_EndX);
-            parser.FillChunk(_Position, _Chunk);
+            parser.FillChunk(p_Position, p_Chunk);
             
             m_IOHandler->Close(strm);
             return true;

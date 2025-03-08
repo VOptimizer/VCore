@@ -91,7 +91,7 @@ namespace VCore
                     {
                         subposCopy.v[m_Axis.y] = bitCount + j;
                         auto voxel = _Chunk->find(subposCopy);
-                        if(std::find(m_TransparentMaterials.begin(), m_TransparentMaterials.end(), voxel.Material) != m_TransparentMaterials.end())
+                        if(std::find(m_TransparentMaterials.begin(), m_TransparentMaterials.end(), voxel.GetMaterial()) != m_TransparentMaterials.end())
                         {
                             _opaqueVoxels[i] &= ~(1 << (bitCount + j));
                             _transparentVoxels[i] |= (1 << (bitCount + j));
@@ -238,7 +238,7 @@ namespace VCore
 
                 auto key = (uint32_t)voxel;
                 if(GroupAfterMaterial)
-                    key = voxel.Material;
+                    key = voxel.GetMaterial();
 
                 // Checks if there is already a cached version.
                 if((key != m_CachedKey) || !m_MaskCache)

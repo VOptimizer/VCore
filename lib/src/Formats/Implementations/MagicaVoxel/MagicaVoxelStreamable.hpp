@@ -28,6 +28,7 @@
 #include <VCore/Formats/Streamable.hpp>
 #include <VCore/Misc/FileStream.hpp>
 #include <VCore/Meshing/Material.hpp>
+#include "MagicaVoxelModelParser.hpp"
 
 namespace VCore
 {
@@ -35,29 +36,29 @@ namespace VCore
     {
         public:
             CMagicaVoxelStreamable(
-                const std::shared_ptr<IIOHandler> &_IOHandler, 
-                uint64_t _ColorpalettePosition, 
-                uint64_t _ModelPosition,
-                const std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial>> &_NotDefaultMaterials,
-                const std::string &_FilePath) : 
+                const std::shared_ptr<IIOHandler> &p_IOHandler, 
+                const std::shared_ptr<uint32_t[]> &p_Colorpalette,
+                uint64_t p_ModelPosition,
+                const std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial, Uint8Hasher>> &p_NotDefaultMaterials,
+                const std::string &p_FilePath) : 
                 IStreamable(),
-                m_IOHandler(_IOHandler), 
-                m_ColorpalettePosition(_ColorpalettePosition),
-                m_ModelPosition(_ModelPosition),
-                m_NotDefaultMaterials(_NotDefaultMaterials),
-                m_FilePath(_FilePath) {}
+                m_IOHandler(p_IOHandler), 
+                m_Colorpalette(p_Colorpalette),
+                m_ModelPosition(p_ModelPosition),
+                m_NotDefaultMaterials(p_NotDefaultMaterials),
+                m_FilePath(p_FilePath) {}
 
             /** @see IStreamable::SupportsChunkOffloading */
             bool SupportsChunkOffloading() const override { return false; }
 
             /** @see IStreamable::ReadVoxelSpace */
-            bool ReadVoxelSpace(CVoxelSpace &_Space) override;
+            bool ReadVoxelSpace(CVoxelSpace &p_Space) override;
 
         private:
             std::shared_ptr<IIOHandler> m_IOHandler;
-            uint64_t m_ColorpalettePosition;
+            std::shared_ptr<uint32_t[]> m_Colorpalette;
             uint64_t m_ModelPosition;
-            const std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial>> m_NotDefaultMaterials;
+            const std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial, Uint8Hasher>> m_NotDefaultMaterials;
             const std::string m_FilePath;
     };
 } // namespace VCore

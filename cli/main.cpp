@@ -46,15 +46,15 @@ struct SFile
     string InputFile;
     string OutputFile;
 
-    VCore::LoaderType Type;
+    VCore::VoxelFormatType Type;
     VCore::ExporterType OutType;
     bool IsPNG;
 };
 using File = shared_ptr<SFile>;
 
-void HelpDialog(const argh::parser &cmdl)
+void HelpDialog(const argh::parser &p_Cmdl)
 {
-    fs::path CliPath = cmdl(0).str();
+    fs::path CliPath = p_Cmdl(0).str();
     string CliName = "./" + CliPath.filename().string();
 
     cout << "Usage: " << CliName << " [INPUT] [OPTIONS]\n" << endl;
@@ -62,6 +62,7 @@ void HelpDialog(const argh::parser &cmdl)
     cout << "-m, --mesher\tSets the mesher to meshify the voxel mesh. Default: simple. (simple, greedy, greedy_chunked, greedy_textured)" << endl;
     cout << "-o, --output\tOutput path. If the output path doesn't exist it will be created" << endl;
     cout << "-w, --worldspace\tTransforms all vertices to worldspace\n" << endl;
+    cout << "--convert\tConverts a voxel model from one format to another one.\n" << endl;
     cout << "Examples:" << endl;
     cout << CliName << " windmill.vox -o windmill.glb\tConverts the *.vox file to a *.glb" << endl;
     cout << CliName << " voxels/*.vox -o *.glb\tConverts all *.vox files to *.glb with the same name as the *.vox files" << endl;
@@ -70,27 +71,27 @@ void HelpDialog(const argh::parser &cmdl)
     cout << CliName << " *.* -o *.glb\tConverts all supported file formats to *.glb files" << endl;
 }
 
-string ToLower(const string &str)
+string ToLower(const string &p_Str)
 {
     string Ret;
 
-    for (auto &&c : str)
+    for (auto &&c : p_Str)
         Ret += tolower(c);  
 
     return Ret;
 }
 
-File CreateFile(const fs::path &Input, const fs::path &OutputPattern)
+File CreateFile(const fs::path &p_Input, const fs::path &p_OutputPattern)
 {
     static size_t ID = 0;
-    static map<string, VCore::LoaderType> TYPE_MATCHER = {
-        {"gox", VCore::LoaderType::GOXEL},
-        {"vox", VCore::LoaderType::MAGICAVOXEL},
-        {"kenshape", VCore::LoaderType::KENSHAPE},
-        {"qbcl", VCore::LoaderType::QUBICLE},
-        {"qb", VCore::LoaderType::QUBICLE_BIN},
-        {"qbt", VCore::LoaderType::QUBICLE_BIN_TREE},
-        {"qef", VCore::LoaderType::QUBICLE_EXCHANGE},
+    static map<string, VCore::VoxelFormatType> TYPE_MATCHER = {
+        {"gox", VCore::VoxelFormatType::GOXEL},
+        {"vox", VCore::VoxelFormatType::MAGICAVOXEL},
+        {"kenshape", VCore::VoxelFormatType::KENSHAPE},
+        {"qbcl", VCore::VoxelFormatType::QUBICLE},
+        {"qb", VCore::VoxelFormatType::QUBICLE_BIN},
+        {"qbt", VCore::VoxelFormatType::QUBICLE_BIN_TREE},
+        {"qef", VCore::VoxelFormatType::QUBICLE_EXCHANGE},
     };
 
     static map<string, VCore::ExporterType> OUT_TYPE_MATCHER = {
@@ -103,124 +104,250 @@ File CreateFile(const fs::path &Input, const fs::path &OutputPattern)
         // {"png", VCore::ExporterType::PNG},
     };
 
-    File Ret = File(new SFile());
-    Ret->IsPNG = false;
+    File ret = File(new SFile());
+    ret->IsPNG = false;
 
-    Ret->InputFile = Input.string();
-    if(!OutputPattern.has_extension())
+    ret->InputFile = p_Input.string();
+    if(!p_OutputPattern.has_extension())
     {
-        cerr << "Missing file extension: " << OutputPattern << endl;
+        cerr << "Missing file extension: " << p_OutputPattern << endl;
         exit(-1);
     }
 
-    string Filename = OutputPattern.stem().string();
-    string Ext = OutputPattern.extension().string().substr(1);
+    string filename = p_OutputPattern.stem().string();
+    string ext = p_OutputPattern.extension().string().substr(1);
 
-    if(ToLower(Ext) == "png")
-        Ret->IsPNG = true;
-    else if(std::find(SUPPORTED_OUT_EXTS.begin(), SUPPORTED_OUT_EXTS.end(), ToLower(Ext)) == SUPPORTED_OUT_EXTS.end())
+    if(ToLower(ext) == "png")
+        ret->IsPNG = true;
+    else if(std::find(SUPPORTED_OUT_EXTS.begin(), SUPPORTED_OUT_EXTS.end(), ToLower(ext)) == SUPPORTED_OUT_EXTS.end())
     {
-        cerr << "Unsupported file format: " << Ext << endl;
+        cerr << "Unsupported file format: " << ext << endl;
         exit(-1);
     }
 
-    if(Filename.find("*") != string::npos)
-        Filename = regex_replace(Filename, regex("\\*"), Input.stem().string());
-    if(Filename.find("{0}") != string::npos)
-        Filename = regex_replace(Filename, regex("\\{0\\}"), to_string(ID++));
+    if(filename.find("*") != string::npos)
+        filename = regex_replace(filename, regex("\\*"), p_Input.stem().string());
+    if(filename.find("{0}") != string::npos)
+        filename = regex_replace(filename, regex("\\{0\\}"), to_string(ID++));
 
-    if(OutputPattern.has_parent_path())
-        Ret->OutputFile = OutputPattern.parent_path().string() + "/";
+    if(p_OutputPattern.has_parent_path())
+        ret->OutputFile = p_OutputPattern.parent_path().string() + "/";
 
-    Ret->OutputFile += Filename + "." + Ext;
-    Ret->Type = TYPE_MATCHER[ToLower(Input.extension().string().substr(1))];
-    Ret->OutType = OUT_TYPE_MATCHER[ToLower(Ext)];
+    ret->OutputFile += filename + "." + ext;
+    ret->Type = TYPE_MATCHER[ToLower(p_Input.extension().string().substr(1))];
+    ret->OutType = OUT_TYPE_MATCHER[ToLower(ext)];
 
-    return Ret;
+    return ret;
 }
 
-vector<File> ResolveFilenames(const argh::parser &cmdl, const string &OutputPattern)
+vector<File> ResolveFilenames(const argh::parser &p_Cmdl, const string &p_OutputPattern)
 {
-    vector<File> Ret;
-    fs::path OutputPatternPath = OutputPattern;
+    vector<File> ret;
+    fs::path outputPatternPath = p_OutputPattern;
 
-    for (size_t i = 1; i < cmdl.size(); i++)
+    for (size_t i = 1; i < p_Cmdl.size(); i++)
     {
-        fs::path InputPattern = cmdl(i).str();
-        if(InputPattern.filename().string().empty())
+        fs::path inputPattern = p_Cmdl(i).str();
+        if(inputPattern.filename().string().empty())
         {
-            if(!fs::is_directory(InputPattern))
+            if(!fs::is_directory(inputPattern))
             {
-                cerr << "Unsupported format: " << InputPattern << endl;
+                cerr << "Unsupported format: " << inputPattern << endl;
                 exit(-1);
             }
 
-            for(auto& p: fs::directory_iterator(InputPattern))
+            for(auto& p: fs::directory_iterator(inputPattern))
             {
                 if(p.is_regular_file() && p.path().has_extension())
                 {
-                    auto IT = std::find(SUPPORTED_EXTS.begin(), SUPPORTED_EXTS.end(), ToLower(p.path().extension().string().substr(1)));
-                    if(IT != SUPPORTED_EXTS.end())
-                        Ret.push_back(CreateFile(p.path(), OutputPatternPath));
+                    auto it = std::find(SUPPORTED_EXTS.begin(), SUPPORTED_EXTS.end(), ToLower(p.path().extension().string().substr(1)));
+                    if(it != SUPPORTED_EXTS.end())
+                        ret.push_back(CreateFile(p.path(), outputPatternPath));
                 }
             }
 
             continue;
         }
 
-        if(!InputPattern.has_extension())
+        if(!inputPattern.has_extension())
         {
-            cerr << "Missing file extension: " << InputPattern << endl;
+            cerr << "Missing file extension: " << inputPattern << endl;
             exit(-1);
         }
 
-        string Filename = InputPattern.stem().string();
-        string Ext = InputPattern.extension().string().substr(1);
+        string filename = inputPattern.stem().string();
+        string ext = inputPattern.extension().string().substr(1);
 
-        if(Ext == "*" || Filename == "*")
+        if(ext == "*" || filename == "*")
         {
-            vector<string> Exts({ Ext });
+            vector<string> exts({ ext });
 
             // All supported formats
-            if(Ext == std::string("*"))
-                Exts = SUPPORTED_EXTS;
-            else if(std::find(SUPPORTED_EXTS.begin(), SUPPORTED_EXTS.end(), ToLower(Ext)) == SUPPORTED_EXTS.end())
+            if(ext == std::string("*"))
+                exts = SUPPORTED_EXTS;
+            else if(std::find(SUPPORTED_EXTS.begin(), SUPPORTED_EXTS.end(), ToLower(ext)) == SUPPORTED_EXTS.end())
             {
-                cerr << "Unsupported file format: " << Ext << endl;
+                cerr << "Unsupported file format: " << ext << endl;
                 exit(-1);
             }
 
-            for(auto& p: fs::directory_iterator(InputPattern.parent_path()))
+            for(auto& p: fs::directory_iterator(inputPattern.parent_path()))
             {
                 if(p.is_regular_file() && p.path().has_extension())
                 {
-                    auto IT = std::find(Exts.begin(), Exts.end(), ToLower(p.path().extension().string().substr(1)));
-                    if(IT != Exts.end())
+                    auto it = std::find(exts.begin(), exts.end(), ToLower(p.path().extension().string().substr(1)));
+                    if(it != exts.end())
                     {
-                        if(Filename == "*" || ToLower(p.path().stem().string()) == ToLower(Filename))
-                            Ret.push_back(CreateFile(p.path(), OutputPatternPath));
+                        if(filename == "*" || ToLower(p.path().stem().string()) == ToLower(filename))
+                            ret.push_back(CreateFile(p.path(), outputPatternPath));
                     }
                 }
             }
         }
         else
         {
-            if(std::find(SUPPORTED_EXTS.begin(), SUPPORTED_EXTS.end(), Ext) == SUPPORTED_EXTS.end())
+            if(std::find(SUPPORTED_EXTS.begin(), SUPPORTED_EXTS.end(), ext) == SUPPORTED_EXTS.end())
             {
-                cerr << "Unsupported file format: " << Ext << endl;
+                cerr << "Unsupported file format: " << ext << endl;
                 exit(-1);
             }
-            Ret.push_back(CreateFile(InputPattern, OutputPatternPath));
+            ret.push_back(CreateFile(inputPattern, outputPatternPath));
         }
     }
 
-    return Ret;
+    return ret;
+}
+
+void GenerateMesh(const std::string &p_MesherType, const argh::parser &p_Cmdl, const std::string &p_OutputPattern)
+{
+    VCore::Mesher mesher;
+    if(p_MesherType == "greedy")
+        mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::GREEDY);
+    else if(p_MesherType == "greedy_chunked")
+        mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::GREEDY_CHUNKED);
+    else if(p_MesherType == "greedy_textured")
+        mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::GREEDY_TEXTURED);
+    else
+        mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::SIMPLE);
+
+    auto files = ResolveFilenames(p_Cmdl, p_OutputPattern);
+    for (auto &&f : files)
+    {
+        VCore::VoxelFormat loader = VCore::IVoxelFormat::CreateAndOpen(f->InputFile, VCore::FileMode::READ);
+        VCore::Exporter exporter;
+
+        if(!f->IsPNG)
+        {
+            exporter = VCore::IExporter::Create(f->OutType);
+            exporter->Settings->WorldSpace = p_Cmdl[{"-w", "--worldspace"}];
+        }
+
+        std::filesystem::path parent = fs::path(f->OutputFile).parent_path();
+        if(!fs::is_directory(f->OutputFile) && !parent.empty())
+            fs::create_directories(parent);
+
+        auto loaderstartTime = std::chrono::high_resolution_clock::now();
+        loader->Load();
+        auto loaderendTime = std::chrono::high_resolution_clock::now();
+
+        auto loaderduration = std::chrono::duration_cast<std::chrono::milliseconds>(loaderendTime - loaderstartTime);
+        std::cout << "Loader time taken: " << loaderduration.count() << " ms" << std::endl;
+
+        int counter = 0;
+
+        if(f->IsPNG)
+        {
+            // auto meshes = loader->GetModels();
+            // for (auto &&VoxelMesh : meshes)
+            // {
+            //     VCore::CSpriteStackingExporter stacker;
+            //     std::string outputFilename = f->OutputFile;
+
+            //     if(meshes.size() > 1)
+            //     {
+            //         fs::path outputFile = f->OutputFile;
+            //         string Filename = outputFile.stem().string();
+            //         string Ext = outputFile.extension().string().substr(1);
+
+            //         outputFilename = outputFile.replace_filename(Filename + std::to_string(counter) + "." + Ext).string();
+            //     }                    
+
+            //     stacker.Save(outputFilename, VoxelMesh);
+            //     counter++;
+            // }
+        }
+        else
+        {
+            const int MAX_COUNT = 10;
+            int64_t average = 0;
+
+            // for (size_t i = 0; i < MAX_COUNT + 1; i++)
+            // {
+            //     auto startTime = std::chrono::high_resolution_clock::now();
+            //     // auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
+            //     (void)mesher->GenerateChunks(loader->GetModels()[0]);
+            //     // Mesher->GenerateChunks(Loader->GetModels()[0]);
+            //     auto endTime = std::chrono::high_resolution_clock::now();
+
+            //     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+            //     std::cout << "Time taken: " << duration.count() << " ms" << std::endl;
+
+            //     average += duration.count();
+            // }
+
+            // std::cout << "Average " << (average / (float)MAX_COUNT) << " ms" << std::endl;
+
+            auto startTime = std::chrono::high_resolution_clock::now();
+            auto renderTree = mesher->GenerateScene(loader->SceneTree);
+            auto endTime = std::chrono::high_resolution_clock::now();
+
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+            std::cout << "Time taken: " << duration.count() << " ms" << std::endl;
+
+            exporter->Save(f->OutputFile, renderTree);
+        }
+    }
+}
+
+void Convert(const argh::parser &p_Cmdl)
+{
+    for (size_t i = 1; i < p_Cmdl.size(); i++)
+    {
+        fs::path inputPattern = p_Cmdl(i).str();
+        VCore::VoxelFormat loader = VCore::IVoxelFormat::Create(VCore::VoxelFormatType::MAGICAVOXEL);
+        loader->Open(p_Cmdl(i).str(), VCore::FileMode::STREAMED);
+        loader->Load();
+
+        // auto model = loader->GetModels()[0];
+
+        // auto model = std::make_shared<VCore::CVoxelModel>();
+        // for (size_t x = 0; x < 280; x += 256)
+        // {
+        //     for (size_t y = 0; y< 280; y += 256)
+        //     {
+        //         for (size_t z = 0; z< 280; z += 256)
+        //         {
+        //             model->SetVoxel(VCore::Math::Vec3i(x, y, z), 0, 0);
+        //         }
+        //     }
+        // }
+
+        // model->Name = "Test";
+        
+        // model->SetVoxel(VCore::Math::Vec3i(), 0, 1);
+
+        VCore::VoxelFormat saver = VCore::IVoxelFormat::Create(VCore::VoxelFormatType::MAGICAVOXEL);
+        saver->Open("convert.vox", VCore::FileMode::WRITE);
+        // saver->m_Models = loader->GetModels(); //.push_back(model); //.push_back(model); //
+        saver->SceneTree = loader->SceneTree;
+        saver->Save();
+    }
 }
 
 int main(int argc, char const *argv[])
 {
     auto cmdl = argh::parser();
-    cmdl.add_params({"-o", "--output", "-m", "--mesher", "-b"});
+    cmdl.add_params({"-o", "--output", "-m", "--mesher", "--convert", "-w", "--worldspace"});
     cmdl.parse(argc, argv);
 
     // Shows the help dialog.
@@ -230,16 +357,16 @@ int main(int argc, char const *argv[])
         return 0;
     }
 
-    std::string OutputPattern;
-    if(!(cmdl({"-o", "--output"}) >> OutputPattern))
+    std::string outputPattern;
+    if(!(cmdl({"-o", "--output"}) >> outputPattern))
     {
         cerr << "Missing or wrong output format" << endl;
         HelpDialog(cmdl);
         return -1;
     }
 
-    std::string MesherType;
-    cmdl({"-m", "--mesher"}, "simple") >> MesherType;
+    std::string mesherType;
+    cmdl({"-m", "--mesher"}, "simple") >> mesherType;
 
     if(cmdl.size() == 1)
     {
@@ -247,8 +374,8 @@ int main(int argc, char const *argv[])
         return -1;
     }
 
-    int benchmarkCount = 0;
-    cmdl({"-b"}, 0) >> benchmarkCount;
+    bool convert = false;
+    convert = cmdl["--convert"];
 
     // VCore::Math::Vec3f a(1, 1, 1), b(1,1,1);
     // VCore::Math::Vec3i ai(1, 1, 1), bi(1,1,1);
@@ -264,83 +391,10 @@ int main(int argc, char const *argv[])
 
     try
     {
-        VCore::Mesher Mesher;
-        if(MesherType == "greedy")
-            Mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::GREEDY);
-        else if(MesherType == "greedy_chunked")
-            Mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::GREEDY_CHUNKED);
-        else if(MesherType == "greedy_textured")
-            Mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::GREEDY_TEXTURED);
+        if(!convert)
+            GenerateMesh(mesherType, cmdl, outputPattern);
         else
-            Mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::SIMPLE);
-
-        auto Files = ResolveFilenames(cmdl, OutputPattern);
-        for (auto &&f : Files)
-        {
-            VCore::VoxelFormat Loader = VCore::IVoxelFormat::Create(f->Type);
-            VCore::Exporter Exporter;
-
-            if(!f->IsPNG)
-            {
-                Exporter = VCore::IExporter::Create(f->OutType);
-                Exporter->Settings->WorldSpace = cmdl[{"-w", "--worldspace"}];
-            }
-
-            std::filesystem::path parent = fs::path(f->OutputFile).parent_path();
-            if(!fs::is_directory(f->OutputFile) && !parent.empty())
-                fs::create_directories(parent);
-
-            Loader->Load(f->InputFile);
-            int counter = 0;
-
-            if(f->IsPNG)
-            {
-                auto meshes = Loader->GetModels();
-                for (auto &&VoxelMesh : meshes)
-                {
-                    VCore::CSpriteStackingExporter Stacker;
-                    std::string outputFilename = f->OutputFile;
-
-                    if(meshes.size() > 1)
-                    {
-                        fs::path outputFile = f->OutputFile;
-                        string Filename = outputFile.stem().string();
-                        string Ext = outputFile.extension().string().substr(1);
-
-                        outputFilename = outputFile.replace_filename(Filename + std::to_string(counter) + "." + Ext).string();
-                    }                    
-
-                    Stacker.Save(outputFilename, VoxelMesh);
-                    counter++;
-                }
-            }
-            else
-            {
-                std::vector<VCore::Mesh> outputMeshes;
-                const int MAX_COUNT = 10;
-                int64_t average = 0;
-
-                for (size_t i = 0; i < MAX_COUNT + 1; i++)
-                {
-                    auto startTime = std::chrono::high_resolution_clock::now();
-                    auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
-                    // (void)Mesher->GenerateChunks(Loader->GetModels()[0]);
-                    // Mesher->GenerateChunks(Loader->GetModels()[0]);
-                    auto endTime = std::chrono::high_resolution_clock::now();
-
-                    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-                    std::cout << "Time taken: " << duration.count() << " ms" << std::endl;
-
-                    average += duration.count();
-                }
-
-                std::cout << "Average " << (average / (float)MAX_COUNT) << " ms" << std::endl;
-
-                auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
-                outputMeshes.insert(outputMeshes.end(), meshes.begin(), meshes.end());
-                Exporter->Save(f->OutputFile, outputMeshes);
-            }
-        }
+            Convert(cmdl);
     }
     catch(const std::exception& e)
     {

@@ -23,6 +23,7 @@
  */
 
 #include <chrono>
+#include <cstdint>
 #include <future>
 
 #include "../../Misc/Helper.hpp"
@@ -36,180 +37,179 @@
 
 namespace VCore
 {
-    // template <class T, size_t Elements>
-    // thread_local typename CObjectPool<T, Elements>::CLocalStoragePointer CObjectPool<T, Elements>::s_Storage;
-
     template<typename R>
     bool is_ready(std::future<R> const& f)
     { return f.wait_for(std::chrono::microseconds(0)) == std::future_status::ready; }
 
-    std::vector<SMeshChunk> CGreedyMesher::GenerateChunks(VoxelModel _Mesh, bool _OnlyDirty)
-    {
-        if(m_GenerateSingleChunks)
-            return IMesher::GenerateChunks(_Mesh, _OnlyDirty);
+    // std::vector<SMeshChunk> CGreedyMesher::GenerateChunks(VoxelModel _Mesh, bool _OnlyDirty)
+    // {
+    //     if(m_GenerateSingleChunks)
+    //         return IMesher::GenerateChunks(_Mesh, _OnlyDirty);
 
-        auto bbox = _Mesh->calculateBBox();
+    //     auto bbox = _Mesh->calculateBBox();
 
-        std::vector<std::future<Mesh>> futures;
-        std::vector<Mesh> slices;
-        for (int runAxis = 0; runAxis < 3; runAxis++)
-        {
-            auto begin = GetChunkpos(bbox.Beg).v[runAxis];
-            auto end = GetChunkpos(bbox.End).v[runAxis] + Config::ChunkSize;
+    //     std::vector<std::future<Mesh>> futures;
+    //     std::vector<Mesh> slices;
+    //     for (int runAxis = 0; runAxis < 3; runAxis++)
+    //     {
+    //         auto begin = GetChunkpos(bbox.Beg).v[runAxis];
+    //         auto end = GetChunkpos(bbox.End).v[runAxis] + Config::ChunkSize;
 
-            for (int axis = begin; axis < static_cast<int>(end); axis += Config::ChunkSize)
-            {
-                futures.push_back(std::async(&CGreedyMesher::GenerateMeshSlices, this, _Mesh, bbox, runAxis, axis));
-                while(futures.size() >= std::thread::hardware_concurrency())
-                {
-                    auto it = futures.begin();
-                    while (it != futures.end())
-                    {
-                        if(is_ready(*it))
-                        {
-                            auto result = it->get();
-                            slices.push_back(std::move(result));              
-                            it = futures.erase(it);
-                        }
-                        else
-                            it++;
-                    }
-                }
-            }
-        }
+    //         for (int axis = begin; axis < static_cast<int>(end); axis += Config::ChunkSize)
+    //         {
+    //             futures.push_back(std::async(&CGreedyMesher::GenerateMeshSlices, this, _Mesh, bbox, runAxis, axis));
+    //             while(futures.size() >= std::thread::hardware_concurrency())
+    //             {
+    //                 auto it = futures.begin();
+    //                 while (it != futures.end())
+    //                 {
+    //                     if(is_ready(*it))
+    //                     {
+    //                         auto result = it->get();
+    //                         slices.push_back(std::move(result));              
+    //                         it = futures.erase(it);
+    //                     }
+    //                     else
+    //                         it++;
+    //                 }
+    //             }
+    //         }
+    //     }
         
-        auto it = futures.begin();
-        while (it != futures.end())
-        {
-            it->wait();
-            auto result = it->get();
-            slices.push_back(result);       
-            it = futures.erase(it);
-        }
+    //     auto it = futures.begin();
+    //     while (it != futures.end())
+    //     {
+    //         it->wait();
+    //         auto result = it->get();
+    //         slices.push_back(result);       
+    //         it = futures.erase(it);
+    //     }
 
-        CMeshBuilder builder(m_SurfaceFactory);
-        builder.AddTextures(_Mesh->Textures);
+    //     CMeshBuilder builder(m_SurfaceFactory);
+    //     builder.AddTextures(_Mesh->Textures);
 
-        Math::Vec3iHasher hasher;
+    //     Math::Vec3iHasher hasher;
 
-        SMeshChunk chunk;
-        chunk.UniqueId = hasher(bbox.Beg);
-        chunk.InnerBBox = bbox;
-        chunk.TotalBBox = bbox;
-        chunk.MeshData = builder.Merge(nullptr, slices);
+    //     SMeshChunk chunk;
+    //     chunk.UniqueId = hasher(bbox.Beg);
+    //     chunk.InnerBBox = bbox;
+    //     chunk.TotalBBox = bbox;
+    //     chunk.MeshData = builder.Merge(nullptr, slices);
 
-        if(m_GenerateTexture)
-        {
-            TTexturePacker<TextureInfo> packer;
-            auto head = m_Head.load();
-            while (head)
-            {
-                packer.AddRect(head->Info.Size, std::move(head->Info));
-                head = head->Next;
-            }
+    //     if(m_GenerateTexture)
+    //     {
+    //         TTexturePacker<TextureInfo> packer;
+    //         auto head = m_Head.load();
+    //         while (head)
+    //         {
+    //             packer.AddRect(head->Info.Size, std::move(head->Info));
+    //             head = head->Next;
+    //         }
             
-            auto rects = packer.Pack();
-            ankerl::unordered_dense::map<uint32_t, decltype(rects)::value_type> textureMapping;
-            auto texture = std::make_shared<CTexture>(packer.GetCanvasSize());
+    //         auto rects = packer.Pack();
+    //         ankerl::unordered_dense::map<uint32_t, decltype(rects)::value_type> textureMapping;
+    //         auto texture = std::make_shared<CTexture>(packer.GetCanvasSize());
 
-            for (auto &&rect : rects)
-            {
-                textureMapping[rect.Reference.Id] = rect;
-                CopyToAtlas(texture, _Mesh, rect.Position, rect.Reference);
+    //         for (auto &&rect : rects)
+    //         {
+    //             textureMapping[rect.Reference.Id] = rect;
+    //             CopyToAtlas(texture, _Mesh, rect.Position, rect.Reference);
 
 
-                // texture->AddRawPixels(rect.Reference.RawTexture, rect.Position, rect.Size);
-            }
+    //             // texture->AddRawPixels(rect.Reference.RawTexture, rect.Position, rect.Size);
+    //         }
 
-            chunk.MeshData->Textures[TextureType::DIFFIUSE] = texture;
+    //         chunk.MeshData->Textures[TextureType::DIFFIUSE] = texture;
             
-            for (auto &&surface : chunk.MeshData->Surfaces)
-            {
-                for (uint32_t i = 0; i < surface->GetVertexCount(); i += 4)
-                {
-                    auto v1 = surface->GetVertex(i);
-                    auto v2 = surface->GetVertex(i + 1);
-                    auto v3 = surface->GetVertex(i + 2);
-                    auto v4 = surface->GetVertex(i + 3);
-                    // TODO: Currently no UVs! How to map Texture?
-                    // auto textureRect = textureMapping[v1.UV.x];
+    //         for (auto &&surface : chunk.MeshData->Surfaces)
+    //         {
+    //             for (uint32_t i = 0; i < surface->GetVertexCount(); i += 4)
+    //             {
+    //                 auto v1 = surface->GetVertex(i);
+    //                 auto v2 = surface->GetVertex(i + 1);
+    //                 auto v3 = surface->GetVertex(i + 2);
+    //                 auto v4 = surface->GetVertex(i + 3);
+    //                 // TODO: Currently no UVs! How to map Texture?
+    //                 // auto textureRect = textureMapping[v1.UV.x];
 
-                    // For each position we need to substract the margin pixels.
+    //                 // For each position we need to substract the margin pixels.
 
-                    // v1.UV = Math::Vec2f(textureRect.Position.x + 1, textureRect.Position.y + 1) / packer.GetCanvasSize();
-                    // v2.UV = Math::Vec2f((textureRect.Position.x + 1) + (textureRect.Size.x - 2), textureRect.Position.y + 1) / packer.GetCanvasSize();
-                    // v3.UV = Math::Vec2f(textureRect.Position.x + 1, (textureRect.Position.y + 1) + (textureRect.Size.y - 2)) / packer.GetCanvasSize();
-                    // v4.UV = Math::Vec2f((textureRect.Position + Math::Vec2f(1, 1)) + (textureRect.Size - Math::Vec2f(2, 2))) / packer.GetCanvasSize();
+    //                 // v1.UV = Math::Vec2f(textureRect.Position.x + 1, textureRect.Position.y + 1) / packer.GetCanvasSize();
+    //                 // v2.UV = Math::Vec2f((textureRect.Position.x + 1) + (textureRect.Size.x - 2), textureRect.Position.y + 1) / packer.GetCanvasSize();
+    //                 // v3.UV = Math::Vec2f(textureRect.Position.x + 1, (textureRect.Position.y + 1) + (textureRect.Size.y - 2)) / packer.GetCanvasSize();
+    //                 // v4.UV = Math::Vec2f((textureRect.Position + Math::Vec2f(1, 1)) + (textureRect.Size - Math::Vec2f(2, 2))) / packer.GetCanvasSize();
 
-                    surface->UpdateVertex(i, v1);
-                    surface->UpdateVertex(i + 1, v2);
-                    surface->UpdateVertex(i + 2, v3);
-                    surface->UpdateVertex(i + 3, v4);
-                }
-            }
+    //                 surface->UpdateVertex(i, v1);
+    //                 surface->UpdateVertex(i + 1, v2);
+    //                 surface->UpdateVertex(i + 2, v3);
+    //                 surface->UpdateVertex(i + 3, v4);
+    //             }
+    //         }
 
-            ClearTextures();
-        }
+    //         ClearTextures();
+    //     }
 
-        return {chunk};
-    }
+    //     return {chunk};
+    // }
 
-    void CGreedyMesher::CopyToAtlas(Texture &_Atlas, const VoxelModel &_Model, const Math::Vec2ui &_Position, const TextureInfo &_Info)
+    void CGreedyMesher::CopyToAtlas(Texture &p_Atlas, const VoxelModel &p_Model, const Math::Vec2ui &p_Position, const TextureInfo &p_Info)
     {
-        auto diffuse = _Model->Textures.find(TextureType::DIFFIUSE);
-        if(diffuse != _Model->Textures.end())
-        {
-            auto size = _Info.Size - Math::Vec2ui(2, 2);
+        // auto diffuse = p_Model->Textures.find(TextureType::DIFFIUSE);
+        // if(diffuse != p_Model->Textures.end())
+        // {
+        //     auto size = p_Info.Size - Math::Vec2ui(2, 2);
 
-            for (uint32_t x = 0; x < size.x; x++)
-            {
-                for (uint32_t y = 0; y < size.y; y++)
-                {
-                    auto pos = _Info.Position;
-                    pos.v[_Info.Axis.x] += x;
-                    pos.v[_Info.Axis.y] += y;
+        //     for (uint32_t x = 0; x < size.x; x++)
+        //     {
+        //         for (uint32_t y = 0; y < size.y; y++)
+        //         {
+        //             auto pos = p_Info.Position;
+        //             pos.v[p_Info.Axis.x] += x;
+        //             pos.v[p_Info.Axis.y] += y;
 
-                    auto voxIt = _Model->find(pos);
-                    if(voxIt != _Model->end())
-                    {
-                        auto pixel = diffuse->second->GetPixel(Math::Vec2ui(voxIt->second.Color, 0));
-                        _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x + 1, y + 1));
+        //             auto voxIt = p_Model->find(pos);
+        //             if(voxIt != p_Model->end())
+        //             {
+        //                 auto pixel = diffuse->second->GetPixel(Math::Vec2ui(voxIt->second.GetColor(), 0));
+        //                 p_Atlas->AddPixel(pixel, p_Position + Math::Vec2ui(x + 1, y + 1));
 
-                        // Adds margin pixels to the texture
-                        if((x == 0) && (y == 0))
-                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x, y));
+        //                 // Adds margin pixels to the texture
+        //                 if((x == 0) && (y == 0))
+        //                     p_Atlas->AddPixel(pixel, p_Position + Math::Vec2ui(x, y));
 
-                        if(x == 0)
-                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x, y + 1));
+        //                 if(x == 0)
+        //                     p_Atlas->AddPixel(pixel, p_Position + Math::Vec2ui(x, y + 1));
 
-                        if(y == 0)
-                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x + 1, y));
+        //                 if(y == 0)
+        //                     p_Atlas->AddPixel(pixel, p_Position + Math::Vec2ui(x + 1, y));
                         
-                        if(((x + 1) == size.x) && ((y + 1) == size.y))
-                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x + 2, y + 2));
+        //                 if(((x + 1) == size.x) && ((y + 1) == size.y))
+        //                     p_Atlas->AddPixel(pixel, p_Position + Math::Vec2ui(x + 2, y + 2));
 
-                        if((x + 1) == size.x)
-                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x + 2, y + 1));
+        //                 if((x + 1) == size.x)
+        //                     p_Atlas->AddPixel(pixel, p_Position + Math::Vec2ui(x + 2, y + 1));
 
-                        if((y + 1) == size.y)
-                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x + 1, y + 2));
+        //                 if((y + 1) == size.y)
+        //                     p_Atlas->AddPixel(pixel, p_Position + Math::Vec2ui(x + 1, y + 2));
 
-                        // Top right
-                        if(((x + 1) == size.x) && (y == 0))
-                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x + 2, y));
+        //                 // Top right
+        //                 if(((x + 1) == size.x) && (y == 0))
+        //                     p_Atlas->AddPixel(pixel, p_Position + Math::Vec2ui(x + 2, y));
 
-                        // Bottom left
-                        if((x == 0) && ((y + 1) == size.y))
-                            _Atlas->AddPixel(pixel, _Position + Math::Vec2ui(x, y + 2));
-                    }
-                }
-            }
-        }
+        //                 // Bottom left
+        //                 if((x == 0) && ((y + 1) == size.y))
+        //                     p_Atlas->AddPixel(pixel, p_Position + Math::Vec2ui(x, y + 2));
+        //             }
+        //         }
+        //     }
+        // }
     }
 
-    void CGreedyMesher::GenerateQuad(CMeshBuilder &result, Config::bitmask_t faces, CFaceMask::Mask &bits, int width, int depth, bool isFront, const Math::Vec3i &axis, const SChunkMeta &_Chunk, const CVoxel& _Voxel)
+    void CGreedyMesher::GenerateQuad(CMeshBuilder &p_Result, Config::bitmask_t p_Faces, CFaceMask::Mask &p_Bits, int p_Width, int p_Depth, bool p_IsFront, const Math::Vec3i &p_Origin, const Math::Vec3i &p_Axis, const SChunkMeta &p_Chunk, const CVoxel& p_Voxel)
     {
-        int currentMaterial = -1;
+        uint8_t currentMaterial = 0xFF;
+        auto voxmaterial = p_Voxel.GetMaterial();
+        auto color = p_Voxel.GetColor();
 
         // bool hasTexture = result.GetTextures() && !result.GetTextures()->empty();
         // int textureWidth = 0;
@@ -218,10 +218,10 @@ namespace VCore
 
         Config::bitmask_t heightPos = 0;
         // Shift werid = hang
-        while ((heightPos < Config::ChunkSize) && (faces >> heightPos))
+        while ((heightPos < Config::ChunkSize) && (p_Faces >> heightPos))
         {
             // ~ 5ms
-            heightPos += CountTrailingZeroBits(faces >> heightPos);
+            heightPos += CountTrailingZeroBits(p_Faces >> heightPos);
             if(heightPos >= Config::ChunkSize)
                 break;
 
@@ -230,7 +230,7 @@ namespace VCore
             // position.v[axis.y] = 0;
             // position.v[axis.z] = width - 1;
 
-            Config::bitmask_t faceCount = CountTrailingOneBits(faces >> heightPos);
+            Config::bitmask_t faceCount = CountTrailingOneBits(p_Faces >> heightPos);
             // if(position.v[axis.x] > 0 && position.v[axis.z] > 0)
             // {
             //     auto voxels = _Chunk.Chunk->m_Mask.GetRowFaces(position, axis.x) >> heightPos;
@@ -249,7 +249,7 @@ namespace VCore
             const int integers = sizeof(Simd::NativeI) / sizeof(int);
 
             unsigned w = 1;
-            for (uint32_t tmpWidth = width + 1; tmpWidth < Config::ChunkSize; tmpWidth += integers)
+            for (uint32_t tmpWidth = p_Width + 1; tmpWidth < Config::ChunkSize; tmpWidth += integers)
             {
                 const size_t rounds = (tmpWidth + integers < Config::ChunkSize) ? integers : (Config::ChunkSize - tmpWidth);
                 int smask = (1 << rounds) - 1;
@@ -258,14 +258,14 @@ namespace VCore
                 // for (size_t i = 0; i < rounds; i++)
                 //     buf[i] = bits.Bits[(tmpWidth + i) + ((1 - (int)isFront) * Config::ChunkSize)];
 
-                Simd::NativeI simd_cols((int*)&bits.Bits[tmpWidth + ((1 - (int)isFront) * Config::ChunkSize)], integers);
+                Simd::NativeI simd_cols((int*)&p_Bits.Bits[tmpWidth + ((1 - (int)p_IsFront) * Config::ChunkSize)], integers);
 
                 auto result = (simd_mask & simd_cols) == simd_mask;
                 int mResult = result.MoveMask();
                 auto colcnt = CountTrailingOneBits(mResult & smask);
 
                 for (size_t i = 0; i < colcnt; i++)
-                    bits.Bits[(tmpWidth + i) + ((1 - (int)isFront) * Config::ChunkSize)] ^= mask;
+                    p_Bits.Bits[(tmpWidth + i) + ((1 - (int)p_IsFront) * Config::ChunkSize)] ^= mask;
                     
                 w += colcnt;
                 if(colcnt != rounds)
@@ -275,60 +275,56 @@ namespace VCore
             // ~40ms
 
             Math::Vec3f normal;
-            normal.v[axis.x] = isFront ? -1 : 1;
+            normal.v[p_Axis.x] = p_IsFront ? -1 : 1;
 
             Math::Vec3i position;
-            position.v[axis.x] = _Chunk.TotalBBox.Beg.v[axis.x] + depth;
-            position.v[axis.y] = _Chunk.TotalBBox.Beg.v[axis.y] + heightPos;
-            position.v[axis.z] = _Chunk.TotalBBox.Beg.v[axis.z] + width;
+            position.v[p_Axis.x] = p_Chunk.TotalBBox.Beg.v[p_Axis.x] + p_Depth;
+            position.v[p_Axis.y] = p_Chunk.TotalBBox.Beg.v[p_Axis.y] + heightPos;
+            position.v[p_Axis.z] = p_Chunk.TotalBBox.Beg.v[p_Axis.z] + p_Width;
 
             Math::Vec3i size;
-            size.v[axis.x] = 0;
-            size.v[axis.y] = faceCount;
-            size.v[axis.z] = w;
+            size.v[p_Axis.x] = 0;
+            size.v[p_Axis.y] = faceCount;
+            size.v[p_Axis.z] = w;
 
             Math::Vec3f du;
-            du.v[axis.z] = size.v[axis.z];
+            du.v[p_Axis.z] = size.v[p_Axis.z];
 
             Math::Vec3f dv;
-            dv.v[axis.y] = size.v[axis.y];
+            dv.v[p_Axis.y] = size.v[p_Axis.y];
 
-            if(currentMaterial != _Voxel.Material)
+            if(currentMaterial != voxmaterial)
             {
-                auto material = MaterialManager::GetMaterial(_Voxel.Material);
-                if(material)
-                {
-                    currentMaterial = _Voxel.Material;
-                    result.SelectSurface(material);
-                }
+                currentMaterial = voxmaterial;
+                p_Result.SelectSurface(voxmaterial);
             }
 
             // Math::Vec2f uv;
             // if(hasTexture)
             //     uv = Math::Vec2f(((float)(_Voxel.Color + 0.5f)) / textureWidth, 0.5f);
 
-            uint32_t idx1 = result.AddVertex(new SVertex(position, normal, _Voxel.Color));
-            uint32_t idx2 = result.AddVertex(new SVertex(position + du, normal, _Voxel.Color));
-            uint32_t idx3 = result.AddVertex(new SVertex(position + dv, normal, _Voxel.Color));
-            uint32_t idx4 = result.AddVertex(new SVertex(position + size, normal, _Voxel.Color));
+            uint32_t idx1 = p_Result.AddVertex(new SVertex(position - p_Origin, normal, color));
+            uint32_t idx2 = p_Result.AddVertex(new SVertex((position + du) - p_Origin, normal, color));
+            uint32_t idx3 = p_Result.AddVertex(new SVertex((position + dv) - p_Origin, normal, color));
+            uint32_t idx4 = p_Result.AddVertex(new SVertex((position + size) - p_Origin, normal, color));
 
-            if(isFront)
-                result.AddFace(idx1, idx2, idx3, idx4);
+            if(p_IsFront)
+                p_Result.AddFace(idx1, idx2, idx3, idx4);
             else
-                result.AddFace(idx1, idx3, idx2, idx4);
+                p_Result.AddFace(idx1, idx3, idx2, idx4);
 
             heightPos += faceCount;
         }
     }
 
-    uint32_t CGreedyMesher::AddTexture(const Math::Vec3i &_Position, const Math::Vec3i &_Axis, const Math::Vec2ui &_Size)
+    uint32_t CGreedyMesher::AddTexture(const Math::Vec3i &p_Position, const Math::Vec3i &p_Axis, const Math::Vec2ui &p_Size)
     {
         // std::lock_guard<std::mutex> lock(m_Lock);
 
         uint32_t id = m_NextId++;
 
         // auto node = new TextureNode(id, _Position, _Axis, _Size);
-        TextureNode *node = m_Pool.construct(id, _Position, _Axis, _Size);
+        TextureNode *node = m_Pool.construct(id, p_Position, p_Axis, p_Size);
         auto head = m_Head.load(std::memory_order_relaxed);
         do
         {
@@ -352,10 +348,10 @@ namespace VCore
         }
     }
 
-    SMeshChunk CGreedyMesher::GenerateMeshChunk(VoxelModel _Mesh, const SChunkMeta& _Chunk, bool)
+    SMeshChunk CGreedyMesher::GenerateMeshChunk(VoxelModel p_Mesh, const SChunkMeta& p_Chunk, bool)
     {
         CMeshBuilder builder(m_SurfaceFactory);
-        builder.AddTextures(_Mesh->Textures);
+        // builder.AddTextures(p_Mesh->Textures);
 
         // For all 3 axis (x, y, z)
         for (size_t axis = 0; axis < 3; axis++)
@@ -370,7 +366,7 @@ namespace VCore
 
             // ~4ms without Grouping
             // ~10ms with grouping
-            auto masks = mask.Generate(_Mesh, _Chunk, axis);
+            auto masks = mask.Generate(p_Mesh, p_Chunk, axis);
             
             for (auto &&depth : masks)
             {
@@ -383,45 +379,45 @@ namespace VCore
                         auto faces = key.second.Bits[widthAxis];
 
                         if(faces)
-                            GenerateQuad(builder, faces, key.second, widthAxis, depth.first, true, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
+                            GenerateQuad(builder, faces, key.second, widthAxis, depth.first, true, p_Mesh->Origin, Math::Vec3i(axis, axis1, axis2), p_Chunk, voxel);
 
                         faces = key.second.Bits[widthAxis + Config::ChunkSize];
 
                         if(faces)
-                            GenerateQuad(builder, faces, key.second, widthAxis, depth.first + 1, false, Math::Vec3i(axis, axis1, axis2), _Chunk, voxel);
+                            GenerateQuad(builder, faces, key.second, widthAxis, depth.first + 1, false, p_Mesh->Origin, Math::Vec3i(axis, axis1, axis2), p_Chunk, voxel);
                     }
                 }
             }
         }
 
         SMeshChunk chunk;
-        chunk.UniqueId = _Chunk.UniqueId;
-        chunk.InnerBBox = _Chunk.InnerBBox;
-        chunk.TotalBBox = _Chunk.TotalBBox;
+        chunk.UniqueId = p_Chunk.UniqueId;
+        chunk.InnerBBox = p_Chunk.InnerBBox;
+        chunk.TotalBBox = p_Chunk.TotalBBox;
         chunk.MeshData = builder.Build();
 
         return chunk;
     }
 
-    CFaceMask::Mask *CGreedyMesher::GetFaceMask(MeshSlicerContext &_Context, const Math::Vec3i &_Chunkpos, int d)
+    CFaceMask::Mask *CGreedyMesher::GetFaceMask(MeshSlicerContext &p_Context, const Math::Vec3i &p_Chunkpos, int p_Depth)
     {
-        auto key = _Context.SliceIt->first;
+        auto key = p_Context.SliceIt->first;
 
         // Checks if the current chunk is already indexed.
-        auto it = _Context.Chunks.find(_Chunkpos);
-        if(it == _Context.Chunks.end())
+        auto it = p_Context.Chunks.find(p_Chunkpos);
+        if(it == p_Context.Chunks.end())
         {
             CFaceMask maskGenerator;
             maskGenerator.GroupAfterMaterial = m_GenerateTexture;
-            it = _Context.Chunks.insert({_Chunkpos, maskGenerator.Generate(_Context.Model, _Chunkpos, _Context.Axis.z)}).first;
+            it = p_Context.Chunks.insert({p_Chunkpos, maskGenerator.Generate(p_Context.Model, p_Chunkpos, p_Context.Axis.z)}).first;
 
             // Since the map changed, we need to optain the old iterators, so we can continue from the current position.
-            _Context.DepthIt = _Context.Chunks[GetChunkpos(_Context.Position)].find(d);
-            _Context.SliceIt = _Context.DepthIt->second.find(key);
+            p_Context.DepthIt = p_Context.Chunks[GetChunkpos(p_Context.Position)].find(p_Depth);
+            p_Context.SliceIt = p_Context.DepthIt->second.find(key);
         }
 
         // Try to get the same slice with the same material properties as this one.
-        auto depthIt = it->second.find(d);
+        auto depthIt = it->second.find(p_Depth);
         if(depthIt != it->second.end())
         {
             auto keyIt = depthIt->second.find(key);
@@ -432,38 +428,38 @@ namespace VCore
         return nullptr;
     }
 
-    Config::bitmask_t *CGreedyMesher::GetFaces(MeshSlicerContext &_Context, const Math::Vec3i &_Chunkpos, int d, int x, bool _IsFront)
+    Config::bitmask_t *CGreedyMesher::GetFaces(MeshSlicerContext &p_Context, const Math::Vec3i &p_Chunkpos, int p_Depth, int p_XPos, bool p_IsFront)
     {
         Config::bitmask_t *faces = nullptr;
-        auto mask = GetFaceMask(_Context, _Chunkpos, d);
+        auto mask = GetFaceMask(p_Context, p_Chunkpos, p_Depth);
         if(mask)
-            faces = &mask->Bits[(x & Config::InnerChunkMask) + ((1 - (int)_IsFront) * Config::ChunkSize)];
+            faces = &mask->Bits[(p_XPos & Config::InnerChunkMask) + ((1 - (int)p_IsFront) * Config::ChunkSize)];
 
         return faces;     
     }
 
-    void CGreedyMesher::GenerateMeshSlice(MeshSlicerContext &_Context, Config::bitmask_t _Faces, bool _IsFront)
+    void CGreedyMesher::GenerateMeshSlice(MeshSlicerContext &p_Context, Config::bitmask_t p_Faces, bool p_IsFront)
     {
-        unsigned currentMaterial = -1;
-        const int d = _Context.Position.v[_Context.Axis.z] & Config::InnerChunkMask;
-        const int x = _Context.Position.v[_Context.Axis.x];
-        int y = _Context.Position.v[_Context.Axis.y];
+        uint8_t currentMaterial = 0xFF;
+        const int d = p_Context.Position.v[p_Context.Axis.z] & Config::InnerChunkMask;
+        const int x = p_Context.Position.v[p_Context.Axis.x];
+        int y = p_Context.Position.v[p_Context.Axis.y];
         
-        while (y <= _Context.ModelBBox.End.v[_Context.Axis.y])
+        while (y <= p_Context.ModelBBox.End.v[p_Context.Axis.y])
         {
             fast_vector<Config::bitmask_t> bitmasks;
             Config::bitmask_t heightPos = y & Config::InnerChunkMask;
             Config::bitmask_t totalHeight = 0;
 
-            auto position = _Context.Position;
-            position.v[_Context.Axis.y] = y;
+            auto position = p_Context.Position;
+            position.v[p_Context.Axis.y] = y;
             auto chunkpos = GetChunkpos(position);
 
             // Bitmask calculations
             while (true)
             {
                 // Step 1: Get right y position
-                auto zeros = heightPos >= Config::ChunkSize ? 0 : CountTrailingZeroBits(_Faces >> heightPos);
+                auto zeros = heightPos >= Config::ChunkSize ? 0 : CountTrailingZeroBits(p_Faces >> heightPos);
                 if(zeros == Config::ChunkSize)
                     zeros -= heightPos;
 
@@ -475,7 +471,7 @@ namespace VCore
 
                 // Add the zeros count to the global height position
                 y += zeros; // Initial the zeros value could be greater than zero, after that it's always 0. (See if statement above)
-                if(y > _Context.ModelBBox.End.v[_Context.Axis.y]) // Stop if we go over the model bounding box.
+                if(y > p_Context.ModelBBox.End.v[p_Context.Axis.y]) // Stop if we go over the model bounding box.
                     break;
 
                 // Two chunks boundary reached
@@ -490,19 +486,19 @@ namespace VCore
                     // Loops until the next chunk is reached or no more chunks follows the current one.
                     while (!faces)
                     {
-                        chunkpos.v[_Context.Axis.y] += Config::ChunkSize;
-                        if(chunkpos.v[_Context.Axis.y] > _Context.ModelBBox.End.v[_Context.Axis.y])
+                        chunkpos.v[p_Context.Axis.y] += Config::ChunkSize;
+                        if(chunkpos.v[p_Context.Axis.y] > p_Context.ModelBBox.End.v[p_Context.Axis.y])
                         {
-                            chunkpos.v[_Context.Axis.y] -= Config::ChunkSize;
+                            chunkpos.v[p_Context.Axis.y] -= Config::ChunkSize;
                             break;
                         }
 
-                        faces = GetFaces(_Context, chunkpos, d, x, _IsFront);
+                        faces = GetFaces(p_Context, chunkpos, d, x, p_IsFront);
 
                         // Breaks the loop immediately, if no chunk follows the current one.
                         if(!faces && bitmasks.size() > 0)
                         {
-                            chunkpos.v[_Context.Axis.y] -= Config::ChunkSize;
+                            chunkpos.v[p_Context.Axis.y] -= Config::ChunkSize;
                             break;
                         }
                         
@@ -513,12 +509,12 @@ namespace VCore
                     if(!faces)
                         break;
                     
-                    _Faces = *faces;
+                    p_Faces = *faces;
                 }
                 else
                 {
                     // Step 3: Create the bitmask for the face groups.
-                    Config::bitmask_t faceCount = CountTrailingOneBits(_Faces >> heightPos);
+                    Config::bitmask_t faceCount = CountTrailingOneBits(p_Faces >> heightPos);
                     Config::bitmask_t mask = Config::BitmaskMax;
                     if(faceCount != Config::ChunkSize)
                         mask = (((Config::bitmask_t)1 << faceCount) - 1) << heightPos;
@@ -536,12 +532,12 @@ namespace VCore
             if(bitmasks.size() > 0)
             {
                 // Step 4: Find the biggest face
-                auto position = _Context.Position;
+                auto position = p_Context.Position;
 
                 unsigned width = 1;
-                position.v[_Context.Axis.y] = y;
+                position.v[p_Context.Axis.y] = y;
 
-                for (position.v[_Context.Axis.x] = x + 1; position.v[_Context.Axis.x] <= _Context.ModelBBox.End.v[_Context.Axis.x]; position.v[_Context.Axis.x]++)
+                for (position.v[p_Context.Axis.x] = x + 1; position.v[p_Context.Axis.x] <= p_Context.ModelBBox.End.v[p_Context.Axis.x]; position.v[p_Context.Axis.x]++)
                 {
                     bool isContinues = false;
                     fast_vector<std::pair<Config::bitmask_t*, Config::bitmask_t>> nextFaces;
@@ -550,7 +546,7 @@ namespace VCore
                     auto chunkpos = GetChunkpos(position);
                     for (auto &&bitmask : bitmasks)
                     {
-                        auto nextfaces = GetFaces(_Context, chunkpos, d, position.v[_Context.Axis.x], _IsFront);
+                        auto nextfaces = GetFaces(p_Context, chunkpos, d, position.v[p_Context.Axis.x], p_IsFront);
                         if(!nextfaces)
                             break;
 
@@ -564,7 +560,7 @@ namespace VCore
                         nextFaces.push_back({nextfaces, bitmask});
                         isContinues = true;
 
-                        chunkpos.v[_Context.Axis.y] += Config::ChunkSize;
+                        chunkpos.v[p_Context.Axis.y] += Config::ChunkSize;
                     }
                     
                     if(isContinues)
@@ -579,36 +575,32 @@ namespace VCore
                 }
 
                 // Step 5: Build the mesh faces
-                position.v[_Context.Axis.x] = x;
-                position.v[_Context.Axis.y] = y;
+                position.v[p_Context.Axis.x] = x;
+                position.v[p_Context.Axis.y] = y;
 
-                if(!_IsFront)
-                    position.v[_Context.Axis.z] += 1;
+                if(!p_IsFront)
+                    position.v[p_Context.Axis.z] += 1;
 
                 Math::Vec3f normal;
-                normal.v[_Context.Axis.z] = _IsFront ? -1 : 1;
+                normal.v[p_Context.Axis.z] = p_IsFront ? -1 : 1;
 
                 Math::Vec3i size;
-                size.v[_Context.Axis.z] = 0;
-                size.v[_Context.Axis.y] = totalHeight;
-                size.v[_Context.Axis.x] = width;
+                size.v[p_Context.Axis.z] = 0;
+                size.v[p_Context.Axis.y] = totalHeight;
+                size.v[p_Context.Axis.x] = width;
 
                 Math::Vec3f du;
-                du.v[_Context.Axis.x] = size.v[_Context.Axis.x];
+                du.v[p_Context.Axis.x] = size.v[p_Context.Axis.x];
 
                 Math::Vec3f dv;
-                dv.v[_Context.Axis.y] = size.v[_Context.Axis.y];
+                dv.v[p_Context.Axis.y] = size.v[p_Context.Axis.y];
 
-                auto key = _Context.SliceIt->first;
+                auto key = p_Context.SliceIt->first;
                 auto voxel = *(CVoxel*)&key;
-                if(currentMaterial != voxel.Material)
+                if(currentMaterial != voxel.GetMaterial())
                 {
-                    auto material = MaterialManager::GetMaterial(voxel.Material);
-                    if(material)
-                    {
-                        currentMaterial = voxel.Material;
-                        _Context.Builder.SelectSurface(material);
-                    }
+                    currentMaterial = voxel.GetMaterial();
+                    p_Context.Builder.SelectSurface(currentMaterial);
                 }
 
                 // TODO: Currently no UVs! How to map Texture?
@@ -625,33 +617,34 @@ namespace VCore
                 // else if(_Context.Builder.GetTextures() && !_Context.Builder.GetTextures()->empty())
                 //     uv = Math::Vec2f(((float)(voxel.Color + 0.5f)) / _Context.Builder.GetTextures()->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
 
-                uint32_t idx1 = _Context.Builder.AddVertex(new SVertex(position, normal, voxel.Color));
-                uint32_t idx2 = _Context.Builder.AddVertex(new SVertex(position + du, normal, voxel.Color));
-                uint32_t idx3 = _Context.Builder.AddVertex(new SVertex(position + dv, normal, voxel.Color));
-                uint32_t idx4 = _Context.Builder.AddVertex(new SVertex(position + size, normal, voxel.Color));
+                auto color = voxel.GetColor();
+                uint32_t idx1 = p_Context.Builder.AddVertex(new SVertex(position, normal, color));
+                uint32_t idx2 = p_Context.Builder.AddVertex(new SVertex(position + du, normal, color));
+                uint32_t idx3 = p_Context.Builder.AddVertex(new SVertex(position + dv, normal, color));
+                uint32_t idx4 = p_Context.Builder.AddVertex(new SVertex(position + size, normal, color));
 
-                if(_IsFront)
-                    _Context.Builder.AddFace(idx1, idx2, idx3, idx4);
+                if(p_IsFront)
+                    p_Context.Builder.AddFace(idx1, idx2, idx3, idx4);
                 else
-                    _Context.Builder.AddFace(idx1, idx3, idx2, idx4);
+                    p_Context.Builder.AddFace(idx1, idx3, idx2, idx4);
 
                 y += totalHeight;
 
-                if(static_cast<int>(y & Config::ChunkPositionMask) > chunkpos.v[_Context.Axis.y])
+                if(static_cast<int>(y & Config::ChunkPositionMask) > chunkpos.v[p_Context.Axis.y])
                 {
-                    chunkpos.v[_Context.Axis.y] = y & Config::ChunkPositionMask;
+                    chunkpos.v[p_Context.Axis.y] = y & Config::ChunkPositionMask;
                     Config::bitmask_t *faces = nullptr;
 
                     // Loops until the next chunk is reached or no more chunks follows the current one.
                     while (!faces)
                     {
-                        if(chunkpos.v[_Context.Axis.y] > _Context.ModelBBox.End.v[_Context.Axis.y])
+                        if(chunkpos.v[p_Context.Axis.y] > p_Context.ModelBBox.End.v[p_Context.Axis.y])
                             break;
 
-                        faces = GetFaces(_Context, chunkpos, d, x, _IsFront);
+                        faces = GetFaces(p_Context, chunkpos, d, x, p_IsFront);
                         if(!faces)
                         {
-                            chunkpos.v[_Context.Axis.y] += Config::ChunkSize;
+                            chunkpos.v[p_Context.Axis.y] += Config::ChunkSize;
                             y += Config::ChunkSize;
                         }
                     }
@@ -660,7 +653,7 @@ namespace VCore
                     if(!faces)
                         break;
 
-                    _Faces = *faces;
+                    p_Faces = *faces;
                 }
             }
             else
@@ -668,24 +661,24 @@ namespace VCore
         }
     }
 
-    Mesh CGreedyMesher::GenerateMeshSlices(const VoxelModel &_Model, const CBBox &_ModelBBox, int _RunAxis, int _AxisPos)
+    Mesh CGreedyMesher::GenerateMeshSlices(const VoxelModel &p_Model, const CBBox &p_ModelBBox, int p_RunAxis, int p_AxisPos)
     {
-        MeshSlicerContext ctx(_Model, _ModelBBox, m_SurfaceFactory);
+        MeshSlicerContext ctx(p_Model, p_ModelBBox, m_SurfaceFactory);
 
         // This logic calculates the index of one of the three other axis.
         // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
         // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
-        ctx.Axis = Math::Vec3i((_RunAxis + 2) % 3, (_RunAxis + 1) % 3, _RunAxis);
+        ctx.Axis = Math::Vec3i((p_RunAxis + 2) % 3, (p_RunAxis + 1) % 3, p_RunAxis);
 
         CFaceMask mask;
         mask.GroupAfterMaterial = m_GenerateTexture;
-        for (int x = _ModelBBox.Beg.v[ctx.Axis.x]; x <= _ModelBBox.End.v[ctx.Axis.x]; x++)
+        for (int x = p_ModelBBox.Beg.v[ctx.Axis.x]; x <= p_ModelBBox.End.v[ctx.Axis.x]; x++)
         {
-            for (uint32_t d = _AxisPos; d < _AxisPos + Config::ChunkSize; d++)              
+            for (uint32_t d = p_AxisPos; d < p_AxisPos + Config::ChunkSize; d++)              
             {
                 ctx.Position.v[ctx.Axis.z] = d;
                 ctx.Position.v[ctx.Axis.x] = x;
-                ctx.Position.v[ctx.Axis.y] = _ModelBBox.Beg.v[ctx.Axis.y] & Config::ChunkPositionMask;
+                ctx.Position.v[ctx.Axis.y] = p_ModelBBox.Beg.v[ctx.Axis.y] & Config::ChunkPositionMask;
 
                 while (true)
                 {
@@ -693,7 +686,7 @@ namespace VCore
                     auto chunkpos = GetChunkpos(ctx.Position);
                     auto it = ctx.Chunks.find(chunkpos);
                     if(it == ctx.Chunks.end())
-                        it = ctx.Chunks.insert({chunkpos, mask.Generate(_Model, chunkpos, _RunAxis)}).first;
+                        it = ctx.Chunks.insert({chunkpos, mask.Generate(p_Model, chunkpos, p_RunAxis)}).first;
 
                     // Checks if there is a slice for the current depth
                     ctx.DepthIt = it->second.find(d & Config::InnerChunkMask);
@@ -715,7 +708,7 @@ namespace VCore
                     }
                     else
                     {
-                        if(ctx.Position.v[ctx.Axis.y] >= _ModelBBox.End.v[ctx.Axis.y])
+                        if(ctx.Position.v[ctx.Axis.y] >= p_ModelBBox.End.v[ctx.Axis.y])
                             break;
 
                         ctx.Position.v[ctx.Axis.y] += Config::ChunkSize;

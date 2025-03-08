@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#include <string.h>
+#include <cstring>
 #include <VCore/Meshing/MaterialManager.hpp>
 #include "MagicaVoxelFormat.hpp"
 #include "MagicaVoxelModelParser.hpp"
@@ -49,90 +49,86 @@ namespace VCore
         0xff880000, 0xff770000, 0xff550000, 0xff440000, 0xff220000, 0xff110000, 0xffeeeeee, 0xffdddddd, 0xffbbbbbb, 0xffaaaaaa, 0xff888888, 0xff777777, 0xff555555, 0xff444444, 0xff222222, 0xff111111
     };
 
-    void CMagicaVoxelModelParser::FillVoxelSpace(CVoxelSpace &_Space)
+    constexpr auto XYZI_CHUNK_ID = MakeChunkId('X', 'Y', 'Z', 'I');
+
+    struct VoxelData
+    {
+        uint8_t x, y, z;
+        uint8_t ColorMatIdx;
+    };
+
+    void CMagicaVoxelModelParser::FillVoxelSpace(CVoxelSpace &p_Space)
     {
         m_Stream->Seek(m_ModelPosition, SeekOrigin::BEG);
 
         // First get the model size.
         m_Size = ProcessSize(m_Stream);
         auto chunk = m_Stream->Read<SMagicaVoxelChunkHeader>();
-        if(strncmp(chunk.ID, "XYZI", sizeof(chunk.ID)) != 0)
+        if(chunk.Id != XYZI_CHUNK_ID)
             return;
 
-        int voxelCount = m_Stream->Read<int>();
-        for (int i = 0; i < voxelCount; i++)
+        uint32_t voxelCount = m_Stream->Read<uint32_t>();
+        constexpr static uint32_t bufferSize = 1024;
+        VoxelData buffer[bufferSize];
+
+        for (uint32_t i = 0; i < voxelCount; i += bufferSize)
         {
-            Math::Vec3i position;
+            uint32_t remainingVoxels = voxelCount - i;
+            uint32_t voxelsToRead = (remainingVoxels < bufferSize) ? remainingVoxels : bufferSize;
+            m_Stream->Read((char*)buffer, voxelsToRead * sizeof(VoxelData));
 
-            uint8_t data[4];
-            m_Stream->Read((char*)data, sizeof(data));            
+            for (uint32_t bufferPos = 0; bufferPos < voxelsToRead; bufferPos++)
+            {
+                const auto data = buffer[bufferPos];
 
-            // Since in MagicaVoxel the z axis is the gravity axis (Up axis), we need to read the vector in the following order xzy.
-            // So the gravity axis will be the y axis.
-            // Also Magicavoxel uses a left handed coordinate system, VCore uses a right handed one. So we need to convert the coordinates.
-            position.x = (m_Size.x - 1) - data[0];
-            position.y = data[2];
-            position.z = data[1];
-            uint32_t colorMaterialIdx = data[3];
-
-            // Finds the material
-            uint8_t materialIdx = GetMaterial(colorMaterialIdx);
-
-            // Gets the color of this voxel
-            auto color = GetColor(colorMaterialIdx);
-
-            _Space.insert({position, CVoxel(color, materialIdx)});
+                // Since in MagicaVoxel the z axis is the gravity axis (Up axis), we need to read the vector in the following order xzy.
+                // So the gravity axis will be the y axis.
+                // Also Magicavoxel uses a left handed coordinate system, VCore uses a right handed one. So we need to convert the coordinates.
+                Math::Vec3i position((m_Size.x - 1) - data.x, data.z, data.y);
+    
+                // Finds the material
+                uint8_t materialIdx = GetMaterial(data.ColorMatIdx - 1);
+    
+                // Gets the color of this voxel
+                auto color = GetColor(data.ColorMatIdx - 1);
+    
+                p_Space.insert({position, CVoxel(color, materialIdx)});
+            }
         }
     }
 
-    Math::Vec3i CMagicaVoxelModelParser::ProcessSize(IFileStream *_Stream)
+    Math::Vec3i CMagicaVoxelModelParser::ProcessSize(IFileStream *p_Stream)
     {
         Math::Vec3i Size;
 
         // Since in MagicaVoxel the z axis is the gravity axis (Up axis), we need to read the vector in the following order xzy.
         // So the gravity axis will be the y axis.
-        Size.x = _Stream->Read<int>();
-        Size.z = _Stream->Read<int>();
-        Size.y = _Stream->Read<int>();
+        Size.x = p_Stream->Read<int>();
+        Size.z = p_Stream->Read<int>();
+        Size.y = p_Stream->Read<int>();
 
         return Size;
     }
 
-    uint32_t CMagicaVoxelModelParser::GetColor(uint8_t _ColorIdx)
+    uint32_t CMagicaVoxelModelParser::GetColor(uint8_t p_ColorIdx)
     {
-        auto currentPos = m_Stream->Tell();
-        m_Stream->Seek(m_ColorpalettePosition, SeekOrigin::BEG);
+        if(m_Colorpalette)
+            return m_Colorpalette[p_ColorIdx];
 
-        auto header = m_Stream->Read<SMagicaVoxelChunkHeader>();
-        if(strncmp(header.ID, "RGBA", sizeof(header.ID)) != 0)
-            return DefaultPalette[_ColorIdx];
-
-        // Jump to the given index.
-        m_Stream->Seek((_ColorIdx - 1) * sizeof(uint32_t), SeekOrigin::CUR);
-        auto result = m_Stream->Read<uint32_t>();
-
-        // Reset position to the last position.
-        m_Stream->Seek(currentPos, SeekOrigin::BEG);
-
-        return result;
+        return DefaultPalette[p_ColorIdx];
     }
 
-    uint8_t CMagicaVoxelModelParser::GetMaterial(uint8_t _MaterialIdx)
+    uint8_t CMagicaVoxelModelParser::GetMaterial(uint8_t p_MaterialIdx)
     {
         uint8_t result = 0;
-        if(m_NotDefaultMaterials)
+        if(m_NotDefaultMaterials) [[likely]]
         {
-            auto it = m_NotDefaultMaterials->find(_MaterialIdx);
+            auto it = m_NotDefaultMaterials->find(p_MaterialIdx);
             if(it != m_NotDefaultMaterials->end())
             {
-                // Checks if the material is already indexed.
-                result = MaterialManager::FindMaterialSlot(it->second);
-                if(result == UINT8_MAX)
-                {
-                    result = MaterialManager::AddMaterial(it->second);
-                    if(result == UINT8_MAX)
-                        result = 0;
-                }
+                result = MaterialManager::AddOrGetMaterial(it->second);
+                if(result == UINT8_MAX) [[unlikely]]
+                    result = 0;
             }
         }
 

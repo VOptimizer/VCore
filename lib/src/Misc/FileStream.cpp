@@ -1,4 +1,5 @@
 #include <VCore/Misc/FileStream.hpp>
+#include <cstdio>
 
 namespace VCore
 {
@@ -16,17 +17,28 @@ namespace VCore
             m_Size = Tell();
             Seek(0, SeekOrigin::BEG);
             m_FilePath = _File;
+            m_InternalPosition = 0;
         }
     }
 
     uint64_t CDefaultFileStream::Read(char *_Buffer, uint64_t _Size)
     {
-        return fread(_Buffer, 1, _Size, m_File);
+        auto read = fread(_Buffer, 1, _Size, m_File);
+        m_InternalPosition += read;
+        return read;
     }
 
     uint64_t CDefaultFileStream::Write(const char *_Buffer, uint64_t _Size)
     {
-        return fwrite(_Buffer, 1, _Size, m_File);
+        auto written = fwrite(_Buffer, 1, _Size, m_File);
+        m_InternalPosition += written;
+
+        if(m_InternalPosition > m_Size)
+            m_Size += written;
+        else
+        fflush(m_File);
+
+        return  written;
     }
 
     void CDefaultFileStream::Seek(uint64_t _Offset, SeekOrigin _Origin)
@@ -40,6 +52,7 @@ namespace VCore
         }
 
         fseek(m_File, _Offset, seekOff);
+        m_InternalPosition = Tell();
     }
 
     uint64_t CDefaultFileStream::Tell()

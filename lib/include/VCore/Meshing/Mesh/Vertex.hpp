@@ -26,7 +26,7 @@
 #define VERTEX_HPP
 
 #include <VCore/Math/Vector.hpp>
-#include <string.h>
+#include <cstring>
 #include <VCore/Memory/ObjectPool.hpp>
 
 namespace VCore
@@ -34,7 +34,7 @@ namespace VCore
     struct SVertex
     {
         SVertex() = default;
-        SVertex(const Math::Vec3f &_Pos, const Math::Vec3f &_Normal, const uint32_t _Color, const uint8_t _AmbientOcclusionValue = 3) : Pos(_Pos), Normal(_Normal), Color(_Color), AmbientOcclusionValue(_AmbientOcclusionValue) {}
+        SVertex(const Math::Vec3f &p_Pos, const Math::Vec3f &p_Normal, const uint32_t p_Color, const uint8_t p_AmbientOcclusionValue = 3) : Pos(p_Pos), Normal(p_Normal), Color(p_Color), AmbientOcclusionValue(p_AmbientOcclusionValue) {}
         SVertex(SVertex &&) = default;
         SVertex(const SVertex &) = default;
 
@@ -51,14 +51,14 @@ namespace VCore
             return s_Pool.Allocate();
         }
 
-        void operator delete(void *p)
+        void operator delete(void *p_Ptr)
         {
-            s_Pool.Deallocate(p);
+            s_Pool.Deallocate(p_Ptr);
         }
 
-        inline bool operator==(const SVertex &_Vertex) const
+        inline bool operator==(const SVertex &p_Vertex) const
         {
-            return _Vertex.Pos == Pos && _Vertex.Normal == Normal && _Vertex.Color == Color && _Vertex.AmbientOcclusionValue == AmbientOcclusionValue;
+            return p_Vertex.Pos == Pos && p_Vertex.Normal == Normal && p_Vertex.Color == Color && p_Vertex.AmbientOcclusionValue == AmbientOcclusionValue;
         }
 
         private:
@@ -69,14 +69,14 @@ namespace VCore
 
     struct VertexHasher
     {
-        size_t operator()(const SVertex &_Vertex) const
+        size_t operator()(const SVertex &p_Vertex) const
         {
             Math::Vec3fHasher v3fhasher;
 
-            size_t ph = v3fhasher(_Vertex.Pos);
-            size_t nh = v3fhasher(_Vertex.Normal);
+            size_t ph = v3fhasher(p_Vertex.Pos);
+            size_t nh = v3fhasher(p_Vertex.Normal);
 
-            return ((ph * 73856093) ^ (nh * 19349663) ^ (_Vertex.Color * 83492791) ^ (_Vertex.AmbientOcclusionValue * 5860394));
+            return ((ph * 73856093) ^ (nh * 19349663) ^ (p_Vertex.Color * 83492791) ^ (p_Vertex.AmbientOcclusionValue * 5860394));
         }
     };
 } // namespace VCore

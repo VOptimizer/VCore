@@ -173,7 +173,7 @@ namespace VCore
         (void)Opaque;
 
         CMeshBuilder builder(m_SurfaceFactory);
-        builder.AddTextures(m->Textures);
+        // builder.AddTextures(m->Textures);
 
         const CBBox chunkBBox(_Chunk.TotalBBox.Beg, _Chunk.TotalBBox.GetSize());
 
@@ -194,11 +194,7 @@ namespace VCore
                     // auto parts = split(key.first, "_");
                     auto voxel = *(CVoxel*)&key.first;
 
-                    auto material = MaterialManager::GetMaterial(voxel.Material);
-                    if(!material)
-                        material = MaterialManager::GetMaterial(0);
-
-                    builder.SelectSurface(material);
+                    builder.SelectSurface(voxel.GetMaterial());
 
                     // Column connections
                     IndexPair indexFrontCache[Config::ChunkSize] = {};
@@ -252,6 +248,7 @@ namespace VCore
         uint32_t lastLeftIdx = 0, lastRightIdx = 0;
         uint8_t lastLeftAO = 0, lastRightAO = 0;
         IndexPair localCache[Config::ChunkSize] = {};
+        auto color = _Voxel.GetColor();
 
         // Math::Vec2f uv;
         // auto textures = _Builder.GetTextures();
@@ -324,10 +321,10 @@ namespace VCore
                     }
 
                     if(!idx1)
-                        idx1 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[0], faceInfo.V1, faceInfo.Normal, _Voxel.Color, ao1);
+                        idx1 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[0], faceInfo.V1, faceInfo.Normal, color, ao1);
 
                     if(!idx2)
-                        idx2 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[1], faceInfo.V2, faceInfo.Normal, _Voxel.Color, ao2);
+                        idx2 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[1], faceInfo.V2, faceInfo.Normal, color, ao2);
                 }
 
                 if(heightPos < Config::ChunkSize)
@@ -361,10 +358,10 @@ namespace VCore
                 }
 
                 if(!idx3)
-                    idx3 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[2], faceInfo.V3, faceInfo.Normal, _Voxel.Color, ao3);
+                    idx3 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[2], faceInfo.V3, faceInfo.Normal, color, ao3);
 
                 if(!idx4)
-                    idx4 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[3], faceInfo.V4, faceInfo.Normal, _Voxel.Color, ao4);
+                    idx4 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[3], faceInfo.V4, faceInfo.Normal, color, ao4);
 
                 // Save the last two indices.
                 lastLeftIdx = idx3;

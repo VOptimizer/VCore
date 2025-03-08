@@ -30,9 +30,15 @@ namespace VCore
     {
         /**
          * @brief Adds a new material to the material manager
-         * @return Returns a handle to the material or UCHAR_MAX, if all slots are in use..
+         * @return Returns a handle to the material or UCHAR_MAX, if all slots are in use.
          */
         extern uint8_t AddMaterial(const CMaterial &_Material);
+
+        /**
+         * @brief Adds a new material or gets the already existing handle of the material
+         * @return Returns a handle to the material or UCHAR_MAX, if all slots are in use.
+         */
+        extern uint8_t AddOrGetMaterial(const CMaterial &_Material);
 
         /**
          * @brief Retrieves a material by it's handle.
