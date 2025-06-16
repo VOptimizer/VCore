@@ -24,7 +24,7 @@
 
 #include <VCore/Voxel/Storage/Chunk.hpp>
 #include <VCore/Voxel/Storage/VoxelSpace.hpp>
-#include "../../Misc/Helper.hpp"
+#include <cstddef>
 
 namespace VCore
 {
@@ -32,57 +32,57 @@ namespace VCore
     // CBitMaskChunk functions
     //////////////////////////////////////////////////
 
-    void CBitMaskChunk::SetAxis(const Math::Vec3i &_Position, bool _Value, char _Axis)
+    void CBitMaskChunk::SetAxis(const Math::Vec3i &p_Position, bool p_Value, char p_Axis)
     {
-        if(_Value)
+        if(p_Value)
         {
-            switch (_Axis)
+            switch (p_Axis)
             {
-                case 0: m_Grid[(_Position.z) + Config::ChunkSize * (_Position.y)] |= ((Config::bitmask_t)1 << (_Position.x)); break;
-                case 1: m_Grid[(_Position.x) + Config::ChunkSize * (_Position.z) + (Config::ChunkSize * Config::ChunkSize)] |= ((Config::bitmask_t)1 << (_Position.y)); break;
-                case 2: m_Grid[(_Position.x) + Config::ChunkSize * (_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] |= ((Config::bitmask_t)1 << (_Position.z)); break;
+                case 0: m_Grid[(p_Position.z) + Config::ChunkSize * (p_Position.y)] |= ((Config::bitmask_t)1 << (p_Position.x)); break;
+                case 1: m_Grid[(p_Position.x) + Config::ChunkSize * (p_Position.z) + (Config::ChunkSize * Config::ChunkSize)] |= ((Config::bitmask_t)1 << (p_Position.y)); break;
+                case 2: m_Grid[(p_Position.x) + Config::ChunkSize * (p_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] |= ((Config::bitmask_t)1 << (p_Position.z)); break;
             }
         }
         else
         {
-            switch (_Axis)
+            switch (p_Axis)
             {
-                case 0: m_Grid[(_Position.z) + Config::ChunkSize * (_Position.y)] &= ~((Config::bitmask_t)1 << (_Position.x)); break;
-                case 1: m_Grid[(_Position.x) + Config::ChunkSize * (_Position.z) + (Config::ChunkSize * Config::ChunkSize)] &= ~((Config::bitmask_t)1 << (_Position.y)); break;
-                case 2: m_Grid[(_Position.x) + Config::ChunkSize * (_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] &= ~((Config::bitmask_t)1 << (_Position.z)); break;
+                case 0: m_Grid[(p_Position.z) + Config::ChunkSize * (p_Position.y)] &= ~((Config::bitmask_t)1 << (p_Position.x)); break;
+                case 1: m_Grid[(p_Position.x) + Config::ChunkSize * (p_Position.z) + (Config::ChunkSize * Config::ChunkSize)] &= ~((Config::bitmask_t)1 << (p_Position.y)); break;
+                case 2: m_Grid[(p_Position.x) + Config::ChunkSize * (p_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] &= ~((Config::bitmask_t)1 << (p_Position.z)); break;
             }
         }
     }
 
-    CBitMaskChunk &CBitMaskChunk::operator=(const CBitMaskChunk &_Other)
+    CBitMaskChunk &CBitMaskChunk::operator=(const CBitMaskChunk &p_Other)
     {
-        memcpy(m_Grid, _Other.m_Grid, sizeof(m_Grid));
+        memcpy(m_Grid, p_Other.m_Grid, sizeof(m_Grid));
         return *this;
     }
 
-    void CBitMaskChunk::Set(const Math::Vec3i &_Position, bool _Value)
+    void CBitMaskChunk::Set(const Math::Vec3i &p_Position, bool p_Value)
     {
-        if(_Value)
+        if(p_Value)
         {
-            m_Grid[(_Position.z) + Config::ChunkSize * (_Position.y)] |= ((Config::bitmask_t)1 << (_Position.x));
-            m_Grid[(_Position.x) + Config::ChunkSize * (_Position.z) + (Config::ChunkSize * Config::ChunkSize)] |= ((Config::bitmask_t)1 << (_Position.y));
-            m_Grid[(_Position.x) + Config::ChunkSize * (_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] |= ((Config::bitmask_t)1 << (_Position.z));
+            m_Grid[(p_Position.z) + Config::ChunkSize * (p_Position.y)] |= ((Config::bitmask_t)1 << (p_Position.x));
+            m_Grid[(p_Position.x) + Config::ChunkSize * (p_Position.z) + (Config::ChunkSize * Config::ChunkSize)] |= ((Config::bitmask_t)1 << (p_Position.y));
+            m_Grid[(p_Position.x) + Config::ChunkSize * (p_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] |= ((Config::bitmask_t)1 << (p_Position.z));
         }
         else
         {
-            m_Grid[(_Position.z) + Config::ChunkSize * (_Position.y)] &= ~((Config::bitmask_t)1 << (_Position.x));
-            m_Grid[(_Position.x) + Config::ChunkSize * (_Position.z) + (Config::ChunkSize * Config::ChunkSize)] &= ~((Config::bitmask_t)1 << (_Position.y));
-            m_Grid[(_Position.x) + Config::ChunkSize * (_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] &= ~((Config::bitmask_t)1 << (_Position.z));
+            m_Grid[(p_Position.z) + Config::ChunkSize * (p_Position.y)] &= ~((Config::bitmask_t)1 << (p_Position.x));
+            m_Grid[(p_Position.x) + Config::ChunkSize * (p_Position.z) + (Config::ChunkSize * Config::ChunkSize)] &= ~((Config::bitmask_t)1 << (p_Position.y));
+            m_Grid[(p_Position.x) + Config::ChunkSize * (p_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)] &= ~((Config::bitmask_t)1 << (p_Position.z));
         }
     }
 
-    Config::bitmask_t CBitMaskChunk::GetRowFaces(const Math::Vec3i &_Position, char _Axis) const
+    Config::bitmask_t CBitMaskChunk::GetRowFaces(const Math::Vec3i &p_Position, char p_Axis) const
     {
-        switch (_Axis)
+        switch (p_Axis)
         {
-            case 0: return m_Grid[(_Position.z) + Config::ChunkSize * (_Position.y)];
-            case 1: return m_Grid[(_Position.x) + Config::ChunkSize * (_Position.z) + (Config::ChunkSize * Config::ChunkSize)];
-            case 2: return m_Grid[(_Position.x) + Config::ChunkSize * (_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)];
+            case 0: return m_Grid[(p_Position.z) + Config::ChunkSize * (p_Position.y)];
+            case 1: return m_Grid[(p_Position.x) + Config::ChunkSize * (p_Position.z) + (Config::ChunkSize * Config::ChunkSize)];
+            case 2: return m_Grid[(p_Position.x) + Config::ChunkSize * (p_Position.y) + (Config::ChunkSize * Config::ChunkSize * 2)];
         }
 
         return 0;
@@ -97,11 +97,11 @@ namespace VCore
         if(m_Storage && dynamic_cast<CChunk32*>(m_Storage) == nullptr)
         {
             CChunk32 *result = new CChunk32();
-            for (int x = m_InnerBBox.Beg.x; x < m_InnerBBox.End.x; x++)
+            for (int x = m_InnerBBox.Beg.x; x <= m_InnerBBox.End.x; x++)
             {
-                for (int y = m_InnerBBox.Beg.y; y < m_InnerBBox.End.y; y++)
+                for (int y = m_InnerBBox.Beg.y; y <= m_InnerBBox.End.y; y++)
                 {
-                    for (int z = m_InnerBBox.Beg.z; z < m_InnerBBox.End.z; z++)
+                    for (int z = m_InnerBBox.Beg.z; z <= m_InnerBBox.End.z; z++)
                     {
                         Math::Vec3i position(x, y, z);
                         result->SetVoxel(m_Storage->GetVoxel(position), position);
@@ -114,72 +114,39 @@ namespace VCore
         }
     }
 
-    void CChunk::UpdateNeighborChunks(CVoxelSpace *_Space, const Math::Vec3i &_GlobalPos)
+    void CChunk::UpdateNeighborChunks(CVoxelSpace *p_Space, const Math::Vec3i &p_GlobalPos)
     {
-        Math::Vec3i relPos = _GlobalPos & Config::InnerChunkMask;
+        Math::Vec3i relPos = p_GlobalPos & Config::InnerChunkMask;
         for (size_t i = 0; i < 3; i++)
         {
             if(relPos.v[i] == Config::InnerChunkMask)
             {
-                auto globalPos = _GlobalPos;
+                auto globalPos = p_GlobalPos;
                 globalPos.v[i]++;
-                auto chunk = _Space->GetChunk(globalPos);
+                auto chunk = p_Space->GetChunk(globalPos);
                 if(chunk)
-                {
                     chunk->IsDirty = true;
-                    // auto chunkpos = GetChunkpos(globalPos);
-
-                    // auto faces = chunk->m_Mask.GetRowFaces(globalPos - chunkpos, i);
-                    // if(faces & 0x2)
-                    // {
-                    //     auto tmp = relPos;
-                    //     tmp.v[i]++;
-                    //     m_Mask.SetAxis(tmp, _Value, i);
-                    // }
-
-                    // globalPos.v[i]--;
-                    // chunk->m_Mask.SetAxis(globalPos - chunkpos, _Value, i);
-                }
             }
             else if(relPos.v[i] == 0)
             {
-                auto globalPos = _GlobalPos;
+                auto globalPos = p_GlobalPos;
                 globalPos.v[i]--;
-                auto chunk = _Space->GetChunk(globalPos);
+                auto chunk = p_Space->GetChunk(globalPos);
                 if(chunk)
-                {
                     chunk->IsDirty = true;
-                    // auto chunkpos = GetChunkpos(globalPos);
-
-                    // auto faces = chunk->m_Mask.GetRowFaces(globalPos - chunkpos, i);
-                    // if(faces & (Config::FaceMask + 1))
-                    // {
-                    //     auto tmp = relPos;
-                    //     tmp.v[i]--;
-                    //     m_Mask.SetAxis(tmp, _Value, i);
-                    // }
-
-                    // globalPos.v[i]++;
-                    // chunk->m_Mask.SetAxis(globalPos - chunkpos, _Value, i);
-                }
             }
         }
     }
 
-    bool CChunk::insert(const pair &_pair)
+    bool CChunk::insert(const pair &p_pair)
     {
-        Math::Vec3i relPos = _pair.first & Config::InnerChunkMask;
+        Math::Vec3i relPos = p_pair.first & Config::InnerChunkMask;
         if(!m_Storage)
             m_Storage = new CByteChunk();
 
-        auto result = m_Storage->SetVoxel(_pair.second, relPos);
-
-        // CVoxel &voxel = m_Data[relPos.x + Config::ChunkSize * relPos.y + Config::ChunkSize * Config::ChunkSize * relPos.z];
-        // voxel.Color = _pair.second.Color;
-        // voxel.Material = _pair.second.Material;
-
+        auto result = m_Storage->SetVoxel(p_pair.second, relPos);
         Mask.Set(relPos, true);
-        UpdateNeighborChunks(m_Space, _pair.first);
+        UpdateNeighborChunks(m_Space, p_pair.first);
 
         m_InnerBBox.Beg = m_InnerBBox.Beg.min(relPos);
         m_InnerBBox.End = m_InnerBBox.End.max(relPos);
@@ -188,11 +155,11 @@ namespace VCore
         return result;
     }
 
-    bool CChunk::HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos)
+    bool CChunk::HasVoxelOnPlane(int p_Axis, const Math::Vec3i &p_Pos)
     {
-        Math::Vec3i pos = _Pos;
-        int heightAxis = (_Axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
-        int widthAxis = (_Axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
+        Math::Vec3i pos = p_Pos;
+        int heightAxis = (p_Axis + 1) % 3; // 1 = 1 = y, 2 = 2 = z, 3 = 0 = x
+        int widthAxis = (p_Axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
 
         pos.v[widthAxis] = m_InnerBBox.Beg.v[widthAxis];
         for (; pos.v[widthAxis] <= m_InnerBBox.End.v[widthAxis]; pos.v[widthAxis]++)
@@ -200,7 +167,6 @@ namespace VCore
             pos.v[heightAxis] = m_InnerBBox.Beg.v[heightAxis];
             for (; pos.v[heightAxis] <= m_InnerBBox.End.v[heightAxis]; pos.v[heightAxis]++)
             {
-                // if(m_Data[pos.x + Config::ChunkSize * pos.y + Config::ChunkSize * Config::ChunkSize * pos.z].IsInstantiated())
                 if(m_Storage->GetVoxel(pos).IsInstantiated())
                     return true;
             }
@@ -209,19 +175,17 @@ namespace VCore
         return false;
     }
 
-    CChunk::pair CChunk::erase(const iterator &_it)
+    CChunk::pair CChunk::erase(const iterator &p_it)
     {
         if(!m_Storage)
             return { Math::Vec3i(), CVoxel() };
 
-        Math::Vec3i relPos = _it->first & Config::InnerChunkMask;
+        Math::Vec3i relPos = p_it->first & Config::InnerChunkMask;
         m_Storage->SetVoxel(CVoxel(), relPos);
-        // CVoxel &voxel = m_Data[relPos.x + Config::ChunkSize * relPos.y + Config::ChunkSize * Config::ChunkSize * relPos.z];
-        // voxel = CVoxel();
         IsDirty = true;
 
         Mask.Set(relPos, false);
-        UpdateNeighborChunks(m_Space, _it->first);
+        UpdateNeighborChunks(m_Space, p_it->first);
 
         // Checks if the bbox must be resized
         for (size_t i = 0; i < 3; i++)
@@ -231,13 +195,25 @@ namespace VCore
             else if((relPos.v[i] == m_InnerBBox.Beg.v[i]) && !HasVoxelOnPlane(i, relPos))
                 m_InnerBBox.Beg.v[i] += 1;
         }
+
+        // Check if there any remaining voxels.
+        if(
+            m_InnerBBox.Beg.x > m_InnerBBox.End.x && 
+            m_InnerBBox.Beg.y > m_InnerBBox.End.y && 
+            m_InnerBBox.Beg.z > m_InnerBBox.End.z
+        )
+        {
+            delete m_Storage;
+            m_Storage = nullptr;
+            return { Math::Vec3i(), CVoxel() };
+        }
         
-        return next(_it->first);
+        return next(p_it->first);
     }
 
-    CChunk::pair CChunk::next(const Math::Vec3i &_Position) const
+    CChunk::pair CChunk::next(const Math::Vec3i &p_Position) const
     {
-        Math::Vec3i relPos = _Position & Config::InnerChunkMask;
+        Math::Vec3i relPos = p_Position & Config::InnerChunkMask;
 
         for (int z = relPos.z; z <= m_InnerBBox.End.z; z++)
         {
@@ -247,7 +223,7 @@ namespace VCore
                 {
                     CVoxel vox = m_Storage->GetVoxel(Math::Vec3i(x, y, z)); //m_Data[x + Config::ChunkSize * y + Config::ChunkSize * Config::ChunkSize * z];
                     if(vox.IsInstantiated())
-                        return {GetChunkpos(_Position) + Math::Vec3i(x, y, z), vox};
+                        return {GetChunkpos(p_Position) + Math::Vec3i(x, y, z), vox};
                 }
 
                 relPos.x = m_InnerBBox.Beg.x;
@@ -259,13 +235,12 @@ namespace VCore
         return {Math::Vec3i(), CVoxel()};
     }
 
-    CVoxel CChunk::find(const Math::Vec3i &_v) const
+    CVoxel CChunk::find(const Math::Vec3i &p_v) const
     {
         if(!m_Storage)
             return CVoxel();
 
-        Math::Vec3i relPos = _v & Config::InnerChunkMask;
-        // CVoxel vox = m_Data[relPos.x + Config::ChunkSize * relPos.y + Config::ChunkSize * Config::ChunkSize * relPos.z];
+        Math::Vec3i relPos = p_v & Config::InnerChunkMask;
         return m_Storage->GetVoxel(relPos);
     }
 
@@ -273,17 +248,17 @@ namespace VCore
     // CByteChunk functions
     //////////////////////////////////////////////////
 
-    uint8_t CByteChunk::AddAndGetVoxelIndex(const CVoxel &_Voxel)
+    uint8_t CByteChunk::AddAndGetVoxelIndex(const CVoxel &p_Voxel)
     {
-        int index = (uint32_t)_Voxel % HASHMAP_SIZE;
+        int index = (uint32_t)p_Voxel % HASHMAP_SIZE;
 
-        while (m_VoxelIndex[index].RefCount != 0 && m_VoxelIndex[index].Voxel != _Voxel)
+        while (m_VoxelIndex[index].RefCount != 0 && m_VoxelIndex[index].Voxel != p_Voxel)
             index = (index + 1) % HASHMAP_SIZE;
         
         if(m_VoxelIndex[index].RefCount == 0)
             m_VoxelIndexSize++;
 
-        m_VoxelIndex[index].Voxel = _Voxel;
+        m_VoxelIndex[index].Voxel = p_Voxel;
         m_VoxelIndex[index].RefCount++;
 
         return index;
@@ -292,12 +267,11 @@ namespace VCore
     void CByteChunk::Clear()
     {
         memset(m_Data, 0xFF, sizeof(m_Data));
-        // m_InnerBBox = CBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i());
     }
 
-    bool CByteChunk::SetVoxel(const CVoxel &_Voxel, const Math::Vec3i &_Position)
+    bool CByteChunk::SetVoxel(const CVoxel &p_Voxel, const Math::Vec3i &p_Position)
     {
-        auto voxelIndex = _Position.x + Config::ChunkSize * _Position.y + Config::ChunkSize * Config::ChunkSize * _Position.z;
+        auto voxelIndex = p_Position.x + Config::ChunkSize * p_Position.y + Config::ChunkSize * Config::ChunkSize * p_Position.z;
         auto voxel = m_Data[voxelIndex];
 
         // Decrements the old voxel by one.
@@ -311,7 +285,7 @@ namespace VCore
             }
         }
 
-        if(!_Voxel.IsInstantiated())
+        if(!p_Voxel.IsInstantiated())
         {
             m_Data[voxelIndex] = 0xFF;
             return true;
@@ -322,13 +296,13 @@ namespace VCore
             return false;
 
         // Adds the index of the hashmap
-        m_Data[voxelIndex] = AddAndGetVoxelIndex(_Voxel);
+        m_Data[voxelIndex] = AddAndGetVoxelIndex(p_Voxel);
         return true;
     }
 
-    CVoxel CByteChunk::GetVoxel(const Math::Vec3i &_Position) const
+    CVoxel CByteChunk::GetVoxel(const Math::Vec3i &p_Position) const
     {
-        auto voxelIndex = _Position.x + Config::ChunkSize * _Position.y + Config::ChunkSize * Config::ChunkSize * _Position.z;
+        auto voxelIndex = p_Position.x + Config::ChunkSize * p_Position.y + Config::ChunkSize * Config::ChunkSize * p_Position.z;
         auto voxel = m_Data[voxelIndex];
 
         if(voxel != 0xFF)
@@ -341,21 +315,20 @@ namespace VCore
     // CChunk32 functions
     //////////////////////////////////////////////////
 
-    bool CChunk32::SetVoxel(const CVoxel &_Voxel, const Math::Vec3i &_Position)
+    bool CChunk32::SetVoxel(const CVoxel &p_Voxel, const Math::Vec3i &p_Position)
     {
-        m_Data[_Position.x + Config::ChunkSize * _Position.y + Config::ChunkSize * Config::ChunkSize * _Position.z] = _Voxel;
+        m_Data[p_Position.x + Config::ChunkSize * p_Position.y + Config::ChunkSize * Config::ChunkSize * p_Position.z] = p_Voxel;
 
         return true;
     }
 
-    CVoxel CChunk32::GetVoxel(const Math::Vec3i &_Position) const
+    CVoxel CChunk32::GetVoxel(const Math::Vec3i &p_Position) const
     {
-        return m_Data[_Position.x + Config::ChunkSize * _Position.y + Config::ChunkSize * Config::ChunkSize * _Position.z];
+        return m_Data[p_Position.x + Config::ChunkSize * p_Position.y + Config::ChunkSize * Config::ChunkSize * p_Position.z];
     }
 
     void CChunk32::Clear()
     {
         memset(reinterpret_cast<char*>(m_Data), 0xFF, sizeof(m_Data));
-        // m_InnerBBox = CBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i());
     }
 } // namespace VCore

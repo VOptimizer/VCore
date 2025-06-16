@@ -34,37 +34,37 @@ namespace VCore
     {
         public:
             CPlane() : Distance(0) {}
-            CPlane(CPlane &&_Other) { *this = std::move(_Other); }
-            CPlane(const CPlane &_Other) { *this = _Other; }
-            CPlane(float _Distance, const Math::Vec3f &_Normal) : Distance(_Distance), Normal(_Normal) {}
-            CPlane(const Math::Vec3f &_Point, const Math::Vec3f &_Normal) : Normal(_Normal.normalize())
+            CPlane(CPlane &&p_Other) { *this = std::move(p_Other); }
+            CPlane(const CPlane &p_Other) { *this = p_Other; }
+            CPlane(float p_Distance, const Math::Vec3f &p_Normal) : Distance(p_Distance), Normal(p_Normal) {}
+            CPlane(const Math::Vec3f &p_Point, const Math::Vec3f &p_Normal) : Normal(p_Normal.normalize())
             {
                 Normal.zero_approx();
-                Distance = Normal.dot(_Point);
+                Distance = Normal.dot(p_Point);
             }
 
             float Distance;
             Math::Vec3f Normal;
 
-            inline float SignedDistanceToPlane(const Math::Vec3f &_Point) const
+            inline float SignedDistanceToPlane(const Math::Vec3f &p_Point) const
             {
-                return Normal.dot(_Point) - Distance;
+                return Normal.dot(p_Point) - Distance;
             }
 
-            inline CPlane &operator=(CPlane &&_Other)
+            inline CPlane &operator=(CPlane &&p_Other)
             {
-                Distance = _Other.Distance;
-                Normal = _Other.Normal;
+                Distance = p_Other.Distance;
+                Normal = p_Other.Normal;
 
-                _Other.Distance = 0;
-                _Other.Normal = Math::Vec3f();
+                p_Other.Distance = 0;
+                p_Other.Normal = Math::Vec3f();
                 return *this;
             }
 
-            inline CPlane &operator=(const CPlane &_Other)
+            inline CPlane &operator=(const CPlane &p_Other)
             {
-                Distance = _Other.Distance;
-                Normal = _Other.Normal;
+                Distance = p_Other.Distance;
+                Normal = p_Other.Normal;
                 return *this;
             }
 
@@ -75,9 +75,9 @@ namespace VCore
     {
         public:
             CFrustum() = default;
-            CFrustum(CFrustum &&_Other) { *this = std::move(_Other); }
-            CFrustum(const CFrustum &_Other) { *this = _Other; }
-            CFrustum(const CPlane &_Near, const CPlane &_Far, const CPlane &_Left, const CPlane &_Right, const CPlane &_Top, const CPlane &_Bottom) : Near(_Near), Far(_Far), Left(_Left), Right(_Right), Top(_Top), Bottom(_Bottom) {}
+            CFrustum(CFrustum &&p_Other) { *this = std::move(p_Other); }
+            CFrustum(const CFrustum &p_Other) { *this = p_Other; }
+            CFrustum(const CPlane &p_Near, const CPlane &p_Far, const CPlane &p_Left, const CPlane &p_Right, const CPlane &p_Top, const CPlane &p_Bottom) : Near(p_Near), Far(p_Far), Left(p_Left), Right(p_Right), Top(p_Top), Bottom(p_Bottom) {}
 
             CPlane Near;
             CPlane Far;
@@ -86,10 +86,10 @@ namespace VCore
             CPlane Top;
             CPlane Bottom;
 
-            inline bool IsOnFrustum(const CBBox &_BBox) const
+            inline bool IsOnFrustum(const CBBox &p_BBox) const
             {
-                Math::Vec3f center = _BBox.GetCenter();
-                Math::Vec3f extents = _BBox.GetExtents();
+                Math::Vec3f center = p_BBox.GetCenter();
+                Math::Vec3f extents = p_BBox.GetExtents();
 
                 bool b = IsOnOrForwardPlane(Near, center, extents);
                 bool b1 = IsOnOrForwardPlane(Left, center, extents);
@@ -101,62 +101,62 @@ namespace VCore
                 return b && b1 && b2 && b3 && b4 && b5;
             }
 
-            inline static CFrustum Create(const Math::Vec3f &_CamPosition, const Math::Vec3f &_CamFront, const Math::Vec3f &_CamRight, const Math::Vec3f &_CamUp, float _Aspect, float _Fov, float _Near, float _Far)
+            inline static CFrustum Create(const Math::Vec3f &p_CamPosition, const Math::Vec3f &p_CamFront, const Math::Vec3f &p_CamRight, const Math::Vec3f &p_CamUp, float p_Aspect, float p_Fov, float p_Near, float p_Far)
             {
                 CFrustum frustum;
-                const float halfVSide = _Far * tanf(_Fov * 0.5f);
-                const float halfHSide = halfVSide * _Aspect;
-                const Math::Vec3f frontMultiplierFar = _Far * _CamFront;
+                const float halfVSide = p_Far * tanf(p_Fov * 0.5f);
+                const float halfHSide = halfVSide * p_Aspect;
+                const Math::Vec3f frontMultiplierFar = p_Far * p_CamFront;
 
-                frustum.Near = CPlane(_CamPosition + _Near * _CamFront, _CamFront);
-                frustum.Far = CPlane(_CamPosition + frontMultiplierFar, -_CamFront);
+                frustum.Near = CPlane(p_CamPosition + p_Near * p_CamFront, p_CamFront);
+                frustum.Far = CPlane(p_CamPosition + frontMultiplierFar, -p_CamFront);
 
-                frustum.Right = CPlane(_CamPosition, (frontMultiplierFar - _CamRight * halfHSide).cross(_CamUp));
-                frustum.Left = CPlane(_CamPosition, _CamUp.cross(frontMultiplierFar + _CamRight * halfHSide));
+                frustum.Right = CPlane(p_CamPosition, (frontMultiplierFar - p_CamRight * halfHSide).cross(p_CamUp));
+                frustum.Left = CPlane(p_CamPosition, p_CamUp.cross(frontMultiplierFar + p_CamRight * halfHSide));
 
-                frustum.Top = CPlane(_CamPosition, _CamRight.cross(frontMultiplierFar - _CamUp * halfVSide));
-                frustum.Bottom = CPlane(_CamPosition, (frontMultiplierFar + _CamUp * halfVSide).cross(_CamRight));
+                frustum.Top = CPlane(p_CamPosition, p_CamRight.cross(frontMultiplierFar - p_CamUp * halfVSide));
+                frustum.Bottom = CPlane(p_CamPosition, (frontMultiplierFar + p_CamUp * halfVSide).cross(p_CamRight));
 
                 return frustum;
             }
 
-            inline CFrustum &operator=(CFrustum &&_Other)
+            inline CFrustum &operator=(CFrustum &&p_Other)
             {
-                Near = std::move(_Other.Near);
-                Far = std::move(_Other.Far);
+                Near = std::move(p_Other.Near);
+                Far = std::move(p_Other.Far);
 
-                Left = std::move(_Other.Left);
-                Right = std::move(_Other.Right);
+                Left = std::move(p_Other.Left);
+                Right = std::move(p_Other.Right);
 
-                Top = std::move(_Other.Top);
-                Bottom = std::move(_Other.Bottom);
+                Top = std::move(p_Other.Top);
+                Bottom = std::move(p_Other.Bottom);
                 return *this;
             }
 
-            inline CFrustum &operator=(const CFrustum &_Other)
+            inline CFrustum &operator=(const CFrustum &p_Other)
             {
-                Near = _Other.Near;
-                Far = _Other.Far;
+                Near = p_Other.Near;
+                Far = p_Other.Far;
 
-                Left = _Other.Left;
-                Right = _Other.Right;
+                Left = p_Other.Left;
+                Right = p_Other.Right;
 
-                Top = _Other.Top;
-                Bottom = _Other.Bottom;
+                Top = p_Other.Top;
+                Bottom = p_Other.Bottom;
                 return *this;
             }
 
             ~CFrustum() = default;
 
         private:
-            inline bool IsOnOrForwardPlane(const CPlane &_Plane, const Math::Vec3f &_Center, const Math::Vec3f &_Extend) const
+            inline bool IsOnOrForwardPlane(const CPlane &p_Plane, const Math::Vec3f &p_Center, const Math::Vec3f &p_Extend) const
             {
                 // https://gdbooks.gitbooks.io/3dcollisions/content/Chapter2/static_aabb_plane.html
                 // https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
-                Math::Vec3f extendNormal = _Extend * _Plane.Normal.abs();
+                Math::Vec3f extendNormal = p_Extend * p_Plane.Normal.abs();
                 float r = extendNormal.x + extendNormal.y + extendNormal.z;
 
-                return -r <= _Plane.SignedDistanceToPlane(_Center);
+                return -r <= p_Plane.SignedDistanceToPlane(p_Center);
             }
     };
 } // namespace VCore

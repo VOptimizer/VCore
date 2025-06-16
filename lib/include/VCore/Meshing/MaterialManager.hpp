@@ -32,35 +32,35 @@ namespace VCore
          * @brief Adds a new material to the material manager
          * @return Returns a handle to the material or UCHAR_MAX, if all slots are in use.
          */
-        extern uint8_t AddMaterial(const CMaterial &_Material);
+        extern uint8_t AddMaterial(const CMaterial &p_Material);
 
         /**
          * @brief Adds a new material or gets the already existing handle of the material
          * @return Returns a handle to the material or UCHAR_MAX, if all slots are in use.
          */
-        extern uint8_t AddOrGetMaterial(const CMaterial &_Material);
+        extern uint8_t AddOrGetMaterial(const CMaterial &p_Material);
 
         /**
          * @brief Retrieves a material by it's handle.
          * @return Returns a reference to the material, which is associated with the handle, or null, if there is no material associated.
          */
-        extern CMaterial *GetMaterial(const uint8_t _MaterialHandle);
+        extern CMaterial *GetMaterial(const uint8_t p_MaterialHandle);
     	
         /**
          * @brief Creates a new default material.
          * @return Returns a handle to the new material or UCHAR_MAX, if all slots are in use.
          */
-        extern uint8_t CreateMaterial();
+        // extern uint8_t CreateMaterial();
 
         /**
          * @brief Uses linear search for finding the slot for a given material.
          * @return Returns a handle to the material or UCHAR_MAX, if no slots was found.
          */
-        extern uint8_t FindMaterialSlot(const CMaterial &_Material);
+        extern uint8_t FindMaterialSlot(const CMaterial &p_Material);
 
         /**
          * @brief Frees a material.
          */
-        extern void DeleteMaterial(const uint8_t _MaterialHandle);
+        extern void DeleteMaterial(const uint8_t p_MaterialHandle);
     } // namespace MaterialManager
 } // namespace VCore

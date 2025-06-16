@@ -208,8 +208,8 @@ namespace VCore
     // CVoxelSpace functions
     //////////////////////////////////////////////////
 
-    CVoxelSpace::CVoxelSpace(IStreamable *_Stream) : m_VoxelsCount(0), m_Stream(_Stream), m_ModelLoaded(false), m_ChunkCache(Math::Vec3i(), nullptr) {}
-    CVoxelSpace::CVoxelSpace(CVoxelSpace &&_Other) : m_ChunkCache(Math::Vec3i(), nullptr) { *this = std::move(_Other); }
+    CVoxelSpace::CVoxelSpace(IStreamable *p_Stream) : m_VoxelsCount(0), m_Stream(p_Stream), m_ModelLoaded(false), m_ChunkCache(Math::Vec3i(), nullptr) {}
+    CVoxelSpace::CVoxelSpace(CVoxelSpace &&p_Other) : m_ChunkCache(Math::Vec3i(), nullptr) { *this = std::move(p_Other); }
 
     CVoxelSpace::~CVoxelSpace() 
     { 
@@ -218,11 +218,11 @@ namespace VCore
             delete m_Stream;
     }
 
-    void CVoxelSpace::insert(const pair &_pair)
+    void CVoxelSpace::insert(const pair &p_pair)
     {
         CheckLoadModel();
 
-        Math::Vec3i position = GetChunkpos(_pair.first);
+        Math::Vec3i position = GetChunkpos(p_pair.first);
         if(!m_ChunkCache.second || m_ChunkCache.first != position)
         {
             auto it = m_Chunks.find(position);
@@ -235,29 +235,29 @@ namespace VCore
         }
 
         // Time to upgrade
-        if(!m_ChunkCache.second->insert(_pair)) [[unlikely]]
+        if(!m_ChunkCache.second->insert(p_pair)) [[unlikely]]
         {
             m_ChunkCache.second->Upgrade();
-            m_ChunkCache.second->insert(_pair);
+            m_ChunkCache.second->insert(p_pair);
         }
 
         m_VoxelsCount++;
     }
 
-    CVoxelSpace::iterator CVoxelSpace::erase(const iterator &_it)
+    CVoxelSpace::iterator CVoxelSpace::erase(const iterator &p_it)
     {
         CheckLoadModel();
 
-        Math::Vec3i position = GetChunkpos(_it->first);
+        Math::Vec3i position = GetChunkpos(p_it->first);
         auto it = m_Chunks.find(position);
         if(it == m_Chunks.end())
             return end();
 
-        auto res = it->second->erase(_it);
+        auto res = it->second->erase(p_it);
         m_VoxelsCount--;
 
         // Removes the empty chunk.
-        if(it->second->inner_bbox(position).GetSize() == Math::Vec3i::ZERO)
+        if(it->second->IsEmpty())
         {
             delete it->second;
             it = m_Chunks.erase(it);
@@ -396,11 +396,11 @@ namespace VCore
         return bbox;
     }
 
-    CChunk* CVoxelSpace::createOrGetChunk(const Math::Vec3i &_Position)
+    CChunk* CVoxelSpace::createOrGetChunk(const Math::Vec3i &p_Position)
     {
         CheckLoadModel();
 
-        Math::Vec3i position = GetChunkpos(_Position);
+        Math::Vec3i position = GetChunkpos(p_Position);
         auto it = m_Chunks.find(position);
 
         // Creates a new chunk, if neccessary

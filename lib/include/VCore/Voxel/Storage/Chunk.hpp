@@ -40,12 +40,12 @@ namespace VCore
         public:
             CBitMaskChunk() = default;
 
-            void Set(const Math::Vec3i &_Position, bool _Value);
-            void SetAxis(const Math::Vec3i &_Position, bool _Value, char _Axis);
+            void Set(const Math::Vec3i &p_Position, bool p_Value);
+            void SetAxis(const Math::Vec3i &p_Position, bool p_Value, char p_Axis);
 
-            CBitMaskChunk &operator=(const CBitMaskChunk &_Other);
+            CBitMaskChunk &operator=(const CBitMaskChunk &p_Other);
 
-            Config::bitmask_t GetRowFaces(const Math::Vec3i &_Position, char _Axis) const;
+            Config::bitmask_t GetRowFaces(const Math::Vec3i &p_Position, char p_Axis) const;
         private:
             Config::bitmask_t m_Grid[Config::ChunkSize * Config::ChunkSize * 3] = {};
     };
@@ -54,12 +54,12 @@ namespace VCore
     {
         public:
             /** Sets a voxel on a given position. */
-            virtual bool SetVoxel(const CVoxel &_Voxel, const Math::Vec3i &_Position) = 0;
+            virtual bool SetVoxel(const CVoxel &p_Voxel, const Math::Vec3i &p_Position) = 0;
 
             /** 
              * @return Returns either an instantiated or not instantiated voxel. 
              */
-            virtual CVoxel GetVoxel(const Math::Vec3i &_Position) const = 0;
+            virtual CVoxel GetVoxel(const Math::Vec3i &p_Position) const = 0;
 
             virtual ~IChunkStorage() = default;
     };
@@ -73,7 +73,7 @@ namespace VCore
             bool IsDirty;
             CBitMaskChunk Mask;
 
-            CChunk(CVoxelSpace *_Space) : IsDirty(false), m_Space(_Space), m_Storage(nullptr), m_InnerBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i()) { }
+            CChunk(CVoxelSpace *p_Space) : IsDirty(false), m_Space(p_Space), m_Storage(nullptr), m_InnerBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i()) { }
             
 
             /**
@@ -86,28 +86,30 @@ namespace VCore
              * @brief Insert a new voxel.
              * @return Returns true on success and false, if the chunk needs to be upgraded.
              */
-            bool insert(const pair &_pair);
+            bool insert(const pair &p_pair);
 
             /**
              * @brief Removes a voxel.
              */
-            pair erase(const iterator &_it);
+            pair erase(const iterator &p_it);
 
             /**
              * @brief Returns the next voxel or null.
              */
-            pair next(const Math::Vec3i &_Position) const;
+            pair next(const Math::Vec3i &p_Position) const;
 
             /**
              * @brief Tries to find a voxel.
              * @brief Returns a reference to the voxel.
              */
-            CVoxel find(const Math::Vec3i &_v) const;
+            CVoxel find(const Math::Vec3i &p_v) const;
 
-            inline CBBox inner_bbox(const Math::Vec3i &_Position) const
+            inline CBBox inner_bbox(const Math::Vec3i &p_Position) const
             {
-                return CBBox(m_InnerBBox.Beg + _Position, m_InnerBBox.End + _Position);
+                return CBBox(m_InnerBBox.Beg + p_Position, m_InnerBBox.End + p_Position);
             }
+
+            inline bool IsEmpty() const { return m_Storage == nullptr; }
 
             virtual ~CChunk() = default;
 
@@ -117,8 +119,8 @@ namespace VCore
             CBBox m_InnerBBox;
         
         private:
-            bool HasVoxelOnPlane(int _Axis, const Math::Vec3i &_Pos);
-            void UpdateNeighborChunks(CVoxelSpace *_Space, const Math::Vec3i &_GlobalPos);
+            bool HasVoxelOnPlane(int p_Axis, const Math::Vec3i &p_Pos);
+            void UpdateNeighborChunks(CVoxelSpace *p_Space, const Math::Vec3i &p_GlobalPos);
     };
 
     class CByteChunk : public IChunkStorage
@@ -126,8 +128,8 @@ namespace VCore
         public:
             CByteChunk() : m_VoxelIndexSize(0) { Clear(); }
 
-            bool SetVoxel(const CVoxel &_Voxel, const Math::Vec3i &_Position) override;
-            CVoxel GetVoxel(const Math::Vec3i &_Position) const override;
+            bool SetVoxel(const CVoxel &p_Voxel, const Math::Vec3i &p_Position) override;
+            CVoxel GetVoxel(const Math::Vec3i &p_Position) const override;
 
             virtual ~CByteChunk() { Clear(); }
         private:
@@ -145,15 +147,15 @@ namespace VCore
             uint8_t m_VoxelIndexSize;
             uint8_t m_Data[Config::ChunkSize * Config::ChunkSize * Config::ChunkSize] = {};
 
-            uint8_t AddAndGetVoxelIndex(const CVoxel &_Voxel);
+            uint8_t AddAndGetVoxelIndex(const CVoxel &p_Voxel);
             void Clear();
     };
 
     class CChunk32 : public IChunkStorage
     {
         public:
-            bool SetVoxel(const CVoxel &_Voxel, const Math::Vec3i &_Position) override;
-            CVoxel GetVoxel(const Math::Vec3i &_Position) const override;
+            bool SetVoxel(const CVoxel &p_Voxel, const Math::Vec3i &p_Position) override;
+            CVoxel GetVoxel(const Math::Vec3i &p_Position) const override;
 
             virtual ~CChunk32() { Clear(); }
 
@@ -170,9 +172,9 @@ namespace VCore
         CBBox InnerBBox;            //!< The bounding box of the model inside the chunk.
     };
 
-    inline Math::Vec3i GetChunkpos(const Math::Vec3i &_Position)
+    inline Math::Vec3i GetChunkpos(const Math::Vec3i &p_Position)
     {
-        return _Position & Config::ChunkPositionMask;
+        return p_Position & Config::ChunkPositionMask;
     }
 } // namespace VCore
 

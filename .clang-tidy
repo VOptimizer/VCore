@@ -1,0 +1,62 @@
+Checks: >
+  bugprone-unused-return-value,
+  bugprone-unused-raii,
+  clang-analyzer-deadcode.DeadStores,
+  clang-analyzer-unix.Malloc,
+  misc-unused-parameters,
+  readability-inconsistent-declaration-parameter-name,
+  readability-redundant-declaration,
+  modernize-use-bool-literals,
+  modernize-deprecated-headers,
+  readability-function-cognitive-complexity,
+  modernize-use-explicit,
+  readability-identifier-naming,
+  modernize-use-override,  # Stellt sicher, dass override verwendet wird
+  -llvm-*,
+  -clang-analyzer-alpha.*,
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: '.*'
+
+FormatStyle: file
+
+InheritParentConfig: true
+
+CheckOptions:
+  # Naming Conventions basierend auf deinem Stil:
+
+  # Klassen: CMyClass
+  - key: readability-identifier-naming.ClassCase
+    value: CPrefixUpperCamelCase
+
+  # Methoden: PascalCase (z. B. MyMethod)
+  - key: readability-identifier-naming.MethodCase
+    value: UpperCamelCase
+
+  # Variablen: camelCase (z. B. myVariable)
+  - key: readability-identifier-naming.VariableCase
+    value: lowerCamelCase
+
+  # Private Member: m_PascalCase (z. B. m_MyVariable)
+  - key: readability-identifier-naming.PrivateMemberPrefix
+    value: m_
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: UpperCamelCase
+
+  # Öffentliche Member (wie Variablen): PascalCase (z. B. MyVariable)
+  - key: readability-identifier-naming.PublicMemberCase
+    value: UpperCamelCase
+
+  # Funktionsparameter: _PascalCase (z. B. _ParameterName)
+  - key: readability-identifier-naming.ParameterPrefix
+    value: p_
+  - key: readability-identifier-naming.ParameterCase
+    value: UpperCamelCase
+
+  # Deaktiviert erzwungene `override`-Nutzung (manchmal unnötig)
+  - key: modernize-use-override.IgnoreDestructors
+    value: true
+
+  - key: modernize-deprecated-headers.WarnOnDeprecatedIncludes
+    value: true

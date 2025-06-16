@@ -66,8 +66,8 @@ namespace VCore
 
                 if(!it->second.Frames.empty())
                 {
-                    p_Node->Position = it->second.Frames[0].Translation;
-                    p_Node->Rotation = it->second.Frames[0].Rotation;
+                    p_Node->SetPosition(it->second.Frames[0].Translation);
+                    p_Node->SetRotation(it->second.Frames[0].Rotation);
                 }
 
                 parentId = it->second.NodeId;
@@ -703,7 +703,7 @@ namespace VCore
 
                             CSceneNodeBase *node = SceneTree.get();
                             if(!firstGroup) [[likely]]
-                                node = new CSceneNode();
+                                node = new CSceneNode(nullptr);
                             else
                                 firstGroup = false;
 
@@ -717,9 +717,9 @@ namespace VCore
                             CSceneNodeBase *node = nullptr;
 
                             if(shape.Models.size() > 1)
-                                node = new CSceneAnimationNode(std::move(shape.Models));
+                                node = new CSceneAnimationNode(nullptr, std::move(shape.Models));
                             else
-                                node = new CSceneModelNode(shape.Models[0].ModelId);
+                                node = new CSceneModelNode(nullptr,shape.Models[0].ModelId);
 
                             treeHelper.BuildTree(shape.NodeId, node);
                         } break;

@@ -24,6 +24,8 @@
 
 #include <VCore/Meshing/MaterialManager.hpp>
 #include <VCore/VConfig.hpp>
+#include <climits>
+#include <cstdint>
 
 namespace VCore
 {
@@ -49,11 +51,11 @@ namespace VCore
         // Internal functions
         //////////////////////////////////////////////////
 
-        uint64_t HashMaterial(const CMaterial &_Material)
+        constexpr uint64_t HashMaterial(const CMaterial &p_Material)
         {
-            auto rawBytes = reinterpret_cast<const char*>(&_Material) + offsetof(CMaterial, Metallic);
+            auto rawBytes = (const char*)(&p_Material) + offsetof(CMaterial, Metallic);
 
-            constexpr static uint64_t magicPrime = 0x00000100000001b3;
+            constexpr uint64_t magicPrime = 0x00000100000001b3;
             uint64_t hash = 0xcbf29ce484222325;
 
             for (uint32_t i = 0; i < sizeof(CMaterial) - offsetof(CMaterial, Metallic); i++)
@@ -62,18 +64,28 @@ namespace VCore
             return hash;
         }
 
-        uint8_t FindMaterialSlot(const uint64_t _Hash)
+        uint8_t FindMaterialSlot(const uint64_t p_Hash)
         {
             for (size_t i = 0; i < MaxSlots; i++)
             {
-                if(g_Slots[i].Hash == _Hash || (i == 0))
+                if(g_Slots[i].Hash == p_Hash)
                     return i;
             }
             
             return UCHAR_MAX;
         }
 
-        uint8_t CreateMaterial(const uint64_t _Hash)
+        uint8_t FindMaterialSlot(const CMaterial &p_Material, uint8_t &p_Hash)
+        {
+            p_Hash = HashMaterial(p_Material);            
+            auto slot = FindMaterialSlot(p_Hash);
+            if(slot == UCHAR_MAX && g_Slots[0].Material == p_Material)
+                return 0;
+
+            return slot;
+        }
+
+        uint8_t CreateMaterial(const uint64_t p_Hash)
         {
             if(g_NextFreeSlot >= g_Slots + MaxSlots)
                 return UCHAR_MAX;
@@ -85,7 +97,7 @@ namespace VCore
             if(g_NextFreeSlot->Hash)
                 return UCHAR_MAX;
 
-            g_NextFreeSlot->Hash = _Hash;
+            g_NextFreeSlot->Hash = p_Hash;
             auto index = g_NextFreeSlot - g_Slots;
             g_NextFreeSlot++;
             return index;
@@ -95,58 +107,58 @@ namespace VCore
         // Public functions
         //////////////////////////////////////////////////
 
-        uint8_t AddMaterial(const CMaterial &_Material)
+        uint8_t AddMaterial(const CMaterial &p_Material)
         {
-            auto hash = HashMaterial(_Material);
+            auto hash = HashMaterial(p_Material);
             auto slot = CreateMaterial(hash);
             if(slot != UCHAR_MAX) 
-                g_Slots[slot].Material = _Material;
+                g_Slots[slot].Material = p_Material;
 
             return slot;
         }
 
-        uint8_t AddOrGetMaterial(const CMaterial &_Material)
+        uint8_t AddOrGetMaterial(const CMaterial &p_Material)
         {
-            auto hash = HashMaterial(_Material);
-            auto slot = FindMaterialSlot(hash);
+            uint8_t hash;
+            auto slot = FindMaterialSlot(p_Material, hash);
             if(slot == UCHAR_MAX)
             {
                 slot = CreateMaterial(hash);
                 if(slot != UCHAR_MAX) 
-                    g_Slots[slot].Material = _Material;
+                    g_Slots[slot].Material = p_Material;
             }
 
             return slot;
         }
 
-        CMaterial *GetMaterial(const uint8_t _MaterialHandle)
+        CMaterial *GetMaterial(const uint8_t p_MaterialHandle)
         {
-            if(_MaterialHandle >= MaxSlots)
+            if(p_MaterialHandle >= MaxSlots)
                 return nullptr;
 
-            auto &slot = g_Slots[_MaterialHandle];
-            if(slot.Hash || _MaterialHandle == 0)
+            auto &slot = g_Slots[p_MaterialHandle];
+            if(slot.Hash || p_MaterialHandle == 0)
                 return &slot.Material;
 
             return nullptr;
         }
 
-        uint8_t FindMaterialSlot(const CMaterial &_Material)
+        uint8_t FindMaterialSlot(const CMaterial &p_Material)
         {
-            auto hash = HashMaterial(_Material);            
-            return FindMaterialSlot(hash);
+            uint8_t hash;
+            return FindMaterialSlot(p_Material, hash);
         }
 
-        void DeleteMaterial(const uint8_t _MaterialHandle)
+        void DeleteMaterial(const uint8_t p_MaterialHandle)
         {
-            if(_MaterialHandle == 0 || _MaterialHandle >= MaxSlots)
+            if(p_MaterialHandle == 0 || p_MaterialHandle >= MaxSlots)
                 return;
 
-            g_Slots[_MaterialHandle].Hash = 0;
-            g_Slots[_MaterialHandle].Material = CMaterial();
+            g_Slots[p_MaterialHandle].Hash = 0;
+            g_Slots[p_MaterialHandle].Material = CMaterial();
 
-            if(!g_NextFreeSlot || g_NextFreeSlot > (g_Slots + _MaterialHandle))
-                g_NextFreeSlot = g_Slots + _MaterialHandle;
+            if(!g_NextFreeSlot || g_NextFreeSlot > (g_Slots + p_MaterialHandle))
+                g_NextFreeSlot = g_Slots + p_MaterialHandle;
         }
     } // namespace MaterialManager
 } // namespace VCore

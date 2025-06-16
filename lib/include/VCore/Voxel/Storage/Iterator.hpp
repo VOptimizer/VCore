@@ -41,9 +41,9 @@ namespace VCore
             using pointer = pair*;
 
             CVoxelSpaceIterator();
-            CVoxelSpaceIterator(const CVoxelSpace *_Space, const CBBox &_InnerBox, const pair &_Pair);
-            CVoxelSpaceIterator(const CVoxelSpaceIterator &_Other);
-            CVoxelSpaceIterator(CVoxelSpaceIterator &&_Other);
+            CVoxelSpaceIterator(const CVoxelSpace *p_Space, const CBBox &p_InnerBox, const pair &p_Pair);
+            CVoxelSpaceIterator(const CVoxelSpaceIterator &p_Other);
+            CVoxelSpaceIterator(CVoxelSpaceIterator &&p_Other);
 
             reference operator*() const;
             pointer operator->() const;
@@ -51,11 +51,11 @@ namespace VCore
             CVoxelSpaceIterator& operator++();
             CVoxelSpaceIterator& operator++(int);
 
-            bool operator!=(const CVoxelSpaceIterator &_Rhs);
-            bool operator==(const CVoxelSpaceIterator &_Rhs);
+            bool operator!=(const CVoxelSpaceIterator &p_Rhs) const;
+            bool operator==(const CVoxelSpaceIterator &p_Rhs) const;
 
-            CVoxelSpaceIterator& operator=(const CVoxelSpaceIterator &_Other);
-            CVoxelSpaceIterator& operator=(CVoxelSpaceIterator &&_Other);
+            CVoxelSpaceIterator& operator=(const CVoxelSpaceIterator &p_Other);
+            CVoxelSpaceIterator& operator=(CVoxelSpaceIterator &&p_Other);
         
         private:
             const CVoxelSpace *m_Space;

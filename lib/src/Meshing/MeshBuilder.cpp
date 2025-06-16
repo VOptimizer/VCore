@@ -34,8 +34,8 @@ namespace VCore
 
     int CMeshBuilder::AddVertex(const SVertex &p_Vertex, SIndexedSurface &p_Surface)
     {
-        // TODO: How to index for simple mesher. Greedy not neccessary because of "random" distribution
-        // FIXME: The old me is stupid.
+        // How to index for simple mesher. Greedy not neccessary because of "random" distribution
+        // The old me is stupid.
         auto it = p_Surface.Index.find(p_Vertex);
         if(it == p_Surface.Index.end())
         {

@@ -25,30 +25,66 @@
 #ifndef SCENENODE_HPP
 #define SCENENODE_HPP
 
+#include "VCore/Voxel/Storage/VoxelSpace.hpp"
+#include <VCore/Math/Vector.hpp>
 #include <VCore/Misc/fast_vector.hpp>
 #include <VCore/Voxel/VoxelModel.hpp>
 
 #include <VCore/Meshing/Mesh/Mesh.hpp>
 #include <VCore/Math/Mat4x4.hpp>
+#include <VCore/Voxel/BBox.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <utility>
 
 namespace VCore
 {
+    class CVoxelSceneTree;
     class CSceneNodeBase
     {
+        friend CVoxelSceneTree;
         public:
             using Children = fast_vector<CSceneNodeBase*>;
 
-            CSceneNodeBase() = default;
+            CSceneNodeBase(CSceneNodeBase *p_Parent) : m_Parent(p_Parent) {}
 
             std::string Name;
-            Math::Vec3f Position;
-            Math::Vec3f Rotation;
-            Math::Vec3f Scale{1,1,1};
-
             bool Visible{true};
+
+            inline void SetPosition(const Math::Vec3f &p_Position)
+            {
+                m_Position = p_Position;
+                NotifyChildrenTranformDirty();
+            }
+
+            inline void SetRotation(const Math::Vec3f &p_Rotation)
+            {
+                m_Rotation = p_Rotation;
+                NotifyChildrenTranformDirty();
+            }
+
+            inline void SetScale(const Math::Vec3f &p_Scale)
+            {
+                m_Scale = p_Scale;
+                NotifyChildrenTranformDirty();
+            }
+
+            inline void SetParent(CSceneNodeBase *p_Parent)
+            {
+                if(!p_Parent)
+                    return;
+
+                // TODO: REMOVE
+                // if(m_Parent)
+                //     m_Parent->Remove(this)
+                m_Parent = p_Parent;
+            }
+
+            inline Math::Vec3f GetPosition() const { return m_Position; }
+            inline Math::Vec3f GetRotation() const { return m_Rotation; }
+            inline Math::Vec3f GetScale() const { return m_Scale; }
+            inline CSceneNodeBase *GetParent() const { return m_Parent; }
 
             /** Foreach accessors. */
 
@@ -67,25 +103,59 @@ namespace VCore
             /** @return Gets the current children count of this node. */
             virtual uint32_t GetChildrenCount() const = 0;
 
-            inline Math::Mat4x4 GetModelMatrix() const
+            /** @return Gets the global transform of this node. */
+            inline Math::Mat4x4 GetGlobalTransform()
             {
-                Math::Mat4x4 mm;
-                mm
-                    .Rotate(Math::Vec3f(0, 0, 1), Rotation.z)
-                    .Rotate(Math::Vec3f(1, 0, 0), Rotation.x)
-                    .Rotate(Math::Vec3f(0, 1, 0), Rotation.y);
+                if(m_TransformDirty) // Is the transformation dirty?
+                {
+                    m_TransformDirty = false;
 
-                mm *= Math::Mat4x4::Scale(Scale);
-                return Math::Mat4x4::Translation(Position) * mm;
+                    // Update cache
+                    if(m_Parent)
+                        m_GlobalTransform = m_Parent->GetGlobalTransform() * GetGlobalTransform();
+                    else
+                        m_GlobalTransform = GetGlobalTransform();
+                }
+
+                return m_GlobalTransform;
+            }
+
+            inline Math::Mat4x4 GetLocalTransform() const
+            {
+                Math::Mat4x4 localTranform;
+                localTranform
+                    .Rotate(Math::Vec3f(0, 0, 1), m_Rotation.z)
+                    .Rotate(Math::Vec3f(1, 0, 0), m_Rotation.x)
+                    .Rotate(Math::Vec3f(0, 1, 0), m_Rotation.y);
+
+                localTranform *= Math::Mat4x4::Scale(m_Scale);
+                return Math::Mat4x4::Translation(m_Position) * localTranform;
             }
 
             virtual ~CSceneNodeBase() = default;
+        protected:
+            void NotifyChildrenTranformDirty()
+            {
+                m_TransformDirty = true;
+                for (auto &&child : *this) 
+                    child->NotifyChildrenTranformDirty();
+            }
+
+            bool m_TransformDirty{true};
+            Math::Vec3f m_Position;
+            Math::Vec3f m_Rotation;
+            Math::Vec3f m_Scale{1,1,1};
+            CBBox m_BBox;
+
+        private:
+            CSceneNodeBase *m_Parent;
+            Math::Mat4x4 m_GlobalTransform;
     };
 
     class CSceneNode : public CSceneNodeBase
     {
         public:
-            CSceneNode() = default;
+            CSceneNode(CSceneNodeBase *p_Parent) : CSceneNodeBase(p_Parent) {}
 
             /** Foreach accessors. */
 
@@ -99,7 +169,11 @@ namespace VCore
              * @brief Adds a new child to this node.
              * @param p_Node New node to add.
              */
-            inline void AddChild(CSceneNodeBase *p_Node) override { m_Children.push_back(p_Node); }
+            inline void AddChild(CSceneNodeBase *p_Node) override 
+            { 
+                p_Node->SetParent(this); 
+                m_Children.push_back(p_Node); 
+            }
 
             /** @return Gets the current children count of this node. */
             inline uint32_t GetChildrenCount() const override { return m_Children.size(); }
@@ -116,7 +190,7 @@ namespace VCore
     class CSceneModelNode : public CSceneNode
     {
         public:
-            CSceneModelNode(const uint64_t p_ModelId) : CSceneNode(), ModelId(p_ModelId) {}
+            CSceneModelNode(CSceneNodeBase *p_Parent, const uint64_t p_ModelId) : CSceneNode(p_Parent), ModelId(p_ModelId) {}
 
             uint64_t ModelId;
 
@@ -132,7 +206,7 @@ namespace VCore
                 uint32_t FrameIdx;
             };
 
-            CSceneAnimationNode(fast_vector<SFrame> &&p_Frames) : Frames(std::move(p_Frames)) {}
+            CSceneAnimationNode(CSceneNodeBase *p_Parent, fast_vector<SFrame> &&p_Frames) : CSceneNode(p_Parent), Frames(std::move(p_Frames)) {}
 
             fast_vector<SFrame> Frames;
 
@@ -144,16 +218,42 @@ namespace VCore
     class TSceneTree : public CSceneNodeBase
     {
         public:
-            TSceneTree() = default;
-            TSceneTree(std::shared_ptr<CSceneNode::Children> p_Children) : m_Children(p_Children) {}
+            TSceneTree() : CSceneNodeBase(nullptr) {}
+            TSceneTree(std::shared_ptr<CSceneNode::Children> p_Children) : CSceneNodeBase(nullptr), m_Children(p_Children) {}
 
             /** Foreach accessors. */
 
-            inline CSceneNode::Children::iterator begin() override { return m_Children->begin(); }
-            inline CSceneNode::Children::iterator end() override { return m_Children->end(); }
+            inline CSceneNode::Children::iterator begin() override 
+            { 
+                if(!m_Children)
+                    return nullptr;
 
-            inline CSceneNode::Children::const_iterator begin() const override { return m_Children->begin(); }
-            inline CSceneNode::Children::const_iterator end() const override { return m_Children->end(); }
+                return m_Children->begin(); 
+            }
+            
+            inline CSceneNode::Children::iterator end() override 
+            { 
+                if(!m_Children)
+                    return nullptr;
+
+                return m_Children->end(); 
+            }
+
+            inline CSceneNode::Children::const_iterator begin() const override 
+            { 
+                if(!m_Children)
+                    return nullptr;
+
+                return m_Children->begin(); 
+            }
+
+            inline CSceneNode::Children::const_iterator end() const override
+            { 
+                if(!m_Children)
+                    return nullptr;
+                
+                return m_Children->end(); 
+            }
 
             /**
              * @brief Adds a new child to this scene tree.
@@ -167,6 +267,7 @@ namespace VCore
                 if(!m_Children)
                     m_Children = std::make_shared<CSceneNode::Children>();
 
+                p_Node->SetParent(this);
                 m_Children->push_back(p_Node); 
             }
 
@@ -184,7 +285,7 @@ namespace VCore
             }
 
             ~TSceneTree() override = default;
-        private:
+        protected:
             struct ChildrenDeleter
             {
                 void operator()(CSceneNode::Children* p_Children) const
@@ -198,6 +299,57 @@ namespace VCore
 
             fast_vector<T> m_Models;
             std::shared_ptr<CSceneNode::Children> m_Children;
+    };
+
+    class CVoxelSceneTree : public TSceneTree<VoxelModel>
+    {
+        public:
+            void UpdateBoundingVolumes(const fast_vector<VoxelModel> &p_Models)
+            {
+                if(!m_Children)
+                    return;
+
+                m_BBox = CBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i());
+                UpdateBoundingVolumes(this, p_Models);
+            }
+
+        private:
+            void UpdateBoundingVolumes(CSceneNodeBase *p_Node, const fast_vector<VoxelModel> &p_Models)
+            {
+                for (auto &&child : *p_Node) 
+                {
+                    auto modelNode = dynamic_cast<CSceneModelNode*>(child);
+                    if(modelNode)
+                    {
+                        if(modelNode->ModelId < m_Children->size()) [[likely]]
+                        {
+                            auto model = m_Models[modelNode->ModelId];
+                            if(NeedUpdate(model, p_Models))
+                            {
+                                auto bbox = model->calculateBBox();
+                                modelNode->m_BBox = CBBox(modelNode->GetGlobalTransform() * (bbox.Beg - model->Origin), modelNode->GetGlobalTransform() * (bbox.End - model->Origin));
+                            }
+                        }
+                    }
+                    else
+                        child->m_BBox = CBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i());
+                    
+                    UpdateBoundingVolumes(child, p_Models);
+                    p_Node->m_BBox.Beg = m_BBox.Beg.min(modelNode->m_BBox.Beg);
+                    p_Node->m_BBox.End = m_BBox.End.max(modelNode->m_BBox.End);
+                }
+            }
+
+            bool NeedUpdate(const VoxelModel &p_Model, const fast_vector<VoxelModel> &p_Models)
+            {
+                for (auto &&model : p_Models) 
+                {
+                    if(model == p_Model)
+                        return true;
+                }
+
+                return false;
+            }
     };
 
     template <class T>

@@ -22,15 +22,14 @@
  * SOFTWARE.
  */
 
-#include <exception>
 #include <memory>
 #include <stdexcept>
 #include "Implementations/GreedyMesher.hpp"
 #include <VCore/Meshing/IMesher.hpp>
 #include <VCore/Meshing/Mesh/MeshBuilder.hpp>
 #include "Implementations/SimpleMesher.hpp"
-#include "VCore/Formats/SceneNode.hpp"
-#include "VCore/Meshing/Mesh/Mesh.hpp"
+#include <VCore/Formats/SceneNode.hpp>
+#include <VCore/Meshing/Mesh/Mesh.hpp>
 #include <future>
 
 namespace VCore
