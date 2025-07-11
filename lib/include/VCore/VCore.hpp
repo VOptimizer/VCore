@@ -47,6 +47,7 @@
 #include <VCore/Meshing/Mesh/Mesh.hpp>
 #include <VCore/Meshing/Mesh/MeshBuilder.hpp>
 #include <VCore/Meshing/Texture.hpp>
+#include <VCore/Meshing/MaterialManager.hpp>
 
 // Miscellaneous
 #include <VCore/Misc/Exceptions.hpp>

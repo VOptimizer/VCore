@@ -1,9 +1,11 @@
 #ifndef FBX_HPP
 #define FBX_HPP
 
-#include <iostream>
+#include "VCore/Misc/fast_vector.hpp"
+#include "VCore/Misc/unordered_dense.h"
+#include <cstddef>
+#include <cstdint>
 #include <string>
-#include <vector>
 #include <VCore/Export/IExporter.hpp>
 #include <VCore/Misc/FileStream.hpp>
 
@@ -12,17 +14,44 @@ namespace VCore
     class CFbxProperty
     {
         public:
-            CFbxProperty(int _Value) : m_Type('I') { m_Value.iVal = _Value; }
-            CFbxProperty(int64_t _Value) : m_Type('L') { m_Value.lVal = _Value; }
-            CFbxProperty(double _Value) : m_Type('D') { m_Value.dVal = _Value; }
-            CFbxProperty(const char *_Value) : m_Type('S'), m_StrValue(_Value) { }
-            CFbxProperty(const char *_Value, size_t _Size, bool) : m_Type('S'), m_StrValue(_Value, _Size) { }
-            CFbxProperty(const char *_Value, size_t _Size) : m_Type('R'), m_StrValue(_Value, _Size) { }
+            CFbxProperty(int p_Value) : m_Type('I') { m_Value.iVal = p_Value; }
+            CFbxProperty(int64_t p_Value) : m_Type('L') { m_Value.lVal = p_Value; }
+            CFbxProperty(double p_Value) : m_Type('D') { m_Value.dVal = p_Value; }
+            CFbxProperty(const char *p_Value) : m_Type('S'), m_StrValue(p_Value) { }
+            CFbxProperty(const char *p_Value, size_t p_Size, bool) : m_Type('S'), m_StrValue(p_Value, p_Size) { }
+            CFbxProperty(const char *p_Value, size_t p_Size) : m_Type('R'), m_StrValue(p_Value, p_Size) { }
 
-            CFbxProperty(const std::vector<float> &_Value) : m_Type('f'), m_FloatArray(_Value) { }
-            CFbxProperty(const std::vector<int> &_Value) : m_Type('i'), m_IntArray(_Value) { }
+            CFbxProperty(fast_vector<float> &&p_Value) : m_Type('f'), m_FloatArray(std::move(p_Value)) { }
+            CFbxProperty(fast_vector<int> &&p_Value) : m_Type('i'), m_IntArray(std::move(p_Value)) { }
 
-            void Serialize(IFileStream *_Stream);
+            CFbxProperty(const CFbxProperty &p_Other) { *this = p_Other; }
+            CFbxProperty(CFbxProperty &&p_Other) { *this = std::move(p_Other); }
+
+            inline CFbxProperty &operator=(const CFbxProperty &p_Other)
+            {
+                m_Type = p_Other.m_Type;
+                m_Value.lVal = p_Other.m_Value.lVal;
+                m_StrValue = p_Other.m_StrValue;
+                m_FloatArray = p_Other.m_FloatArray;
+                m_IntArray = p_Other.m_IntArray;
+                return *this;
+            }
+
+            inline CFbxProperty &operator=(CFbxProperty &&p_Other)
+            {
+                m_Type = std::move(p_Other.m_Type);
+                m_Value.lVal = std::move(p_Other.m_Value.lVal);
+                m_StrValue = std::move(p_Other.m_StrValue);
+                m_FloatArray = std::move(p_Other.m_FloatArray);
+                m_IntArray = std::move(p_Other.m_IntArray);
+
+                p_Other.m_Type = 0;
+                p_Other.m_Value.lVal = 0;
+
+                return *this;
+            }
+
+            void Serialize(IFileStream *p_Stream);
 
         private:
             union Value
@@ -36,53 +65,54 @@ namespace VCore
             Value m_Value;  
 
             std::string m_StrValue;
-            std::vector<float> m_FloatArray;
-            std::vector<int> m_IntArray;
+            fast_vector<float> m_FloatArray;
+            fast_vector<int> m_IntArray;
     };
 
     class CFbxNode
     {
         public:
-            CFbxNode(const std::string &_Name) : m_Name(_Name) {}
-            CFbxNode(const std::string &_Name, const std::vector<CFbxProperty> &_Props) : m_Name(_Name), m_Properties(_Props) {}
-            CFbxNode(CFbxNode &&_Other) { *this = std::move(_Other); }
+            CFbxNode() {}
+            CFbxNode(const std::string &p_Name) : m_Name(p_Name) {}
+            CFbxNode(const std::string &p_Name, const fast_vector<CFbxProperty> &p_Props) : m_Name(p_Name), m_Properties(p_Props) {}
+            CFbxNode(CFbxNode &&p_Other) { *this = std::move(p_Other); }
 
-            CFbxNode &operator=(CFbxNode &&_Other)
+            CFbxNode &operator=(CFbxNode &&p_Other)
             {
-                m_Name = std::move(_Other.m_Name);
-                m_SubNodes = std::move(_Other.m_SubNodes);
-                m_Properties = std::move(_Other.m_Properties);
+                m_Name = std::move(p_Other.m_Name);
+                m_SubNodes = std::move(p_Other.m_SubNodes);
+                m_Properties = std::move(p_Other.m_Properties);
 
                 return *this;
             }
 
             template<class ...Args>
-            void AddP70(Args&& ..._Args)
+            void AddP70(Args&& ...p_Args)
             {
                 CFbxNode p("P");
-                p.AddProperties(std::forward<Args>(_Args)...);
+                p.AddProperties(std::forward<Args>(p_Args)...);
                 AddSubNode(std::move(p));
             }
 
             template<class T, class ...Args>
-            void AddProperties(T&& _Value, Args&& ..._Args)
+            void AddProperties(T&& p_Value, Args&& ...p_Args)
             {
-                m_Properties.emplace_back(std::forward<T>(_Value));
-                AddProperties(std::forward<Args>(_Args)...);
+                m_Properties.emplace_back(std::forward<T>(p_Value));
+                AddProperties(std::forward<Args>(p_Args)...);
             }
             void AddProperties() {}
 
-            void Serialize(IFileStream *_Stream);
+            void Serialize(IFileStream *p_Stream);
 
-            void AddSubNode(CFbxNode &&_Node);
-            void AddSubNode(const std::string &_Name, const std::vector<CFbxProperty> &_Props);
+            void AddSubNode(CFbxNode &&p_Node);
+            void AddSubNode(const std::string &p_Name, const fast_vector<CFbxProperty> &p_Props);
 
             ~CFbxNode() {}
 
         private:
             std::string m_Name;
-            std::vector<CFbxNode> m_SubNodes;
-            std::vector<CFbxProperty> m_Properties;
+            fast_vector<CFbxNode> m_SubNodes;
+            fast_vector<CFbxProperty> m_Properties;
     };
 
     class CFbxExporter : public IExporter
@@ -91,27 +121,38 @@ namespace VCore
             CFbxExporter()  = default;
             ~CFbxExporter() = default;
         protected:
-            void WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes) override;
+            void WriteHeaderData(const fast_vector<Mesh> &) override;
+            bool SupportsSceneTree() override { return true; }
+            void WriteMeshData(const Mesh &p_Mesh) override;
+            void WriteFooterData() override;
+
+            void EnterSceneNode(const CSceneNodeBase *p_Node) override;
+            void LeaveSceneNode(const CSceneNodeBase *) override;
 
         private:
-            inline std::string BuildClassName(const std::string &_Name, const std::string &_Class)
+            IFileStream *m_Stream{};
+            CFbxNode m_Objects, m_Connections;
+            uint64_t m_MeshCounter{};
+            uint64_t m_BaseIdOffset{};
+            uint64_t m_ModelCounter{};
+            ankerl::unordered_dense::map<uint8_t, uint32_t> m_AddedMaterials;
+            fast_vector<uint64_t> m_NodeStack;
+
+            inline std::string BuildClassName(const std::string &p_Name, const std::string &p_Class)
             {
-                std::string retVal = _Name;
+                std::string retVal = p_Name;
                 retVal.insert(retVal.end(), 0);
                 retVal.insert(retVal.end(), 1);
-                retVal += _Class;
+                retVal += p_Class;
                 return retVal;
             }
 
-            void WriteFBXHeader(IFileStream *_Stream);
-            void WriteGlobalSettings(IFileStream *_Stream);
-            void WriteFBXFooter(IFileStream *_Stream);
+            void WriteFBXHeader();
+            void WriteGlobalSettings();
+            void WriteFBXFooter();
 
-            void AddTexture(const std::string &_Path, CFbxNode &_Objects, Texture _Texture, TextureType _Type);
-            void AddMesh(CFbxNode &_Objects, CFbxNode &_Connections, int64_t _RootId, Mesh _Mesh);
-            void AddMaterial(CFbxNode &_Objects, Material _Material);
-            void ConnectTextures(CFbxNode &_Connections, Material _Material, const ankerl::unordered_dense::map<TextureType, Texture> &_Textures);
-            int64_t CreateNull(CFbxNode &_Objects, const std::string &_Name);
+            void AddMaterial(uint8_t p_MaterialHandl);
+            void CreateNode(const CSceneNodeBase *p_Node);
     };
 }
 

@@ -26,11 +26,11 @@
 #define VECTOR_HPP
 
 #include <cmath>
-#include <math.h>
+#include <cmath>
 #include <VCore/Misc/unordered_dense.h>
 
 // #include "SIMD/x86/Vector-SIMD.hpp"
-#include <string.h>
+#include <cstring>
 
 namespace VCore
 {
@@ -52,11 +52,11 @@ namespace VCore
                 };
 
                 TVector2() : x(0), y(0){}
-                TVector2(T x, T y) : x(x), y(y) {}
+                TVector2(T p_x, T p_y) : x(p_x), y(p_y) {}
 
                 template<class O>
-                TVector2(const TVector2<O> &v) : x(v.x), y(v.y) {}
-                TVector2(const TVector2 &_Vec) : x(_Vec.x), y(_Vec.y) {}
+                TVector2(const TVector2<O> &p_v) : x(p_v.x), y(p_v.y) {}
+                TVector2(const TVector2 &p_Vec) : x(p_Vec.x), y(p_Vec.y) {}
 
                 // Upon here just math. Math is magic :D
 
@@ -65,79 +65,79 @@ namespace VCore
                     return sqrt((x * x) + (y * y));
                 }
 
-                inline TVector2 operator*(const TVector2 &vr) const
+                inline TVector2 operator*(const TVector2 &p_vr) const
                 {
-                    return TVector2(x * vr.x, y * vr.y);
+                    return TVector2(x * p_vr.x, y * p_vr.y);
                 }
 
-                inline TVector2 operator-(const TVector2 &vr) const
+                inline TVector2 operator-(const TVector2 &p_vr) const
                 {
-                    return TVector2(x - vr.x, y - vr.y);
+                    return TVector2(x - p_vr.x, y - p_vr.y);
                 }
 
-                inline TVector2 operator+(const TVector2 &vr) const
+                inline TVector2 operator+(const TVector2 &p_vr) const
                 {
-                    return TVector2(x + vr.x, y + vr.y);
+                    return TVector2(x + p_vr.x, y + p_vr.y);
                 }
 
-                inline TVector2 &operator+=(const TVector2 &vr)
+                inline TVector2 &operator+=(const TVector2 &p_vr)
                 {
-                    x += vr.x;
-                    y += vr.y;
+                    x += p_vr.x;
+                    y += p_vr.y;
 
                     return *this;
                 }
 
-                inline TVector2 &operator=(const TVector2 &vr)
+                inline TVector2 &operator=(const TVector2 &p_vr)
                 {
-                    x = vr.x;
-                    y = vr.y;
+                    x = p_vr.x;
+                    y = p_vr.y;
 
                     return *this;
                 }
 
-                inline bool operator>=(const TVector2 &vr) const
+                inline bool operator>=(const TVector2 &p_vr) const
                 {
-                    if(x != vr.x)
-                        return x >= vr.x;
+                    if(x != p_vr.x)
+                        return x >= p_vr.x;
 
-                    return y >= vr.y;
+                    return y >= p_vr.y;
                 }
 
-                inline bool operator>(const TVector2 &vr) const
+                inline bool operator>(const TVector2 &p_vr) const
                 {
-                    if(x != vr.x)
-                        return x > vr.x;
+                    if(x != p_vr.x)
+                        return x > p_vr.x;
 
-                    return y > vr.y;
+                    return y > p_vr.y;
                 }
 
-                inline bool operator<(const TVector2 &vr) const
+                inline bool operator<(const TVector2 &p_vr) const
                 {
-                    if(x != vr.x)
-                        return x < vr.x;
+                    if(x != p_vr.x)
+                        return x < p_vr.x;
 
-                    return y < vr.y;
+                    return y < p_vr.y;
                 }
 
-                inline TVector2 operator/(const TVector2 &vr) const
+                inline TVector2 operator/(const TVector2 &p_vr) const
                 {
-                    return TVector2(x / vr.x, y / vr.y);
+                    return TVector2(x / p_vr.x, y / p_vr.y);
                 }
 
-                inline TVector2 operator/(float scalar) const
+                inline TVector2 operator/(float p_scalar) const
                 {
-                    return TVector2(x / scalar, y / scalar);
+                    return TVector2(x / p_scalar, y / p_scalar);
                 }
 
-                inline TVector2 operator*(float scalar) const
+                inline TVector2 operator*(float p_scalar) const
                 {
-                    return TVector2(x * scalar, y * scalar);
+                    return TVector2(x * p_scalar, y * p_scalar);
                 }
 
-                inline bool operator==(const TVector2 &vr) const
+                inline bool operator==(const TVector2 &p_vr) const
                 {
-                    return x == vr.x && y == vr.y;
+                    return x == p_vr.x && y == p_vr.y;
                 }
 
                 ~TVector2() = default;
@@ -169,144 +169,144 @@ namespace VCore
                 };
 
                 TVector3() : x(0), y(0), z(0) {}
-                TVector3(T x, T y, T z) : x(x), y(y), z(z) {}
-                TVector3(const TVector3 &v) : x(v.x), y(v.y), z(v.z) {}
+                TVector3(T p_x, T p_y, T p_z) : x(p_x), y(p_y), z(p_z) {}
+                TVector3(const TVector3 &p_v) : x(p_v.x), y(p_v.y), z(p_v.z) {}
 
                 template<class O>
-                TVector3(const TVector3<O> &v) : x(v.x), y(v.y), z(v.z) {}
+                TVector3(const TVector3<O> &p_v) : x(p_v.x), y(p_v.y), z(p_v.z) {}
                 
                 inline bool IsZero() const
                 {
                     return x == 0 && y == 0 && z == 0;
                 }
 
-                inline bool operator==(const TVector3 &vr) const
+                inline bool operator==(const TVector3 &p_vr) const
                 {
                     // T va[4] = {}, vb[4] = {};
                     // memmove(va, v, sizeof(T) * 3);
                     // memmove(vb, vr.v, sizeof(T) * 3);
                     // return VectorEq(v, vr.v);
 
-                    return x == vr.x && y == vr.y && z == vr.z;
+                    return x == p_vr.x && y == p_vr.y && z == p_vr.z;
                 }
 
-                inline bool operator!=(const TVector3 &vr) const
+                inline bool operator!=(const TVector3 &p_vr) const
                 {
-                    return x != vr.x || y != vr.y || z != vr.z;
+                    return x != p_vr.x || y != p_vr.y || z != p_vr.z;
                 }
 
-                inline bool operator>(const TVector3 &vr) const
+                inline bool operator>(const TVector3 &p_vr) const
                 {
-                    if(x != vr.x)
-                        return x > vr.x;
+                    if(x != p_vr.x)
+                        return x > p_vr.x;
 
-                    if(y != vr.y)
-                        return y > vr.y;
+                    if(y != p_vr.y)
+                        return y > p_vr.y;
 
-                    return z > vr.z;
+                    return z > p_vr.z;
                 }
 
-                inline bool operator>=(const TVector3 &vr) const
+                inline bool operator>=(const TVector3 &p_vr) const
                 {
-                    if(x != vr.x)
-                        return x >= vr.x;
+                    if(x != p_vr.x)
+                        return x >= p_vr.x;
 
-                    if(y != vr.y)
-                        return y >= vr.y;
+                    if(y != p_vr.y)
+                        return y >= p_vr.y;
 
-                    return z >= vr.z;
+                    return z >= p_vr.z;
                 }
 
-                inline bool operator<(const TVector3 &vr) const
+                inline bool operator<(const TVector3 &p_vr) const
                 {
-                    if(x != vr.x)
-                        return x < vr.x;
+                    if(x != p_vr.x)
+                        return x < p_vr.x;
 
-                    if(y != vr.y)
-                        return y < vr.y;
+                    if(y != p_vr.y)
+                        return y < p_vr.y;
 
-                    return z < vr.z;
+                    return z < p_vr.z;
                 }
 
-                inline bool operator<=(const TVector3 &vr) const
+                inline bool operator<=(const TVector3 &p_vr) const
                 {
-                    if(x != vr.x)
-                        return x <= vr.x;
+                    if(x != p_vr.x)
+                        return x <= p_vr.x;
 
-                    if(y != vr.y)
-                        return y <= vr.y;
+                    if(y != p_vr.y)
+                        return y <= p_vr.y;
 
-                    return z <= vr.z;
+                    return z <= p_vr.z;
                 }
 
                 // Upon here just math. Math is magic :D
 
-                inline TVector3 operator*(const TVector3 &vr) const
+                inline TVector3 operator*(const TVector3 &p_vr) const
                 {
-                    return TVector3(x * vr.x, y * vr.y, z * vr.z);
+                    return TVector3(x * p_vr.x, y * p_vr.y, z * p_vr.z);
                 }
 
-                inline TVector3 operator-(const TVector3 &vr) const
+                inline TVector3 operator-(const TVector3 &p_vr) const
                 {
-                    return TVector3(x - vr.x, y - vr.y, z - vr.z);
+                    return TVector3(x - p_vr.x, y - p_vr.y, z - p_vr.z);
                     // T out[4];
                     // VectorSub(v, vr.v, out);
                     // return TVector3(out[0], out[1], out[2]);
                 }
 
-                inline TVector3 operator+(const TVector3 &vr) const
+                inline TVector3 operator+(const TVector3 &p_vr) const
                 {
-                    return TVector3(x + vr.x, y + vr.y, z + vr.z);
+                    return TVector3(x + p_vr.x, y + p_vr.y, z + p_vr.z);
                     // T out[4];
                     // VectorAdd(v, vr.v, out);
                     // return TVector3(out[0], out[1], out[2]);
                 }
 
-                inline TVector3 &operator+=(const TVector3 &vr)
+                inline TVector3 &operator+=(const TVector3 &p_vr)
                 {
-                    x += vr.x;
-                    y += vr.y;
-                    z += vr.z;
+                    x += p_vr.x;
+                    y += p_vr.y;
+                    z += p_vr.z;
 
                     return *this;
                 }
 
-                inline TVector3 &operator*=(const TVector3 &vr)
+                inline TVector3 &operator*=(const TVector3 &p_vr)
                 {
-                    x *= vr.x;
-                    y *= vr.y;
-                    z *= vr.z;
+                    x *= p_vr.x;
+                    y *= p_vr.y;
+                    z *= p_vr.z;
 
                     return *this;
                 }
 
-                inline TVector3 &operator=(const TVector3 &vr)
+                inline TVector3 &operator=(const TVector3 &p_vr)
                 {
-                    x = vr.x;
-                    y = vr.y;
-                    z = vr.z;
+                    x = p_vr.x;
+                    y = p_vr.y;
+                    z = p_vr.z;
 
                     return *this;
                 }
 
-                inline TVector3 operator/(const TVector3 &vr) const
+                inline TVector3 operator/(const TVector3 &p_vr) const
                 {
-                    return TVector3(x / vr.x, y / vr.y, z / vr.z);
+                    return TVector3(x / p_vr.x, y / p_vr.y, z / p_vr.z);
                 }
 
-                inline TVector3 operator/(float scalar) const
+                inline TVector3 operator/(float p_scalar) const
                 {
-                    return TVector3(x / scalar, y / scalar, z / scalar);
+                    return TVector3(x / p_scalar, y / p_scalar, z / p_scalar);
                 }
 
-                inline TVector3 operator*(float scalar) const
+                inline TVector3 operator*(float p_scalar) const
                 {
-                    return TVector3(x * scalar, y * scalar, z * scalar);
+                    return TVector3(x * p_scalar, y * p_scalar, z * p_scalar);
                 }
 
-                inline TVector3 operator&(T scalar) const
+                inline TVector3 operator&(T p_scalar) const
                 {
-                    return TVector3(x & scalar, y & scalar, z & scalar);
+                    return TVector3(x & p_scalar, y & p_scalar, z & p_scalar);
                 }
 
                 inline TVector3 operator-() const
@@ -314,16 +314,16 @@ namespace VCore
                     return TVector3(-x, -y, -z);
                 }
 
-                inline float dot(const TVector3 &vr) const
+                inline float dot(const TVector3 &p_vr) const
                 {
-                    return x * vr.x + y * vr.y + z * vr.z;
+                    return x * p_vr.x + y * p_vr.y + z * p_vr.z;
                 }
 
-                inline TVector3 cross(const TVector3 &vr) const
+                inline TVector3 cross(const TVector3 &p_vr) const
                 {
-                    return TVector3(y * vr.z - z * vr.y, 
-                                z * vr.x - x * vr.z, 
-                                x * vr.y - y * vr.x);
+                    return TVector3(y * p_vr.z - z * p_vr.y, 
+                                z * p_vr.x - x * p_vr.z, 
+                                x * p_vr.y - y * p_vr.x);
                 }
 
                 inline float length() const
@@ -340,14 +340,14 @@ namespace VCore
                     return TVector3(x / v, y / v, z / v);
                 }
 
-                inline TVector3 min(const TVector3 &vec) const
+                inline TVector3 min(const TVector3 &p_vec) const
                 {
-                    return TVector3(std::min(x, vec.x), std::min(y, vec.y), std::min(z, vec.z));
+                    return TVector3(std::min(x, p_vec.x), std::min(y, p_vec.y), std::min(z, p_vec.z));
                 }
 
-                inline TVector3 max(const TVector3 &vec) const
+                inline TVector3 max(const TVector3 &p_vec) const
                 {
-                    return TVector3(std::max(x, vec.x), std::max(y, vec.y), std::max(z, vec.z));
+                    return TVector3(std::max(x, p_vec.x), std::max(y, p_vec.y), std::max(z, p_vec.z));
                 }
 
                 inline TVector3 abs() const
@@ -367,6 +367,18 @@ namespace VCore
                         z = 0;
 
                     return *this;
+                }
+
+                inline TVector2<T> octahedron_encode() const
+                {
+                    auto nAbs = fabs(x) + fabs(y) + fabs(z);
+                    auto p = TVector2<T>(x / nAbs, y / nAbs);
+                    if(z < 0)
+                        p = TVector2<T>((1.f - fabs(p.y)) * ((p.x < 0) ? -1 : 1), (1.f - fabs(p.x)) * ((p.y < 0) ? -1 : 1));
+
+                    p.x *= 0.5f + 0.5f;
+                    p.y *= 0.5f + 0.5f;
+                    return p;
                 }
 
                 ~TVector3() = default;
@@ -389,11 +401,11 @@ namespace VCore
                 };
 
                 Vec4f() : x(0), y(0), z(0), w(0) {}
-                Vec4f(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
+                Vec4f(float p_x, float p_y, float p_z, float p_w) : x(p_x), y(p_y), z(p_z), w(p_w) {}
 
                 template<class T>
-                Vec4f(const TVector3<T> &v) : x(v.x), y(v.y), z(v.z), w(1.0) {}
-                Vec4f(const Vec4f &v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
+                Vec4f(const TVector3<T> &p_v) : x(p_v.x), y(p_v.y), z(p_v.z), w(1.0) {}
+                Vec4f(const Vec4f &p_v) : x(p_v.x), y(p_v.y), z(p_v.z), w(p_v.w) {}
 
                 template<class T>
                 inline TVector3<T> ToVector3() const
@@ -403,54 +415,54 @@ namespace VCore
 
                 // Upon here just math. Math is magic :D
 
-                inline Vec4f operator*(const Vec4f &vr) const
+                inline Vec4f operator*(const Vec4f &p_vr) const
                 {
-                    return Vec4f(x * vr.x, y * vr.y, z * vr.z, w * vr.w);
+                    return Vec4f(x * p_vr.x, y * p_vr.y, z * p_vr.z, w * p_vr.w);
                 }
 
-                inline Vec4f operator-(const Vec4f &vr) const
+                inline Vec4f operator-(const Vec4f &p_vr) const
                 {
-                    return Vec4f(x - vr.x, y - vr.y, z - vr.z, w - vr.w);
+                    return Vec4f(x - p_vr.x, y - p_vr.y, z - p_vr.z, w - p_vr.w);
                 }
 
-                inline Vec4f operator+(const Vec4f &vr) const
+                inline Vec4f operator+(const Vec4f &p_vr) const
                 {
-                    return Vec4f(x + vr.x, y + vr.y, z + vr.z, w + vr.w);
+                    return Vec4f(x + p_vr.x, y + p_vr.y, z + p_vr.z, w + p_vr.w);
                 }
 
-                inline Vec4f &operator+=(const Vec4f &vr)
+                inline Vec4f &operator+=(const Vec4f &p_vr)
                 {
-                    x += vr.x;
-                    y += vr.y;
-                    z += vr.z;
-                    w += vr.w;
+                    x += p_vr.x;
+                    y += p_vr.y;
+                    z += p_vr.z;
+                    w += p_vr.w;
 
                     return *this;
                 }
 
-                inline Vec4f &operator=(const Vec4f &vr)
+                inline Vec4f &operator=(const Vec4f &p_vr)
                 {
-                    x = vr.x;
-                    y = vr.y;
-                    z = vr.z;
-                    w = vr.w;
+                    x = p_vr.x;
+                    y = p_vr.y;
+                    z = p_vr.z;
+                    w = p_vr.w;
 
                     return *this;
                 }
 
-                inline Vec4f operator/(const Vec4f &vr) const
+                inline Vec4f operator/(const Vec4f &p_vr) const
                 {
-                    return Vec4f(x / vr.x, y / vr.y, z / vr.z, w / vr.w);
+                    return Vec4f(x / p_vr.x, y / p_vr.y, z / p_vr.z, w / p_vr.w);
                 }
 
-                inline Vec4f operator/(float scalar) const
+                inline Vec4f operator/(float p_scalar) const
                 {
-                    return Vec4f(x / scalar, y / scalar, z / scalar, w / scalar);
+                    return Vec4f(x / p_scalar, y / p_scalar, z / p_scalar, w / p_scalar);
                 }
 
-                inline Vec4f operator*(float scalar) const
+                inline Vec4f operator*(float p_scalar) const
                 {
-                    return Vec4f(x * scalar, y * scalar, z * scalar, w * scalar);
+                    return Vec4f(x * p_scalar, y * p_scalar, z * p_scalar, w * p_scalar);
                 }
 
                 ~Vec4f() = default;
@@ -487,9 +499,9 @@ namespace VCore
         const TVector3<T> TVector3<T>::RIGHT(1, 0, 0);
 
         template<class T>
-        inline TVector3<T> operator*(float scalar, const TVector3<T> &vr)
+        inline TVector3<T> operator*(float p_scalar, const TVector3<T> &p_vr)
         {
-            return vr * scalar;
+            return p_vr * p_scalar;
         }
 
         inline Vec3f floor(const Vec3f &p_Vec)
@@ -510,7 +522,7 @@ namespace VCore
         class Vec2fHasher
         {
             public:
-                std::size_t operator()(Vec2f const& _Vec) const noexcept
+                std::size_t operator()(Vec2f const& p_Vec) const noexcept
                 {
                     union Floatconvert
                     {
@@ -519,8 +531,8 @@ namespace VCore
                     };
 
                     Floatconvert x, y;
-                    x.f = _Vec.x;
-                    y.f = _Vec.y;
+                    x.f = p_Vec.x;
+                    y.f = p_Vec.y;
 
                     return (x.i * 73856093) ^ (y.i * 19349663);
                 }
@@ -529,7 +541,7 @@ namespace VCore
         class Vec3fHasher
         {
             public:
-                std::size_t operator()(Vec3f const& _Vec) const noexcept
+                std::size_t operator()(Vec3f const& p_Vec) const noexcept
                 {
                     union Floatconvert
                     {
@@ -538,9 +550,9 @@ namespace VCore
                     };
 
                     Floatconvert x, y, z;
-                    x.f = _Vec.x;
-                    y.f = _Vec.y;
-                    z.f = _Vec.z;
+                    x.f = p_Vec.x;
+                    y.f = p_Vec.y;
+                    z.f = p_Vec.z;
                     
 
                     // http://www.beosil.com/download/CollisionDetectionHashing_VMV03.pdf
@@ -551,10 +563,10 @@ namespace VCore
         class Vec3iHasher
         {
             public:
-                std::size_t operator()(Vec3i const& _Vec) const noexcept
+                std::size_t operator()(Vec3i const& p_Vec) const noexcept
                 {
                     // http://www.beosil.com/download/CollisionDetectionHashing_VMV03.pdf
-                    return ((_Vec.x * 73856093) ^ (_Vec.y * 19349663) ^ (_Vec.z * 83492791));
+                    return ((p_Vec.x * 73856093) ^ (p_Vec.y * 19349663) ^ (p_Vec.z * 83492791));
                 }
         };
     }

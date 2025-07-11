@@ -25,7 +25,8 @@
 #ifndef VCONFIG_HPP
 #define VCONFIG_HPP
 
-#include <stdint.h>
+#include <climits>
+#include <cstdint>
 
 namespace VCore
 {

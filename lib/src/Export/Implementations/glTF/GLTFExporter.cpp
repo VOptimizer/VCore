@@ -81,7 +81,7 @@ namespace VCore
         m_BinaryStream = nullptr;
     }
 
-    void CGLTFExporter::WriteHeaderData()
+    void CGLTFExporter::WriteHeaderData(const fast_vector<Mesh> &)
     {
         const auto binaryFilename = GetPathWithoutExt(m_Path) + ".bin";
         m_BinaryStream = m_IOHandler->Open(binaryFilename, "wb");

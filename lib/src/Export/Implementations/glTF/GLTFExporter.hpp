@@ -46,7 +46,7 @@ namespace VCore
             ankerl::unordered_dense::map<uint8_t, uint64_t> m_MaterialHandleMapper;
             std::stack<uint64_t> m_Nodes;
 
-            void WriteHeaderData() override;
+            void WriteHeaderData(const fast_vector<Mesh> &) override;
 
             bool SupportsSceneTree() override { return true; }
 

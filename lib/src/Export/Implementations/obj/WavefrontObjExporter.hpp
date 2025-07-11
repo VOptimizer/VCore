@@ -46,9 +46,14 @@ namespace VCore
       std::string m_FilenameWithoutExt;
       uint64_t m_IndexOffset{};
 
-      void WriteData(const std::string &p_Path, const std::vector<Mesh> &p_Meshes) override;
+      void WriteHeaderData(const fast_vector<Mesh> &) override;
+      bool SupportsSceneTree() override { return false; }
+      void WriteMeshData(const Mesh &p_Mesh) override;
+      void WriteFooterData() override;
 
-      void WriteMeshData(const Mesh &p_Mesh);
+      void EnterSceneNode(const CSceneNodeBase *) override {}
+      void LeaveSceneNode(const CSceneNodeBase *) override {}
+
       std::string GetObjMaterial(const uint8_t p_MaterialHandle);
 
       void GenerateTextureAndPatchUV();

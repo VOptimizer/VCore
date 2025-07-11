@@ -28,14 +28,16 @@
 #include <cstring>
 #include <sstream>
 #include <VCore/Misc/Exceptions.hpp>
+#include "MagicaVoxelDictionary.hpp"
 #include "MagicaVoxelModelParser.hpp"
 #include <VCore/Meshing/MaterialManager.hpp>
+#include "MagicaVoxelScenetreeWriter.hpp"
 #include "MagicaVoxelStreamable.hpp"
-#include "VCore/Formats/SceneNode.hpp"
-#include "VCore/Math/Mat4x4.hpp"
-#include "VCore/Math/Vector.hpp"
-#include "VCore/Misc/FileStream.hpp"
-#include "VCore/Misc/fast_vector.hpp"
+#include <VCore/Formats/SceneNode.hpp>
+#include <VCore/Math/Mat4x4.hpp>
+#include <VCore/Math/Vector.hpp>
+#include <VCore/Misc/FileStream.hpp>
+#include <VCore/Misc/fast_vector.hpp>
 
 namespace VCore
 {
@@ -46,6 +48,8 @@ namespace VCore
     constexpr auto GROUP_CHUNK_ID = MakeChunkId('n', 'G', 'R', 'P');
     constexpr auto SHAPE_CHUNK_ID = MakeChunkId('n', 'S', 'H', 'P');
     constexpr auto SIZE_CHUNK_ID = MakeChunkId('S', 'I', 'Z', 'E');
+    constexpr auto PACK_CHUNK_ID = MakeChunkId('P', 'A', 'C', 'K');
+    constexpr auto XYZI_CHUNK_ID = MakeChunkId('X', 'Y', 'Z', 'I');
 
     struct SMagicaVoxelSceneTreeHelper
     {
@@ -118,123 +122,137 @@ namespace VCore
     // Writing functions
     //////////////////////////////////////////////////
 
-    // void CMagicaVoxelFormat::WriteFormat()
-    // {
-    //     m_DataStream->Write("VOX ", 4);
-    //     m_DataStream->Write((int32_t)150);
+    void CMagicaVoxelFormat::WriteFormat()
+    {
+        if(!SceneTree)
+            return;
 
-    //     SMagicaVoxelChunkHeader mainChunk = { {'M', 'A', 'I', 'N'}, 0, 0 };
+        m_DataStream->Write("VOX ", 4);
+        m_DataStream->Write((int32_t)150);
 
-    //     // Position to path later.
-    //     auto patchPos = m_DataStream->Tell() + offsetof(SMagicaVoxelChunkHeader, ChildChunkSize);
-    //     m_DataStream->Write(mainChunk);
+        SMagicaVoxelChunkHeader mainChunk = { MAIN_CHUNK_ID, 0, 0 };
 
-    //     if(m_Models.size() > 1)
-    //     {
-    //         SMagicaVoxelChunkHeader packChunk = { {'P', 'A', 'C', 'K'}, (int)sizeof(int32_t), 0 };
-    //         m_DataStream->Write(packChunk);
-    //         m_DataStream->Write((int32_t)m_Models.size());
-    //     }
+        // Position to path later.
+        auto patchPos = m_DataStream->Tell() + offsetof(SMagicaVoxelChunkHeader, ChildChunkSize);
+        m_DataStream->Write(mainChunk);
 
-    //     // Setup root of the scenetree
-    //     // A scenetree starts always with a transform node followed by a group node.
-    //     auto root = std::make_shared<STransformNode>();
-    //     root->NodeID = 0;
-    //     root->ChildID = 1;
-    //     root->LayerID = -1;
-    //     root->NumFrames = 1;
-    //     m_MagicaSceneTree.push_back(root);
+        auto modelCount = SceneTree->GetModels().size();
+        if(modelCount > 1)
+        {
+            SMagicaVoxelChunkHeader packChunk = { PACK_CHUNK_ID, (int)sizeof(int32_t), 0 };
+            m_DataStream->Write(packChunk);
+            m_DataStream->Write((int32_t)modelCount);
+        }
 
-    //     auto rootGroup = std::make_shared<SGroupNode>();
-    //     rootGroup->NodeID = 1;
-    //     m_MagicaSceneTree.push_back(rootGroup);
+        // Setup root of the scenetree
+        // A scenetree starts always with a transform node followed by a group node.
+        // auto root = std::make_shared<STransformNode>();
+        // root->NodeID = 0;
+        // root->ChildID = 1;
+        // root->LayerID = -1;
+        // root->NumFrames = 1;
+        // m_MagicaSceneTree.push_back(root);
 
-    //     // Resets everything
-    //     m_Materials.clear();
-    //     LoadDefaultPalette();
+        // auto rootGroup = std::make_shared<SGroupNode>();
+        // rootGroup->NodeID = 1;
+        // m_MagicaSceneTree.push_back(rootGroup);
 
-    //     m_VoxelIndex = 1;
-    //     m_ModelCounter = 0;
+        // Resets everything
+        LoadDefaultPalette();
 
-    //     // First try to traverse the scenetree
-    //     TraverseVCoreSceneTree();
+        m_VoxelIndex = 1;
+        m_ModelCounter = 0;
 
-    //     // Write all Animations, if there are any.
-    //     for (auto &&animation : m_Animations)
-    //     {
-    //         // Checks, if this animation was already written.
-    //         if(m_AlreadyWrittenAnimations.empty() || (m_AlreadyWrittenAnimations.find(reinterpret_cast<uintptr_t>(animation.get())) == m_AlreadyWrittenAnimations.end()))
-    //             rootGroup->ChildrensID.push_back(WriteAnimation(animation));
-    //     }
+        // First try to traverse the scenetree
+        // TraverseVCoreSceneTree();
+
+        // Write all Animations, if there are any.
+        // for (auto &&animation : m_Animations)
+        // {
+        //     // Checks, if this animation was already written.
+        //     if(m_AlreadyWrittenAnimations.empty() || (m_AlreadyWrittenAnimations.find(reinterpret_cast<uintptr_t>(animation.get())) == m_AlreadyWrittenAnimations.end()))
+        //         rootGroup->ChildrensID.push_back(WriteAnimation(animation));
+        // }
+
+        auto modelCounter = 0;
+        CMagicaVoxelScenetreeWriter tree(SceneTree, m_DataStream);
         
-    //     // Write all Models, if there are any.
-    //     for (auto &&model : m_Models)
-    //     {
-    //         // Checks, if this model was already written.
-    //         if(m_AlreadyWrittenModels.empty() || (m_AlreadyWrittenModels.find(reinterpret_cast<uintptr_t>(model.get())) == m_AlreadyWrittenModels.end()))
-    //             rootGroup->ChildrensID.push_back(WriteModel(model));
-    //     }
+        // Write all Models, if there are any.
+        for (auto &&model : SceneTree->GetModels())
+        {
+            tree.VoxelModelMap[modelCounter] = {};
+            WriteModel(model, &tree, modelCounter);
+            modelCounter++;
+        }
+            
+        // {
+        //     // Checks, if this model was already written.
+        //     // if(m_AlreadyWrittenModels.empty() || (m_AlreadyWrittenModels.find(reinterpret_cast<uintptr_t>(model.get())) == m_AlreadyWrittenModels.end()))
+        //     //     rootGroup->ChildrensID.push_back(WriteModel(model));
+        // }
 
-    //     m_AlreadyWrittenAnimations.clear();
-    //     m_AlreadyWrittenModels.clear();
+        // Write the scenetree to the file.
+        tree.WriteTree();
+        // WriteSceneTree();       
 
-    //     // Write the scenetree to the file.
-    //     WriteSceneTree();       
+        // Write the used colors.
+        SMagicaVoxelChunkHeader rgbaChunk = { RGBA_CHUNK_ID, (int)sizeof(int32_t) * 256, 0 };
+        m_DataStream->Write(rgbaChunk);
+        m_DataStream->Write((char*)m_ColorPalette, (int)sizeof(int32_t) * PALETTE_SIZE);
 
-    //     // Write the used colors.
-    //     SMagicaVoxelChunkHeader rgbaChunk = { {'R', 'G', 'B', 'A'}, (int)sizeof(int32_t) * 256, 0 };
-    //     m_DataStream->Write(rgbaChunk);
-    //     m_DataStream->Write((char*)m_ColorPalette, (int)sizeof(int32_t) * PALETTE_SIZE);
 
-    //     // Write for each color a material.
-    //     for (size_t i = 0; i < PALETTE_SIZE; i++)
-    //     {
-    //         auto matlPatchPos = m_DataStream->Tell() + offsetof(SMagicaVoxelChunkHeader, ChunkContentSize);
-    //         SMagicaVoxelChunkHeader matlChunk = { {'M', 'A', 'T', 'L'}, 0, 0 };
-    //         m_DataStream->Write(matlChunk);
-    //         m_DataStream->Write((int32_t)i);
+        CMagicaVoxelDictionary dict(m_DataStream);
 
-    //         Material mat;
-    //         if(i > 0 && (i - 1) < m_Materials.size())
-    //             mat = m_Materials[i - 1];
-    //         else
-    //             mat = MaterialManager::GetMaterial(0);
+        // Write for each color a material.
+        for (size_t i = 0; i < PALETTE_SIZE; i++)
+        {
+            auto matlPatchPos = m_DataStream->Tell() + offsetof(SMagicaVoxelChunkHeader, ChunkContentSize);
+            SMagicaVoxelChunkHeader matlChunk = { MATL_CHUNK_ID, 0, 0 };
+            m_DataStream->Write(matlChunk);
+            m_DataStream->Write((int32_t)i);
 
-    //         m_DataStream->Write((int32_t)8);
+            Material mat = nullptr;
+            if(i > 0 && (i - 1) < m_Materials.size())
+                mat = MaterialManager::GetMaterial(m_Materials[i - 1]);
+            
+            if(!mat)
+                mat = MaterialManager::GetMaterial(0);
 
-    //         if(mat->Metallic)
-    //             WriteDictKeyString("_type", "_metal");
-    //         else if(mat->Transparency)
-    //             WriteDictKeyString("_type", "_glass");
-    //         else if(mat->Emission || mat->Power)
-    //             WriteDictKeyString("_type", "_emit");
-    //         else
-    //             WriteDictKeyString("_type", "_diffuse");
+            m_DataStream->Write((int32_t)8);
 
-    //         WriteDictKeyFloat("_metal", mat->Metallic);
-    //         WriteDictKeyFloat("_alpha", mat->Transparency);
-    //         WriteDictKeyFloat("_rough", mat->Roughness);
-    //         WriteDictKeyFloat("_spec", mat->Specular);
-    //         WriteDictKeyFloat("_ior", mat->IOR);
-    //         WriteDictKeyFloat("_emit", mat->Emission);
-    //         WriteDictKeyFloat("_flux", mat->Power);
+            if(mat->Metallic)
+                dict.WriteDictKeyString("_type", "_metal");
+            else if(mat->Transparency)
+                dict.WriteDictKeyString("_type", "_glass");
+            else if(mat->Emission || mat->Power)
+                dict.WriteDictKeyString("_type", "_emit");
+            else
+                dict.WriteDictKeyString("_type", "_diffuse");
 
-    //         auto currentPos = m_DataStream->Tell();
-    //         m_DataStream->Seek(matlPatchPos, SeekOrigin::BEG);
-    //         m_DataStream->Write((int32_t)(currentPos - (matlPatchPos + 8)));
-    //         m_DataStream->Seek(currentPos, SeekOrigin::BEG);
-    //     }
+            dict.WriteDictKeyFloat("_metal", mat->Metallic);
+            dict.WriteDictKeyFloat("_alpha", mat->Transparency);
+            dict.WriteDictKeyFloat("_rough", mat->Roughness);
+            dict.WriteDictKeyFloat("_spec", mat->Specular);
+            dict.WriteDictKeyFloat("_ior", mat->IOR);
+            dict.WriteDictKeyFloat("_emit", mat->Emission);
+            dict.WriteDictKeyFloat("_flux", mat->Power);
 
-    //     // Patch the main chunks child content size.
-    //     auto currentPos = m_DataStream->Tell();
-    //     m_DataStream->Seek(patchPos, SeekOrigin::BEG);
-    //     m_DataStream->Write((int32_t)(currentPos - (patchPos + 4)));
-    //     m_DataStream->Seek(currentPos, SeekOrigin::BEG);
+            auto currentPos = m_DataStream->Tell();
+            m_DataStream->Seek(matlPatchPos, SeekOrigin::BEG);
+            m_DataStream->Write((int32_t)(currentPos - (matlPatchPos + 8)));
+            m_DataStream->Seek(currentPos, SeekOrigin::BEG);
+        }
 
-    //     m_VoxelIndexMap.clear();
-    //     m_Materials.clear();
-    //     m_MagicaSceneTree.clear();
-    // }
+        // Patch the main chunks child content size.
+        auto currentPos = m_DataStream->Tell();
+        m_DataStream->Seek(patchPos, SeekOrigin::BEG);
+        m_DataStream->Write((int32_t)(currentPos - (patchPos + 4)));
+        m_DataStream->Seek(currentPos, SeekOrigin::BEG);
+
+        m_VoxelIndexMap.clear();
+        m_Materials.clear();
+        m_MagicaSceneTree.clear();
+    }
 
     // int CMagicaVoxelFormat::WriteAnimation(const VoxelAnimation &p_Animation)
     // {
@@ -254,364 +272,236 @@ namespace VCore
     //     return result;
     // }
 
-    // int CMagicaVoxelFormat::WriteModel(const VoxelModel &p_Model, ankerl::unordered_dense::map<Math::Vec3i, SShapeNode, Math::Vec3iHasher> *p_Shapes, uint32_t p_FrameIdx)
-    // {
-    //     m_AlreadyWrittenModels.insert(reinterpret_cast<uintptr_t>(p_Model.get()));
+    void CMagicaVoxelFormat::WriteModel(const VoxelModel &p_Model, CMagicaVoxelScenetreeWriter *p_Tree, uint32_t p_modelCounter)
+    {
+        auto bbox = p_Model->calculateBBox();
+        auto size = bbox.GetSize();
 
-    //     int scenetreeId = 0;
-    //     bool generateNodes = (p_Shapes == nullptr) || p_Shapes->empty();
+        for (int32_t x = 0; x <= size.x; x += 256)
+        {
+            for (int32_t y = 0; y <= size.y; y += 256)
+            {
+                for (int32_t z = 0; z <= size.z; z += 256)
+                {
+                    p_Tree->VoxelModelMap[p_modelCounter].push_back(m_ModelCounter++);
 
-    //     auto bbox = p_Model->calculateBBox();
-    //     auto size = bbox.GetSize();
+                    SMagicaVoxelChunkHeader sizeChunk = { SIZE_CHUNK_ID, (int)sizeof(int32_t) * 3, 0 };
+                    m_DataStream->Write(sizeChunk);
 
-    //     if(generateNodes)
-    //     {
-    //         auto transform = std::make_shared<STransformNode>();
-    //         transform->NodeID = m_MagicaSceneTree.size();
-    //         transform->ChildID = m_MagicaSceneTree.size() + 1;
-    //         transform->LayerID = 0;
-    //         transform->NumFrames = 1;
-    //         transform->Frames.push_back(SFrameTransform());
-    //         transform->Frames[0].Translation = Math::Vec3f(bbox.Beg.x, bbox.Beg.y, bbox.Beg.z);
+            	    auto modelSize = (size - Math::Vec3f(x, y, z) + Math::Vec3f::ONE).min(Math::Vec3f(256, 256, 256));
+                    m_DataStream->Write((int32_t)modelSize.x);
+                    m_DataStream->Write((int32_t)modelSize.z);
+                    m_DataStream->Write((int32_t)modelSize.y);
+
+                    auto patchPos = m_DataStream->Tell() + offsetof(SMagicaVoxelChunkHeader, ChunkContentSize);
+
+                    SMagicaVoxelChunkHeader xyziChunk = { XYZI_CHUNK_ID, 0, 0 };
+                    m_DataStream->Write(xyziChunk);
+                    m_DataStream->Write((int32_t)0);
+
+                    ankerl::unordered_dense::map<Math::Vec3i, const CChunk*, Math::Vec3iHasher> chunks;
+                    for (int mx = 0; mx <= modelSize.x; mx += Config::ChunkSize)
+                    {
+                        for (int my = 0; my <= modelSize.y; my += Config::ChunkSize)
+                        {
+                            for (int mz = 0; mz <= modelSize.z; mz += Config::ChunkSize)
+                            {
+                                auto chunkpos = GetChunkpos(Math::Vec3i(bbox.End.x - (mx + x), y + my, z + mz));
+                                auto chunk = p_Model->getChunk(chunkpos);
+                                if(chunk)
+                                    chunks[chunkpos] = chunk;
+                            }
+                        }
+                    }
+
+                    int32_t voxelCount = 0;
+                    for (auto &&chunk : chunks)
+                    {
+                        auto innerBBox = chunk.second->inner_bbox(chunk.first);
+                        for (int mx = innerBBox.End.x; mx >= innerBBox.Beg.x; mx--)
+                        {
+                            for (int my = innerBBox.Beg.y; my <= innerBBox.End.y; my++)
+                            {
+                                for (int mz = innerBBox.Beg.z; mz <= innerBBox.End.z; mz++)
+                                {
+                                    // auto relpos = chunk.first - (chunk.first & 256);
+
+                                    // Mirrors the model for MagicaVoxel
+                                    auto voxel = chunk.second->find(Math::Vec3i(mx, my, mz));
+                                    if(voxel.IsInstantiated())
+                                    {
+                                        voxelCount++;
+                                        m_DataStream->Write((uint8_t)mx);//((mx - innerBBox.Beg.x) + relpos.x));//(uint8_t)(modelSize.x - ((mx - innerBBox.Beg.x) + relpos.x)));
+                                        m_DataStream->Write((uint8_t)mz);//((mz - innerBBox.Beg.z) + relpos.z));
+                                        m_DataStream->Write((uint8_t)my);//((my - innerBBox.Beg.y) + relpos.y));
+
+                                        auto mapIt = m_VoxelIndexMap.find((uint32_t)voxel);
+                                        if(mapIt == m_VoxelIndexMap.end())
+                                        {
+                                            m_ColorPalette[m_VoxelIndex - 1] = 0xFF000000 | voxel.GetColor();
+                                            m_Materials.push_back(voxel.GetMaterial());
+
+                                            // auto mat = MaterialManager::GetMaterial(voxel.GetMaterial());
+                                            // if(mat)
+                                            //     m_Materials.push_back(mat);
+                                            // else
+                                            //     m_Materials.push_back(MaterialManager::GetMaterial(0));
+
+                                            mapIt = m_VoxelIndexMap.insert({(uint32_t)voxel, m_VoxelIndex++}).first;
+                                        }
+
+                                        m_DataStream->Write(mapIt->second);
+                                    }
+                                }
+                            }
+                        }
+                    }                                       
+
+                    auto currentPos = m_DataStream->Tell();
+                    m_DataStream->Seek(patchPos, SeekOrigin::BEG);
+                    m_DataStream->Write((int32_t)(currentPos - (patchPos + 8)));
+                    m_DataStream->Seek(4, SeekOrigin::CUR);
+                    m_DataStream->Write((int32_t)voxelCount);
+                    m_DataStream->Seek(currentPos, SeekOrigin::BEG);
+                }
+            }
+        }
+    }
+
+    void CMagicaVoxelFormat::TraverseVCoreSceneTree()
+    {
+        // TODO: 
+        // auto rootGroup = std::static_pointer_cast<SGroupNode>(m_MagicaSceneTree[m_MagicaSceneTree.size() - 1]);
+        // if(SceneTree)
+        //     rootGroup->ChildrensID.push_back(TraverseSceneTreeNode(SceneTree));
+    }
+
+    int CMagicaVoxelFormat::TraverseSceneTreeNode(const CSceneNode* p_Node)
+    {
+        // TODO: 
+        // if(p_Node->Model)
+        // {
+        //     auto childId = WriteModel(p_Node->Model);
+        //     auto translate = std::static_pointer_cast<STransformNode>(m_MagicaSceneTree[childId]);
+        //     translate->Frames[0].Translation += p_Node->Position + p_Node->Model->calculateBBox().GetSize() * 0.5f;
+        //     if(!p_Node->Visible)
+        //         translate->Attributes["_hidden"] = "1";
+        //     return childId;
+        // }
+        // else if(p_Node->Animation)
+        // {
+        //     auto childId = WriteAnimation(p_Node->Animation);
+        //     auto translate = std::static_pointer_cast<STransformNode>(m_MagicaSceneTree[childId]);
+        //     translate->Frames[0].Translation += p_Node->Position + p_Node->Animation->GetFrame(0).Model->calculateBBox().GetSize() * 0.5f;
+        //     if(!p_Node->Visible)
+        //         translate->Attributes["_hidden"] = "1";
+        //     return childId;
+        // }
+
+        // auto transform = std::make_shared<STransformNode>();
+        // transform->NodeID = m_MagicaSceneTree.size();
+        // transform->ChildID = m_MagicaSceneTree.size() + 1;
+        // transform->LayerID = 0;
+        // transform->NumFrames = 1;
+        // transform->Frames.push_back(SFrameTransform());
+        // transform->Frames[0].Translation = p_Node->Position; //Math::Vec3i(_Node->Position.x, _Node->Position.z, _Node->Position.y);
+        // // transform->Frames[0].Rotation = Math::Vec3i(_Node->Rotation.x, _Node->Rotation.z, _Node->Rotation.y);
+        // m_MagicaSceneTree.push_back(transform);
+
+        // auto group = std::make_shared<SGroupNode>();
+        // group->NodeID = m_MagicaSceneTree.size();
+        // m_MagicaSceneTree.push_back(group);
+
+        // for (auto &&node : *p_Node)
+        //     group->ChildrensID.push_back(TraverseSceneTreeNode(node));
+
+        // return transform->NodeID;
+    }
+
+    void CMagicaVoxelFormat::WriteSceneTree()
+    {
+        
+
+        // for (auto &&node : m_MagicaSceneTree)
+        // {
+        //     // Position to path later.
+        //     auto patchPos = m_DataStream->Tell() + offsetof(SMagicaVoxelChunkHeader, ChunkContentSize);
+
+        //     switch (node->Type)
+        //     {
+        //         case NodeType::TRANSFORM: {
+        //             auto transform = std::static_pointer_cast<STransformNode>(node);
+
+        //             SMagicaVoxelChunkHeader nTRNChunk = { {'n', 'T', 'R', 'N'}, 0, 0 };
+        //             m_DataStream->Write(nTRNChunk);
+        //             m_DataStream->Write(transform->NodeID);
+        //             m_DataStream->Write((int32_t)transform->Attributes.size());
+        //             for (auto &&dict : transform->Attributes)
+        //                 WriteDictKeyString(dict.first.c_str(), dict.second.c_str());
+        //             m_DataStream->Write(transform->ChildID);
+        //             m_DataStream->Write((int32_t)-1);
+        //             m_DataStream->Write(transform->LayerID);
+        //             m_DataStream->Write(transform->NumFrames);
+
+        //             for (auto &&frame : transform->Frames)
+        //             {
+        //                 m_DataStream->Write((int32_t)1);
+        //                 WriteDictKeyVec3i("_t", frame.Translation);
+        //                 // WriteDictKeyInt("_f", frame.FrameIdx);
+        //             }
+
+        //             if(transform->Frames.size() == 0)
+        //                 m_DataStream->Write((int32_t)0);
+        //         } break;
             
-    //         // TODO:
-    //         // if(!p_Model->Name.empty())
-    //         //     transform->Attributes["_name"] = p_Model->Name;
+        //         case NodeType::GROUP: {
+        //             auto group = std::static_pointer_cast<SGroupNode>(node);
 
-    //         m_MagicaSceneTree.push_back(transform);
-    //         scenetreeId = transform->NodeID;
-    //     }
+        //             SMagicaVoxelChunkHeader nGRPChunk = { {'n', 'G', 'R', 'P'}, 0, 0 };
+        //             m_DataStream->Write(nGRPChunk);
+        //             m_DataStream->Write(group->NodeID);
+        //             m_DataStream->Write((int32_t)0);
+        //             m_DataStream->Write((int32_t)group->ChildrensID.size());
 
-    //     GroupNode group;
-    //     if(size.x >= 256 || size.y >= 256 || size.z >= 256)
-    //     {
-    //         group = std::make_shared<SGroupNode>();
-    //         group->NodeID = m_MagicaSceneTree.size();
-    //         m_MagicaSceneTree.push_back(group);
-    //     }
+        //             for (auto &&child : group->ChildrensID)
+        //                 m_DataStream->Write((int32_t)child);
+        //         } break;
 
-    //     for (int32_t x = 0; x <= size.x; x += 256)
-    //     {
-    //         for (int32_t y = 0; y <= size.y; y += 256)
-    //         {
-    //             for (int32_t z = 0; z <= size.z; z += 256)
-    //             {
-    //                 if(generateNodes)
-    //                 {
-    //                     if(group)
-    //                     {
-    //                         auto transform = std::make_shared<STransformNode>();
-    //                         transform->NodeID = m_MagicaSceneTree.size();
-    //                         transform->ChildID = m_MagicaSceneTree.size() + 1;
-    //                         transform->LayerID = 0;
-    //                         transform->NumFrames = 1;
-    //                         transform->Frames.push_back(SFrameTransform());
-    //                         transform->Frames[0].Translation = Math::Vec3i(x, y, z);
-    //                         group->ChildrensID.push_back(transform->NodeID);
-    //                         m_MagicaSceneTree.push_back(transform);
-    //                     }
+        //         case NodeType::SHAPE: {
+        //             auto shape = std::static_pointer_cast<SShapeNode>(node);
 
-    //                     auto shape = std::make_shared<SShapeNode>();
-    //                     shape->NodeID = m_MagicaSceneTree.size();
+        //             SMagicaVoxelChunkHeader nSHPChunk = { {'n', 'S', 'H', 'P'}, 0, 0 };
+        //             m_DataStream->Write(nSHPChunk);
+        //             m_DataStream->Write(shape->NodeID);
+        //             // m_DataStream->Write((int32_t)0);
 
-    //                     SFrame frame;
-    //                     frame.ModelId = m_ModelCounter++;
-    //                     frame.FrameIdx = p_FrameIdx;
-    //                     shape->Models.push_back(frame);
-    //                     m_MagicaSceneTree.push_back(shape);
+        //             m_DataStream->Write((int32_t)shape->Attributes.size());
+        //             for (auto &&dict : shape->Attributes)
+        //                 WriteDictKeyString(dict.first.c_str(), dict.second.c_str());
 
-    //                     if(p_Shapes)
-    //                         (*p_Shapes)[Math::Vec3i(x, y, z)] = shape;
-    //                 }
-    //                 else
-    //                 {
-    //                     auto it = p_Shapes->find(Math::Vec3i(x, y, z));
-    //                     if(it == p_Shapes->end())
-    //                         continue;
+        //             m_DataStream->Write((int32_t)shape->Models.size());
 
-    //                     SFrame frame;
-    //                     frame.ModelId = m_ModelCounter++;
-    //                     frame.FrameIdx = p_FrameIdx;
-    //                     it->second->Models.push_back(frame);
-    //                     it->second->Attributes["_loop"] = "1";
-    //                 }
+        //             for (auto &&model : shape->Models)
+        //             {
+        //                 m_DataStream->Write((int32_t)model.ModelId);
 
-    //                 SMagicaVoxelChunkHeader sizeChunk = { {'S', 'I', 'Z', 'E'}, (int)sizeof(int32_t) * 3, 0 };
-    //                 m_DataStream->Write(sizeChunk);
+        //                 if(shape->Models.size() == 1)
+        //                     m_DataStream->Write((int32_t)0);
+        //                 else
+        //                 {
+        //                     m_DataStream->Write((int32_t)1);
+        //                     WriteDictKeyInt("_f", model.FrameIdx);
+        //                 }
+        //             }
+        //         } break;
+        //     }
 
-    //         	    auto modelSize = size - Math::Vec3f(x, y, z);
-
-    //                 m_DataStream->Write(std::min((int32_t)modelSize.x + 1, (int32_t)256));
-    //                 m_DataStream->Write(std::min((int32_t)modelSize.z + 1, (int32_t)256));
-    //                 m_DataStream->Write(std::min((int32_t)modelSize.y + 1, (int32_t)256));
-
-    //                 auto patchPos = m_DataStream->Tell() + offsetof(SMagicaVoxelChunkHeader, ChunkContentSize);
-    //                 SMagicaVoxelChunkHeader xyziChunk = { {'X', 'Y', 'Z', 'I'}, 0, 0 };
-    //                 m_DataStream->Write(xyziChunk);
-    //                 // static_cast<int>(sizeof(int32_t) + sizeof(int32_t) * _Model->GetBlockCount())
-    //                 m_DataStream->Write((int32_t)0);
-
-    //                 ankerl::unordered_dense::map<Math::Vec3i, const CChunk*, Math::Vec3iHasher> chunks;
-    //                 for (int mx = 0; mx <= modelSize.x; mx += Config::ChunkSize)
-    //                 {
-    //                     for (int my = 0; my <= modelSize.y; my += Config::ChunkSize)
-    //                     {
-    //                         for (int mz = 0; mz <= modelSize.z; mz += Config::ChunkSize)
-    //                         {
-    //                             auto chunkpos = GetChunkpos(Math::Vec3i(bbox.End.x - (mx + x), y + my, z + mz));
-    //                             auto chunk = p_Model->getChunk(chunkpos);
-    //                             if(chunk)
-    //                                 chunks[chunkpos] = chunk;
-    //                         }
-    //                     }
-    //                 }
-
-    //                 int32_t voxelCount = 0;
-    //                 for (auto &&chunk : chunks)
-    //                 {
-    //                     auto innerBBox = chunk.second->inner_bbox(Math::Vec3i());
-    //                     for (int mx = innerBBox.End.x; mx >= innerBBox.Beg.x; mx--)
-    //                     {
-    //                         for (int my = innerBBox.Beg.y; my <= innerBBox.End.y; my++)
-    //                         {
-    //                             for (int mz = innerBBox.Beg.z; mz <= innerBBox.End.z; mz++)
-    //                             {
-    //                                 auto relpos = chunk.first - (chunk.first & 256);
-
-    //                                 // Mirrors the model for MagicaVoxel
-    //                                 auto voxel = chunk.second->find(Math::Vec3i(mx, my, mz));
-    //                                 if(voxel.IsInstantiated())
-    //                                 {
-    //                                     voxelCount++;
-    //                                     m_DataStream->Write((uint8_t)(modelSize.x - ((mx - innerBBox.Beg.x) + relpos.x)));
-    //                                     m_DataStream->Write((uint8_t)((mz - innerBBox.Beg.z) + relpos.z));
-    //                                     m_DataStream->Write((uint8_t)((my - innerBBox.Beg.y) + relpos.y));
-
-    //                                     auto mapIt = m_VoxelIndexMap.find((uint32_t)voxel);
-    //                                     if(mapIt == m_VoxelIndexMap.end())
-    //                                     {
-    //                                         m_ColorPalette[m_VoxelIndex - 1] = 0xFF000000 | voxel.GetColor();
-
-    //                                         auto mat = MaterialManager::GetMaterial(voxel.GetMaterial());
-    //                                         if(mat)
-    //                                             m_Materials.push_back(mat);
-    //                                         else
-    //                                             m_Materials.push_back(MaterialManager::GetMaterial(0));
-
-    //                                         mapIt = m_VoxelIndexMap.insert({(uint32_t)voxel, m_VoxelIndex++}).first;
-    //                                     }
-
-    //                                     m_DataStream->Write(mapIt->second);
-    //                                 }
-    //                             }
-    //                         }
-    //                     }
-    //                 }                                       
-
-    //                 auto currentPos = m_DataStream->Tell();
-    //                 m_DataStream->Seek(patchPos, SeekOrigin::BEG);
-    //                 m_DataStream->Write((int32_t)(currentPos - (patchPos + 8)));
-    //                 m_DataStream->Seek(4, SeekOrigin::CUR);
-    //                 m_DataStream->Write((int32_t)voxelCount);
-    //                 m_DataStream->Seek(currentPos, SeekOrigin::BEG);
-    //             }
-    //         }
-    //     }
-
-    //     return scenetreeId;
-    // }
-
-    // void CMagicaVoxelFormat::WriteString(const char *p_String)
-    // {
-    //     uint32_t size = strlen(p_String);
-
-    //     // Size "prefix"
-    //     m_DataStream->Write(size);
-
-    //     // String without null termination.
-    //     m_DataStream->Write(p_String, size);
-    // }
-
-    // void CMagicaVoxelFormat::WriteDictKeyString(const char *p_Key, const char *p_Value)
-    // {
-    //     WriteString(p_Key);
-    //     WriteString(p_Value);
-    // }
-
-    // void CMagicaVoxelFormat::WriteDictKeyInt(const char *p_Key, const int p_Value)
-    // {
-    //     WriteString(p_Key);
-
-    //     // Formats the float number to a string with two digits after the decimal point.
-    //     uint32_t size = snprintf(nullptr, 0, "%i", p_Value);
-    //     char *value = new char[size + 1];
-    //     snprintf(value, size + 1, "%i", p_Value);
-        
-    //     m_DataStream->Write(size);
-    //     m_DataStream->Write(value, size);
-    //     delete[] value;
-    // }
-
-    // void CMagicaVoxelFormat::WriteDictKeyFloat(const char *p_Key, const float p_Value)
-    // {
-    //     WriteString(p_Key);
-
-    //     // Formats the float number to a string with two digits after the decimal point.
-    //     uint32_t size = snprintf(nullptr, 0, "%.2f", p_Value);
-    //     char *value = new char[size + 1];
-    //     snprintf(value, size + 1, "%.2f", p_Value);
-        
-    //     m_DataStream->Write(size);
-    //     m_DataStream->Write(value, size);
-    //     delete[] value;
-    // }
-
-    // void CMagicaVoxelFormat::WriteDictKeyVec3i(const char *p_Key, const Math::Vec3i &p_Value)
-    // {
-    //     WriteString(p_Key);
-
-    //     // Formats a Vec3i in the format "X Z Y", since MagicaVoxel uses the Z Axis as gravity axis.
-    //     uint32_t size = snprintf(nullptr, 0, "%i %i %i", p_Value.x, p_Value.z, p_Value.y);
-    //     char *value = new char[size + 1];
-    //     snprintf(value, size + 1, "%i %i %i", p_Value.x, p_Value.z, p_Value.y);
-        
-    //     m_DataStream->Write(size);
-    //     m_DataStream->Write(value, size);
-    //     delete[] value;
-    // }
-
-    // void CMagicaVoxelFormat::TraverseVCoreSceneTree()
-    // {
-    //     // TODO: 
-    //     // auto rootGroup = std::static_pointer_cast<SGroupNode>(m_MagicaSceneTree[m_MagicaSceneTree.size() - 1]);
-    //     // if(SceneTree)
-    //     //     rootGroup->ChildrensID.push_back(TraverseSceneTreeNode(SceneTree));
-    // }
-
-    // int CMagicaVoxelFormat::TraverseSceneTreeNode(const CSceneNode* p_Node)
-    // {
-    //     // TODO: 
-    //     // if(p_Node->Model)
-    //     // {
-    //     //     auto childId = WriteModel(p_Node->Model);
-    //     //     auto translate = std::static_pointer_cast<STransformNode>(m_MagicaSceneTree[childId]);
-    //     //     translate->Frames[0].Translation += p_Node->Position + p_Node->Model->calculateBBox().GetSize() * 0.5f;
-    //     //     if(!p_Node->Visible)
-    //     //         translate->Attributes["_hidden"] = "1";
-    //     //     return childId;
-    //     // }
-    //     // else if(p_Node->Animation)
-    //     // {
-    //     //     auto childId = WriteAnimation(p_Node->Animation);
-    //     //     auto translate = std::static_pointer_cast<STransformNode>(m_MagicaSceneTree[childId]);
-    //     //     translate->Frames[0].Translation += p_Node->Position + p_Node->Animation->GetFrame(0).Model->calculateBBox().GetSize() * 0.5f;
-    //     //     if(!p_Node->Visible)
-    //     //         translate->Attributes["_hidden"] = "1";
-    //     //     return childId;
-    //     // }
-
-    //     // auto transform = std::make_shared<STransformNode>();
-    //     // transform->NodeID = m_MagicaSceneTree.size();
-    //     // transform->ChildID = m_MagicaSceneTree.size() + 1;
-    //     // transform->LayerID = 0;
-    //     // transform->NumFrames = 1;
-    //     // transform->Frames.push_back(SFrameTransform());
-    //     // transform->Frames[0].Translation = p_Node->Position; //Math::Vec3i(_Node->Position.x, _Node->Position.z, _Node->Position.y);
-    //     // // transform->Frames[0].Rotation = Math::Vec3i(_Node->Rotation.x, _Node->Rotation.z, _Node->Rotation.y);
-    //     // m_MagicaSceneTree.push_back(transform);
-
-    //     // auto group = std::make_shared<SGroupNode>();
-    //     // group->NodeID = m_MagicaSceneTree.size();
-    //     // m_MagicaSceneTree.push_back(group);
-
-    //     // for (auto &&node : *p_Node)
-    //     //     group->ChildrensID.push_back(TraverseSceneTreeNode(node));
-
-    //     // return transform->NodeID;
-    // }
-
-    // void CMagicaVoxelFormat::WriteSceneTree()
-    // {
-    //     for (auto &&node : m_MagicaSceneTree)
-    //     {
-    //         // Position to path later.
-    //         auto patchPos = m_DataStream->Tell() + offsetof(SMagicaVoxelChunkHeader, ChunkContentSize);
-
-    //         switch (node->Type)
-    //         {
-    //             case NodeType::TRANSFORM: {
-    //                 auto transform = std::static_pointer_cast<STransformNode>(node);
-
-    //                 SMagicaVoxelChunkHeader nTRNChunk = { {'n', 'T', 'R', 'N'}, 0, 0 };
-    //                 m_DataStream->Write(nTRNChunk);
-    //                 m_DataStream->Write(transform->NodeID);
-    //                 m_DataStream->Write((int32_t)transform->Attributes.size());
-    //                 for (auto &&dict : transform->Attributes)
-    //                     WriteDictKeyString(dict.first.c_str(), dict.second.c_str());
-    //                 m_DataStream->Write(transform->ChildID);
-    //                 m_DataStream->Write((int32_t)-1);
-    //                 m_DataStream->Write(transform->LayerID);
-    //                 m_DataStream->Write(transform->NumFrames);
-
-    //                 for (auto &&frame : transform->Frames)
-    //                 {
-    //                     m_DataStream->Write((int32_t)1);
-    //                     WriteDictKeyVec3i("_t", frame.Translation);
-    //                     // WriteDictKeyInt("_f", frame.FrameIdx);
-    //                 }
-
-    //                 if(transform->Frames.size() == 0)
-    //                     m_DataStream->Write((int32_t)0);
-    //             } break;
-            
-    //             case NodeType::GROUP: {
-    //                 auto group = std::static_pointer_cast<SGroupNode>(node);
-
-    //                 SMagicaVoxelChunkHeader nGRPChunk = { {'n', 'G', 'R', 'P'}, 0, 0 };
-    //                 m_DataStream->Write(nGRPChunk);
-    //                 m_DataStream->Write(group->NodeID);
-    //                 m_DataStream->Write((int32_t)0);
-    //                 m_DataStream->Write((int32_t)group->ChildrensID.size());
-
-    //                 for (auto &&child : group->ChildrensID)
-    //                     m_DataStream->Write((int32_t)child);
-    //             } break;
-
-    //             case NodeType::SHAPE: {
-    //                 auto shape = std::static_pointer_cast<SShapeNode>(node);
-
-    //                 SMagicaVoxelChunkHeader nSHPChunk = { {'n', 'S', 'H', 'P'}, 0, 0 };
-    //                 m_DataStream->Write(nSHPChunk);
-    //                 m_DataStream->Write(shape->NodeID);
-    //                 // m_DataStream->Write((int32_t)0);
-
-    //                 m_DataStream->Write((int32_t)shape->Attributes.size());
-    //                 for (auto &&dict : shape->Attributes)
-    //                     WriteDictKeyString(dict.first.c_str(), dict.second.c_str());
-
-    //                 m_DataStream->Write((int32_t)shape->Models.size());
-
-    //                 for (auto &&model : shape->Models)
-    //                 {
-    //                     m_DataStream->Write((int32_t)model.ModelId);
-
-    //                     if(shape->Models.size() == 1)
-    //                         m_DataStream->Write((int32_t)0);
-    //                     else
-    //                     {
-    //                         m_DataStream->Write((int32_t)1);
-    //                         WriteDictKeyInt("_f", model.FrameIdx);
-    //                     }
-    //                 }
-    //             } break;
-    //         }
-
-    //         auto currentPos = m_DataStream->Tell();
-    //         m_DataStream->Seek(patchPos, SeekOrigin::BEG);
-    //         m_DataStream->Write((int32_t)(currentPos - (patchPos + 8)));
-    //         m_DataStream->Seek(currentPos, SeekOrigin::BEG);
-    //     }
-    // }
+        //     auto currentPos = m_DataStream->Tell();
+        //     m_DataStream->Seek(patchPos, SeekOrigin::BEG);
+        //     m_DataStream->Write((int32_t)(currentPos - (patchPos + 8)));
+        //     m_DataStream->Seek(currentPos, SeekOrigin::BEG);
+        // }
+    }
 
     //////////////////////////////////////////////////
     // Reading functions
@@ -631,6 +521,7 @@ namespace VCore
         if(Version < 150)
             throw CVoxelFormatException("Version: " + std::to_string(Version) + " is not supported");
 
+        LoadMaterials();
         ProcessChunks();
     }
 
@@ -667,6 +558,30 @@ namespace VCore
         }
     }
 
+    void CMagicaVoxelFormat::LoadMaterials()
+    {
+        if(!m_DataStream->Eof())
+        {
+            auto pos = m_DataStream->Tell();
+
+            SMagicaVoxelChunkHeader chunk = m_DataStream->Read<SMagicaVoxelChunkHeader>();
+            if(chunk.Id == MAIN_CHUNK_ID)
+            {
+                while (!m_DataStream->Eof())
+                {
+                    chunk = m_DataStream->Read<SMagicaVoxelChunkHeader>();
+                    switch (chunk.Id)
+                    {
+                        case MATL_CHUNK_ID: ProcessMaterial(); break;
+                        default: m_DataStream->Seek(chunk.ChunkContentSize + chunk.ChildChunkSize); break;
+                    }
+                }
+            }
+
+            m_DataStream->Seek(pos, SeekOrigin::BEG);
+        }
+    }
+
     void CMagicaVoxelFormat::ProcessChunks()
     {
         // Preloads the color palette.
@@ -688,7 +603,6 @@ namespace VCore
                     chunk = m_DataStream->Read<SMagicaVoxelChunkHeader>();
                     switch (chunk.Id) 
                     {
-                        case MATL_CHUNK_ID: ProcessMaterial(); break;
                         case SIZE_CHUNK_ID: ProcessModel(colorpalette); break;
 
                         case TRANSFORM_CHUNK_ID:
@@ -859,7 +773,7 @@ namespace VCore
 
                     // Scenetree always in OpenGL Y-UP Space
                     tmp >> frameTransform.Translation.x >> frameTransform.Translation.z >> frameTransform.Translation.y;
-                    frameTransform.Translation.x *= -1;
+                    // frameTransform.Translation.x *= -1;
                 }
                 else if(key == "_r")
                 {
@@ -907,7 +821,7 @@ namespace VCore
         SGroupNode ret;
 
         ret.NodeId = m_DataStream->Read<uint32_t>();
-        SkipDict();
+        CMagicaVoxelDictionary(m_DataStream).SkipDict();
 
         uint32_t children = m_DataStream->Read<uint32_t>();
         for (uint32_t i = 0; i < children; i++)
@@ -921,7 +835,7 @@ namespace VCore
         SShapeNode ret;
 
         ret.NodeId = m_DataStream->Read<uint32_t>();
-        SkipDict();
+        CMagicaVoxelDictionary(m_DataStream).SkipDict();
 
         uint32_t children = m_DataStream->Read<uint32_t>();
         for (uint32_t i = 0; i < children; i++)
@@ -953,17 +867,5 @@ namespace VCore
         }
 
         return ret;
-    }
-
-    void CMagicaVoxelFormat::SkipDict()
-    {
-        uint32_t keys = m_DataStream->Read<uint32_t>();
-        for (uint32_t i = 0; i < keys; i++)
-        {
-            uint32_t size = m_DataStream->Read<uint32_t>();
-            m_DataStream->Seek(size);
-            size = m_DataStream->Read<uint32_t>();
-            m_DataStream->Seek(size);
-        }
     }
 }

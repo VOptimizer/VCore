@@ -22,10 +22,13 @@
  * SOFTWARE.
  */
 
+#include "VCore/Math/Mat4x4.hpp"
+#include "VCore/Voxel/Frustum.hpp"
 #include <VCore/Formats/Streamable.hpp>
 #include <VCore/Voxel/Storage/VoxelSpace.hpp>
 #include <VCore/Voxel/VoxelModel.hpp>
 #include <VCore/VConfig.hpp>
+#include <utility>
 
 namespace VCore
 {
@@ -95,52 +98,52 @@ namespace VCore
         return ret;
     }
 
-    CChunkQueryList &CChunkQueryList::operator=(const CChunkQueryList &_Other)
+    CChunkQueryList &CChunkQueryList::operator=(const CChunkQueryList &p_Other)
     {
-        m_Chunks = _Other.m_Chunks;
-        m_FilterFunction = _Other.m_FilterFunction;
-        m_Userdata = _Other.m_Userdata;
+        m_Chunks = p_Other.m_Chunks;
+        m_FilterFunction = p_Other.m_FilterFunction;
+        m_Userdata = p_Other.m_Userdata;
         return *this;
     }
 
-    CChunkQueryList &CChunkQueryList::operator=(CChunkQueryList &&_Other)
+    CChunkQueryList &CChunkQueryList::operator=(CChunkQueryList &&p_Other)
     {
-        m_Chunks = _Other.m_Chunks;
-        m_FilterFunction = _Other.m_FilterFunction;
-        m_Userdata = _Other.m_Userdata;
+        m_Chunks = p_Other.m_Chunks;
+        m_FilterFunction = p_Other.m_FilterFunction;
+        m_Userdata = p_Other.m_Userdata;
 
-        _Other.m_Chunks = nullptr;
-        _Other.m_FilterFunction = nullptr;
-        _Other.m_Userdata = nullptr;
+        p_Other.m_Chunks = nullptr;
+        p_Other.m_FilterFunction = nullptr;
+        p_Other.m_Userdata = nullptr;
         return *this;
     }
 
-    bool CChunkQueryList::ApplyFilter(ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher>::const_iterator &_Iterator, SChunkMeta &_ChunkMeta) const
+    bool CChunkQueryList::ApplyFilter(ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher>::const_iterator &p_Iterator, SChunkMeta &p_ChunkMeta) const
     {
-        CBBox bbox(_Iterator->first, _Iterator->first + CHUNK_SIZE);
+        CBBox bbox(p_Iterator->first, p_Iterator->first + CHUNK_SIZE);
         bool filtered = !m_FilterFunction;
         if(m_FilterFunction)
-            filtered = m_FilterFunction(bbox, _Iterator->second, m_Userdata);
+            filtered = m_FilterFunction(bbox, p_Iterator->second, m_Userdata);
 
         if(filtered)
         {
             Math::Vec3iHasher hasher;
-            _ChunkMeta = {hasher(_Iterator->first), _Iterator->second, bbox, _Iterator->second->inner_bbox(_Iterator->first)};
+            p_ChunkMeta = {hasher(p_Iterator->first), p_Iterator->second, bbox, p_Iterator->second->inner_bbox(p_Iterator->first)};
         }
 
         return filtered;
     }
 
-    SChunkMeta CChunkQueryList::FilterNext(ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher>::const_iterator &_Iterator) const
+    SChunkMeta CChunkQueryList::FilterNext(ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher>::const_iterator &p_Iterator) const
     {
         while (true)
         {
-            _Iterator++;
-            if(_Iterator == m_Chunks->end())
+            p_Iterator++;
+            if(p_Iterator == m_Chunks->end())
                 return SChunkMeta();
 
             SChunkMeta result;
-            if(ApplyFilter(_Iterator, result))
+            if(ApplyFilter(p_Iterator, result))
                 return result;
         }
     }
@@ -177,30 +180,30 @@ namespace VCore
         return *this;
     }
 
-    bool CChunkQueryList::CChunkQueryIterator::operator!=(const CChunkQueryIterator &_Rhs)
+    bool CChunkQueryList::CChunkQueryIterator::operator!=(const CChunkQueryIterator &p_Rhs)
     {
-        return m_Iterator != _Rhs.m_Iterator;
+        return m_Iterator != p_Rhs.m_Iterator;
     }
 
-    bool CChunkQueryList::CChunkQueryIterator::operator==(const CChunkQueryIterator &_Rhs)
+    bool CChunkQueryList::CChunkQueryIterator::operator==(const CChunkQueryIterator &p_Rhs)
     {
-        return m_Iterator == _Rhs.m_Iterator;
+        return m_Iterator == p_Rhs.m_Iterator;
     }
 
-    CChunkQueryList::CChunkQueryIterator& CChunkQueryList::CChunkQueryIterator::operator=(const CChunkQueryIterator &_Other)
+    CChunkQueryList::CChunkQueryIterator& CChunkQueryList::CChunkQueryIterator::operator=(const CChunkQueryIterator &p_Other)
     {
-        m_ChunkMeta = _Other.m_ChunkMeta;
-        m_Parent = _Other.m_Parent;
-        m_Iterator = _Other.m_Iterator;
+        m_ChunkMeta = p_Other.m_ChunkMeta;
+        m_Parent = p_Other.m_Parent;
+        m_Iterator = p_Other.m_Iterator;
         return *this;
     }
 
-    CChunkQueryList::CChunkQueryIterator& CChunkQueryList::CChunkQueryIterator::operator=(CChunkQueryIterator &&_Other)
+    CChunkQueryList::CChunkQueryIterator& CChunkQueryList::CChunkQueryIterator::operator=(CChunkQueryIterator &&p_Other)
     {
-        m_ChunkMeta = _Other.m_ChunkMeta;
-        m_Parent = _Other.m_Parent;
-        _Other.m_Parent = nullptr;
-        m_Iterator = std::move(_Other.m_Iterator);
+        m_ChunkMeta = p_Other.m_ChunkMeta;
+        m_Parent = p_Other.m_Parent;
+        p_Other.m_Parent = nullptr;
+        m_Iterator = std::move(p_Other.m_Iterator);
         return *this;
     }
 
@@ -282,35 +285,35 @@ namespace VCore
         return end();
     }
 
-    CVoxelSpace::iterator CVoxelSpace::find(const Math::Vec3i &_v) const
+    CVoxelSpace::iterator CVoxelSpace::find(const Math::Vec3i &p_v) const
     {
         const_cast<CVoxelSpace*>(this)->CheckLoadModel();
-        Math::Vec3i position = GetChunkpos(_v);
+        Math::Vec3i position = GetChunkpos(p_v);
         auto it = m_Chunks.find(position);
         if(it == m_Chunks.end())
             return end();
 
-        CVoxel vox = it->second->find(_v);
+        CVoxel vox = it->second->find(p_v);
         if(!vox.IsInstantiated())
             return end();
 
-        return CVoxelSpaceIterator(this, it->second->inner_bbox(it->first), {_v, vox});
+        return CVoxelSpaceIterator(this, it->second->inner_bbox(it->first), {p_v, vox});
     }
 
     CVoxelSpace::querylist CVoxelSpace::queryDirtyChunks() const
     {
         const_cast<CVoxelSpace*>(this)->CheckLoadModel();
-        return CChunkQueryList(m_Chunks, [](const CBBox &_BBox, const CChunk *_Chunk, void *_Userdata)
+        return CChunkQueryList(m_Chunks, [](const CBBox &p_BBox, const CChunk *p_Chunk, CChunkQueryList::IUserdata *p_Userdata)
         {
-            (void)_BBox;
-            (void)_Userdata;
-            return _Chunk->IsDirty;
+            (void)p_BBox;
+            (void)p_Userdata;
+            return p_Chunk->IsDirty;
         });
     }
 
-    void CVoxelSpace::markAsProcessed(const SChunkMeta &_Chunk)
+    void CVoxelSpace::markAsProcessed(const SChunkMeta &p_Chunk)
     {
-        auto it = m_Chunks.find(_Chunk.TotalBBox.Beg);
+        auto it = m_Chunks.find(p_Chunk.TotalBBox.Beg);
         if(it != m_Chunks.end())
             it->second->IsDirty = false;
     }
@@ -321,24 +324,26 @@ namespace VCore
         return CChunkQueryList(m_Chunks);
     }
 
-    CVoxelSpace::querylist CVoxelSpace::queryChunks(const CFrustum *_Frustum) const
+    CVoxelSpace::querylist CVoxelSpace::queryChunks(const CFrustum *p_Frustum, const Math::Mat4x4 &p_ModelMatrix) const
     {
         const_cast<CVoxelSpace*>(this)->CheckLoadModel();
-        return CChunkQueryList(m_Chunks, [](const CBBox &_BBox, const CChunk *_Chunk, void *_Userdata)
+        return CChunkQueryList(m_Chunks, [](const CBBox &p_BBox, const CChunk *p_Chunk, CChunkQueryList::IUserdata *p_Userdata)
         {
-            CFrustum *frustum = (CFrustum*)_Userdata;
-            return frustum->IsOnFrustum(_Chunk->inner_bbox(_BBox.Beg));
-        }, const_cast<CFrustum*>(_Frustum));
+            auto data = p_Userdata->GetUserdata<std::pair<const CFrustum*, Math::Mat4x4>>();
+            const CFrustum *frustum = data->first;
+            
+            return frustum->IsOnFrustum(p_Chunk->inner_bbox(data->second * p_BBox.Beg));
+        }, new CChunkQueryList::TUserdata<std::pair<const CFrustum*, Math::Mat4x4>>(new std::pair<const CFrustum*, Math::Mat4x4>(p_Frustum, p_ModelMatrix), true));
     }
 
-    CVoxelSpace::iterator CVoxelSpace::next(const Math::Vec3i &_FromPosition) const
+    CVoxelSpace::iterator CVoxelSpace::next(const Math::Vec3i &p_FromPosition) const
     {
-        Math::Vec3i position = GetChunkpos(_FromPosition);
+        Math::Vec3i position = GetChunkpos(p_FromPosition);
         auto it = m_Chunks.find(position);
         if(it == m_Chunks.end())
             return end();
 
-        auto res = it->second->next(_FromPosition);
+        auto res = it->second->next(p_FromPosition);
         
         // Searches for the next voxel inside of any chunk.
         while (!res.second.IsInstantiated())
@@ -419,21 +424,21 @@ namespace VCore
         m_ModelLoaded = false;
     }
 
-    CVoxelSpace &CVoxelSpace::operator=(CVoxelSpace &&_Other)
+    CVoxelSpace &CVoxelSpace::operator=(CVoxelSpace &&p_Other)
     {
-        m_VoxelsCount = _Other.m_VoxelsCount;
-        m_Chunks = std::move(_Other.m_Chunks);
-        m_ModelLoaded = std::move(_Other.m_ModelLoaded);
+        m_VoxelsCount = p_Other.m_VoxelsCount;
+        m_Chunks = std::move(p_Other.m_Chunks);
+        m_ModelLoaded = std::move(p_Other.m_ModelLoaded);
 
         return *this;
     }
 
-    void CVoxelSpace::SetStream(IStreamable *_Strm)
+    void CVoxelSpace::SetStream(IStreamable *p_Strm)
     {
         if(m_Stream)
             delete m_Stream;
 
-        m_Stream = _Strm;
+        m_Stream = p_Strm;
     }
 
     void CVoxelSpace::Unload()
@@ -442,9 +447,9 @@ namespace VCore
             clear();
     }
 
-    CChunk *CVoxelSpace::GetChunk(const Math::Vec3i &_Position) const
+    CChunk *CVoxelSpace::GetChunk(const Math::Vec3i &p_Position) const
     {
-        auto position = GetChunkpos(_Position);
+        auto position = GetChunkpos(p_Position);
         auto it = m_Chunks.find(position);
         if(it == m_Chunks.end())
             return nullptr;

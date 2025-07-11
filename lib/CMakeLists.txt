@@ -89,9 +89,9 @@ endmacro(ADD_EXPORTER)
 
 ADD_EXPORTER(OBJ "${PROJECT_SOURCE_DIR}/src/Export/Implementations/obj/WavefrontObjExporter.cpp")
 ADD_EXPORTER(SPRITESTACKING "${PROJECT_SOURCE_DIR}/src/Export/Implementations/SpriteStackingExporter.cpp")
-ADD_EXPORTER(GODOT3 "${PROJECT_SOURCE_DIR}/src/Export/Implementations/GodotSceneExporter.cpp")
+ADD_EXPORTER(GODOT "${PROJECT_SOURCE_DIR}/src/Export/Implementations/godot/GodotSceneExporter.cpp")
 ADD_EXPORTER(GLTF "${PROJECT_SOURCE_DIR}/src/Export/Implementations/glTF/GLTFExporter.cpp")
-ADD_EXPORTER(PLY "${PROJECT_SOURCE_DIR}/src/Export/Implementations/PLYExporter.cpp")
+ADD_EXPORTER(PLY "${PROJECT_SOURCE_DIR}/src/Export/Implementations/ply/PLYExporter.cpp")
 ADD_EXPORTER(FBX "${PROJECT_SOURCE_DIR}/src/Export/Implementations/fbx/FbxExporter.cpp")
 
 include_directories(
@@ -103,7 +103,7 @@ add_library(${PROJECT_NAME} STATIC ${CORE_SRCS} ${IMPORTER_SRCS} ${EXPORTER_SRCS
 target_include_directories(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}")
 target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W4>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wreturn-type -Wextra -Wunused-parameter -Wmismatched-tags -Wpessimizing-move -march=native>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wreturn-type -Wextra -Wunused-parameter -Wmismatched-tags -Wpessimizing-move -march=x86-64>
 )
 
 find_program(CPPCHECK cppcheck)

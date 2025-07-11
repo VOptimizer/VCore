@@ -28,6 +28,8 @@
 #include "Iterator.hpp"
 #include <VCore/Voxel/BBox.hpp>
 #include "../Voxel.hpp"
+#include "VCore/Misc/unordered_dense.h"
+#include <cstdint>
 #include <utility>
 #include <VCore/VConfig.hpp>
 
@@ -122,6 +124,21 @@ namespace VCore
             bool HasVoxelOnPlane(int p_Axis, const Math::Vec3i &p_Pos);
             void UpdateNeighborChunks(CVoxelSpace *p_Space, const Math::Vec3i &p_GlobalPos);
     };
+
+    // class CUMapChunk : public IChunkStorage
+    // {
+    //     public:
+    //         bool SetVoxel(const CVoxel &p_Voxel, const Math::Vec3i &p_Position) override;
+    //         CVoxel GetVoxel(const Math::Vec3i &p_Position) const override;
+
+    //         virtual ~CUMapChunk() { Clear(); }
+
+    //     private:
+    //         void Clear();
+
+    //         ankerl::unordered_dense::map<uint32_t, CVoxel> m_Data;
+    //         // CVoxel m_Data[Config::ChunkSize * Config::ChunkSize * Config::ChunkSize];
+    // };
 
     class CByteChunk : public IChunkStorage
     {

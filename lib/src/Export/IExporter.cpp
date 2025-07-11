@@ -29,11 +29,6 @@
 #include <stdexcept>
 #include <VCore/Export/IExporter.hpp>
 
-#define  VCORE_BUILD_NO_OBJ_EXPORTER
-#define  VCORE_BUILD_NO_GODOT3_EXPORTER
-#define  VCORE_BUILD_NO_PLY_EXPORTER
-#define  VCORE_BUILD_NO_FBX_EXPORTER
-
 #ifndef VCORE_BUILD_NO_GLTF_EXPORTER
 #include "Implementations/glTF/GLTFExporter.hpp"
 #endif
@@ -43,11 +38,11 @@
 #endif
 
 #ifndef VCORE_BUILD_NO_GODOT3_EXPORTER
-#include "Implementations/GodotSceneExporter.hpp"
+#include "Implementations/godot/GodotSceneExporter.hpp"
 #endif
 
 #ifndef VCORE_BUILD_NO_PLY_EXPORTER
-#include "Implementations/PLYExporter.hpp"
+#include "Implementations/ply/PLYExporter.hpp"
 #endif
 
 #ifndef VCORE_BUILD_NO_FBX_EXPORTER
@@ -83,8 +78,9 @@ namespace VCore
             case ExporterType::PLY: return Exporter(new CPLYExporter());
             #endif
 
-            #ifndef VCORE_BUILD_NO_GODOT3_EXPORTER
-            case ExporterType::ESCN: return Exporter(new CGodotSceneExporter());
+            #ifndef VCORE_BUILD_NO_GODOT_EXPORTER
+            case ExporterType::ESCN2: return Exporter(new CGodotSceneExporter(GodotVersion::GODOT3));
+            case ExporterType::ESCN3: return Exporter(new CGodotSceneExporter(GodotVersion::GODOT4));
             #endif
 
             default:
@@ -103,8 +99,10 @@ namespace VCore
             type = ExporterType::GLTF;
         else if(ext == "glb")
             type = ExporterType::GLB;
-        else if(ext == "escn")
-            type = ExporterType::ESCN;
+        else if(ext == "escn2")
+            type = ExporterType::ESCN2;
+        else if(ext == "escn3")
+            type = ExporterType::ESCN3;
         else if(ext == "ply")
             type = ExporterType::PLY;
         else if(ext == "fbx")
@@ -130,7 +128,7 @@ namespace VCore
         m_IOHandler = p_Handler;
         m_Path = p_Path;
 
-        WriteHeaderData();
+        WriteHeaderData(p_Meshes);
         WriteMeshes(p_Meshes);
         WriteFooterData();
 
@@ -144,11 +142,16 @@ namespace VCore
         m_Path = p_Path;
         m_SceneTree = p_RenderTree;
 
-        WriteHeaderData();
+        WriteHeaderData(p_RenderTree->GetModels());
         if(SupportsSceneTree())
         {
             WriteMeshes(p_RenderTree->GetModels());
             TraverseTree();
+        }
+        else
+        {
+            TraverseTree();
+            WriteMeshes(p_RenderTree->GetModels());
         }
         WriteFooterData();
 
@@ -181,14 +184,23 @@ namespace VCore
             if(modelNode->ModelId >= meshes.size())
                 return;
 
-            if(!meshes[modelNode->ModelId])
+            auto mesh = meshes[modelNode->ModelId];
+            if(SupportsSceneTree())
             {
-                m_NullModels.push_back(modelNode->ModelId);
-                std::sort(m_NullModels.begin(), m_NullModels.end());
-                return;
-            }
+                if(!mesh)
+                {
+                    m_NullModels.push_back(modelNode->ModelId);
+                    std::sort(m_NullModels.begin(), m_NullModels.end());
+                    return;
+                }
 
-            CalculateModelDec(modelNode->ModelId);
+                CalculateModelDec(modelNode->ModelId);
+            }
+            else
+            {
+                if(mesh)
+                    mesh->ModelMatrix = modelNode->GetGlobalTransform();
+            }
         }
 
         ISceneTreeVisitor<Mesh>::TraverseNode(p_Node);

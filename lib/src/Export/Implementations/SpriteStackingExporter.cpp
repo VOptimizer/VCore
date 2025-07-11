@@ -41,30 +41,30 @@ namespace VCore
 
     std::vector<char> CSpriteStackingExporter::Generate(VoxelModel m)
     {
-        Math::Vec3f Size = m->calculateBBox().GetSize();
-        std::vector<uint32_t> Pixels(Size.x * Size.y * Size.z, 0);
+        // Math::Vec3f Size = m->calculateBBox().GetSize();
+        // std::vector<uint32_t> Pixels(Size.x * Size.y * Size.z, 0);
 
-        auto diffuse = m->Textures.at(TextureType::DIFFIUSE);
+        // auto diffuse = m->Textures.at(TextureType::DIFFIUSE);
 
-        for (size_t y = 0; y < Size.y; y++)
-        {
-            for (size_t x = 0; x < Size.x; x++)
-            {
-                for (size_t z = 0; z < Size.z; z++)
-                {
-                    auto voxIt = m->find(Math::Vec3f(x, y, z));
-                    if(voxIt != m->end())
-                        Pixels[x + (size_t)Size.x * z + (size_t)Size.x * (size_t)Size.z * y] = diffuse->GetPixel(Math::Vec2ui(voxIt->second.GetColor(), 0));
-                }
-            }
-        }
+        // for (size_t y = 0; y < Size.y; y++)
+        // {
+        //     for (size_t x = 0; x < Size.x; x++)
+        //     {
+        //         for (size_t z = 0; z < Size.z; z++)
+        //         {
+        //             auto voxIt = m->find(Math::Vec3f(x, y, z));
+        //             if(voxIt != m->end())
+        //                 Pixels[x + (size_t)Size.x * z + (size_t)Size.x * (size_t)Size.z * y] = diffuse->GetPixel(Math::Vec2ui(voxIt->second.GetColor(), 0));
+        //         }
+        //     }
+        // }
         
-        std::vector<char> Texture;
-        stbi_write_png_to_func([](void *context, void *data, int size){
-            std::vector<char> *InnerTexture = (std::vector<char>*)context;
-            InnerTexture->insert(InnerTexture->end(), (char*)data, ((char*)data) + size);
-        }, &Texture, Size.x, Size.y * Size.z, 4, Pixels.data(), sizeof(uint32_t) * Size.x);
+        // std::vector<char> Texture;
+        // stbi_write_png_to_func([](void *context, void *data, int size){
+        //     std::vector<char> *InnerTexture = (std::vector<char>*)context;
+        //     InnerTexture->insert(InnerTexture->end(), (char*)data, ((char*)data) + size);
+        // }, &Texture, Size.x, Size.y * Size.z, 4, Pixels.data(), sizeof(uint32_t) * Size.x);
 
-        return Texture;
+        // return Texture;
     }
 }

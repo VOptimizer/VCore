@@ -26,6 +26,7 @@
 #define PLYEXPORTER_HPP
 
 #include <VCore/Export/IExporter.hpp>
+#include <cstdint>
 
 namespace VCore
 {
@@ -35,7 +36,14 @@ namespace VCore
             CPLYExporter() = default;
             ~CPLYExporter() = default;
         protected:
-            void WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes) override;
+            void WriteHeaderData(const fast_vector<Mesh> &) override { m_Counter = 0; }
+            bool SupportsSceneTree() override { return false; }
+            void WriteMeshData(const Mesh &p_Mesh) override;
+
+            void EnterSceneNode(const CSceneNodeBase *) override {}
+            void LeaveSceneNode(const CSceneNodeBase *) override {}
+
+            uint32_t m_Counter{};
     };
 }
 

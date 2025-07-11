@@ -33,6 +33,7 @@
 #include <VCore/Meshing/Texture.hpp>
 
 #include "Chunk.hpp"
+#include "VCore/Math/Mat4x4.hpp"
 
 #include <vector>
 
@@ -76,11 +77,54 @@ namespace VCore
         };
 
         public:
+            class IUserdata
+            {
+                public:
+                    IUserdata(bool p_UserdataOwner) : m_UserdataOwner(p_UserdataOwner) {}
+
+                    template<class T>
+                    T *GetUserdata() const
+                    {
+                        return static_cast<T*>(GetUserdataInternal());
+                    }
+
+                    virtual ~IUserdata() = default;
+                protected:
+                    virtual void *GetUserdataInternal() const = 0;
+
+                    bool m_UserdataOwner;
+            };
+
+            template<class T>
+            class TUserdata : public IUserdata
+            {
+                public:
+                    TUserdata(T* p_Userdata, bool p_UserdataOwner) : IUserdata(p_UserdataOwner), m_Userdata(p_Userdata) {}
+
+                    virtual ~TUserdata()
+                    {
+                        if(m_UserdataOwner && m_Userdata)
+                        {
+                            delete m_Userdata;
+                            m_Userdata = nullptr;
+                        }
+                    }
+
+                protected:
+                    void *GetUserdataInternal() const override
+                    {
+                        return m_Userdata;
+                    }
+
+                private:
+                    T* m_Userdata;
+            };
+
             using iterator = CChunkQueryIterator;
-            using FilterFunction = bool (*)(const CBBox &p_BBox, const CChunk *p_Chunk, void *p_Userdata);
+            using FilterFunction = bool (*)(const CBBox &p_BBox, const CChunk *p_Chunk, IUserdata *p_Userdata);
 
             CChunkQueryList() : m_FilterFunction(nullptr), m_Chunks(nullptr) {}
-            CChunkQueryList(const ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher> &p_Chunks, FilterFunction p_FilterFn = nullptr, void *p_Userdata = nullptr) : m_FilterFunction(p_FilterFn), m_Chunks(&p_Chunks), m_Userdata(p_Userdata) {}
+            CChunkQueryList(const ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher> &p_Chunks, FilterFunction p_FilterFn = nullptr, IUserdata *p_Userdata = nullptr) : m_FilterFunction(p_FilterFn), m_Chunks(&p_Chunks), m_Userdata(p_Userdata) {}
             CChunkQueryList(const CChunkQueryList &p_Other) { *this = p_Other; }
             CChunkQueryList(CChunkQueryList &&p_Other) { *this = std::move(p_Other); }
 
@@ -95,13 +139,18 @@ namespace VCore
             CChunkQueryList &operator=(const CChunkQueryList &p_Other);
             CChunkQueryList &operator=(CChunkQueryList &&p_Other);
 
+            ~CChunkQueryList()
+            {
+                if(m_Userdata)
+                    delete m_Userdata;
+            }
         private:
             bool ApplyFilter(ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher>::const_iterator &p_Iterator, SChunkMeta &p_ChunkMeta) const;
             SChunkMeta FilterNext(ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher>::const_iterator &p_Iterator) const;
 
             FilterFunction m_FilterFunction;
             const ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher> *m_Chunks;
-            void *m_Userdata;
+            IUserdata *m_Userdata;
     };
 
     class CVoxelSpace
@@ -155,7 +204,7 @@ namespace VCore
             /**
              * @return Returns a list of all chunks which are falling inside the given frustum.
              */
-            querylist queryChunks(const CFrustum *p_Frustum) const;
+            querylist queryChunks(const CFrustum *p_Frustum, const Math::Mat4x4 &p_ModelMatrix = Math::Mat4x4()) const;
 
             /**
              * @return Gets the voxel count.

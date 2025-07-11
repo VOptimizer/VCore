@@ -119,7 +119,8 @@ namespace VCore
         uint32_t ChunkContentSize;
         uint32_t ChildChunkSize;
     };
-
+    
+    class CMagicaVoxelScenetreeWriter;
     class CMagicaVoxelFormat : public IVoxelFormat
     {
         public:  
@@ -128,7 +129,7 @@ namespace VCore
 
         protected:
             void ParseFormat() override;
-            void WriteFormat() override {}
+            void WriteFormat() override;
 
             void ClearCache() override;
 
@@ -138,42 +139,27 @@ namespace VCore
 
             void LoadColorPalette();
             void ProcessChunks();
+            void LoadMaterials();
             void ProcessMaterial();
             void ProcessModel(const std::shared_ptr<uint32_t[]> &p_Colorpalette);
             
-
             STransformNode ProcessTransformNode();
             SGroupNode ProcessGroupNode();
             SShapeNode ProcessShapeNode();
 
-            void SkipDict();
-
             // int WriteAnimation(const VoxelAnimation &p_Animation);
-            int WriteModel(const VoxelModel &p_Model, ankerl::unordered_dense::map<Math::Vec3i, SShapeNode, Math::Vec3iHasher> *p_Shapes = nullptr, uint32_t p_FrameIdx = 0);
+            void WriteModel(const VoxelModel &p_Model, CMagicaVoxelScenetreeWriter *p_Tree, uint32_t p_modelCounter);
 
             void TraverseVCoreSceneTree();
             int TraverseSceneTreeNode(const CSceneNode* p_Node);
             void WriteSceneTree();
-
-            /**
-             * @brief Writes a string.
-             * A string is stored without null termination and has an int32 as "prefix" which contains the size of the string.
-             */
-            void WriteString(const char *p_String);
-            
-            void WriteDictKeyString(const char *p_Key, const char *p_Value);
-            void WriteDictKeyInt(const char *p_Key, const int p_Value);
-            void WriteDictKeyFloat(const char *p_Key, const float p_Value);
-            void WriteDictKeyVec3i(const char *p_Key, const Math::Vec3i &p_Value);
 
             // Scenetree nodes for the voxel file
             fast_vector<SNode> m_MagicaSceneTree;
 
             // Maps
             ankerl::unordered_dense::map<uint32_t, uint8_t> m_VoxelIndexMap;
-
-            ankerl::unordered_dense::set<uintptr_t> m_AlreadyWrittenModels;
-            ankerl::unordered_dense::set<uintptr_t> m_AlreadyWrittenAnimations;
+            fast_vector<uint8_t> m_Materials;
 
             std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial, Uint8Hasher>> m_NotDefaultMaterials;
 

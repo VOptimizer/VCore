@@ -25,6 +25,7 @@
 #ifndef SCENENODE_HPP
 #define SCENENODE_HPP
 
+#include "VCore/Voxel/Frustum.hpp"
 #include "VCore/Voxel/Storage/VoxelSpace.hpp"
 #include <VCore/Math/Vector.hpp>
 #include <VCore/Misc/fast_vector.hpp>
@@ -104,7 +105,7 @@ namespace VCore
             virtual uint32_t GetChildrenCount() const = 0;
 
             /** @return Gets the global transform of this node. */
-            inline Math::Mat4x4 GetGlobalTransform()
+            inline Math::Mat4x4 GetGlobalTransform() const
             {
                 if(m_TransformDirty) // Is the transformation dirty?
                 {
@@ -112,9 +113,9 @@ namespace VCore
 
                     // Update cache
                     if(m_Parent)
-                        m_GlobalTransform = m_Parent->GetGlobalTransform() * GetGlobalTransform();
+                        m_GlobalTransform = m_Parent->GetGlobalTransform() * GetLocalTransform();
                     else
-                        m_GlobalTransform = GetGlobalTransform();
+                        m_GlobalTransform = GetLocalTransform();
                 }
 
                 return m_GlobalTransform;
@@ -122,14 +123,14 @@ namespace VCore
 
             inline Math::Mat4x4 GetLocalTransform() const
             {
-                Math::Mat4x4 localTranform;
-                localTranform
+                Math::Mat4x4 localTransform;
+                localTransform
                     .Rotate(Math::Vec3f(0, 0, 1), m_Rotation.z)
                     .Rotate(Math::Vec3f(1, 0, 0), m_Rotation.x)
                     .Rotate(Math::Vec3f(0, 1, 0), m_Rotation.y);
 
-                localTranform *= Math::Mat4x4::Scale(m_Scale);
-                return Math::Mat4x4::Translation(m_Position) * localTranform;
+                localTransform *= Math::Mat4x4::Scale(m_Scale);
+                return Math::Mat4x4::Translation(m_Position) * localTransform;
             }
 
             virtual ~CSceneNodeBase() = default;
@@ -141,7 +142,16 @@ namespace VCore
                     child->NotifyChildrenTranformDirty();
             }
 
-            bool m_TransformDirty{true};
+            virtual void DoFrustumCulling(const CFrustum &p_Frustum, fast_vector<CSceneNodeBase*> &p_Models)
+            {
+                for (auto &&child : *this) 
+                {
+                    if(p_Frustum.IsOnFrustum(child->m_BBox))
+                        child->DoFrustumCulling(p_Frustum, p_Models);
+                }
+            }
+
+            mutable bool m_TransformDirty{true};
             Math::Vec3f m_Position;
             Math::Vec3f m_Rotation;
             Math::Vec3f m_Scale{1,1,1};
@@ -149,7 +159,7 @@ namespace VCore
 
         private:
             CSceneNodeBase *m_Parent;
-            Math::Mat4x4 m_GlobalTransform;
+            mutable Math::Mat4x4 m_GlobalTransform;
     };
 
     class CSceneNode : public CSceneNodeBase
@@ -195,6 +205,13 @@ namespace VCore
             uint64_t ModelId;
 
             ~CSceneModelNode() override = default;
+
+        protected:
+            void DoFrustumCulling(const CFrustum &p_Frustum, fast_vector<CSceneNodeBase*> &p_Models) override
+            {
+                p_Models.push_back(this);
+                CSceneNodeBase::DoFrustumCulling(p_Frustum, p_Models);
+            }
     };
 
     class CSceneAnimationNode : public CSceneNode
@@ -211,6 +228,13 @@ namespace VCore
             fast_vector<SFrame> Frames;
 
             ~CSceneAnimationNode() override = default;
+
+        protected:
+            void DoFrustumCulling(const CFrustum &p_Frustum, fast_vector<CSceneNodeBase*> &p_Models) override
+            {
+                p_Models.push_back(this);
+                CSceneNodeBase::DoFrustumCulling(p_Frustum, p_Models);
+            }
     };
 
     /** Root of a scene tree */
@@ -313,6 +337,14 @@ namespace VCore
                 UpdateBoundingVolumes(this, p_Models);
             }
 
+            fast_vector<CSceneNodeBase*> DoFrustumCulling(const CFrustum &p_Frustum)
+            {
+                fast_vector<CSceneNodeBase*> result;
+
+                CSceneNodeBase::DoFrustumCulling(p_Frustum, result);
+
+                return result;
+            }
         private:
             void UpdateBoundingVolumes(CSceneNodeBase *p_Node, const fast_vector<VoxelModel> &p_Models)
             {
@@ -378,7 +410,7 @@ namespace VCore
             std::shared_ptr<TSceneTree<T>> m_SceneTree;
     };
 
-    using VoxelSceneTree_t = TSceneTree<VoxelModel>;
+    using VoxelSceneTree_t = CVoxelSceneTree; //TSceneTree<VoxelModel>;
     using VoxelSceneTree = std::shared_ptr<VoxelSceneTree_t>;
 
     using RenderSceneTree_t = TSceneTree<Mesh>;

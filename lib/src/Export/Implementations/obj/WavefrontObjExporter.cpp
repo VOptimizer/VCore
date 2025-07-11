@@ -23,6 +23,7 @@
  */
 
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <VCore/Meshing/MaterialManager.hpp>
 #include "WavefrontObjExporter.hpp"
@@ -39,6 +40,18 @@
 
 namespace VCore
 {   
+    void CWavefrontObjExporter::WriteHeaderData(const fast_vector<Mesh> &)
+    {
+        m_FilenameWithoutExt = GetFilenameWithoutExt(m_Path);
+        std::string filePathWithoutExt = GetPathWithoutExt(m_Path);
+
+        m_ObjFile = m_IOHandler->Open(filePathWithoutExt + ".obj", "w+b");
+        m_MtlFile = m_IOHandler->Open(filePathWithoutExt + ".mtl", "wb");
+
+        m_ObjFile->Write(std::format("# {}\n", IExporter::WATERMARK));
+        m_ObjFile->Write("mtllib " + m_FilenameWithoutExt + ".mtl\n");
+    }
+
     void CWavefrontObjExporter::WriteMeshData(const Mesh &p_Mesh)
     {
         // Name of the mesh
@@ -88,6 +101,19 @@ namespace VCore
             }
             m_IndexOffset += surface->GetVertexCount();
         }
+    }
+
+    void CWavefrontObjExporter::WriteFooterData()
+    {
+        GenerateTextureAndPatchUV();
+
+        m_Colors.clear();
+        m_Materials.clear();
+        m_FilenameWithoutExt.clear();
+        m_IndexOffset = 0;
+
+        m_IOHandler->Close(m_ObjFile);
+        m_IOHandler->Close(m_MtlFile);
     }
 
     std::string CWavefrontObjExporter::GetObjMaterial(const uint8_t p_MaterialHandle)
@@ -162,7 +188,7 @@ namespace VCore
                     pixelIndex++;
 
                     texture->AddPixel(CColor(color), position);
-                    it = uvMapping.insert({color, (Math::Vec2f(position) + Math::Vec2f(.5f, .5f)) / texture->GetSize()}).first;
+                    it = uvMapping.insert({color, (Math::Vec2f(position.x, (p2Size - 1) - position.y) + Math::Vec2f(.5f, .5f)) / texture->GetSize()}).first;
                 }
 
                 // Patch the uv coordinates.
@@ -178,31 +204,5 @@ namespace VCore
     {
         auto size = std::ceil(std::sqrt(m_Colors.size()));
         return std::pow(2, std::ceil(std::log2(size)));
-    }
-
-    void CWavefrontObjExporter::WriteData(const std::string &p_Path, const std::vector<Mesh> &p_Meshes)
-    {
-        m_FilenameWithoutExt = GetFilenameWithoutExt(p_Path);
-        std::string filePathWithoutExt = GetPathWithoutExt(p_Path);
-
-        m_ObjFile = m_IOHandler->Open(filePathWithoutExt + ".obj", "w+b");
-        m_MtlFile = m_IOHandler->Open(filePathWithoutExt + ".mtl", "wb");
-
-        m_ObjFile->Write("# Generated with VCore (https://github.com/VOptimizer/VCore)\n");
-        m_ObjFile->Write("mtllib " + m_FilenameWithoutExt + ".mtl\n");
-
-        // Writes all models to the file.
-        for (auto &&mesh : p_Meshes)
-            WriteMeshData(mesh);
-
-        GenerateTextureAndPatchUV();
-
-        m_Colors.clear();
-        m_Materials.clear();
-        m_FilenameWithoutExt.clear();
-        m_IndexOffset = 0;
-
-        m_IOHandler->Close(m_ObjFile);
-        m_IOHandler->Close(m_MtlFile);
     }
 }

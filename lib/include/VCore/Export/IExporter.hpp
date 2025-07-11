@@ -44,7 +44,8 @@ namespace VCore
         OBJ,
         GLTF,
         GLB,
-        ESCN,
+        ESCN2, //!< Godot 3
+        ESCN3, //!< Godot 4
         PLY,
         FBX,
         USDC,
@@ -110,6 +111,7 @@ namespace VCore
 
             virtual ~IExporter() { DeleteFileStream(); }
         
+            static constexpr const char *WATERMARK = "Generated with VCore (https://github.com/VOptimizer/VCore)";
         protected:
             void TraverseTree() override;
             void TraverseNode(const CSceneNodeBase *p_Node) override;
@@ -119,18 +121,12 @@ namespace VCore
 
             /**
              * @brief Called everytime, before any model or node should be written.
-             * @param p_Path: Path to write the file to.
+             * @param p_TotalMeshes: Total count of meshes
              */
-            virtual void WriteHeaderData() = 0;
+            virtual void WriteHeaderData(const fast_vector<Mesh> &p_Meshes) = 0;
 
             /** @return Returns true, if the format supports a scene tree */
             virtual bool SupportsSceneTree() = 0;
-
-            // /** @brief Called everytime a child node is entered. Here you can write the node to file and can setup the child parent hierarchy. */
-            // virtual void EnterChildNode(const CSceneNodeBase *p_Node) = 0;
-
-            // /** @brief Called everytime a child node is leaved. Here you can setup the child parent hierarchy. */
-            // virtual void LeaveChildNode(const CSceneNodeBase *p_Node) = 0;
 
             /** Writes a mesh to file */
             virtual void WriteMeshData(const Mesh &p_Mesh) = 0;
@@ -146,7 +142,7 @@ namespace VCore
             void SaveTexture(const Texture &p_Texture, const std::string &p_Path, const std::string &p_Suffix);
             void DeleteFileStream();
 
-            IIOHandler *m_IOHandler;
+            IIOHandler *m_IOHandler{};
             std::string m_Path;
             uint32_t m_ModelIdDec{};
             mutable fast_vector<uint32_t> m_NullModels;

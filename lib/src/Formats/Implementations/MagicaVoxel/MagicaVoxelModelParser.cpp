@@ -87,7 +87,7 @@ namespace VCore
                 Math::Vec3i position((m_Size.x - 1) - data.x, data.z, data.y);
     
                 // Finds the material
-                uint8_t materialIdx = GetMaterial(data.ColorMatIdx - 1);
+                uint8_t materialIdx = GetMaterial(data.ColorMatIdx);
     
                 // Gets the color of this voxel
                 auto color = GetColor(data.ColorMatIdx - 1);

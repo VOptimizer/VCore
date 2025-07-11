@@ -8,7 +8,11 @@ set(SRCS
     "${PROJECT_SOURCE_DIR}/main.cpp"
     "${PROJECT_SOURCE_DIR}/TestCases_MaterialManager.cpp"
     "${PROJECT_SOURCE_DIR}/TestCases_VoxelSpace.cpp"
-    "${PROJECT_SOURCE_DIR}/TestCases_Chunk.cpp")
+    "${PROJECT_SOURCE_DIR}/TestCases_Chunk.cpp"
+    "${PROJECT_SOURCE_DIR}/TestCases_MagicaVoxelFormat.cpp"
+    "${PROJECT_SOURCE_DIR}/TestCases_Culling.cpp"
+    # "${PROJECT_SOURCE_DIR}/TestFileGenerator.cpp"
+    )
 
 include_directories("${PROJECT_SOURCE_DIR}/../lib/include")
 add_subdirectory("${PROJECT_SOURCE_DIR}/../lib" VCore/)

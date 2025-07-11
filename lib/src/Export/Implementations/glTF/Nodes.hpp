@@ -25,6 +25,7 @@
 #ifndef NODES_HPP
 #define NODES_HPP
 
+#include "VCore/Export/IExporter.hpp"
 #include <CJSON/JSON.hpp>
 #include <cstring>
 #include <VCore/Math/Mat4x4.hpp>
@@ -55,7 +56,7 @@ namespace VCore::GLTF
             void Serialize(CJSON &p_Json) const
             {
                 p_Json.AddPair("version", std::string("2.0"));
-                p_Json.AddPair("generator", std::string("Generated with VCore (https://github.com/VOptimizer/VCore)"));
+                p_Json.AddPair("generator", std::string(IExporter::WATERMARK));
             }        
     };
 
@@ -439,7 +440,7 @@ namespace VCore::GLTF
                 if(modelNode)
                     meshHandle = modelNode->ModelId - p_ModelIdDec;
 
-                m_Nodes.emplace_back(p_Node->Name, meshHandle, p_Node->Position, p_Node->Rotation, p_Node->Scale);
+                m_Nodes.emplace_back(p_Node->Name, meshHandle, p_Node->GetPosition(), p_Node->GetRotation(), p_Node->GetScale());
 
                 auto handle = m_Nodes.size() - 1;
                 if(p_ParentNode != static_cast<uint64_t>(-1))

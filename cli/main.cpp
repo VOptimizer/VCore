@@ -24,7 +24,9 @@
 
 #include <algorithm>
 #include "argh.h"
+#include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -39,7 +41,7 @@ using namespace std;
 namespace fs = std::filesystem;
 
 const vector<string> SUPPORTED_EXTS({"gox", "vox", "kenshape", "qbcl", "qb", "qbt", "qef"});
-const vector<string> SUPPORTED_OUT_EXTS({"gltf", "glb", "obj", "escn", "ply", "png", "fbx"});
+const vector<string> SUPPORTED_OUT_EXTS({"gltf", "glb", "obj", "escn2", "escn3", "ply", "png", "fbx"});
 
 struct SFile
 {
@@ -98,7 +100,8 @@ File CreateFile(const fs::path &p_Input, const fs::path &p_OutputPattern)
         {"gltf", VCore::ExporterType::GLTF},
         {"glb", VCore::ExporterType::GLB},
         {"obj", VCore::ExporterType::OBJ},
-        {"escn", VCore::ExporterType::ESCN},
+        {"escn2", VCore::ExporterType::ESCN2},
+        {"escn3", VCore::ExporterType::ESCN3},
         {"ply", VCore::ExporterType::PLY},
         {"fbx", VCore::ExporterType::FBX}
         // {"png", VCore::ExporterType::PNG},
@@ -335,6 +338,9 @@ void Convert(const argh::parser &p_Cmdl)
         // model->Name = "Test";
         
         // model->SetVoxel(VCore::Math::Vec3i(), 0, 1);
+
+
+
 
         VCore::VoxelFormat saver = VCore::IVoxelFormat::Create(VCore::VoxelFormatType::MAGICAVOXEL);
         saver->Open("convert.vox", VCore::FileMode::WRITE);

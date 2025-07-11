@@ -25,17 +25,54 @@
 #ifndef GODOTSCENEEXPORTER_HPP
 #define GODOTSCENEEXPORTER_HPP
 
+#include "VCore/Meshing/Color.hpp"
+#include "VCore/Misc/FileStream.hpp"
+#include "VCore/Misc/unordered_dense.h"
 #include <VCore/Export/IExporter.hpp>
+#include <cstdint>
+#include <string>
 
 namespace VCore
 {
+    enum GodotVersion
+    {
+        GODOT3 = 2,
+        GODOT4 = 3
+    };
+
     class CGodotSceneExporter : public IExporter
     {
         public:
-            CGodotSceneExporter() = default;
+            CGodotSceneExporter(GodotVersion p_GodotVersion) : IExporter(), m_GodotVersion(p_GodotVersion) {}
             ~CGodotSceneExporter() = default;
+
+        private:
+            IFileStream *m_ESCNFile{};
+            uint64_t m_ModelIndex{};
+            GodotVersion m_GodotVersion;
+
+            void WriteMaterial(uint8_t p_MaterialHandle);
         protected:
-            void WriteData(const std::string &_Path, const std::vector<Mesh> &_Meshes) override;
+            void WriteBytesAsString(const uint8_t* p_Bytes, uint32_t p_Size);
+            void WriteColorAsByteString(const CColor &p_Color);
+            void WriteGodot3Surface(const ISurface *p_Surface, uint64_t p_SurfaceIdx);
+            void WriteGodot4Surface(const ISurface *p_Surface);
+
+            std::string GetNodeName(const CSceneNodeBase *p_Node);
+            std::string GetParentName(const CSceneNodeBase *p_Node);
+
+            std::string FormatResourceId(uint64_t p_Id);
+
+            void WriteHeaderData(const fast_vector<Mesh> &p_Meshes) override;
+
+            bool SupportsSceneTree() override { return true; }
+
+            void EnterSceneNode(const CSceneNodeBase *p_Node) override;
+            void LeaveSceneNode(const CSceneNodeBase *) override {}
+
+            void WriteMeshData(const Mesh &p_Mesh) override;
+
+            void WriteFooterData() override;
     };
 }
 
