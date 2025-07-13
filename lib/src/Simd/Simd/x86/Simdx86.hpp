@@ -25,13 +25,15 @@
 #ifndef SIMDX86_HPP
 #define SIMDX86_HPP
 
+#undef __AVX2__
+
 #if defined(__AVX2__)
     #include <immintrin.h>
 #elif defined(__SSE2__)
     #include <emmintrin.h>
 #endif
 
-#include <string.h>
+#include <cstring>
 
 namespace VCore
 {
@@ -109,36 +111,36 @@ namespace VCore
         {
             public:
                 NativeI() : m_Value(_mm_setzero_si128()) {}
-                NativeI(const int _Value) : m_Value(_mm_set1_epi32(_Value)) {}
-                NativeI(const int *_Values, const unsigned char _Size) : NativeI() { Load(_Values, _Size); }
+                NativeI(const int p_Value) : m_Value(_mm_set1_epi32(p_Value)) {}
+                NativeI(const int *p_Values, const unsigned char p_Size) : NativeI() { Load(p_Values, p_Size); }
                 NativeI(const NativeI &) = default;
                 NativeI(NativeI &&) = default;
 
                 /** Loads given values into the register. */
-                inline NativeI &Load(const int *_Values, const unsigned char _Size)
+                inline NativeI &Load(const int *p_Values, const unsigned char p_Size)
                 {
-                    if(_Size < 4)
+                    if(p_Size < 4)
                     {
                         alignas(32) int buf[4] = {};
-                        memcpy(buf, _Values, sizeof(int) * _Size);
+                        memcpy(buf, p_Values, sizeof(int) * p_Size);
                         m_Value = _mm_load_si128((__m128i*)buf);
                     }
                     else
-                        m_Value = _mm_loadu_si128((__m128i*)_Values);
+                        m_Value = _mm_loadu_si128((__m128i*)p_Values);
 
                     return *this;
                 }
 
-                inline void Store(int *_Values, const unsigned char _Size) const
+                inline void Store(int *p_Values, const unsigned char p_Size) const
                 {
-                    if(_Size < 4)
+                    if(p_Size < 4)
                     {
                         alignas(32) int buf[4] = {};
                         _mm_store_si128((__m128i*)buf, m_Value);
-                        memcpy(_Values, buf, sizeof(int) * _Size);
+                        memcpy(p_Values, buf, sizeof(int) * p_Size);
                     }
                     else
-                        _mm_storeu_si128((__m128i*)_Values, m_Value);
+                        _mm_storeu_si128((__m128i*)p_Values, m_Value);
                 }
 
                 inline int MoveMask() const
@@ -149,23 +151,23 @@ namespace VCore
                 inline NativeI &operator=(const NativeI&) = default;
                 inline NativeI &operator=(NativeI&&) = default;
 
-                inline NativeI operator^(const NativeI &_Other) const
+                inline NativeI operator^(const NativeI &p_Other) const
                 {
-                    return NativeI(_mm_xor_si128(m_Value, _Other.m_Value));
+                    return NativeI(_mm_xor_si128(m_Value, p_Other.m_Value));
                 };
 
-                inline NativeI operator&(const NativeI &_Other) const
+                inline NativeI operator&(const NativeI &p_Other) const
                 {
-                    return NativeI(_mm_and_si128(m_Value, _Other.m_Value));
+                    return NativeI(_mm_and_si128(m_Value, p_Other.m_Value));
                 };
 
-                inline NativeI operator==(const NativeI &_Other) const
+                inline NativeI operator==(const NativeI &p_Other) const
                 {
-                    return NativeI(_mm_cmpeq_epi32(m_Value, _Other.m_Value));
+                    return NativeI(_mm_cmpeq_epi32(m_Value, p_Other.m_Value));
                 };
 
             protected:
-                NativeI(const __m128i &_Value) : m_Value(_Value) {}
+                NativeI(const __m128i &p_Value) : m_Value(p_Value) {}
 
             private:
                 __m128i m_Value;

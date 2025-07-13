@@ -30,7 +30,6 @@
 #include <VCore/Misc/fast_vector.hpp>
 #include <atomic>
 #include <mutex>
-#include <new>
 
 #include <VCore/VPlatform.hpp>
 
@@ -53,7 +52,7 @@ namespace VCore
             {
                 friend CLocalStoragePointer;
                 protected:
-                    virtual void AddFreeStorage(CLocalStorage *_Storage) = 0;
+                    virtual void AddFreeStorage(CLocalStorage *p_Storage) = 0;
             };
 
             /** Lock-free mutex using std::atomic_flag */
@@ -88,7 +87,7 @@ namespace VCore
                     CSegmentedMemory() : m_FreeChunks(nullptr) {}
 
                     /** @see SegmentateBlock for more informations */
-                    CSegmentedMemory(void *_Block, uintptr_t _BlockSize, uint32_t _ChunkSize, void *_CustomData) : m_FreeChunks(nullptr) { SegmentateBlock(_Block, _BlockSize, _ChunkSize, _CustomData); }
+                    CSegmentedMemory(void *p_Block, uintptr_t p_BlockSize, uint32_t p_ChunkSize, void *p_CustomData) : m_FreeChunks(nullptr) { SegmentateBlock(p_Block, p_BlockSize, p_ChunkSize, p_CustomData); }
                     
                     /**
                      * @brief Allocates a new chunk of memory
@@ -108,31 +107,31 @@ namespace VCore
 
                     /**
                      * @brief Deallocates memory, and add it back to the pool.
-                     * @param _Mem: Memory to add back
+                     * @param p_Mem: Memory to add back
                      */
-                    inline void Deallocate(void *_Mem)
+                    inline void Deallocate(void *p_Mem)
                     {
-                        auto chunk = reinterpret_cast<Chunk*>(_Mem);
+                        auto chunk = reinterpret_cast<Chunk*>(p_Mem);
                         chunk->Next = m_FreeChunks;
                         m_FreeChunks = chunk;
                     }
 
                     /**
                      * @brief Segmentates a block of memory into multiple chunks.
-                     * @param _Block: Continues block of memory to segmentate.
-                     * @param _BlockSize: Size of the block.
-                     * @param _ChunkSize: Size of one chunk.
+                     * @param p_Block: Continues block of memory to segmentate.
+                     * @param p_BlockSize: Size of the block.
+                     * @param p_ChunkSize: Size of one chunk.
                      */
-                    inline void SegmentateBlock(void *_Block, uintptr_t _BlockSize, uint32_t _ChunkSize, void *_CustomData)
+                    inline void SegmentateBlock(void *p_Block, uintptr_t p_BlockSize, uint32_t p_ChunkSize, void *p_CustomData)
                     {
-                        auto chunks = _BlockSize / _ChunkSize;
+                        auto chunks = p_BlockSize / p_ChunkSize;
 
-                        auto tmp = reinterpret_cast<Chunk*>(_Block);
+                        auto tmp = reinterpret_cast<Chunk*>(p_Block);
                         m_FreeChunks = tmp;
                         for (size_t i = 1; i < chunks; i++)
                         {
-                            tmp->CustomData = _CustomData;
-                            tmp->Next = reinterpret_cast<Chunk*>(reinterpret_cast<std::byte*>(_Block) + (i * _ChunkSize));
+                            tmp->CustomData = p_CustomData;
+                            tmp->Next = reinterpret_cast<Chunk*>(reinterpret_cast<std::byte*>(p_Block) + (i * p_ChunkSize));
                             tmp = tmp->Next;
                         }
                         tmp->Next = nullptr;
@@ -156,13 +155,13 @@ namespace VCore
             class CLocalStorage
             {
                 public:
-                    CLocalStorage(uintptr_t _BlockSize, size_t _Chunksize) : m_Segments(reinterpret_cast<std::byte*>(this) + sizeof(m_Segments), _BlockSize, _Chunksize, this) {}
+                    CLocalStorage(uintptr_t p_BlockSize, size_t p_Chunksize) : m_Segments(reinterpret_cast<std::byte*>(this) + sizeof(m_Segments), p_BlockSize, p_Chunksize, this) {}
 
                     /** Allocates a new chunk of memory. */
                     inline void* Allocate() { return m_Segments.Allocate(); }
 
                     /** Deallocates a chunk of memory. */
-                    inline void Deallocate(void *_Mem) { return m_Segments.Deallocate(_Mem); }
+                    inline void Deallocate(void *p_Mem) { return m_Segments.Deallocate(p_Mem); }
 
                     /** @return Returns true, if no more chunks are left. */
                     inline bool IsFull() const { return m_Segments.IsFull(); }
@@ -177,10 +176,10 @@ namespace VCore
                     CLocalStoragePointer() : m_Pool(nullptr), m_Storage(nullptr) {}
                     CLocalStoragePointer(const CLocalStoragePointer&) = delete;
 
-                    inline void SetStorage(IPool *_Pool, CLocalStorage *_Storage)
+                    inline void SetStorage(IPool *p_Pool, CLocalStorage *p_Storage)
                     {
-                        m_Pool = _Pool;
-                        m_Storage = _Storage;
+                        m_Pool = p_Pool;
+                        m_Storage = p_Storage;
                     }
 
                     inline CLocalStoragePointer &operator=(const CLocalStoragePointer&) = delete;
@@ -248,50 +247,29 @@ namespace VCore
                 }
 
                 /** Deallocates a chunk of memory. */
-                inline void Deallocate(void *_Mem)
+                inline void Deallocate(void *p_Mem)
                 {
                     // Each memory chunk has a small header which points back to it's storage.
-                    auto chunkStart = reinterpret_cast<std::byte*>(_Mem) - _Internal::CSegmentedMemory::ChunkDataOffset;
+                    auto chunkStart = reinterpret_cast<std::byte*>(p_Mem) - _Internal::CSegmentedMemory::ChunkDataOffset;
                     auto storage = reinterpret_cast<_Internal::CLocalStorage*>(chunkStart);
                     bool full = storage->IsFull();
                     storage->Deallocate(chunkStart);
 
                     if(full)
                         m_FreeStorages.push_back(storage);
-
-                    // CLocalStorage *storage = nullptr;
-                    // auto memNumericPtr = reinterpret_cast<uintptr_t>(_Mem);
-
-                    // for (auto &&block : m_Blocks)
-                    // {
-                    //     auto blockNumericPtr = reinterpret_cast<uintptr_t>(block);
-                    //     if(memNumericPtr >= blockNumericPtr && memNumericPtr < (blockNumericPtr + BlockSize))
-                    //     {
-                    //         auto offset = (memNumericPtr - blockNumericPtr);
-                    //         offset = (offset / (sizeof(void*) + LocalStorageSize));
-                    //         storage = reinterpret_cast<CLocalStorage*>(reinterpret_cast<std::byte*>(block) + (offset * (sizeof(void*) + LocalStorageSize)));
-                    //         break;
-                    //     }
-                    // }
-                    
-                    // bool full = storage->IsFull();
-                    // storage->Deallocate(_Mem);
-
-                    // if(full)
-                    //     m_FreeStorages.push_back(storage);
                 }
 
                 template <class ...args>
-                inline T* construct(args&& ..._args)
+                inline T* construct(args&& ...p_args)
                 {
-                    T *obj = new(Allocate()) T(std::forward<args>(_args)...);
+                    T *obj = new(Allocate()) T(std::forward<args>(p_args)...);
                     return obj;
                 }
 
-                inline void destruct(T* _ptr)
+                inline void destruct(T* p_ptr)
                 {
-                    _ptr->~T();
-                    Deallocate(_ptr);
+                    p_ptr->~T();
+                    Deallocate(p_ptr);
                 }
 
                 ~CObjectPool()
@@ -303,10 +281,10 @@ namespace VCore
                         delete[] block;
                 }
             protected:
-                void AddFreeStorage(_Internal::CLocalStorage *_Storage) override
+                void AddFreeStorage(_Internal::CLocalStorage *p_Storage) override
                 {
                     std::lock_guard<_Internal::LockFreeMutex> lock(m_Lock);
-                    m_FreeStorages.push_back(_Storage);
+                    m_FreeStorages.push_back(p_Storage);
                 }
 
             private:

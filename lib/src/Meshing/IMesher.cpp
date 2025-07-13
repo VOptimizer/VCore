@@ -59,19 +59,19 @@ namespace VCore
 
         CVoxelSpace::querylist chunks;
         if(m_Frustum)
-            chunks = p_Mesh->queryChunks(m_Frustum);
+            chunks = p_Mesh->QueryChunks(m_Frustum);
         else
         {
             if(!p_OnlyDirty)
-                chunks = p_Mesh->queryChunks();
+                chunks = p_Mesh->QueryChunks();
             else
-                chunks = p_Mesh->queryDirtyChunks();
+                chunks = p_Mesh->QueryDirtyChunks();
         }
 
         std::vector<std::future<SMeshChunk>> futures;
         for (auto &&c : chunks)
         {
-            p_Mesh->markAsProcessed(c);
+            p_Mesh->MarkAsProcessed(c);
             futures.push_back(std::async(&IMesher::GenerateMeshChunk, this, p_Mesh, c, true));
             while(futures.size() >= std::thread::hardware_concurrency())
             {

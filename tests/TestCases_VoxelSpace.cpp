@@ -25,14 +25,14 @@ TEST_CASE("insert single voxel -> find voxel -> voxel equals inserted")
     const auto position = VCore::Math::Vec3i(0, 1, 0);
     const auto voxel = VCore::CVoxel(5, 2);
 
-    space.insert({
+    space.Insert({
         position,
         voxel
     });
 
-    CHECK(space.size() == 1);
-    CheckChunks(space.queryChunks(), 1);
-    auto it = space.find(position);
+    CHECK(space.Size() == 1);
+    CheckChunks(space.QueryChunks(), 1);
+    auto it = space.Find(position);
     REQUIRE_NE(it, space.end());
 
     CHECK(it->second == voxel);
@@ -45,18 +45,18 @@ TEST_CASE("insert single voxel -> erase single voxel")
     const auto position = VCore::Math::Vec3i(0, 1, 0);
     const auto voxel = VCore::CVoxel(5, 2);
 
-    space.insert({
+    space.Insert({
         position,
         voxel
     });
 
-    CHECK(space.size() == 1);
+    CHECK(space.Size() == 1);
 
-    auto it = space.find(position);
-    space.erase(it);
+    auto it = space.Find(position);
+    space.Erase(it);
 
-    CHECK(space.size() == 0);
-    CheckChunks(space.queryChunks(), 0);
+    CHECK(space.Size() == 0);
+    CheckChunks(space.QueryChunks(), 0);
 }
 
 TEST_CASE("insert multiple voxels -> multiple chunks")
@@ -67,9 +67,9 @@ TEST_CASE("insert multiple voxels -> multiple chunks")
     const auto position1 = VCore::Math::Vec3i(VCore::Config::ChunkSize, 0, 0);
     const auto voxel = VCore::CVoxel(5, 2);
 
-    space.insert({position, voxel});
-    space.insert({position1, voxel});
+    space.Insert({position, voxel});
+    space.Insert({position1, voxel});
 
-    CheckChunks(space.queryChunks(), 2);
-    CheckChunks(space.queryDirtyChunks(), 2);
+    CheckChunks(space.QueryChunks(), 2);
+    CheckChunks(space.QueryDirtyChunks(), 2);
 }

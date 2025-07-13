@@ -25,9 +25,9 @@ class CVoxelTestFormat
 
         void ValidateModel(const VCore::VoxelModel &p_Model)
         {
-            CHECK_EQ(p_Model->size(), m_VoxelCount);
+            CHECK_EQ(p_Model->Size(), m_VoxelCount);
 
-            auto bbox = p_Model->calculateBBox();
+            auto bbox = p_Model->CalculateBBox();
 
             CHECK_EQ(bbox.Beg, m_BBox.Beg);
             CHECK_EQ(bbox.End, m_BBox.End);

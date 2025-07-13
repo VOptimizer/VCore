@@ -90,9 +90,10 @@ TEST_CASE("delete none existing material -> material 5")
 TEST_CASE("full material list -> expect UCHAR_MAX for the overflow one")
 {
     std::vector<uint8_t> materialHandles = { 0 };
+    VCore::MaterialManager::DeleteMaterial(1);
 
     // Fill all slots with materials.
-    for (uint8_t i; i < VCore::Config::MaxMaterialSlots - 2; i++) 
+    for (uint8_t i = 0; i < VCore::Config::MaxMaterialSlots - 2; i++) 
         materialHandles.push_back(VCore::MaterialManager::AddMaterial(VCore::CMaterial()));
 
     CHECK(materialHandles.size() == VCore::Config::MaxMaterialSlots - 1);

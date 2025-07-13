@@ -51,7 +51,7 @@ namespace VCore
         m_Axis = Math::TVector3<char>(_Axis, (_Axis + 1) % 3, (_Axis + 2) % 3);
 
         auto &voxels = *_Model;
-        m_Chunk.Chunk = voxels.getChunk(_ChunkPos);
+        m_Chunk.Chunk = voxels.GetChunk(_ChunkPos);
         if(m_Chunk.Chunk)
         {
             // meta.UniqueId = hasher(_ChunkPos);
@@ -163,7 +163,7 @@ namespace VCore
 
                     // Checks if the position is outside of the current chunk and gets the neighbor chunk
                     if((position.v[m_Axis.x] < TotalBBox.Beg.v[m_Axis.x]) || (position.v[m_Axis.x] >= TotalBBox.End.v[m_Axis.x]))
-                        chunk = m_Model->getChunk(position);
+                        chunk = m_Model->GetChunk(position);
 
                     if(chunk)
                         FillVoxelBits(opaqueVoxels + (i * simdIntSize), transparentVoxels + (i * simdIntSize), chunk, position, count);

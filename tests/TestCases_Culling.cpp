@@ -53,7 +53,9 @@ TEST_CASE("Frustum culling -> multiple models in scene tree")
     auto loader = VCore::IVoxelFormat::CreateAndOpen("../models/frustum.vox", VCore::FileMode::READ);
     loader->Load();
 
-    loader->SceneTree->UpdateBoundingVolumes(loader->SceneTree->GetModels());
+    for (auto &&model : loader->SceneTree->GetModels()) 
+        model->NotifyChanged();
+    
     auto nodes = loader->SceneTree->DoFrustumCulling(frustum);
 
     CHECK_LT(nodes.size(), loader->SceneTree->GetModels().size());
@@ -81,12 +83,12 @@ TEST_CASE("Frustum culling -> cull chunks")
         {
             for (uint32_t z = 0; z < VCore::Config::ChunkSize * 3; z++) 
             {
-                model->insert({VCore::Math::Vec3i(x, y, z), VCore::CVoxel(0, 0)});
+                model->Insert({VCore::Math::Vec3i(x, y, z), VCore::CVoxel(0, 0)});
             }
         }
     }
 
-    auto query = model->queryChunks(&frustum);
+    auto query = model->QueryChunks(&frustum);
     
     auto counter = 0;
     for (auto &&chunk : query) 

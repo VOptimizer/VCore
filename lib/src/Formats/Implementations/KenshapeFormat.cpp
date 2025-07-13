@@ -82,7 +82,7 @@ namespace VCore
                 for (; z <= Pos.z + blocks; z++)
                 {
                     Math::Vec3f v(Pos.x, Pos.y, z);
-                    m->insert({v, CVoxel((z < Pos.z) ? backIdx : idx, 0)});
+                    m->Insert({v, CVoxel((z < Pos.z) ? backIdx : idx, 0)});
                 }
             }
 

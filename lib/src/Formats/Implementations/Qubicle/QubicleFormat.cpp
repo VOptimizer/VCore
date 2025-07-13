@@ -258,6 +258,6 @@ namespace VCore
         if(cid == 0xFFFFFFFF)
             return;
 
-        mesh->insert({pos, CVoxel(cid, 0)});
+        mesh->Insert({pos, CVoxel(cid, 0)});
     }
 }

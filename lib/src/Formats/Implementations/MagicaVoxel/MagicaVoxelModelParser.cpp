@@ -92,7 +92,7 @@ namespace VCore
                 // Gets the color of this voxel
                 auto color = GetColor(data.ColorMatIdx - 1);
     
-                p_Space.insert({position, CVoxel(color, materialIdx)});
+                p_Space.Insert({position, CVoxel(color, materialIdx)});
             }
         }
     }

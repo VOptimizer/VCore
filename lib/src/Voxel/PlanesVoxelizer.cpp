@@ -55,7 +55,7 @@ namespace VCore
         if(topsize.IsZero())
             return;
 
-        m_Mesh->clear();
+        m_Mesh->Clear();
         m_Mesh->Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
 
         ProjectPlanes(_planes, _info);

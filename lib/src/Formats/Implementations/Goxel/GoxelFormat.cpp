@@ -71,10 +71,10 @@ namespace VCore
 
     void CGoxelFormat::CreateChunk(const Math::Vec3i &p_ChunkPos, VoxelModel &p_Model, CGoxelModelParser &p_Parser)
     {
-        auto chunk = p_Model->getChunk(p_ChunkPos);
+        auto chunk = p_Model->GetChunk(p_ChunkPos);
         if(!chunk)
         {
-            chunk = p_Model->createOrGetChunk(p_ChunkPos);
+            chunk = p_Model->CreateOrGetChunk(p_ChunkPos);
             if(m_Mode != FileMode::STREAMED)
                 p_Parser.FillChunk(p_ChunkPos, chunk);
         }

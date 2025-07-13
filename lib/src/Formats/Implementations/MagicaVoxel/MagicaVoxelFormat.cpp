@@ -274,7 +274,7 @@ namespace VCore
 
     void CMagicaVoxelFormat::WriteModel(const VoxelModel &p_Model, CMagicaVoxelScenetreeWriter *p_Tree, uint32_t p_modelCounter)
     {
-        auto bbox = p_Model->calculateBBox();
+        auto bbox = p_Model->CalculateBBox();
         auto size = bbox.GetSize();
 
         for (int32_t x = 0; x <= size.x; x += 256)
@@ -307,7 +307,7 @@ namespace VCore
                             for (int mz = 0; mz <= modelSize.z; mz += Config::ChunkSize)
                             {
                                 auto chunkpos = GetChunkpos(Math::Vec3i(bbox.End.x - (mx + x), y + my, z + mz));
-                                auto chunk = p_Model->getChunk(chunkpos);
+                                auto chunk = p_Model->GetChunk(chunkpos);
                                 if(chunk)
                                     chunks[chunkpos] = chunk;
                             }
@@ -383,7 +383,7 @@ namespace VCore
         // {
         //     auto childId = WriteModel(p_Node->Model);
         //     auto translate = std::static_pointer_cast<STransformNode>(m_MagicaSceneTree[childId]);
-        //     translate->Frames[0].Translation += p_Node->Position + p_Node->Model->calculateBBox().GetSize() * 0.5f;
+        //     translate->Frames[0].Translation += p_Node->Position + p_Node->Model->CalculateBBox().GetSize() * 0.5f;
         //     if(!p_Node->Visible)
         //         translate->Attributes["_hidden"] = "1";
         //     return childId;
@@ -392,7 +392,7 @@ namespace VCore
         // {
         //     auto childId = WriteAnimation(p_Node->Animation);
         //     auto translate = std::static_pointer_cast<STransformNode>(m_MagicaSceneTree[childId]);
-        //     translate->Frames[0].Translation += p_Node->Position + p_Node->Animation->GetFrame(0).Model->calculateBBox().GetSize() * 0.5f;
+        //     translate->Frames[0].Translation += p_Node->Position + p_Node->Animation->GetFrame(0).Model->CalculateBBox().GetSize() * 0.5f;
         //     if(!p_Node->Visible)
         //         translate->Attributes["_hidden"] = "1";
         //     return childId;

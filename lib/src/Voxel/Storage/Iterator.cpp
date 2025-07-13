@@ -69,7 +69,7 @@ namespace VCore
             }
         }
 
-        *this = m_Space->next(next);
+        *this = m_Space->Next(next);
         return *this;
     }
 
@@ -89,7 +89,7 @@ namespace VCore
             }
         }
 
-        *this = m_Space->next(next);
+        *this = m_Space->Next(next);
         return *this;
     }
 

@@ -120,7 +120,7 @@ namespace VCore
             if(mask == 0)
                 continue;
 
-            mesh->insert({pos, CVoxel(cid, 0)});
+            mesh->Insert({pos, CVoxel(cid, 0)});
         }
     }
 }

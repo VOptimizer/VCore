@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-#include "VCore/Math/Mat4x4.hpp"
-#include "VCore/Voxel/Frustum.hpp"
+#include <VCore/Math/Mat4x4.hpp>
+#include <VCore/Voxel/Frustum.hpp>
 #include <VCore/Formats/Streamable.hpp>
 #include <VCore/Voxel/Storage/VoxelSpace.hpp>
 #include <VCore/Voxel/VoxelModel.hpp>
@@ -216,12 +216,12 @@ namespace VCore
 
     CVoxelSpace::~CVoxelSpace() 
     { 
-        clear(); 
+        Clear(); 
         if(m_Stream) 
             delete m_Stream;
     }
 
-    void CVoxelSpace::insert(const pair &p_pair)
+    void CVoxelSpace::Insert(const pair &p_pair)
     {
         CheckLoadModel();
 
@@ -247,7 +247,7 @@ namespace VCore
         m_VoxelsCount++;
     }
 
-    CVoxelSpace::iterator CVoxelSpace::erase(const iterator &p_it)
+    CVoxelSpace::iterator CVoxelSpace::Erase(const iterator &p_it)
     {
         CheckLoadModel();
 
@@ -285,7 +285,7 @@ namespace VCore
         return end();
     }
 
-    CVoxelSpace::iterator CVoxelSpace::find(const Math::Vec3i &p_v) const
+    CVoxelSpace::iterator CVoxelSpace::Find(const Math::Vec3i &p_v) const
     {
         const_cast<CVoxelSpace*>(this)->CheckLoadModel();
         Math::Vec3i position = GetChunkpos(p_v);
@@ -300,7 +300,7 @@ namespace VCore
         return CVoxelSpaceIterator(this, it->second->inner_bbox(it->first), {p_v, vox});
     }
 
-    CVoxelSpace::querylist CVoxelSpace::queryDirtyChunks() const
+    CVoxelSpace::querylist CVoxelSpace::QueryDirtyChunks() const
     {
         const_cast<CVoxelSpace*>(this)->CheckLoadModel();
         return CChunkQueryList(m_Chunks, [](const CBBox &p_BBox, const CChunk *p_Chunk, CChunkQueryList::IUserdata *p_Userdata)
@@ -311,20 +311,20 @@ namespace VCore
         });
     }
 
-    void CVoxelSpace::markAsProcessed(const SChunkMeta &p_Chunk)
+    void CVoxelSpace::MarkAsProcessed(const SChunkMeta &p_Chunk)
     {
         auto it = m_Chunks.find(p_Chunk.TotalBBox.Beg);
         if(it != m_Chunks.end())
             it->second->IsDirty = false;
     }
 
-    CVoxelSpace::querylist CVoxelSpace::queryChunks() const
+    CVoxelSpace::querylist CVoxelSpace::QueryChunks() const
     {
         const_cast<CVoxelSpace*>(this)->CheckLoadModel();
         return CChunkQueryList(m_Chunks);
     }
 
-    CVoxelSpace::querylist CVoxelSpace::queryChunks(const CFrustum *p_Frustum, const Math::Mat4x4 &p_ModelMatrix) const
+    CVoxelSpace::querylist CVoxelSpace::QueryChunks(const CFrustum *p_Frustum, const Math::Mat4x4 &p_ModelMatrix) const
     {
         const_cast<CVoxelSpace*>(this)->CheckLoadModel();
         return CChunkQueryList(m_Chunks, [](const CBBox &p_BBox, const CChunk *p_Chunk, CChunkQueryList::IUserdata *p_Userdata)
@@ -336,7 +336,7 @@ namespace VCore
         }, new CChunkQueryList::TUserdata<std::pair<const CFrustum*, Math::Mat4x4>>(new std::pair<const CFrustum*, Math::Mat4x4>(p_Frustum, p_ModelMatrix), true));
     }
 
-    CVoxelSpace::iterator CVoxelSpace::next(const Math::Vec3i &p_FromPosition) const
+    CVoxelSpace::iterator CVoxelSpace::Next(const Math::Vec3i &p_FromPosition) const
     {
         Math::Vec3i position = GetChunkpos(p_FromPosition);
         auto it = m_Chunks.find(position);
@@ -386,7 +386,7 @@ namespace VCore
         return CVoxelSpaceIterator(this, CBBox(), {Math::Vec3i(), CVoxel()});
     }
 
-    CBBox CVoxelSpace::calculateBBox() const
+    CBBox CVoxelSpace::CalculateBBox() const
     {
         const_cast<CVoxelSpace*>(this)->CheckLoadModel();
 
@@ -401,7 +401,7 @@ namespace VCore
         return bbox;
     }
 
-    CChunk* CVoxelSpace::createOrGetChunk(const Math::Vec3i &p_Position)
+    CChunk* CVoxelSpace::CreateOrGetChunk(const Math::Vec3i &p_Position)
     {
         CheckLoadModel();
 
@@ -415,7 +415,7 @@ namespace VCore
         return it->second;
     }
 
-    void CVoxelSpace::clear()
+    void CVoxelSpace::Clear()
     {
         for (auto &&chunk : m_Chunks)
             delete chunk.second;
@@ -444,7 +444,7 @@ namespace VCore
     void CVoxelSpace::Unload()
     {
         if(m_Stream && m_ModelLoaded && !m_Stream->SupportsChunkOffloading())
-            clear();
+            Clear();
     }
 
     CChunk *CVoxelSpace::GetChunk(const Math::Vec3i &p_Position) const

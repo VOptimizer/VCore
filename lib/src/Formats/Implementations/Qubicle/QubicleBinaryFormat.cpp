@@ -101,7 +101,7 @@ namespace VCore
                         continue;
 
                     auto pos = Math::Vec3f(x, y, z);
-                    mesh->insert({pos, CVoxel(cid, 0)});
+                    mesh->Insert({pos, CVoxel(cid, 0)});
                 }
             }
         }
@@ -138,7 +138,7 @@ namespace VCore
                         if(cid == 0xFFFFFFFF)
                             continue;
 
-                        mesh->insert({pos, CVoxel(cid, 0)});
+                        mesh->Insert({pos, CVoxel(cid, 0)});
                     }
                     
                 }
@@ -155,7 +155,7 @@ namespace VCore
                     if(cid == 0xFFFFFFFF)
                         continue;
 
-                    mesh->insert({pos, CVoxel(cid, 0)});
+                    mesh->Insert({pos, CVoxel(cid, 0)});
                 }
             }
         }

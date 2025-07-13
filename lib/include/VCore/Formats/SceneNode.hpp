@@ -25,8 +25,9 @@
 #ifndef SCENENODE_HPP
 #define SCENENODE_HPP
 
-#include "VCore/Voxel/Frustum.hpp"
-#include "VCore/Voxel/Storage/VoxelSpace.hpp"
+#include <VCore/Misc/MessageBus.hpp>
+#include <VCore/Voxel/Frustum.hpp>
+#include <VCore/Voxel/Storage/VoxelSpace.hpp>
 #include <VCore/Math/Vector.hpp>
 #include <VCore/Misc/fast_vector.hpp>
 #include <VCore/Voxel/VoxelModel.hpp>
@@ -41,6 +42,8 @@
 
 namespace VCore
 {
+    using BBoxMessageBus = TMessageBus<uint64_t, CBBox>;
+
     class CVoxelSceneTree;
     class CSceneNodeBase
     {
@@ -76,9 +79,8 @@ namespace VCore
                 if(!p_Parent)
                     return;
 
-                // TODO: REMOVE
                 // if(m_Parent)
-                //     m_Parent->Remove(this)
+                //     m_Parent->Remove(this);
                 m_Parent = p_Parent;
             }
 
@@ -142,6 +144,37 @@ namespace VCore
                     child->NotifyChildrenTranformDirty();
             }
 
+            virtual void NotifyTreeChanged(CSceneNodeBase *p_Node, bool p_Added)
+            {
+                if(m_Parent)
+                    m_Parent->NotifyTreeChanged(p_Node, p_Added);
+            }
+
+            virtual void SetMessageBus(BBoxMessageBus *p_Bus)
+            {
+                for (auto &&node : *this)
+                    node->SetMessageBus(p_Bus);
+            }
+
+            void CalculateBBox()
+            {
+                m_BBox = CBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i());
+                for (auto &&child : *this) 
+                {
+                    m_BBox.Beg = m_BBox.Beg.min(child->m_BBox.Beg);
+                    m_BBox.End = m_BBox.End.max(child->m_BBox.End);
+                }
+            }
+
+            void NotifyBBoxChanged()
+            {
+                if(m_Parent)
+                {
+                    m_Parent->CalculateBBox();
+                    m_Parent->NotifyBBoxChanged();
+                }
+            }
+
             virtual void DoFrustumCulling(const CFrustum &p_Frustum, fast_vector<CSceneNodeBase*> &p_Models)
             {
                 for (auto &&child : *this) 
@@ -182,7 +215,8 @@ namespace VCore
             inline void AddChild(CSceneNodeBase *p_Node) override 
             { 
                 p_Node->SetParent(this); 
-                m_Children.push_back(p_Node); 
+                m_Children.push_back(p_Node);
+                NotifyTreeChanged(p_Node, true);
             }
 
             /** @return Gets the current children count of this node. */
@@ -197,14 +231,25 @@ namespace VCore
             Children m_Children;
     };
 
-    class CSceneModelNode : public CSceneNode
+    class CSceneModelNode : public CSceneNode, public IMessageHandler<uint64_t, CBBox>
     {
+        friend CVoxelSceneTree;
         public:
-            CSceneModelNode(CSceneNodeBase *p_Parent, const uint64_t p_ModelId) : CSceneNode(p_Parent), ModelId(p_ModelId) {}
+            CSceneModelNode(CSceneNodeBase *p_Parent, const uint64_t p_ModelId) : CSceneNode(p_Parent), ModelId(p_ModelId), m_MessageBus(nullptr)
+            {  }
 
             uint64_t ModelId;
 
-            ~CSceneModelNode() override = default;
+            void OnMessage(const uint64_t&, const CBBox &p_NewBBox) override
+            {
+                CalculateBBox();
+                m_BBox.Beg = m_BBox.Beg.min(GetGlobalTransform() * p_NewBBox.Beg);
+                m_BBox.End = m_BBox.End.max(GetGlobalTransform() * p_NewBBox.End);
+                NotifyBBoxChanged();
+            }
+
+            ~CSceneModelNode() override
+            { Unsubscribe(); }
 
         protected:
             void DoFrustumCulling(const CFrustum &p_Frustum, fast_vector<CSceneNodeBase*> &p_Models) override
@@ -212,6 +257,21 @@ namespace VCore
                 p_Models.push_back(this);
                 CSceneNodeBase::DoFrustumCulling(p_Frustum, p_Models);
             }
+
+            void SetMessageBus(BBoxMessageBus *p_Bus) override
+            {
+                Unsubscribe();
+                m_MessageBus = p_Bus;
+                m_MessageBus->AddHandler(ModelId, this);
+            }
+
+            void Unsubscribe()
+            {
+                if(m_MessageBus)
+                    m_MessageBus->RemoveHandler(ModelId, this);
+            }
+
+            BBoxMessageBus *m_MessageBus;
     };
 
     class CSceneAnimationNode : public CSceneNode
@@ -293,10 +353,11 @@ namespace VCore
 
                 p_Node->SetParent(this);
                 m_Children->push_back(p_Node); 
+                NotifyTreeChanged(p_Node, true);
             }
 
             /** @brief Adds a new model to this scene tree */
-            inline void AddModel(T p_Model) { m_Models.push_back(p_Model); }
+            inline virtual void AddModel(T p_Model) { m_Models.push_back(p_Model); }
 
             const fast_vector<T> GetModels() const { return m_Models; }
 
@@ -325,18 +386,9 @@ namespace VCore
             std::shared_ptr<CSceneNode::Children> m_Children;
     };
 
-    class CVoxelSceneTree : public TSceneTree<VoxelModel>
+    class CVoxelSceneTree : public TSceneTree<VoxelModel>, public IMessageHandler<uintptr_t, CBBox>
     {
         public:
-            void UpdateBoundingVolumes(const fast_vector<VoxelModel> &p_Models)
-            {
-                if(!m_Children)
-                    return;
-
-                m_BBox = CBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i());
-                UpdateBoundingVolumes(this, p_Models);
-            }
-
             fast_vector<CSceneNodeBase*> DoFrustumCulling(const CFrustum &p_Frustum)
             {
                 fast_vector<CSceneNodeBase*> result;
@@ -345,43 +397,41 @@ namespace VCore
 
                 return result;
             }
-        private:
-            void UpdateBoundingVolumes(CSceneNodeBase *p_Node, const fast_vector<VoxelModel> &p_Models)
+
+            void AddModel(VoxelModel p_Model) override
             {
-                for (auto &&child : *p_Node) 
+                TSceneTree<VoxelModel>::AddModel(p_Model);
+                ModelBBoxMessageBus::GetInstance()->AddHandler((uintptr_t)p_Model.get(), this);
+            }
+
+            void OnMessage(const uintptr_t &p_Model, const CBBox &p_BBox) override
+            {
+                // Find the handle, and inform all subnotes
+                for (uint64_t i = 0; i < m_Models.size(); i++) 
                 {
-                    auto modelNode = dynamic_cast<CSceneModelNode*>(child);
-                    if(modelNode)
+                    if(p_Model == (uintptr_t)m_Models[i].get())
                     {
-                        if(modelNode->ModelId < m_Children->size()) [[likely]]
-                        {
-                            auto model = m_Models[modelNode->ModelId];
-                            if(NeedUpdate(model, p_Models))
-                            {
-                                auto bbox = model->calculateBBox();
-                                modelNode->m_BBox = CBBox(modelNode->GetGlobalTransform() * (bbox.Beg - model->Origin), modelNode->GetGlobalTransform() * (bbox.End - model->Origin));
-                            }
-                        }
+                        m_MessageBus.PublishMessage(i, p_BBox);
+                        break;
                     }
-                    else
-                        child->m_BBox = CBBox(Math::Vec3i(INT32_MAX, INT32_MAX, INT32_MAX), Math::Vec3i());
-                    
-                    UpdateBoundingVolumes(child, p_Models);
-                    p_Node->m_BBox.Beg = m_BBox.Beg.min(modelNode->m_BBox.Beg);
-                    p_Node->m_BBox.End = m_BBox.End.max(modelNode->m_BBox.End);
-                }
+                }                    
             }
 
-            bool NeedUpdate(const VoxelModel &p_Model, const fast_vector<VoxelModel> &p_Models)
+            ~CVoxelSceneTree() override
             {
-                for (auto &&model : p_Models) 
-                {
-                    if(model == p_Model)
-                        return true;
-                }
-
-                return false;
+                for (auto &&model : m_Models) 
+                    ModelBBoxMessageBus::GetInstance()->RemoveHandler((uintptr_t)model.get(), this);
             }
+        
+        protected:
+            void NotifyTreeChanged(CSceneNodeBase *p_Node, bool p_Added) override
+            {
+                if(p_Added)
+                    p_Node->SetMessageBus(&m_MessageBus);
+            }
+
+        private:
+            BBoxMessageBus m_MessageBus;
     };
 
     template <class T>

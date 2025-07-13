@@ -46,7 +46,7 @@ namespace VCore
     //     if(m_GenerateSingleChunks)
     //         return IMesher::GenerateChunks(_Mesh, _OnlyDirty);
 
-    //     auto bbox = _Mesh->calculateBBox();
+    //     auto bbox = _Mesh->CalculateBBox();
 
     //     std::vector<std::future<Mesh>> futures;
     //     std::vector<Mesh> slices;

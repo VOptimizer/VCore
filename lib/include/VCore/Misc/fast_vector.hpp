@@ -39,6 +39,20 @@ namespace VCore
                 insert(end(), p_l.begin(), p_l.end());
             }
 
+            inline void remove(const T &p_Value)
+            {
+                for (uint64_t i = 0; i < m_Size; i++) 
+                {
+                    if(m_Data[i] == p_Value)
+                    {
+                        m_Data[i].~T();
+                        insert(m_Data + i, m_Data + i + 1, m_Data + m_Size);
+                        m_Size--;
+                        break;
+                    }
+                }
+            }
+
             inline void push_back(const T &p_Value)
             {
                 if(!m_Data)

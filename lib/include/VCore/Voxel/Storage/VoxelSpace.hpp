@@ -32,10 +32,10 @@
 #include <VCore/VConfig.hpp>
 #include <VCore/Meshing/Texture.hpp>
 
-#include "Chunk.hpp"
-#include "VCore/Math/Mat4x4.hpp"
-
-#include <vector>
+#include <VCore/Voxel/Storage/Chunk.hpp>
+#include <VCore/Math/Mat4x4.hpp>
+#include <VCore/Misc/MessageBus.hpp>
+#include <cstdint>
 
 namespace VCore
 {
@@ -172,58 +172,59 @@ namespace VCore
             /**
              * @brief Insert a new voxel.
              */
-            void insert(const pair &p_pair);
+            void Insert(const pair &p_pair);
 
             /**
              * @brief Removes a voxel.
              */
-            iterator erase(const iterator &p_it);
+            iterator Erase(const iterator &p_it);
 
             /**
              * @brief Tries to find a voxel.
              * @return Returns an iterator to the voxel or ::end()
              */
-            iterator find(const Math::Vec3i &p_v) const;
+            iterator Find(const Math::Vec3i &p_v) const;
 
             /**
              * @return Gets a list of all chunks which has been modified.
              * @note Marks all chunks as processed.
              */
-            querylist queryDirtyChunks() const;
+            querylist QueryDirtyChunks() const;
 
             /**
              * @brief Marks a dirty chunks as clean.
              */
-            void markAsProcessed(const SChunkMeta &p_Chunk);
+            void MarkAsProcessed(const SChunkMeta &p_Chunk);
 
             /**
              * @return Returns all chunks.
              */
-            querylist queryChunks() const;
+            querylist QueryChunks() const;
 
             /**
              * @return Returns a list of all chunks which are falling inside the given frustum.
              */
-            querylist queryChunks(const CFrustum *p_Frustum, const Math::Mat4x4 &p_ModelMatrix = Math::Mat4x4()) const;
+            querylist QueryChunks(const CFrustum *p_Frustum, const Math::Mat4x4 &p_ModelMatrix = Math::Mat4x4()) const;
+
+            void NotifyChanged() { ModelBBoxMessageBus::GetInstance()->PublishMessage((uintptr_t)this, CalculateBBox()); }
 
             /**
              * @return Gets the voxel count.
              */
-            inline size_t size() const { return m_VoxelsCount; }
+            inline size_t Size() const { return m_VoxelsCount; }
 
             iterator begin();
             iterator end() const;
 
-            CBBox calculateBBox() const;
+            CBBox CalculateBBox() const;
 
-            CChunk* createOrGetChunk(const Math::Vec3i &p_Position);
+            CChunk* CreateOrGetChunk(const Math::Vec3i &p_Position);
 
-            inline CChunk *getChunk(const Math::Vec3i &p_Position) const
-            {
-                return GetChunk(p_Position);
-            }
-
-            void clear();
+            /** Gets the chunk at the given position or null, if not found */
+            CChunk *GetChunk(const Math::Vec3i &p_Position) const;
+            
+            /** Deletes all voxel data. */
+            void Clear();
 
             CVoxelSpace &operator=(const CVoxelSpace &p_Other) = delete;
             CVoxelSpace &operator=(CVoxelSpace &&p_Other);
@@ -236,8 +237,7 @@ namespace VCore
             ~CVoxelSpace();
 
         private:
-            CChunk *GetChunk(const Math::Vec3i &p_Position) const;
-            iterator next(const Math::Vec3i &p_FromPosition) const;
+            iterator Next(const Math::Vec3i &p_FromPosition) const;
 
             // Checks if the whole model needs to be loaded.
             void CheckLoadModel();

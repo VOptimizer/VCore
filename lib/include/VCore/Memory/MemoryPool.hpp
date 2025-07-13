@@ -25,12 +25,11 @@
 #ifndef MEMORYPOOL_HPP
 #define MEMORYPOOL_HPP
 
-#include <assert.h>
+#include <cassert>
 #include <atomic>
-#include <memory>
 #include <mutex>
 #include <new>
-#include <stddef.h>
+#include <cstddef>
 
 namespace VCore
 {
@@ -56,22 +55,22 @@ namespace VCore
              * @brief Constructs a new object from the pool.
              */
             template<class ...args>
-            T* construct(args&& ..._args);
+            T* construct(args&& ...p_args);
 
             /**
              * @brief Releases an object to the pool.
              */
-            void destruct(T* _ptr);
+            void destruct(T* p_ptr);
 
             /**
              * @brief Allocates data of the pool, without intializing it.
              */
-            T* allocate(size_type _n);
+            T* allocate(size_type p_n);
 
             /**
              * @brief Releases data to the pool. Without deinitializing it.
              */
-            void deallocate(T *_ptr, size_type);
+            void deallocate(T *p_ptr, size_type);
 
             /**
              * @brief Frees all allocated blocks.
@@ -97,7 +96,7 @@ namespace VCore
             class Block
             {
                 public:
-                    Block(Block *_next, Chunk *_free);
+                    Block(Block *p_next, Chunk *p_free);
 
                     char Data[BlockSize * CMemoryPool::ChunkSize];
                     Block *Next;
@@ -121,24 +120,24 @@ namespace VCore
 
     template <class T, size_t BlockSize>
     template <class ...args>
-    inline T* CMemoryPool<T, BlockSize>::construct(args&& ..._args)
+    inline T* CMemoryPool<T, BlockSize>::construct(args&& ...p_args)
     {
         auto data = allocate(sizeof(T));
-        T *obj = new(data) T(std::forward<args>(_args)...);
+        T *obj = new(data) T(std::forward<args>(p_args)...);
         return obj; 
     }
 
     template <class T, size_t BlockSize>
-    inline void CMemoryPool<T, BlockSize>::destruct(T* _ptr)
+    inline void CMemoryPool<T, BlockSize>::destruct(T* p_ptr)
     {
-        _ptr->~T();
-        deallocate(_ptr, sizeof(T));
+        p_ptr->~T();
+        deallocate(p_ptr, sizeof(T));
     }
 
     template<class T, size_t BlockSize>
-    inline T* CMemoryPool<T, BlockSize>::allocate(size_type _n)
+    inline T* CMemoryPool<T, BlockSize>::allocate(size_type p_n)
     {
-        if(sizeof(T) != _n)
+        if(sizeof(T) != p_n)
             throw std::bad_alloc();
 
         TaggedPointer tagged = m_FirstFreeChunk.load(std::memory_order_acquire);
@@ -196,11 +195,11 @@ namespace VCore
     }
 
     template<class T, size_t BlockSize>
-    inline void CMemoryPool<T, BlockSize>::deallocate(T *_ptr, size_type)
+    inline void CMemoryPool<T, BlockSize>::deallocate(T *p_ptr, size_type)
     {
         TaggedPointer tagged;
 
-        auto tmp = (Chunk*)_ptr;
+        auto tmp = (Chunk*)p_ptr;
         tagged.Ptr = tmp;
         tagged.Bits |= 1;
 
@@ -244,7 +243,7 @@ namespace VCore
     //////////////////////////////////////////////////
 
     template<class T, size_t BlockSize>
-    inline CMemoryPool<T, BlockSize>::Block::Block(Block *_next, Chunk *_free) : Next(_next)
+    inline CMemoryPool<T, BlockSize>::Block::Block(Block *p_next, Chunk *p_free) : Next(p_next)
     {
         Chunk *tmp = (Chunk*)Data;
         for (size_t i = 1; i < BlockSize - 1; i++)
@@ -254,7 +253,7 @@ namespace VCore
             tmp = next;
         }
 
-        tmp->Next = _free;
+        tmp->Next = p_free;
     }
 } // namespace VoxelOptimizer
 
