@@ -168,14 +168,11 @@ namespace VCore
         },
     };
 
-    SMeshChunk CSimpleMesher::GenerateMeshChunk(VoxelModel m, const SChunkMeta &_Chunk, bool Opaque)
+    SMeshChunk CSimpleMesher::GenerateMeshChunk(VoxelModel p_Mesh, const SChunkMeta &p_Chunk, bool)
     {
-        (void)Opaque;
-
         CMeshBuilder builder(m_SurfaceFactory);
-        // builder.AddTextures(m->Textures);
 
-        const CBBox chunkBBox(_Chunk.TotalBBox.Beg, _Chunk.TotalBBox.GetSize());
+        const CBBox chunkBBox(p_Chunk.TotalBBox.Beg, p_Chunk.TotalBBox.GetSize());
 
         // For all 3 axis (x, y, z)
         for (size_t axis = 0; axis < 3; axis++)
@@ -185,7 +182,7 @@ namespace VCore
             int axis2 = (axis + 2) % 3; // 2 = 2 = z, 3 = 0 = x, 4 = 1 = y
 
             CFaceMask mask;
-            auto masks = mask.Generate(m, _Chunk, axis);
+            auto masks = mask.Generate(p_Mesh, p_Chunk, axis);
 
             for (auto &&depth : masks)
             {
@@ -203,35 +200,35 @@ namespace VCore
                     for (uint32_t widthAxis = 0; widthAxis < Config::ChunkSize; widthAxis++)
                     {
                         auto faces = key.second.Bits[widthAxis];
-                        GenerateQuads(builder, faces, depth.first, widthAxis, true, Math::Vec3i(axis, axis1, axis2), _Chunk, m, voxel, indexFrontCache);
+                        GenerateQuads(builder, faces, depth.first, widthAxis, true, Math::Vec3i(axis, axis1, axis2), p_Chunk, p_Mesh, voxel, indexFrontCache);
 
                         faces = key.second.Bits[widthAxis + Config::ChunkSize];
-                        GenerateQuads(builder, faces, depth.first + 1, widthAxis, false, Math::Vec3i(axis, axis1, axis2), _Chunk, m, voxel, indexBackCache);
+                        GenerateQuads(builder, faces, depth.first + 1, widthAxis, false, Math::Vec3i(axis, axis1, axis2), p_Chunk, p_Mesh, voxel, indexBackCache);
                     }
                 }
             }
         }
 
         SMeshChunk chunk;
-        chunk.UniqueId = _Chunk.UniqueId;
-        chunk.InnerBBox = _Chunk.InnerBBox;
-        chunk.TotalBBox = _Chunk.TotalBBox;
+        chunk.UniqueId = p_Chunk.UniqueId;
+        chunk.InnerBBox = p_Chunk.InnerBBox;
+        chunk.TotalBBox = p_Chunk.TotalBBox;
         chunk.MeshData = builder.Build();
 
         return chunk;
     }
 
-    inline uint8_t GenerateAO(uint8_t _Side1, uint8_t _Side2, uint8_t _Corner)
+    inline uint8_t GenerateAO(uint8_t p_Side1, uint8_t p_Side2, uint8_t p_Corner)
     {
-        if(_Side1 && _Side2)
+        if(p_Side1 && p_Side2)
             return 0;
 
-        return 3 - (_Side1 + _Side2 + _Corner);
+        return 3 - (p_Side1 + p_Side2 + p_Corner);
     }
 
-    inline uint32_t AddVertex(CMeshBuilder &_Builder, const VoxelModel &_Model, const Math::Vec3i _Position, const SAmbientOcclusionDirection &_Direction, const Math::Vec3f &_Vertex, const Math::Vec3f &_Normal, const uint32_t _Color, uint8_t &_Ao)
+    inline uint32_t AddVertex(CMeshBuilder &p_Builder, const VoxelModel &_Model, const Math::Vec3i p_Position, const SAmbientOcclusionDirection &p_Direction, const Math::Vec3f &p_Vertex, const Math::Vec3f &p_Normal, const uint32_t p_Color, uint8_t &p_Ao)
     {
-        auto vertex = _Vertex + _Position;
+        auto vertex = p_Vertex + p_Position;
 
         // TODO: Makes everything 30ms slower (at my machine)
         // auto side1 = _Model->find(_Direction.Side1 + _Position);
@@ -239,16 +236,16 @@ namespace VCore
         // auto corner = _Model->find(_Direction.Corner + _Position);
 
         // _Ao = GenerateAO(side1 != _Model->end(), side2 != _Model->end(), corner != _Model->end());
-        return _Builder.AddVertex(new SVertex(vertex, _Normal, _Color, _Ao));
+        return p_Builder.AddVertex(new SVertex(vertex, p_Normal, p_Color, p_Ao));
     }
 
-    void CSimpleMesher::GenerateQuads(CMeshBuilder &_Builder, Config::bitmask_t _Faces, int depth, int width, bool isFront, const Math::Vec3i &_Axis, const SChunkMeta &_Chunk, const VoxelModel &_Model, const CVoxel& _Voxel, IndexPair *_Cache)
+    void CSimpleMesher::GenerateQuads(CMeshBuilder &p_Builder, Config::bitmask_t p_Faces, int p_Depth, int p_Width, bool p_isFront, const Math::Vec3i &p_Axis, const SChunkMeta &p_Chunk, const VoxelModel &p_Model, const CVoxel& p_Voxel, IndexPair *p_Cache)
     {
         // Last two indices of the last quad.
         uint32_t lastLeftIdx = 0, lastRightIdx = 0;
         uint8_t lastLeftAO = 0, lastRightAO = 0;
         IndexPair localCache[Config::ChunkSize] = {};
-        auto color = _Voxel.GetColor();
+        auto color = p_Voxel.GetColor();
 
         // Math::Vec2f uv;
         // auto textures = _Builder.GetTextures();
@@ -256,9 +253,9 @@ namespace VCore
         //     uv = Math::Vec2f(((float)(_Voxel.Color + 0.5f)) / textures->at(TextureType::DIFFIUSE)->GetSize().x, 0.5f);
 
         Config::bitmask_t heightPos = 0;
-        while ((heightPos <= Config::ChunkSize) && (_Faces >> heightPos))
+        while ((heightPos <= Config::ChunkSize) && (p_Faces >> heightPos))
         {
-            auto zeros = heightPos >= Config::ChunkSize ? 0 : CountTrailingZeroBits(_Faces >> heightPos);
+            auto zeros = heightPos >= Config::ChunkSize ? 0 : CountTrailingZeroBits(p_Faces >> heightPos);
 
             // Are there any gaps between the quads? If so reset the last save indices
             // Bits zero count > 0
@@ -269,16 +266,16 @@ namespace VCore
             if(heightPos >= Config::ChunkSize)
                 break;
 
-            auto &faceInfo = FACE_INFOS[_Axis.x * 2 + (isFront ? 0 : 1)];
+            auto &faceInfo = FACE_INFOS[p_Axis.x * 2 + (p_isFront ? 0 : 1)];
             for (; heightPos < Config::ChunkSize; heightPos++)
             {
-                if(((_Faces >> heightPos) & 0x1) == 0)
+                if(((p_Faces >> heightPos) & 0x1) == 0)
                     break;
 
                 Math::Vec3i position;
-                position.v[_Axis.x] = _Chunk.TotalBBox.Beg.v[_Axis.x] + depth;
-                position.v[_Axis.y] = _Chunk.TotalBBox.Beg.v[_Axis.y] + heightPos;
-                position.v[_Axis.z] = _Chunk.TotalBBox.Beg.v[_Axis.z] + width;
+                position.v[p_Axis.x] = p_Chunk.TotalBBox.Beg.v[p_Axis.x] + p_Depth;
+                position.v[p_Axis.y] = p_Chunk.TotalBBox.Beg.v[p_Axis.y] + heightPos;
+                position.v[p_Axis.z] = p_Chunk.TotalBBox.Beg.v[p_Axis.z] + p_Width;
 
                 // Make room for the new quad.
                 // Bits zero count == 0
@@ -292,76 +289,76 @@ namespace VCore
                 {
                     if(heightPos < Config::ChunkSize)
                     {
-                        if(isFront)
+                        if(p_isFront)
                         {
-                            if(_Cache[heightPos].Instantiated)
+                            if(p_Cache[heightPos].Instantiated)
                             {
-                                idx1 = _Cache[heightPos].Idx2;
-                                ao1 = _Cache[heightPos].AO2;
+                                idx1 = p_Cache[heightPos].Idx2;
+                                ao1 = p_Cache[heightPos].AO2;
                             }
-                            else if(heightPos && _Cache[heightPos - 1].Instantiated)
+                            else if(heightPos && p_Cache[heightPos - 1].Instantiated)
                             {
-                                idx1 = _Cache[heightPos].Idx4;
-                                ao1 = _Cache[heightPos].AO4;
+                                idx1 = p_Cache[heightPos].Idx4;
+                                ao1 = p_Cache[heightPos].AO4;
                             }
                         }
                         else
                         {
-                            if(_Cache[heightPos].Instantiated)
+                            if(p_Cache[heightPos].Instantiated)
                             {
-                                idx2 = _Cache[heightPos].Idx2;
-                                ao2 = _Cache[heightPos].AO2;
+                                idx2 = p_Cache[heightPos].Idx2;
+                                ao2 = p_Cache[heightPos].AO2;
                             }
-                            else if(heightPos && _Cache[heightPos - 1].Instantiated)
+                            else if(heightPos && p_Cache[heightPos - 1].Instantiated)
                             {
-                                idx2 = _Cache[heightPos].Idx4;
-                                ao2 = _Cache[heightPos].AO4;
+                                idx2 = p_Cache[heightPos].Idx4;
+                                ao2 = p_Cache[heightPos].AO4;
                             }
                         }
                     }
 
                     if(!idx1)
-                        idx1 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[0], faceInfo.V1, faceInfo.Normal, color, ao1);
+                        idx1 = AddVertex(p_Builder, p_Model, position, faceInfo.AmbientOcclusionDirections[0], faceInfo.V1, faceInfo.Normal, color, ao1);
 
                     if(!idx2)
-                        idx2 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[1], faceInfo.V2, faceInfo.Normal, color, ao2);
+                        idx2 = AddVertex(p_Builder, p_Model, position, faceInfo.AmbientOcclusionDirections[1], faceInfo.V2, faceInfo.Normal, color, ao2);
                 }
 
                 if(heightPos < Config::ChunkSize)
                 {
-                    if(isFront)
+                    if(p_isFront)
                     {
-                        if(_Cache[heightPos].Instantiated)
+                        if(p_Cache[heightPos].Instantiated)
                         {
-                            idx3 = _Cache[heightPos].Idx4;
-                            ao3 = _Cache[heightPos].AO4;
+                            idx3 = p_Cache[heightPos].Idx4;
+                            ao3 = p_Cache[heightPos].AO4;
                         }
-                        else if((heightPos + 1 < Config::ChunkSize) && _Cache[heightPos + 1].Instantiated)
+                        else if((heightPos + 1 < Config::ChunkSize) && p_Cache[heightPos + 1].Instantiated)
                         {
-                            idx3 = _Cache[heightPos].Idx2;
-                            ao3 = _Cache[heightPos].AO2;
+                            idx3 = p_Cache[heightPos].Idx2;
+                            ao3 = p_Cache[heightPos].AO2;
                         }
                     }
                     else
                     {
-                        if(_Cache[heightPos].Instantiated)
+                        if(p_Cache[heightPos].Instantiated)
                         {
-                            idx4 = _Cache[heightPos].Idx4;
-                            ao4 = _Cache[heightPos].AO4;
+                            idx4 = p_Cache[heightPos].Idx4;
+                            ao4 = p_Cache[heightPos].AO4;
                         }
-                        else if((heightPos + 1 < Config::ChunkSize) && _Cache[heightPos + 1].Instantiated)
+                        else if((heightPos + 1 < Config::ChunkSize) && p_Cache[heightPos + 1].Instantiated)
                         {
-                            idx4 = _Cache[heightPos].Idx2;
-                            ao4 = _Cache[heightPos].AO2;
+                            idx4 = p_Cache[heightPos].Idx2;
+                            ao4 = p_Cache[heightPos].AO2;
                         }
                     }
                 }
 
                 if(!idx3)
-                    idx3 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[2], faceInfo.V3, faceInfo.Normal, color, ao3);
+                    idx3 = AddVertex(p_Builder, p_Model, position, faceInfo.AmbientOcclusionDirections[2], faceInfo.V3, faceInfo.Normal, color, ao3);
 
                 if(!idx4)
-                    idx4 = AddVertex(_Builder, _Model, position, faceInfo.AmbientOcclusionDirections[3], faceInfo.V4, faceInfo.Normal, color, ao4);
+                    idx4 = AddVertex(p_Builder, p_Model, position, faceInfo.AmbientOcclusionDirections[3], faceInfo.V4, faceInfo.Normal, color, ao4);
 
                 // Save the last two indices.
                 lastLeftIdx = idx3;
@@ -372,7 +369,7 @@ namespace VCore
 
                 if(heightPos < Config::ChunkSize)
                 {
-                    if(isFront)
+                    if(p_isFront)
                         localCache[heightPos] = IndexPair(idx2, idx4, ao2, ao4);
                     else
                         localCache[heightPos] = IndexPair(idx1, idx3, ao1, ao3);
@@ -393,10 +390,10 @@ namespace VCore
                 }
 
                 // Create the quad.
-                _Builder.AddFace(idx1, idx2, idx3, idx4);
+                p_Builder.AddFace(idx1, idx2, idx3, idx4);
             }
         }
 
-        memcpy(_Cache, localCache, sizeof(IndexPair) * Config::ChunkSize);
+        memcpy(p_Cache, localCache, sizeof(IndexPair) * Config::ChunkSize);
     }
 }

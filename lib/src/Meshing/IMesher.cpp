@@ -28,6 +28,7 @@
 #include <VCore/Meshing/IMesher.hpp>
 #include <VCore/Meshing/Mesh/MeshBuilder.hpp>
 #include "Implementations/SimpleMesher.hpp"
+#include "Implementations/Transvoxel/TransvoxelMesher.hpp"
 #include <VCore/Formats/SceneNode.hpp>
 #include <VCore/Meshing/Mesh/Mesh.hpp>
 #include <future>
@@ -172,6 +173,7 @@ namespace VCore
             case MesherTypes::GREEDY: return std::make_shared<CGreedyMesher>();
             case MesherTypes::GREEDY_CHUNKED: return std::make_shared<CGreedyMesher>(false, true);
             case MesherTypes::GREEDY_TEXTURED: return std::make_shared<CGreedyMesher>(true);
+            case MesherTypes::SMOOTH: return std::make_shared<CTransvoxelMesher>();
             default:
                 throw std::runtime_error("Invalid mesher type!");
         }

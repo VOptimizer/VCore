@@ -61,7 +61,7 @@ void HelpDialog(const argh::parser &p_Cmdl)
 
     cout << "Usage: " << CliName << " [INPUT] [OPTIONS]\n" << endl;
     cout << "-h, --help\tThis dialog" << endl;
-    cout << "-m, --mesher\tSets the mesher to meshify the voxel mesh. Default: simple. (simple, greedy, greedy_chunked, greedy_textured)" << endl;
+    cout << "-m, --mesher\tSets the mesher to meshify the voxel mesh. Default: simple. (simple, greedy, greedy_chunked, greedy_textured, smooth)" << endl;
     cout << "-o, --output\tOutput path. If the output path doesn't exist it will be created" << endl;
     cout << "-w, --worldspace\tTransforms all vertices to worldspace\n" << endl;
     cout << "--convert\tConverts a voxel model from one format to another one.\n" << endl;
@@ -230,6 +230,8 @@ void GenerateMesh(const std::string &p_MesherType, const argh::parser &p_Cmdl, c
         mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::GREEDY_CHUNKED);
     else if(p_MesherType == "greedy_textured")
         mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::GREEDY_TEXTURED);
+    else if(p_MesherType == "smooth")
+        mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::SMOOTH);
     else
         mesher = VCore::IMesher::Create<VCore::DefaultSurface>(VCore::MesherTypes::SIMPLE);
 

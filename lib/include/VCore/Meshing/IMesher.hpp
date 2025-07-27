@@ -42,6 +42,7 @@ namespace VCore
         GREEDY,
         GREEDY_CHUNKED,   //!< Old legacy greedy mesher, which looks very chunky.
         GREEDY_TEXTURED,
+        SMOOTH
     };
 
     struct SMeshChunk : public SChunkMeta

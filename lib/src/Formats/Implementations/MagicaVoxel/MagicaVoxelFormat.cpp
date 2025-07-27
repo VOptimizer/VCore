@@ -509,12 +509,12 @@ namespace VCore
 
     void CMagicaVoxelFormat::ParseFormat()
     {   
-        std::string Signature(4, '\0');
-        m_DataStream->Read(&Signature[0], 4);
-        Signature += "\0";
+        std::string signature(4, '\0');
+        m_DataStream->Read(&signature[0], 4);
+        signature += "\0";
 
         // Checks the file header
-        if(Signature != "VOX ")
+        if(signature != "VOX ")
             throw CVoxelFormatException("Unknown file format");
 
         int Version = m_DataStream->Read<int>();

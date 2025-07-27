@@ -28,7 +28,6 @@
 #include <cstddef>
 #include <VCore/Voxel/VoxelModel.hpp>
 #include <VCore/Misc/fast_vector.hpp>
-#include <map>
 
 namespace VCore
 {
@@ -47,9 +46,9 @@ namespace VCore
             /**
              * @brief Generates the face bit mask for the given chunk on the axis.
              */
-            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> Generate(const VoxelModel &_Model, const SChunkMeta &_Chunk, const uint8_t _Axis);
+            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> Generate(const VoxelModel &p_Model, const SChunkMeta &p_Chunk, const uint8_t p_Axis);
 
-            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> Generate(const VoxelModel &_Model, Math::Vec3i _ChunkPos, const uint8_t _Axis);
+            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> Generate(const VoxelModel &p_Model, Math::Vec3i p_ChunkPos, const uint8_t p_Axis);
 
             ~CFaceMask() = default;
 
@@ -61,9 +60,9 @@ namespace VCore
             };
 
             void InternalGenerate();
-            void FillVoxelBits(Config::bitmask_t *_opaqueVoxels, Config::bitmask_t *_transparentVoxels, const CChunk *_Chunk, const Math::Vec3i &_Position, const int _Count);
-            void GenerateMask(Config::bitmask_t *_Voxels, const Math::Vec3i &_Subpos, const int _Count);
-            void FillSlice(Config::bitmask_t _Faces, const Math::Vec3i &_Subpos, const int _Column, const bool _Backface, ankerl::unordered_dense::map<uint32_t, Mask> &_Masks);
+            void FillVoxelBits(Config::bitmask_t *p_opaqueVoxels, Config::bitmask_t *p_transparentVoxels, const CChunk *p_Chunk, const Math::Vec3i &p_Position, const int p_Count);
+            void GenerateMask(Config::bitmask_t *p_Voxels, const Math::Vec3i &p_Subpos, const int p_Count);
+            void FillSlice(Config::bitmask_t p_Faces, const Math::Vec3i &p_Subpos, const int p_Column, const bool p_Backface, ankerl::unordered_dense::map<uint32_t, Mask> &p_Masks);
 
             VoxelModel m_Model;
             SChunkMeta m_Chunk;

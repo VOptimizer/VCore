@@ -31,32 +31,32 @@
 
 namespace VCore
 {
-    ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>> CFaceMask::Generate(const VoxelModel &_Model, const SChunkMeta &_Chunk, const uint8_t _Axis)
+    ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>> CFaceMask::Generate(const VoxelModel &p_Model, const SChunkMeta &p_Chunk, const uint8_t p_Axis)
     {
-        m_Model = _Model;
-        m_Chunk = _Chunk;
+        m_Model = p_Model;
+        m_Chunk = p_Chunk;
 
         // This logic calculates the index of one of the three other axis.
-        m_Axis = Math::TVector3<char>(_Axis, (_Axis + 1) % 3, (_Axis + 2) % 3);
+        m_Axis = Math::TVector3<char>(p_Axis, (p_Axis + 1) % 3, (p_Axis + 2) % 3);
 
         InternalGenerate();
         return std::move(m_FacesMasks);
     }
 
-    ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>> CFaceMask::Generate(const VoxelModel &_Model, Math::Vec3i _ChunkPos, const uint8_t _Axis)
+    ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>> CFaceMask::Generate(const VoxelModel &p_Model, Math::Vec3i p_ChunkPos, const uint8_t p_Axis)
     {
-        m_Model = _Model;
+        m_Model = p_Model;
 
         // This logic calculates the index of one of the three other axis.
-        m_Axis = Math::TVector3<char>(_Axis, (_Axis + 1) % 3, (_Axis + 2) % 3);
+        m_Axis = Math::TVector3<char>(p_Axis, (p_Axis + 1) % 3, (p_Axis + 2) % 3);
 
-        auto &voxels = *_Model;
-        m_Chunk.Chunk = voxels.GetChunk(_ChunkPos);
+        auto &voxels = *p_Model;
+        m_Chunk.Chunk = voxels.GetChunk(p_ChunkPos);
         if(m_Chunk.Chunk)
         {
             // meta.UniqueId = hasher(_ChunkPos);
-            m_Chunk.TotalBBox = CBBox(_ChunkPos, _ChunkPos + Math::Vec3i(Config::ChunkSize, Config::ChunkSize, Config::ChunkSize));
-            m_Chunk.InnerBBox = m_Chunk.Chunk->inner_bbox(_ChunkPos);
+            m_Chunk.TotalBBox = CBBox(p_ChunkPos, p_ChunkPos + Math::Vec3i(Config::ChunkSize, Config::ChunkSize, Config::ChunkSize));
+            m_Chunk.InnerBBox = m_Chunk.Chunk->inner_bbox(p_ChunkPos);
             InternalGenerate();
         }
 
@@ -73,33 +73,33 @@ namespace VCore
         return std::move(m_FacesMasks);
     }
 
-    void CFaceMask::FillVoxelBits(Config::bitmask_t *_opaqueVoxels, Config::bitmask_t *_transparentVoxels, const CChunk *_Chunk, const Math::Vec3i &_Position, const int _Count)
+    void CFaceMask::FillVoxelBits(Config::bitmask_t *p_opaqueVoxels, Config::bitmask_t *p_transparentVoxels, const CChunk *p_Chunk, const Math::Vec3i &p_Position, const int p_Count)
     {
-        Math::Vec3i subpos = _Position & Config::InnerChunkMask;
-        for (int i = 0; i < _Count; i++)
+        Math::Vec3i subpos = p_Position & Config::InnerChunkMask;
+        for (int i = 0; i < p_Count; i++)
         {          
-            _opaqueVoxels[i] = _Chunk->Mask.GetRowFaces(subpos, m_Axis.y); // (_Chunk->m_Mask.GetRowFaces(subpos, m_Axis.y) >> 1) & 0xFFFFFFFF;
+            p_opaqueVoxels[i] = p_Chunk->Mask.GetRowFaces(subpos, m_Axis.y); // (_Chunk->m_Mask.GetRowFaces(subpos, m_Axis.y) >> 1) & 0xFFFFFFFF;
 
-            if(_opaqueVoxels[i] && (m_TransparentMaterials.size() > 0))
+            if(p_opaqueVoxels[i] && (m_TransparentMaterials.size() > 0))
             {
-                uint32_t bitCount = CountTrailingZeroBits(_opaqueVoxels[i]);
+                uint32_t bitCount = CountTrailingZeroBits(p_opaqueVoxels[i]);
                 auto subposCopy = subpos;
                 while (bitCount < Config::ChunkSize)
                 {
-                    auto count = CountTrailingOneBits(_opaqueVoxels[i] >> bitCount);
+                    auto count = CountTrailingOneBits(p_opaqueVoxels[i] >> bitCount);
                     for (uint32_t j = 0; j < count; j++)
                     {
                         subposCopy.v[m_Axis.y] = bitCount + j;
-                        auto voxel = _Chunk->find(subposCopy);
+                        auto voxel = p_Chunk->find(subposCopy);
                         if(std::find(m_TransparentMaterials.begin(), m_TransparentMaterials.end(), voxel.GetMaterial()) != m_TransparentMaterials.end())
                         {
-                            _opaqueVoxels[i] &= ~(1 << (bitCount + j));
-                            _transparentVoxels[i] |= (1 << (bitCount + j));
+                            p_opaqueVoxels[i] &= ~(1 << (bitCount + j));
+                            p_transparentVoxels[i] |= (1 << (bitCount + j));
                         }
                     }
 
                     bitCount += count;
-                    bitCount += CountTrailingZeroBits(_opaqueVoxels[i] >> bitCount);
+                    bitCount += CountTrailingZeroBits(p_opaqueVoxels[i] >> bitCount);
                 }
             }
 
@@ -179,11 +179,11 @@ namespace VCore
         m_TransparentMaterials.clear();
     }
 
-    void CFaceMask::GenerateMask(Config::bitmask_t *_Voxels, const Math::Vec3i &_Subpos, const int _Count)
+    void CFaceMask::GenerateMask(Config::bitmask_t *p_Voxels, const Math::Vec3i &p_Subpos, const int p_Count)
     {
-        Simd::NativeI beforeVoxelsSimd((int*)_Voxels, simdIntSize);
-        Simd::NativeI voxelsSimd((int*)_Voxels + simdIntSize, simdIntSize);
-        Simd::NativeI afterVoxelsSimd((int*)_Voxels + (simdIntSize * 2), simdIntSize);
+        Simd::NativeI beforeVoxelsSimd((int*)p_Voxels, simdIntSize);
+        Simd::NativeI voxelsSimd((int*)p_Voxels + simdIntSize, simdIntSize);
+        Simd::NativeI afterVoxelsSimd((int*)p_Voxels + (simdIntSize * 2), simdIntSize);
 
         // Cache reset
         ankerl::unordered_dense::map<uint32_t, Mask> *masks = nullptr;
@@ -200,35 +200,35 @@ namespace VCore
         ((afterVoxelsSimd & voxelsSimd) ^ voxelsSimd).Store((int*)backFaces, simdIntSize);
 
         // Fill the mask structure with data.
-        for (int i = 0; i < _Count; i++)
+        for (int i = 0; i < p_Count; i++)
         {
             auto faces = (unsigned int)frontFaces[i];
             if(faces)
             {
                 if(!masks)
-                    masks = &m_FacesMasks[_Subpos.v[m_Axis.x]];
-                FillSlice(faces, _Subpos, i, false, *masks);
+                    masks = &m_FacesMasks[p_Subpos.v[m_Axis.x]];
+                FillSlice(faces, p_Subpos, i, false, *masks);
             }
 
             faces = (unsigned int)backFaces[i];
             if(faces)
             {
                 if(!masks)
-                    masks = &m_FacesMasks[_Subpos.v[m_Axis.x]];
-                FillSlice(faces, _Subpos, i, true, *masks);
+                    masks = &m_FacesMasks[p_Subpos.v[m_Axis.x]];
+                FillSlice(faces, p_Subpos, i, true, *masks);
             }
         }
     }
 
-    void CFaceMask::FillSlice(Config::bitmask_t _Faces, const Math::Vec3i &_Subpos, const int _Column, const bool _Backface, ankerl::unordered_dense::map<uint32_t, Mask> &_Masks)
+    void CFaceMask::FillSlice(Config::bitmask_t p_Faces, const Math::Vec3i &p_Subpos, const int p_Column, const bool p_Backface, ankerl::unordered_dense::map<uint32_t, Mask> &p_Masks)
     {
-        auto bitCount = CountTrailingZeroBits(_Faces);
-        auto subposCopy = _Subpos;
-        subposCopy.v[m_Axis.z] += _Column;
+        auto bitCount = CountTrailingZeroBits(p_Faces);
+        auto subposCopy = p_Subpos;
+        subposCopy.v[m_Axis.z] += p_Column;
 
         while (bitCount < Config::ChunkSize)
         {
-            auto count = CountTrailingOneBits(_Faces >> bitCount);
+            auto count = CountTrailingOneBits(p_Faces >> bitCount);
             for (uint32_t j = 0; j < count; j++)
             {
                 subposCopy.v[m_Axis.y] = bitCount + j;
@@ -244,14 +244,14 @@ namespace VCore
                 if((key != m_CachedKey) || !m_MaskCache)
                 {
                     m_CachedKey = key;
-                    m_MaskCache = &_Masks[m_CachedKey];
+                    m_MaskCache = &p_Masks[m_CachedKey];
                 }
 
-                m_MaskCache->Bits[_Subpos.v[m_Axis.z] + _Column + (_Backface * Config::ChunkSize)] |= (Config::bitmask_t)1 << (bitCount + j);
+                m_MaskCache->Bits[p_Subpos.v[m_Axis.z] + p_Column + (p_Backface * Config::ChunkSize)] |= (Config::bitmask_t)1 << (bitCount + j);
             }
 
             bitCount += count;
-            bitCount += CountTrailingZeroBits(_Faces >> bitCount);
+            bitCount += CountTrailingZeroBits(p_Faces >> bitCount);
         }
     }
 } // namespace VCore

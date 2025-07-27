@@ -70,6 +70,7 @@ namespace VCore
             uint32_t AddVertex(const SVertex* p_Vertex);
 
             void AddFace(uint32_t p_Idx1, uint32_t p_Idx2, uint32_t p_Idx3, uint32_t p_Idx4);
+            void AddFace(uint32_t p_Idx1, uint32_t p_Idx2, uint32_t p_Idx3);
 
             ~CMeshBuilder() = default;
         private:

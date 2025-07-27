@@ -85,6 +85,11 @@ namespace VCore
         m_CurrentSurface->AddFace(p_Idx2, p_Idx4, p_Idx3);
     }
 
+    void CMeshBuilder::AddFace(uint32_t p_Idx1, uint32_t p_Idx2, uint32_t p_Idx3)
+    {
+        m_CurrentSurface->AddFace(p_Idx1, p_Idx2, p_Idx3);
+    }
+
     Mesh CMeshBuilder::Merge(Mesh p_MergeInto, const std::vector<Mesh> &p_Meshes, bool p_ApplyModelMatrix)
     {
         Mesh ret;

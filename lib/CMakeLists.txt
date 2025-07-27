@@ -22,6 +22,7 @@ set(CORE_SRCS
              "${PROJECT_SOURCE_DIR}/src/Meshing/IMesher.cpp"
              "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/SimpleMesher.cpp"
              "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/GreedyMesher.cpp"
+             "${PROJECT_SOURCE_DIR}/src/Meshing/Implementations/Transvoxel/TransvoxelMesher.cpp"
 
              "${PROJECT_SOURCE_DIR}/src/Meshing/MeshBuilder.cpp"
              "${PROJECT_SOURCE_DIR}/src/Meshing/FaceMask.cpp"
