@@ -29,8 +29,10 @@
 #include "VCore/Meshing/Mesh/Vertex.hpp"
 #include "VCore/VConfig.hpp"
 #include "VCore/Voxel/Storage/Chunk.hpp"
+#include "src/Misc/Helper.hpp"
 #include <VCore/Meshing/Mesh/MeshBuilder.hpp>
 #include <cstdint>
+#include <cstring>
 #include <format>
 
 namespace VCore 
@@ -62,7 +64,6 @@ namespace VCore
 
         CMeshBuilder builder(m_SurfaceFactory);
         const CBBox chunkBBox(p_Chunk.TotalBBox.Beg, p_Chunk.TotalBBox.GetSize());
-        builder.SelectSurface(0);
 
         CChunk *localGrid[3 * 3 * 3];
         for (int z = -1; z <= 1; z++) 
@@ -78,18 +79,17 @@ namespace VCore
 
         // const float t = 0.3;
 
-        for (int z = -1; z < static_cast<int>(Config::ChunkSize); z++) 
+        Math::Vec3i startPos(localGrid[12] ? 0 : 1, localGrid[10] ? 0 : 1, localGrid[4] ? 0 : 1);
+        for (int z = -startPos.z; z < static_cast<int>(Config::ChunkSize); z++) 
         {
-            for (int y = -1; y < static_cast<int>(Config::ChunkSize); y++)
+            for (int y = -startPos.y; y < static_cast<int>(Config::ChunkSize); y++)
             {
-                int x = -1;
+                int x = -startPos.x;
                 Config::bitmask_t voxelCount = Config::ChunkSize;
 
                 while (x < static_cast<int>(Config::ChunkSize)) 
                 {
                     Config::bitmask_t voxels[4] = {};
-
-                    // uint64_t signFlags = 0;
                     for (int dy = 0; dy <= 1; dy++)
                     {
                         for (int dz = 0; dz <= 1; dz++)
@@ -97,41 +97,50 @@ namespace VCore
                             voxels[dz + 2 * dy] = ExtractVoxels(const_cast<const CChunk**>(localGrid), Math::Vec3i(x, dy + y, dz + z));
                             if(x == -1)
                                 voxels[dz + 2 * dy] |= ExtractVoxels(const_cast<const CChunk**>(localGrid), Math::Vec3i(x + 1, dy + y, dz + z)) << 1;
-                            else if(x == static_cast<int>(Config::ChunkSize) - 2)
-                                voxels[dz + 2 * dy] |= (ExtractVoxels(const_cast<const CChunk**>(localGrid), Math::Vec3i(x + 2, dy + y, dz + z)) & 0x3) << 2;
+                            else if(x == static_cast<int>(Config::ChunkSize) - (1 + startPos.x))
+                                voxels[dz + 2 * dy] |= (ExtractVoxels(const_cast<const CChunk**>(localGrid), Math::Vec3i(x + 1 + startPos.x, dy + y, dz + z)) & 0x1) << (1 + startPos.x);
                         }
                     }
 
-                    const Math::Vec3i corners[8] = {
-                        Math::Vec3i(x, y, z) + Math::Vec3i::ONE,
-                        Math::Vec3i(x + 1, y, z) + Math::Vec3i::ONE,
-                        Math::Vec3i(x, y, z + 1) + Math::Vec3i::ONE,
-                        Math::Vec3i(x + 1, y, z + 1) + Math::Vec3i::ONE,
-
-                        Math::Vec3i(x, y + 1, z) + Math::Vec3i::ONE,
-                        Math::Vec3i(x + 1, y + 1, z) + Math::Vec3i::ONE,
-                        Math::Vec3i(x, y + 1, z + 1) + Math::Vec3i::ONE,
-                        Math::Vec3i(x + 1, y + 1, z + 1) + Math::Vec3i::ONE,
-                    };
-
-                    const uint8_t visibilityMask = (x > -1 ? 1 : 0) | ((y > -1 ? 1 : 0) << 1) | ((z > -1 ? 1 : 0) << 2);
-
                     for (Config::bitmask_t i = 0; i < voxelCount - 1; i++) 
                     {
-                        const uint16_t cellIdx = ((voxels[0] >> i) & 0x3) | (((voxels[1] >> i) & 0x3) << 2) | (((voxels[2] >> i) & 0x3) << 4) | (((voxels[3] >> i) & 0x3) << 6);
+                        const uint8_t visibilityMask = ((x + static_cast<int>(i)) > 0 ? 1 : 0) | ((z > 0 ? 1 : 0) << 1) | ((y > 0 ? 1 : 0) << 2);
+                        const Math::Vec3i corners[8] = {
+                            Math::Vec3i(x + i, y, z),
+                            Math::Vec3i(x + i + 1, y, z),
+                            Math::Vec3i(x + i, y, z + 1),
+                            Math::Vec3i(x + i + 1, y, z + 1),
+
+                            Math::Vec3i(x + i, y + 1, z),
+                            Math::Vec3i(x + i + 1, y + 1, z),
+                            Math::Vec3i(x + i, y + 1, z + 1),
+                            Math::Vec3i(x + i + 1, y + 1, z + 1),
+                        };
+                        
+                        uint16_t cellIdx = ((voxels[0] >> i) & 0x3) | (((voxels[1] >> i) & 0x3) << 2) | (((voxels[2] >> i) & 0x3) << 4) | (((voxels[3] >> i) & 0x3) << 6);
 
                         if(cellIdx != 0 && cellIdx != 0xFF)
                         {
                             auto cellClass = regularCellClass[cellIdx];
                             auto cellData = &regularCellData[cellClass];
 
+                            auto voxel = p_Chunk.Chunk->find(corners[CountTrailingZeroBits(cellIdx)]);
+                            builder.SelectSurface(voxel.GetMaterial());
+
                             uint32_t idx[3];
                             uint32_t counter = 0;
+
+                            uint32_t indices[15] = {};
+                            memset(indices, 0xFF, sizeof(indices));
 
                             auto end = cellData->vertexIndex + (cellData->GetTriangleCount() * 3);
                             for (auto data = cellData->vertexIndex; data != end; data++)
                             {
                                 auto edgeData = regularVertexData[cellIdx][*data];
+                                uint8_t reuseDir = (edgeData >> 12) & 0xF;
+                                uint8_t vertexIndex = (edgeData >> 8) & 0xF;
+                                Math::Vec3i reuseDirVec((x + static_cast<int>(i)) + startPos.x + -(reuseDir & 0x1), y + startPos.y + -((reuseDir >> 2) & 0x1), z +  + startPos.z + -((reuseDir >> 1) & 0x1));
+
                                 auto v0 = (edgeData & 0xF0) >> 4;
                                 auto v1 = edgeData & 0xF;
 
@@ -141,37 +150,37 @@ namespace VCore
                                 auto d1 = ((cellIdx & (1 << v1)) >> v1) ? -1 : 1;
                                 auto d0 = ((cellIdx & (1 << v0)) >> v0) ? -1 : 1;
 
-                                const float t = static_cast<float>(d1) / static_cast<float>(d1 - d0);                                
-                                auto q = t * Math::Vec3f(p0 + Math::Vec3i(i, 0, 0)) + (1.f - t) * Math::Vec3f(p1 + Math::Vec3i(i, 0, 0));
-
-                                // Maybe one of the stupiest approaches to this problem or I didn't read
-                                // the paper correctly, but since V-Core uses different threads for each chunk
-                                // it is not possible to generate one big mesh. This leads to the problem, that
-                                // there are overlapping faces. To remove them, I check if a face would be generated
-                                // at the lower boundary, and check if there is an adjacenting chunk, then skip this face.
-                                if(q.z <= 0.5f)
+                                const float t = static_cast<float>(d1) / static_cast<float>(d1 - d0);
+                                if(t > 0.f && t < 1.f)
                                 {
-                                    if(localGrid[4])
-                                        continue;
-                                }
+                                    if(indices[*data] != 0xFFFFFFFF)
+                                        idx[counter++] = indices[*data];
+                                    else if(((reuseDir & visibilityMask) == reuseDir) && cache.HasCachedVertex(reuseDirVec, vertexIndex, voxel))
+                                        idx[counter++] = cache.GetCachedVertex(reuseDirVec, vertexIndex);
+                                    else
+                                    {                             
+                                        auto q = t * Math::Vec3f(p0) + (1.f - t) * Math::Vec3f(p1);
+                                        idx[counter++] = builder.AddVertex(new SVertex(q + chunkBBox.Beg, Math::Vec3f::ZERO, voxel.GetColor()));
+                                        indices[*data] = idx[counter - 1];
 
-                                if(q.y <= 0.5f)
-                                {
-                                    if(localGrid[10])
-                                        continue;
+                                        if (reuseDir & 0x8)
+                                            cache.CacheVertex(corners[0] + startPos, vertexIndex, idx[counter - 1], voxel);
+                                    }
                                 }
-
-                                if(q.x <= 0.5f)
-                                {
-                                    if(localGrid[12])
-                                        continue;
-                                }
-
-                                idx[counter++] = builder.AddVertex(new SVertex(q + chunkBBox.Beg, Math::Vec3f::ZERO, 0));
+                                // else if (t == 0 && v1 == 7)
+                                // {
+                                //     int k = 0;
+                                //     k++;
+                                // }
+                                // else
+                                // {
+                                //     int k = 0;
+                                //     k++;
+                                // }
 
                                 if(counter % 3 == 0)
                                 {
-                                    builder.AddFace(idx[0], idx[1], idx[2]);
+                                    builder.AddFace(idx[2], idx[1], idx[0]);
                                     counter = 0;
                                 }
                             }
@@ -179,7 +188,7 @@ namespace VCore
                     }
 
                     x += Config::ChunkSize - 1;
-                    voxelCount = 3;
+                    voxelCount = 2 + startPos.x;
                 }
             }
         }

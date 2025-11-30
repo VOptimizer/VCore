@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include "VCore/Voxel/Storage/Chunk.hpp"
 #include <VCore/Math/Mat4x4.hpp>
 #include <VCore/Voxel/Frustum.hpp>
 #include <VCore/Formats/Streamable.hpp>
@@ -32,6 +33,13 @@
 
 namespace VCore
 {
+    struct FrustumQuery
+    {
+        const CFrustum *Frustum;
+        Math::Mat4x4 ModelMatrix;
+        IStreamable *Source;
+    };
+
     static const Math::Vec3i CHUNK_SIZE(Config::ChunkSize, Config::ChunkSize, Config::ChunkSize);
 
     //////////////////////////////////////////////////
@@ -211,14 +219,14 @@ namespace VCore
     // CVoxelSpace functions
     //////////////////////////////////////////////////
 
-    CVoxelSpace::CVoxelSpace(IStreamable *p_Stream) : m_VoxelsCount(0), m_Stream(p_Stream), m_ModelLoaded(false), m_ChunkCache(Math::Vec3i(), nullptr) {}
+    CVoxelSpace::CVoxelSpace(IStreamable *p_Stream) : m_VoxelsCount(0), m_Source(p_Stream), m_ModelLoaded(false), m_ChunkCache(Math::Vec3i(), nullptr) {}
     CVoxelSpace::CVoxelSpace(CVoxelSpace &&p_Other) : m_ChunkCache(Math::Vec3i(), nullptr) { *this = std::move(p_Other); }
 
     CVoxelSpace::~CVoxelSpace() 
     { 
         Clear(); 
-        if(m_Stream) 
-            delete m_Stream;
+        if(m_Source) 
+            delete m_Source;
     }
 
     void CVoxelSpace::Insert(const pair &p_pair)
@@ -329,11 +337,20 @@ namespace VCore
         const_cast<CVoxelSpace*>(this)->CheckLoadModel();
         return CChunkQueryList(m_Chunks, [](const CBBox &p_BBox, const CChunk *p_Chunk, CChunkQueryList::IUserdata *p_Userdata)
         {
-            auto data = p_Userdata->GetUserdata<std::pair<const CFrustum*, Math::Mat4x4>>();
-            const CFrustum *frustum = data->first;
+            auto data = p_Userdata->GetUserdata<FrustumQuery>();
+            const CFrustum *frustum = data->Frustum;
+
+            // Loads this chunk, if it's inside the frustum, otherwise ignore this chunk.
+            if(p_Chunk->IsEmpty() && data->Source)
+            {
+                if(frustum->IsOnFrustum(p_BBox))
+                    data->Source->ReadChunk(p_BBox.Beg, const_cast<CChunk*>(p_Chunk));
+                else
+                    return false;
+            }
             
-            return frustum->IsOnFrustum(p_Chunk->inner_bbox(data->second * p_BBox.Beg));
-        }, new CChunkQueryList::TUserdata<std::pair<const CFrustum*, Math::Mat4x4>>(new std::pair<const CFrustum*, Math::Mat4x4>(p_Frustum, p_ModelMatrix), true));
+            return !p_Chunk->IsEmpty() && frustum->IsOnFrustum(p_Chunk->inner_bbox(data->ModelMatrix * p_BBox.Beg));
+        }, new CChunkQueryList::TUserdata<FrustumQuery>(new FrustumQuery(p_Frustum, p_ModelMatrix, m_Source), true));
     }
 
     CVoxelSpace::iterator CVoxelSpace::Next(const Math::Vec3i &p_FromPosition) const
@@ -363,10 +380,10 @@ namespace VCore
 
     void CVoxelSpace::CheckLoadModel()
     {
-        if(m_Stream && !m_ModelLoaded && !m_Stream->SupportsChunkOffloading())
+        if(m_Source && !m_ModelLoaded && !m_Source->SupportsChunkOffloading())
         {
             m_ModelLoaded = true;
-            m_Stream->ReadVoxelSpace(*this);
+            m_Source->ReadVoxelSpace(*this);
         }
     }
 
@@ -433,17 +450,17 @@ namespace VCore
         return *this;
     }
 
-    void CVoxelSpace::SetStream(IStreamable *p_Strm)
+    void CVoxelSpace::SetSource(IStreamable *p_Source)
     {
-        if(m_Stream)
-            delete m_Stream;
+        if(m_Source)
+            delete m_Source;
 
-        m_Stream = p_Strm;
+        m_Source = p_Source;
     }
 
     void CVoxelSpace::Unload()
     {
-        if(m_Stream && m_ModelLoaded && !m_Stream->SupportsChunkOffloading())
+        if(m_Source && m_ModelLoaded && !m_Source->SupportsChunkOffloading())
             Clear();
     }
 

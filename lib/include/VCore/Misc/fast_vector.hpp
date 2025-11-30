@@ -113,7 +113,12 @@ namespace VCore
                 {
                     auto dataPtr = m_Data + from;
                     for (uint64_t i = 0; i < size; i++) 
-                        new(&dataPtr[i]) T(p_Begin[i]);
+                    {
+                        if constexpr (std::is_move_constructible_v<T>)
+                            new(&dataPtr[i]) T(std::move(p_Begin[i]));
+                        else
+                            new(&dataPtr[i]) T(p_Begin[i]);
+                    }
                 }
                     
                 m_Size += size;
@@ -125,7 +130,23 @@ namespace VCore
                     return;
 
                 m_Capacity += (p_Size - m_Capacity) + 1;
-                m_Data = static_cast<T*>(custom_realloc(static_cast<void*>(m_Data), m_Capacity * sizeof(T)));
+
+                if constexpr(std::is_trivially_copyable_v<T>)
+                    m_Data = static_cast<T*>(custom_realloc(static_cast<void*>(m_Data), m_Capacity * sizeof(T)));
+                else
+                {
+                    auto tmp = static_cast<T*>(custom_malloc(m_Capacity * sizeof(T)));
+                    for (uint64_t i = 0; i < m_Size; i++) 
+                    {
+                        if constexpr (std::is_move_constructible_v<T>)
+                            new(&tmp[i]) T(std::move(m_Data[i]));
+                        else
+                            new(&tmp[i]) T(m_Data[i]);
+                    }
+
+                    custom_free(m_Data);
+                    m_Data = tmp;
+                }
             }
 
             inline fast_vector &operator=(fast_vector &&p_Other) noexcept

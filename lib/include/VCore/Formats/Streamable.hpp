@@ -49,7 +49,7 @@ namespace VCore
              * 
              * @return Returns true on success otherwise false.
              */
-            virtual bool WriteChunk(const Math::Vec3i &_Position, const CChunk *_Chunk) { (void)_Position; (void)_Chunk; return false; }
+            virtual bool WriteChunk(const Math::Vec3i &p_Position, const CChunk *p_Chunk) { (void)p_Position; (void)p_Chunk; return false; }
 
             /** 
              * @brief Reads a chunk from the stream. 
@@ -59,7 +59,7 @@ namespace VCore
              * 
              * @return Returns true on success otherwise false.
              */
-            virtual bool ReadChunk(const Math::Vec3i &_Position, CChunk *_Chunk) { (void)_Position; (void)_Chunk; return false; }
+            virtual bool ReadChunk(const Math::Vec3i &p_Position, CChunk *p_Chunk) { (void)p_Position; (void)p_Chunk; return false; }
 
             /**
              * @brief Writes a whole voxelspace (Voxel model) to the stream
@@ -68,7 +68,7 @@ namespace VCore
              * 
              * @return Returns true on success otherwise false.
              */
-            virtual bool WriteVoxelSpace(const CVoxelSpace &_Space) { (void)_Space; return false; }
+            virtual bool WriteVoxelSpace(const CVoxelSpace &p_Space) { (void)p_Space; return false; }
 
             /**
              * @brief Reads a whole voxelspace (Voxel model) from the stream
@@ -77,7 +77,7 @@ namespace VCore
              * 
              * @return Returns true on success otherwise false.
              */
-            virtual bool ReadVoxelSpace(CVoxelSpace &_Space) { (void)_Space; return false; }
+            virtual bool ReadVoxelSpace(CVoxelSpace &p_Space) { (void)p_Space; return false; }
 
             virtual ~IStreamable() = default;
 

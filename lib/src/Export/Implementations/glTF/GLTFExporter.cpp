@@ -32,6 +32,7 @@
 #include <VCore/Misc/fast_vector.hpp>
 #include <VCore/Misc/FileStream.hpp>
 #include <VCore/Meshing/MaterialManager.hpp>
+#include <utility>
 
 namespace VCore
 {
@@ -152,7 +153,7 @@ namespace VCore
 
             // Create the surface, and sets all needed accessors.
             mesh.AddPrimitive(GetGLTFMaterialHandle(surface->MaterialHandle), {
-                { "POSITION",  positionAccessor },
+                { "POSITION",  std::move(positionAccessor) },
                 { "NORMAL", GLTF::CAccessor(vertexBufferView, GLTF::GLTFTypes::FLOAT, "VEC3", surface->GetVertexCount()) },
                 { "COLOR_0", GLTF::CAccessor(vertexBufferView, GLTF::GLTFTypes::UNSIGNED_BYTE, "VEC4", surface->GetVertexCount()) },
                 { "INDICES", GLTF::CAccessor(indicesBufferView, GLTF::GLTFTypes::INT, "SCALAR", surface->GetFaceCount() * 3) }

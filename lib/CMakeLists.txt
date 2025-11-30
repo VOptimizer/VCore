@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.15.0)
 project(VCore VERSION 0.1.0 LANGUAGES CXX C)
 
 # Basic compiler setup
@@ -120,11 +120,8 @@ INSTALL(
     FILES_MATCHING PATTERN "*.h*")
 
 install(TARGETS ${PROJECT_NAME}
-    # for executables and dll on Win
+    EXPORT EngineTargets
     RUNTIME DESTINATION bin
-    # shared libraries
     LIBRARY DESTINATION lib
-    # for static libraries
     ARCHIVE DESTINATION lib
-    # public headers
     INCLUDES DESTINATION include)

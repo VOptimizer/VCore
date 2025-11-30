@@ -28,7 +28,6 @@
 #include "Iterator.hpp"
 #include <VCore/Voxel/BBox.hpp>
 #include "../Voxel.hpp"
-#include "VCore/Misc/unordered_dense.h"
 #include <cstdint>
 #include <utility>
 #include <VCore/VConfig.hpp>

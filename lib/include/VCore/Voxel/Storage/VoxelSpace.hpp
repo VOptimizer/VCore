@@ -229,7 +229,7 @@ namespace VCore
             CVoxelSpace &operator=(const CVoxelSpace &p_Other) = delete;
             CVoxelSpace &operator=(CVoxelSpace &&p_Other);
 
-            void SetStream(IStreamable *p_Strm);
+            void SetSource(IStreamable *p_Source);
 
             /** Unloads this model. */
             void Unload();
@@ -246,7 +246,7 @@ namespace VCore
             ankerl::unordered_dense::map<Math::Vec3i, CChunk*, Math::Vec3iHasher> m_Chunks;
 
             // Allows to stream content from and to disk or other storage devices.
-            IStreamable *m_Stream;
+            mutable IStreamable *m_Source;
             bool m_ModelLoaded;
             std::pair<Math::Vec3i, CChunk*> m_ChunkCache;
     };

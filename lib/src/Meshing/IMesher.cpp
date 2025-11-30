@@ -74,7 +74,7 @@ namespace VCore
         {
             p_Mesh->MarkAsProcessed(c);
             futures.push_back(std::async(&IMesher::GenerateMeshChunk, this, p_Mesh, c, true));
-            while(futures.size() >= std::thread::hardware_concurrency())
+            while(futures.size() >= 1) //std::thread::hardware_concurrency())
             {
                 auto it = futures.begin();
                 while (it != futures.end())

@@ -63,7 +63,7 @@ namespace VCore
         }
         
         if(m_Mode == FileMode::STREAMED)
-            m->SetStream(new CGoxelStreamable(m_IOHandler, m_DataStream->GetFilePath(), std::move(m_BL16Offsets), std::move(m_Materials), std::move(m_Chunks), m_BeginX, m_EndX));
+            m->SetSource(new CGoxelStreamable(m_IOHandler, m_DataStream->GetFilePath(), std::move(m_BL16Offsets), std::move(m_Materials), std::move(m_Chunks), m_BeginX, m_EndX));
 
         m_Chunks.clear();
         m_Materials.clear();

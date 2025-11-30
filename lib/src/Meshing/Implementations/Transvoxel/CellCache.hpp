@@ -25,6 +25,7 @@
 #ifndef CELLCACHE_HPP
 #define CELLCACHE_HPP
 
+#include <VCore/Voxel/Voxel.hpp>
 #include <VCore/VConfig.hpp>
 #include <VCore/Math/Vector.hpp>
 #include <cstdint>
@@ -37,35 +38,47 @@ namespace VCore
         public:
             CCellCache()
             {
+                Reset();
+            }
+
+            void Reset()
+            {
                 std::memset(m_Cells, 0xFF, sizeof(m_Cells));
             }
 
-            void ResetLayer(uint8_t p_Layer)
+            void CacheVertex(const Math::Vec3i &p_Pos, uint8_t p_Vertex, uint32_t p_Index, const CVoxel &p_Voxel)
             {
-                std::memset(&m_Cells[(p_Layer * (Config::ChunkSize * Config::ChunkSize))], 0xFF, sizeof(Cell) * Config::ChunkSize * Config::ChunkSize);
+                auto idx = GetIndex(p_Pos);
+                m_Cells[idx].VertexIndex[p_Vertex] = p_Index;
+                m_Cells[idx].Voxel = p_Voxel;
             }
 
-            void CacheVertex(const Math::Vec3i &p_Pos, uint8_t p_Vertex, uint32_t p_Index)
+            bool HasCachedVertex(const Math::Vec3i &p_Pos, uint8_t p_Vertex, const CVoxel &p_Voxel)
             {
-                m_Cells[((p_Pos.z & 0x1) * (Config::ChunkSize * Config::ChunkSize)) + p_Pos.x + Config::ChunkSize * p_Pos.y].VertexIndex[p_Vertex] = p_Index;
-            }
-
-            bool HasCachedVertex(const Math::Vec3i &p_Pos, uint8_t p_Vertex)
-            {
-                return m_Cells[((p_Pos.z & 0x1) * (Config::ChunkSize * Config::ChunkSize)) + p_Pos.x + Config::ChunkSize * p_Pos.y].VertexIndex[p_Vertex] != 0xFFFFFFFF;
+                auto idx = GetIndex(p_Pos);
+                return m_Cells[idx].VertexIndex[p_Vertex] != 0xFFFFFFFF && m_Cells[idx].Voxel == p_Voxel;
             }
 
             uint32_t GetCachedVertex(const Math::Vec3i &p_Pos, uint8_t p_Vertex)
             {
-                return m_Cells[((p_Pos.z & 0x1) * (Config::ChunkSize * Config::ChunkSize)) + p_Pos.x + Config::ChunkSize * p_Pos.y].VertexIndex[p_Vertex];
+                auto idx = GetIndex(p_Pos);
+                return m_Cells[idx].VertexIndex[p_Vertex];
             }
         private:
             struct Cell
             {
                 uint32_t VertexIndex[4];
+                CVoxel Voxel;
             };
 
-            Cell m_Cells[2 * (Config::ChunkSize * Config::ChunkSize)];
+            constexpr static auto CHUNK_SIZE = Config::ChunkSize + 1;
+
+            uint32_t GetIndex(const Math::Vec3i &p_Pos)
+            {
+                return ((p_Pos.z & 0x1) * (CHUNK_SIZE * CHUNK_SIZE)) + p_Pos.x + CHUNK_SIZE * p_Pos.y;
+            }
+
+            Cell m_Cells[2 * (CHUNK_SIZE * CHUNK_SIZE)];
     };
 }
 

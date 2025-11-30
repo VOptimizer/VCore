@@ -23,10 +23,11 @@
  */
 
 #include "MagicaVoxelFormat.hpp"
+#include <algorithm>
 #include <cstddef>
+#include <cstdlib>
 #include <cstdint>
 #include <cstring>
-#include <sstream>
 #include <VCore/Misc/Exceptions.hpp>
 #include "MagicaVoxelDictionary.hpp"
 #include "MagicaVoxelModelParser.hpp"
@@ -38,6 +39,8 @@
 #include <VCore/Math/Vector.hpp>
 #include <VCore/Misc/FileStream.hpp>
 #include <VCore/Misc/fast_vector.hpp>
+#include <string>
+#include <string_view>
 
 namespace VCore
 {
@@ -103,6 +106,42 @@ namespace VCore
             }
         }
     };
+
+    int ConvertRangeToInt(std::string_view::const_iterator p_Begin, std::string_view::const_iterator p_End)
+    {
+        int result = 0;
+        bool negative = false;
+        while (p_Begin != p_End) 
+        {
+            if(*p_Begin == '-')
+                negative = true;
+            else
+                result = result * 10 + (*p_Begin - '0');
+
+            p_Begin++;
+        }
+
+        return result * (negative ? -1 : 1);
+    }
+
+    Math::Vec3i ParsePosition(std::string_view p_View)
+    {
+        Math::Vec3i result;
+        auto spaceIt = std::find(p_View.begin(), p_View.end(), ' ');
+
+        result.x = ConvertRangeToInt(p_View.begin(), spaceIt);
+
+        // Scenetree always in OpenGL Y-UP Space
+        auto begin = spaceIt + 1;
+        spaceIt = std::find(begin, p_View.end(), ' ');
+        result.z = ConvertRangeToInt(begin, spaceIt);
+
+        begin = spaceIt + 1;
+        spaceIt = std::find(begin, p_View.end(), ' ');
+        result.y = ConvertRangeToInt(begin, spaceIt);
+
+        return result;
+    }
 
     void CMagicaVoxelFormat::ClearCache()
     {
@@ -768,12 +807,7 @@ namespace VCore
                     std::string value(size, '\0'); 
                     m_DataStream->Read(&value[0], size);
 
-                    std::stringstream tmp;
-                    tmp << value;
-
-                    // Scenetree always in OpenGL Y-UP Space
-                    tmp >> frameTransform.Translation.x >> frameTransform.Translation.z >> frameTransform.Translation.y;
-                    // frameTransform.Translation.x *= -1;
+                    frameTransform.Translation = ParsePosition(value);
                 }
                 else if(key == "_r")
                 {

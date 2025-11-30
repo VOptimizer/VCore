@@ -30,7 +30,7 @@
 #include <VCore/Meshing/Material.hpp>
 #include "GoxelModelParser.hpp"
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace VCore
 {

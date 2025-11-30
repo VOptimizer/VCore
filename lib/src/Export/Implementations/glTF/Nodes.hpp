@@ -157,9 +157,21 @@ namespace VCore::GLTF
     {
         public:
             CBuffer(const uint64_t p_Size, const std::string &p_Uri) : Size(p_Size), Uri(p_Uri) {}
+            CBuffer(CBuffer &&p_Other) { *this = std::move(p_Other); }
+            CBuffer(const CBuffer &) = delete;
 
             uint64_t Size;
             std::string Uri;
+
+            CBuffer &operator=(const CBuffer &) = delete;
+            CBuffer &operator=(CBuffer &&p_Other)
+            {
+                Size = p_Other.Size;
+                Uri = std::move(p_Other.Uri);
+                p_Other.Size = 0;
+
+                return *this;
+            }
 
             void Serialize(CJSON &p_Json) const
             {
@@ -186,6 +198,25 @@ namespace VCore::GLTF
                 const uint64_t p_Offset, 
                 const BufferTarget p_Target, 
                 const uint64_t p_Stride) : Size(p_Size), Offset(p_Offset), Target(p_Target), ByteStride(p_Stride) {}
+
+            CBufferView(const CBufferView &) = delete;
+            CBufferView(CBufferView &&p_Other) { *this = std::move(p_Other); }
+
+            CBufferView &operator=(const CBufferView &) = delete;
+            CBufferView &operator=(CBufferView &&p_Other)
+            {
+                Size = p_Other.Size;
+                Offset = p_Other.Offset;
+                Target = p_Other.Target;
+                ByteStride = p_Other.ByteStride;
+
+                p_Other.Size = 0;
+                p_Other.Offset = 0;
+                p_Other.Target = BufferTarget::NONE;
+                p_Other.ByteStride = 0;
+
+                return *this;
+            }
 
             uint64_t Size;
             uint64_t Offset;
@@ -215,6 +246,40 @@ namespace VCore::GLTF
                 const std::string_view p_Type,
                 const uint64_t p_Count
             ) : BufferView(p_BufferView), ComponentType(p_ComponentType), Type(p_Type), Count(p_Count) {}
+
+            CAccessor(const CAccessor &p_Other) { *this = p_Other; }
+            CAccessor(CAccessor &&p_Other) { *this = std::move(p_Other); }
+
+            CAccessor &operator=(const CAccessor &p_Other)
+            {
+                BufferView = p_Other.BufferView;
+                ComponentType = p_Other.ComponentType;
+                Type = p_Other.Type;
+                Count = p_Other.Count;
+                Offset = p_Other.Offset;
+                m_Min = p_Other.m_Min;
+                m_Max = p_Other.m_Max;
+
+                return *this;
+            }
+
+            CAccessor &operator=(CAccessor &&p_Other)
+            {
+                BufferView = p_Other.BufferView;
+                ComponentType = p_Other.ComponentType;
+                Type = std::move(p_Other.Type);
+                Count = p_Other.Count;
+                Offset = p_Other.Offset;
+                m_Min = std::move(p_Other.m_Min);
+                m_Max = std::move(p_Other.m_Max);
+
+                p_Other.BufferView = 0;
+                p_Other.ComponentType = GLTFTypes::UNSIGNED_BYTE;
+                p_Other.Count = 0;
+                p_Other.Offset = 0;
+
+                return *this;
+            }
 
             uint64_t BufferView{};
             GLTFTypes ComponentType{};
@@ -263,6 +328,10 @@ namespace VCore::GLTF
                 p_json.AddPair("count", Count);
             }
 
+            ~CAccessor()
+            {
+                Type.clear();
+            }
         private:
             fast_vector<float> m_Max, m_Min;
     };
@@ -271,6 +340,21 @@ namespace VCore::GLTF
     {
         public:
             explicit CPrimitive(uint64_t p_MaterialHandle) : m_MaterialHandle(p_MaterialHandle) {}
+            CPrimitive(const CPrimitive&) = delete;
+            CPrimitive(CPrimitive &&p_Other) { *this = std::move(p_Other); }
+
+            CPrimitive &operator=(const CPrimitive&) = delete;
+            CPrimitive &operator=(CPrimitive &&p_Other)
+            {
+                IndicesAccessor = p_Other.IndicesAccessor;
+                m_MaterialHandle = p_Other.m_MaterialHandle;
+                m_Attributes = std::move(p_Other.m_Attributes);
+
+                p_Other.IndicesAccessor = 0;
+                p_Other.m_MaterialHandle = 0;
+
+                return *this;
+            }
 
             uint64_t IndicesAccessor{};
 
@@ -298,6 +382,21 @@ namespace VCore::GLTF
             using AccessorValue = std::pair<const char*, CAccessor>;
 
             explicit CMesh(GLTFDocument *p_DocumentRef, const uint64_t p_MeshHandle) : m_DocumentRef(p_DocumentRef), m_MeshHandle(p_MeshHandle) {}
+            CMesh(CMesh &&p_Other) { *this = std::move(p_Other); }
+            CMesh(const CMesh &) = default;
+
+            CMesh &operator=(const CMesh &) = default;
+            CMesh &operator=(CMesh &&p_Other)
+            {
+                m_Primitives = std::move(p_Other.m_Primitives);
+                m_DocumentRef = p_Other.m_DocumentRef;
+                m_MeshHandle = p_Other.m_MeshHandle;
+
+                p_Other.m_DocumentRef = nullptr;
+                p_Other.m_MeshHandle = 0;
+
+                return *this;
+            }
 
             [[nodiscard]] uint64_t GetMeshHandle() const { return m_MeshHandle; }
 
@@ -379,6 +478,17 @@ namespace VCore::GLTF
     {
         public:
             explicit CMaterial(const VCore::CMaterial *p_MaterialRef) : MaterialRef(p_MaterialRef) {}
+            CMaterial(const CMaterial&) = delete;
+            CMaterial(CMaterial &&p_Other) { *this = std::move(p_Other); }
+
+            CMaterial &operator=(const CMaterial&) = delete;
+            CMaterial &operator=(CMaterial &&p_Other)
+            {
+                MaterialRef = p_Other.MaterialRef;
+                p_Other.MaterialRef = nullptr;
+
+                return *this;
+            }
 
             const VCore::CMaterial *MaterialRef;
 
