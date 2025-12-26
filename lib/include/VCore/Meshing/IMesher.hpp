@@ -61,10 +61,15 @@ namespace VCore
             template<class SurfaceType>
             static Mesher Create(MesherTypes p_Type)
             {
-                auto result = Create(p_Type);
-                result->SetSurfaceFactory([]() -> ISurface* {
+                return Create(p_Type, [](void*) -> ISurface* {
                     return new SurfaceType();
                 });
+            }
+
+            static Mesher Create(MesherTypes p_Type, SurfaceFactory p_Factory)
+            {
+                auto result = Create(p_Type);
+                result->SetSurfaceFactory(p_Factory);
 
                 return result;
             }

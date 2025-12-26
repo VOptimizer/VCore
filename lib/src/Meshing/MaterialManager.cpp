@@ -78,11 +78,12 @@ namespace VCore
         uint8_t FindMaterialSlot(const CMaterial &p_Material, uint8_t &p_Hash)
         {
             p_Hash = HashMaterial(p_Material);            
-            auto slot = FindMaterialSlot(p_Hash);
-            if(slot == UCHAR_MAX && g_Slots[0].Material == p_Material)
-                return 0;
+            // auto slot = FindMaterialSlot(p_Hash);
+            // if(slot == UCHAR_MAX && g_Slots[0].Material == p_Material)
+            //     return 0;
 
-            return slot;
+            // return slot;
+            return FindMaterialSlot(p_Hash);
         }
 
         uint8_t CreateMaterial(const uint64_t p_Hash)
@@ -160,5 +161,13 @@ namespace VCore
             if(!g_NextFreeSlot || g_NextFreeSlot > (g_Slots + p_MaterialHandle))
                 g_NextFreeSlot = g_Slots + p_MaterialHandle;
         }
+
+        class InitHack
+        {
+            public:
+                InitHack() 
+                { g_Slots[0].Hash = HashMaterial(g_Slots[0].Material); }
+        };
+        InitHack _;
     } // namespace MaterialManager
 } // namespace VCore

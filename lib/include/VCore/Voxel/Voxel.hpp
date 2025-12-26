@@ -35,15 +35,15 @@ namespace VCore
     {
         public:
             CVoxel() : m_Value(0xFFFFFFFF) { }
-            CVoxel(uint32_t _Color, uint32_t _Material) : m_Value((_Color & 0xFFFFFF) | ((_Material & 0xFF) << 24)) { }
-            CVoxel(const CVoxel &_Other) { *this = _Other; }
+            CVoxel(uint32_t p_Color, uint32_t p_Material) : m_Value((p_Color & 0xFFFFFF) | ((p_Material & 0xFF) << 24)) { }
+            CVoxel(const CVoxel &p_Other) { *this = p_Other; }
 
             inline uint8_t GetMaterial() const { return (m_Value >> 24) & 0xFF; }
             inline uint32_t GetColor() const { return m_Value & 0xFFFFFF; }
 
-            inline CVoxel &operator=(const CVoxel &_Other)
+            inline CVoxel &operator=(const CVoxel &p_Other)
             {
-                m_Value = _Other.m_Value;
+                m_Value = p_Other.m_Value;
                 return *this;
             }
 
@@ -60,14 +60,14 @@ namespace VCore
                 return m_Value;
             };
 
-            inline bool operator==(const CVoxel &_rhs) const
+            inline bool operator==(const CVoxel &p_rhs) const
             {
-                return m_Value == _rhs.m_Value;
+                return m_Value == p_rhs.m_Value;
             }
 
-            inline bool operator!=(const CVoxel &_rhs) const
+            inline bool operator!=(const CVoxel &p_rhs) const
             {
-                return m_Value != _rhs.m_Value;
+                return m_Value != p_rhs.m_Value;
             }
 
             ~CVoxel() = default;

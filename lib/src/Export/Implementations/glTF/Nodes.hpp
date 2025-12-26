@@ -119,9 +119,9 @@ namespace VCore::GLTF
                 m_Scale = p_Other.m_Scale;
 
                 p_Other.m_MeshId = -1;
-                m_Position = Math::Vec3f();
-                m_Rotation = Math::Vec3f();
-                m_Scale = Math::Vec3f();
+                p_Other.m_Position = Math::Vec3f();
+                p_Other.m_Rotation = Math::Vec3f();
+                p_Other.m_Scale = Math::Vec3f();
 
                 return *this;
             }

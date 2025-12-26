@@ -31,7 +31,7 @@ namespace VCore
         auto stream = m_IOHandler->Open(m_FilePath, "rb");
         if(stream)
         {
-            CMagicaVoxelModelParser parser(stream, m_Colorpalette, m_ModelPosition, m_NotDefaultMaterials);
+            CMagicaVoxelModelParser parser(stream, m_Colorpalette, m_ModelPosition, m_MaterialMap);
             parser.FillVoxelSpace(p_Space);
 
             m_IOHandler->Close(stream);

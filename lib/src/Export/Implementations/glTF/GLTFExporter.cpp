@@ -131,7 +131,8 @@ namespace VCore
                 m_BinaryStream->Write(vertex.Pos);
                 m_BinaryStream->Write(vertex.Normal);
 
-                CColor c(vertex.Color);
+                CColor c;
+                c.FromRGBA(vertex.Color);
                 uint8_t color[4] = {
                     // Converts the RGB value from sRGB to linear colorspace.
                     static_cast<uint8_t>(pow(static_cast<float>(c.R) / 255.f, 2.2f) * 255.f), 

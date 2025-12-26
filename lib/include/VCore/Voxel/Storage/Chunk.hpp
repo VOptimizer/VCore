@@ -182,7 +182,7 @@ namespace VCore
 
     struct SChunkMeta
     {
-        size_t UniqueId;            //!< Unique identifier of the chunks. Only changes, if the voxel mesh is resized.
+        size_t UniqueId;            //!< Unique identifier of the chunks.
         const CChunk *Chunk;        //!< Chunk with is associated with this metadata.
         CBBox TotalBBox;            //!< The total bounding box of the chunk.
         CBBox InnerBBox;            //!< The bounding box of the model inside the chunk.

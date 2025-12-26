@@ -30,6 +30,10 @@
 
 namespace VCore
 {
+  inline constexpr unsigned long long operator ""_KiB(unsigned long long p_Value) { return p_Value * 1024; };
+  inline constexpr unsigned long long operator ""_MiB(unsigned long long p_Value) { return operator""_KiB(p_Value) * 1024; };
+  inline constexpr unsigned long long operator ""_GiB(unsigned long long p_Value) { return operator""_MiB(p_Value) * 1024; };
+
   namespace Config
   {
     // Type of the bitmask. This is also used to determine the size of the chunks.
@@ -53,6 +57,9 @@ namespace VCore
 
     // Maximum count of materials
     static constexpr uint8_t MaxMaterialSlots = UCHAR_MAX;
+
+    // File buffer size
+    static constexpr uint32_t MaxFileReadBufferSize = 100_MiB;
   }
 }
 

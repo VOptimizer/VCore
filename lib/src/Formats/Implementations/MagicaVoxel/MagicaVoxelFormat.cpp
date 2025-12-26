@@ -39,8 +39,10 @@
 #include <VCore/Math/Vector.hpp>
 #include <VCore/Misc/FileStream.hpp>
 #include <VCore/Misc/fast_vector.hpp>
+#include <VCore/Debug.hpp>
 #include <string>
 #include <string_view>
+#include <cstdio>
 
 namespace VCore
 {
@@ -70,11 +72,13 @@ namespace VCore
             if(it != ParentTransforms.end()) [[likely]]
             {
                 p_Node->Name = it->second.Name;
+                p_Node->Visible = !it->second.Hidden;
 
                 if(!it->second.Frames.empty())
                 {
                     p_Node->SetPosition(it->second.Frames[0].Translation);
                     p_Node->SetRotation(it->second.Frames[0].Rotation);
+                    p_Node->SetScale(it->second.Frames[0].Scale);
                 }
 
                 parentId = it->second.NodeId;
@@ -148,7 +152,7 @@ namespace VCore
         IVoxelFormat::ClearCache();
         LoadDefaultPalette();
 
-        m_NotDefaultMaterials = nullptr;
+        m_MaterialMap = nullptr;
     }
 
     void CMagicaVoxelFormat::LoadDefaultPalette()
@@ -377,7 +381,7 @@ namespace VCore
                                         auto mapIt = m_VoxelIndexMap.find((uint32_t)voxel);
                                         if(mapIt == m_VoxelIndexMap.end())
                                         {
-                                            m_ColorPalette[m_VoxelIndex - 1] = 0xFF000000 | voxel.GetColor();
+                                            m_ColorPalette[m_VoxelIndex - 1].FromRGBA(0xFF000000 | voxel.GetColor());
                                             m_Materials.push_back(voxel.GetMaterial());
 
                                             // auto mat = MaterialManager::GetMaterial(voxel.GetMaterial());
@@ -559,8 +563,8 @@ namespace VCore
         int Version = m_DataStream->Read<int>();
         if(Version < 150)
             throw CVoxelFormatException("Version: " + std::to_string(Version) + " is not supported");
-
-        LoadMaterials();
+          
+        LoadMaterials(); 
         ProcessChunks();
     }
 
@@ -623,8 +627,11 @@ namespace VCore
 
     void CMagicaVoxelFormat::ProcessChunks()
     {
+        START_PROFILER("LoadColorPalette", TimeUnit::NANO)           
         // Preloads the color palette.
         LoadColorPalette();
+        END_PROFILER()
+
         if(!m_DataStream->Eof())
         {
             SMagicaVoxelChunkHeader chunk = m_DataStream->Read<SMagicaVoxelChunkHeader>();
@@ -642,7 +649,12 @@ namespace VCore
                     chunk = m_DataStream->Read<SMagicaVoxelChunkHeader>();
                     switch (chunk.Id) 
                     {
-                        case SIZE_CHUNK_ID: ProcessModel(colorpalette); break;
+                        case SIZE_CHUNK_ID: 
+                        {
+                            // START_PROFILER("ProcessModel", TimeUnit::NANO)
+                            ProcessModel(colorpalette);
+                            // END_PROFILER()
+                        } break;
 
                         case TRANSFORM_CHUNK_ID:
                         {
@@ -726,13 +738,14 @@ namespace VCore
                 material.Emission = std::stof(value);
         }
 
-        auto defaultMaterial = MaterialManager::GetMaterial(0);
-        if(*defaultMaterial != material) // Only materials, which are not the default one, will be indexed.
-        {
-            if(!m_NotDefaultMaterials)
-                m_NotDefaultMaterials = std::make_shared<ankerl::unordered_dense::map<uint8_t, CMaterial, Uint8Hasher>>();
+        if(!m_MaterialMap)
+            m_MaterialMap = std::make_shared<MaterialMap>();
 
-            m_NotDefaultMaterials->insert({materialIdx, material});
+        if(materialIdx < 257)
+        {
+            auto &matConfig =  m_MaterialMap->Materials[materialIdx];
+            matConfig.first = material;
+            matConfig.second = 0xFF;
         }
     }
 
@@ -742,13 +755,13 @@ namespace VCore
         Math::Vec3f size;
         if(static_cast<unsigned>(m_Mode) & static_cast<unsigned>(FileMode::STREAMED))
         {
-            model = std::make_shared<CVoxelSpace>(new CMagicaVoxelStreamable(m_IOHandler, p_Colorpalette, m_DataStream->Tell(), m_NotDefaultMaterials, m_DataStream->GetFilePath()));
+            model = std::make_shared<CVoxelSpace>(new CMagicaVoxelStreamable(m_IOHandler, p_Colorpalette, m_DataStream->Tell(), m_MaterialMap, m_DataStream->GetFilePath()));
             size = CMagicaVoxelModelParser::ProcessSize(m_DataStream);
         }
         else
         {
             model = std::make_shared<CVoxelSpace>();
-            CMagicaVoxelModelParser parser(m_DataStream, p_Colorpalette, m_DataStream->Tell(), m_NotDefaultMaterials);
+            CMagicaVoxelModelParser parser(m_DataStream, p_Colorpalette, m_DataStream->Tell(), m_MaterialMap);
             parser.FillVoxelSpace(*model);
             size = parser.GetSize();
         }
@@ -777,9 +790,16 @@ namespace VCore
                 m_DataStream->Read(&value[0], size);
                 ret.Name = value;
             }
+            else if(key == "_hidden")
+            {
+                size = m_DataStream->Read<uint32_t>();
+                char hidden = 0;
+                m_DataStream->Read(&hidden, size);
+                ret.Hidden = hidden;
+            }
             else
             {
-                int size = m_DataStream->Read<int>();
+                size = m_DataStream->Read<int>();
                 m_DataStream->Seek(size);
             }            
         }
@@ -808,6 +828,7 @@ namespace VCore
                     m_DataStream->Read(&value[0], size);
 
                     frameTransform.Translation = ParsePosition(value);
+                    frameTransform.Translation.x *= -1;
                 }
                 else if(key == "_r")
                 {
@@ -815,24 +836,26 @@ namespace VCore
                     std::string value(size, '\0'); 
                     m_DataStream->Read(&value[0], size);
 
-                    char rot = std::stoi(value);
+                    int rot = std::stoi(value);
 
-                    uint8_t idx1 = rot & 3;
-                    uint8_t idx2 = (rot >> 2) & 3;
-                    uint8_t idx3 = 3 - idx1 - idx2;
+                    uint8_t row1Idx = rot & 3;
+                    uint8_t row2Idx = (rot >> 2) & 3;
+                    uint8_t row3Idx = 3 - (row1Idx + row2Idx);
 
                     auto rotation = Math::Mat4x4(Math::Vec4f(0, 0, 0, 0),
                                             Math::Vec4f(0, 0, 0, 0),
                                             Math::Vec4f(0, 0, 0, 0),
                                             Math::Vec4f(0, 0, 0, 1));
 
-                    rotation.x.v[idx1] = ((rot & 0x10) == 0x10) ? -1 : 1;
-                    rotation.y.v[idx2] = ((rot & 0x20) == 0x20) ? -1 : 1;
-                    rotation.z.v[idx3] = ((rot & 0x40) == 0x40) ? -1 : 1;
+                    rotation.x.v[row1Idx] = ((rot & 0x10) == 0x10) ? -1 : 1;
+                    rotation.y.v[row2Idx] = ((rot & 0x20) == 0x20) ? -1 : 1;
+                    rotation.z.v[row3Idx] = ((rot & 0x40) == 0x40) ? -1 : 1;
 
                     // Gets the euler angle, y is the up axis.
                     frameTransform.Rotation = rotation.GetEuler();
+                    frameTransform.Scale = rotation.GetScale();
                     std::swap(frameTransform.Rotation.y, frameTransform.Rotation.z);
+                    std::swap(frameTransform.Scale.y, frameTransform.Scale.z);
                 }
                 else if(key == "_f")
                 {

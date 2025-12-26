@@ -29,6 +29,8 @@
 #include <VCore/Voxel/Storage/VoxelSpace.hpp>
 #include <VCore/Meshing/Texture.hpp>
 #include <VCore/Meshing/Material.hpp>
+#include <cstdint>
+#include <utility>
 
 namespace VCore
 {
@@ -43,12 +45,9 @@ namespace VCore
                (static_cast<uint32_t>(p_c4) << 24);
     }
 
-    struct Uint8Hasher
+    struct MaterialMap
     {
-        std::size_t operator()(uint8_t const& p_Value) const noexcept
-        {
-            return static_cast<std::size_t>(p_Value);
-        }
+        std::pair<CMaterial, uint8_t> Materials[257];
     };
 
     class CMagicaVoxelModelParser
@@ -58,9 +57,9 @@ namespace VCore
                 IFileStream *p_Stream, 
                 const std::shared_ptr<uint32_t[]> &p_Colorpalette,
                 uint64_t p_ModelPosition,
-                const std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial, Uint8Hasher>> &p_NotDefaultMaterials) 
+                const std::shared_ptr<MaterialMap> &p_MaterialMap) 
             : m_Stream(p_Stream), m_Colorpalette(p_Colorpalette), 
-            m_ModelPosition(p_ModelPosition), m_NotDefaultMaterials(p_NotDefaultMaterials) {}
+            m_ModelPosition(p_ModelPosition), m_MaterialMap(p_MaterialMap) {}
 
             /**
              * @brief Fills a given voxel space with voxel data
@@ -79,7 +78,7 @@ namespace VCore
             IFileStream *m_Stream;
             std::shared_ptr<uint32_t[]> m_Colorpalette;
             uint64_t m_ModelPosition;
-            std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial, Uint8Hasher>> m_NotDefaultMaterials;
+            std::shared_ptr<MaterialMap> m_MaterialMap;
             Math::Vec3i m_Size;
     };
 } // namespace VCore

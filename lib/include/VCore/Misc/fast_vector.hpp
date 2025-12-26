@@ -149,6 +149,12 @@ namespace VCore
                 }
             }
 
+            inline void resize(size_t p_Size)
+            {
+                reserve(p_Size);
+                m_Size = p_Size;
+            }
+
             inline fast_vector &operator=(fast_vector &&p_Other) noexcept
             {
                 m_Data = std::move(p_Other.m_Data);

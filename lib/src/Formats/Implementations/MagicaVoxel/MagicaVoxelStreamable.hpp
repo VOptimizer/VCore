@@ -39,13 +39,13 @@ namespace VCore
                 const std::shared_ptr<IIOHandler> &p_IOHandler, 
                 const std::shared_ptr<uint32_t[]> &p_Colorpalette,
                 uint64_t p_ModelPosition,
-                const std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial, Uint8Hasher>> &p_NotDefaultMaterials,
+                const std::shared_ptr<MaterialMap> &p_MaterialMap,
                 const std::string &p_FilePath) : 
                 IStreamable(),
                 m_IOHandler(p_IOHandler), 
                 m_Colorpalette(p_Colorpalette),
                 m_ModelPosition(p_ModelPosition),
-                m_NotDefaultMaterials(p_NotDefaultMaterials),
+                m_MaterialMap(p_MaterialMap),
                 m_FilePath(p_FilePath) {}
 
             /** @see IStreamable::SupportsChunkOffloading */
@@ -58,7 +58,7 @@ namespace VCore
             std::shared_ptr<IIOHandler> m_IOHandler;
             std::shared_ptr<uint32_t[]> m_Colorpalette;
             uint64_t m_ModelPosition;
-            const std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial, Uint8Hasher>> m_NotDefaultMaterials;
+            const std::shared_ptr<MaterialMap> m_MaterialMap;
             const std::string m_FilePath;
     };
 } // namespace VCore

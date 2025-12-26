@@ -30,6 +30,7 @@
 #include <VCore/Meshing/Material.hpp>
 #include <VCore/VPlatform.hpp>
 #include <VCore/Misc/fast_vector.hpp>
+#include <utility>
 
 #ifdef VCORE_RTTI_ENABLED
 #include <stdexcept>
@@ -414,7 +415,41 @@ namespace VCore
 //             fast_vector<uint32_t> m_Indices;
 //     };
 
-    using SurfaceFactory = ISurface* (*)();
+    class SurfaceFactory
+    {
+        public:
+            using Callback = ISurface* (*)(void*);
+            SurfaceFactory(Callback p_Callback, void *p_Context = nullptr) : m_Callback(p_Callback), m_Context(p_Context) {}
+            SurfaceFactory(SurfaceFactory &&p_Other) { *this = std::move(p_Other); }
+            SurfaceFactory(const SurfaceFactory &p_Other) { *this = p_Other; }
+
+            SurfaceFactory &operator=(SurfaceFactory &&p_Other)
+            { 
+                m_Callback = p_Other.m_Callback;
+                m_Context = p_Other.m_Context;
+
+                p_Other.m_Callback = nullptr;
+                p_Other.m_Context = nullptr;
+                return *this;    
+            }
+
+            SurfaceFactory &operator=(const SurfaceFactory &p_Other)
+            {
+                m_Callback = p_Other.m_Callback;
+                m_Context = p_Other.m_Context;
+                return *this;    
+            }
+
+            ISurface *operator()() const
+            {
+                return m_Callback(m_Context);
+            }
+        private:
+            Callback m_Callback;
+            void *m_Context;
+    };
+
+    // using SurfaceFactory = ISurface* (*)(void*);
     using DefaultSurface = TSurface<fast_vector<SVertex*>, fast_vector<uint32_t>, UINT32_MAX>;
 } // namespace VCore
 

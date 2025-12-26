@@ -33,6 +33,7 @@
 #include <string>
 
 #include "MagicaVoxelModelParser.hpp"
+#include "VCore/Math/Vector.hpp"
 #include <VCore/Formats/SceneNode.hpp>
 #include <VCore/Voxel/Storage/VoxelSpace.hpp>
 
@@ -52,6 +53,7 @@ namespace VCore
     {
         Math::Vec3i Translation;
         Math::Vec3f Rotation;
+        Math::Vec3f Scale{Math::Vec3f::ONE};
         uint32_t FrameIdx;
     };
 
@@ -83,6 +85,7 @@ namespace VCore
             std::string Name;
 
             uint32_t ChildId;
+            bool Hidden{};
             fast_vector<SFrameTransform> Frames;
     };
 
@@ -161,7 +164,7 @@ namespace VCore
             ankerl::unordered_dense::map<uint32_t, uint8_t> m_VoxelIndexMap;
             fast_vector<uint8_t> m_Materials;
 
-            std::shared_ptr<ankerl::unordered_dense::map<uint8_t, CMaterial, Uint8Hasher>> m_NotDefaultMaterials;
+            std::shared_ptr<MaterialMap> m_MaterialMap;
 
             CColor m_ColorPalette[PALETTE_SIZE];
 

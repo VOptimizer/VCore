@@ -25,7 +25,8 @@
 #ifndef COLOR_HPP
 #define COLOR_HPP
 
-#include <stdint.h>
+#include <cstdint>
+#include <utility>
 
 namespace VCore
 {
@@ -46,14 +47,35 @@ namespace VCore
             };
 
             CColor() : R(255), G(255), B(255), A(255) {}
-
             CColor(unsigned char p_Red, unsigned char p_Green, unsigned char p_Blue, unsigned char p_Alpha) : R(p_Red), G(p_Green), B(p_Blue), A(p_Alpha) {}
-            CColor(uint32_t p_color)
+            CColor(const CColor &p_Other) { *this = p_Other; }
+            CColor(CColor &&p_Other) { *this = std::move(p_Other); }
+
+            CColor &operator=(const CColor &p_Other)
             {
-                FromABGR(p_color);
+                R = p_Other.R;
+                G = p_Other.G;
+                B = p_Other.B;
+                A = p_Other.A;
+                return *this;
             }
 
-            inline void FromABGR(uint32_t p_color)
+            CColor &operator=(CColor &&p_Other)
+            {
+                R = std::move(p_Other.R);
+                G = std::move(p_Other.G);
+                B = std::move(p_Other.B);
+                A = std::move(p_Other.A);
+
+                p_Other.R = 255;
+                p_Other.G = 255;
+                p_Other.B = 255;
+                p_Other.A = 255;
+
+                return *this;
+            }
+
+            inline void FromRGBA(uint32_t p_color)
             {
                 R = p_color & 0xFF;
                 G = (p_color & 0xFF00) >> 8;
@@ -61,12 +83,11 @@ namespace VCore
                 A = (p_color & 0xFF000000) >> 24;
             }
 
-            inline void FromARGB(uint32_t p_color)
+            inline static CColor CreateFromRGBA(uint32_t p_color)
             {
-                R = (p_color & 0xFF0000) >> 16;
-                G = (p_color & 0xFF00) >> 8;
-                B = p_color & 0xFF;
-                A = (p_color & 0xFF000000) >> 24;
+                CColor c;
+                c.FromRGBA(p_color);
+                return c;
             }
 
             inline uint32_t AsRGBA() const
@@ -74,19 +95,9 @@ namespace VCore
                 return (uint32_t)R | (uint32_t)(G << 8) | (uint32_t)(B << 16) | (uint32_t)(A << 24);
             }
 
-            inline uint32_t AsBGRA() const
+            inline bool operator!=(const CColor &p_Rhs)
             {
-                return ((uint32_t)R << 16) | (uint32_t)(G << 8) | (uint32_t)B | (uint32_t)(A << 24);
-            }
-
-            inline uint32_t AsABGR() const
-            {
-                return ((uint32_t)R << 24) | (uint32_t)(G << 16) | ((uint32_t)B << 8) | (uint32_t)A;
-            }
-
-            inline bool operator!=(const CColor &c)
-            {
-                return R != c.R || G != c.G || B != c.B || A != c.A;
+                return R != p_Rhs.R || G != p_Rhs.G || B != p_Rhs.B || A != p_Rhs.A;
             }
 
             ~CColor() = default;

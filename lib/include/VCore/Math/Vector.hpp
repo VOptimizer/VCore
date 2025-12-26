@@ -30,6 +30,7 @@
 #include <VCore/Misc/unordered_dense.h>
 
 // #include "SIMD/x86/Vector-SIMD.hpp"
+#include <cstdint>
 #include <cstring>
 
 namespace VCore
@@ -522,7 +523,7 @@ namespace VCore
         class Vec2fHasher
         {
             public:
-                std::size_t operator()(Vec2f const& p_Vec) const noexcept
+                uint64_t operator()(Vec2f const& p_Vec) const noexcept
                 {
                     union Floatconvert
                     {
@@ -541,7 +542,7 @@ namespace VCore
         class Vec3fHasher
         {
             public:
-                std::size_t operator()(Vec3f const& p_Vec) const noexcept
+                uint64_t operator()(Vec3f const& p_Vec) const noexcept
                 {
                     union Floatconvert
                     {
@@ -563,7 +564,7 @@ namespace VCore
         class Vec3iHasher
         {
             public:
-                std::size_t operator()(Vec3i const& p_Vec) const noexcept
+                uint64_t operator()(Vec3i const& p_Vec) const noexcept
                 {
                     // http://www.beosil.com/download/CollisionDetectionHashing_VMV03.pdf
                     return ((p_Vec.x * 73856093) ^ (p_Vec.y * 19349663) ^ (p_Vec.z * 83492791));

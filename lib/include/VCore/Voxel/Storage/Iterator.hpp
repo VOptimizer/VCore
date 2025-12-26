@@ -41,6 +41,7 @@ namespace VCore
             using pointer = pair*;
 
             CVoxelSpaceIterator();
+            CVoxelSpaceIterator(const CVoxelSpace *p_Space);
             CVoxelSpaceIterator(const CVoxelSpace *p_Space, const CBBox &p_InnerBox, const pair &p_Pair);
             CVoxelSpaceIterator(const CVoxelSpaceIterator &p_Other);
             CVoxelSpaceIterator(CVoxelSpaceIterator &&p_Other);

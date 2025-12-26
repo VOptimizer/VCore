@@ -58,4 +58,6 @@
 #include <VCore/Voxel/PlanesVoxelizer.hpp>
 #include <VCore/Voxel/Frustum.hpp>
 
+#include <VCore/Debug.hpp>
+
 #endif //VCore_HPP

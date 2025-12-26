@@ -25,6 +25,9 @@
 #ifndef BINARYSTREAM_HPP
 #define BINARYSTREAM_HPP
 
+#include "VCore/Misc/fast_vector.hpp"
+#include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -99,7 +102,7 @@ namespace VCore
              * @param p_Size: Size of the buffer.
              * @return Returns the read size.
              */
-            virtual uint64_t Read(char *p_Buffer, uint64_t p_Size) = 0;
+            uint64_t Read(char *p_Buffer, uint64_t p_Size);
 
             /**
              * @brief Writes data to a file.
@@ -114,12 +117,12 @@ namespace VCore
              * @param p_Offset: Offset in bytes to move the cursor.
              * @param p_Origin: The seek origin.
              */
-            virtual void Seek(uint64_t p_Offset, SeekOrigin p_Origin = SeekOrigin::CUR) = 0;
+            void Seek(int64_t p_Offset, SeekOrigin p_Origin = SeekOrigin::CUR);
 
             /**
              * @return Returns the current cursor position in bytes.
              */
-            virtual uint64_t Tell() = 0;
+            uint64_t Tell();
 
             /**
              * @return Returns the size of the file.
@@ -135,7 +138,14 @@ namespace VCore
 
             virtual ~IFileStream() = default;
         protected:
+            virtual uint64_t ReadInternal(char *p_Buffer, uint64_t p_Size) = 0;
+            virtual void SeekInternal(int64_t p_Offset, SeekOrigin p_Origin) = 0;
+            virtual uint64_t TellInternal() = 0;
+            void FillBuffer();
+
+            fast_vector<uint8_t> m_Buffer;
             std::string m_FilePath;
+            int64_t m_ReadPos{};
     };
 
     template<>
@@ -179,14 +189,17 @@ namespace VCore
         public:
             CDefaultFileStream(const std::string &p_File, const char *p_OpenMode);
 
-            uint64_t Read(char *p_Buffer, uint64_t p_Size) override;
             uint64_t Write(const char *p_Buffer, uint64_t p_Size) override;
-            void Seek(uint64_t p_Offset, SeekOrigin p_Origin = SeekOrigin::CUR) override;
-            uint64_t Tell() override;
             uint64_t Size() override;
             void Close() override;
 
             ~CDefaultFileStream() override { Close(); }
+
+        protected:
+            uint64_t ReadInternal(char *p_Buffer, uint64_t p_Size) override;
+            void SeekInternal(int64_t p_Offset, SeekOrigin p_Origin = SeekOrigin::CUR) override;
+            uint64_t TellInternal() override;
+
         private:
             uint64_t m_Size;
             uint64_t m_InternalPosition;

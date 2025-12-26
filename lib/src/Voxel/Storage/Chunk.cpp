@@ -25,6 +25,7 @@
 #include <VCore/Voxel/Storage/Chunk.hpp>
 #include <VCore/Voxel/Storage/VoxelSpace.hpp>
 #include <cstddef>
+#include <VCore/Debug.hpp>
 
 namespace VCore
 {
@@ -144,7 +145,7 @@ namespace VCore
         if(!m_Storage)
             m_Storage = new CByteChunk();
 
-        auto result = m_Storage->SetVoxel(p_pair.second, relPos);
+        bool result = m_Storage->SetVoxel(p_pair.second, relPos);
         Mask.Set(relPos, true);
         UpdateNeighborChunks(m_Space, p_pair.first);
 
@@ -252,14 +253,16 @@ namespace VCore
     {
         int index = (uint32_t)p_Voxel % HASHMAP_SIZE;
 
+        // Guard is inside the SetVoxel method.
         while (m_VoxelIndex[index].RefCount != 0 && m_VoxelIndex[index].Voxel != p_Voxel)
             index = (index + 1) % HASHMAP_SIZE;
         
-        if(m_VoxelIndex[index].RefCount == 0)
+        auto &voxelIndex = m_VoxelIndex[index];
+        if(voxelIndex.RefCount == 0)
             m_VoxelIndexSize++;
 
-        m_VoxelIndex[index].Voxel = p_Voxel;
-        m_VoxelIndex[index].RefCount++;
+        voxelIndex.Voxel = p_Voxel;
+        voxelIndex.RefCount++;
 
         return index;
     }
@@ -271,7 +274,7 @@ namespace VCore
 
     bool CByteChunk::SetVoxel(const CVoxel &p_Voxel, const Math::Vec3i &p_Position)
     {
-        auto voxelIndex = p_Position.x + Config::ChunkSize * p_Position.y + Config::ChunkSize * Config::ChunkSize * p_Position.z;
+        const auto voxelIndex = p_Position.x + Config::ChunkSize * p_Position.y + Config::ChunkSize * Config::ChunkSize * p_Position.z;
         auto voxel = m_Data[voxelIndex];
 
         // Decrements the old voxel by one.
@@ -285,6 +288,7 @@ namespace VCore
             }
         }
 
+        // Deletes the voxel inside the grid.
         if(!p_Voxel.IsInstantiated())
         {
             m_Data[voxelIndex] = 0xFF;

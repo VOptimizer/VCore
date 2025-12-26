@@ -172,7 +172,7 @@ namespace VCore
 
     void CChunkQueryList::CChunkQueryIterator::InitFilter()
     {
-        if(!m_Parent->ApplyFilter(m_Iterator, m_ChunkMeta))
+        if(m_Iterator != m_Parent->m_Chunks->end() && !m_Parent->ApplyFilter(m_Iterator, m_ChunkMeta))
             m_ChunkMeta = m_Parent->FilterNext(m_Iterator);
     }
 
@@ -400,7 +400,7 @@ namespace VCore
 
     CVoxelSpace::iterator CVoxelSpace::end() const
     {
-        return CVoxelSpaceIterator(this, CBBox(), {Math::Vec3i(), CVoxel()});
+        return CVoxelSpaceIterator(this);
     }
 
     CBBox CVoxelSpace::CalculateBBox() const

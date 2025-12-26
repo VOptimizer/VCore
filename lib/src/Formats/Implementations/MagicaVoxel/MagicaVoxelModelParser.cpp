@@ -22,8 +22,10 @@
  * SOFTWARE.
  */
 
-#include <cstring>
+#include <VCore/Debug.hpp>
+#include <VCore/VConfig.hpp>
 #include <VCore/Meshing/MaterialManager.hpp>
+#include <utility>
 #include "MagicaVoxelFormat.hpp"
 #include "MagicaVoxelModelParser.hpp"
 
@@ -56,6 +58,7 @@ namespace VCore
         uint8_t x, y, z;
         uint8_t ColorMatIdx;
     };
+    constexpr static uint32_t BufferSize = 1_MiB / sizeof(VoxelData);
 
     void CMagicaVoxelModelParser::FillVoxelSpace(CVoxelSpace &p_Space)
     {
@@ -68,13 +71,12 @@ namespace VCore
             return;
 
         uint32_t voxelCount = m_Stream->Read<uint32_t>();
-        constexpr static uint32_t bufferSize = 1024;
-        VoxelData buffer[bufferSize];
+        VoxelData buffer[BufferSize];
 
-        for (uint32_t i = 0; i < voxelCount; i += bufferSize)
+        for (uint32_t i = 0; i < voxelCount; i += BufferSize)
         {
             uint32_t remainingVoxels = voxelCount - i;
-            uint32_t voxelsToRead = (remainingVoxels < bufferSize) ? remainingVoxels : bufferSize;
+            uint32_t voxelsToRead = (remainingVoxels < BufferSize) ? remainingVoxels : BufferSize;
             m_Stream->Read((char*)buffer, voxelsToRead * sizeof(VoxelData));
 
             for (uint32_t bufferPos = 0; bufferPos < voxelsToRead; bufferPos++)
@@ -91,7 +93,7 @@ namespace VCore
     
                 // Gets the color of this voxel
                 auto color = GetColor(data.ColorMatIdx - 1);
-    
+                
                 p_Space.Insert({position, CVoxel(color, materialIdx)});
             }
         }
@@ -121,15 +123,16 @@ namespace VCore
     uint8_t CMagicaVoxelModelParser::GetMaterial(uint8_t p_MaterialIdx)
     {
         uint8_t result = 0;
-        if(m_NotDefaultMaterials) [[likely]]
+        if(m_MaterialMap) [[likely]]
         {
-            auto it = m_NotDefaultMaterials->find(p_MaterialIdx);
-            if(it != m_NotDefaultMaterials->end())
-            {
-                result = MaterialManager::AddOrGetMaterial(it->second);
-                if(result == UINT8_MAX) [[unlikely]]
-                    result = 0;
-            }
+            auto &matConfig =  m_MaterialMap->Materials[p_MaterialIdx];
+            if(matConfig.second == UINT8_MAX)
+                matConfig.second = MaterialManager::AddOrGetMaterial(matConfig.first);
+
+            if(matConfig.second == UINT8_MAX) [[unlikely]]
+                matConfig.second = 0;
+
+            result = matConfig.second;
         }
 
         return result;
