@@ -91,9 +91,9 @@ namespace VCore
         m_File = fopen(p_File.c_str(), p_OpenMode);
         if(m_File)
         {
-            Seek(0, SeekOrigin::END);
-            m_Size = Tell();
-            Seek(0, SeekOrigin::BEG);
+            SeekInternal(0, SeekOrigin::END);
+            m_Size = TellInternal();
+            SeekInternal(0, SeekOrigin::BEG);
             m_FilePath = p_File;
             m_InternalPosition = 0;
         }
@@ -130,7 +130,7 @@ namespace VCore
         }
 
         fseek(m_File, p_Offset, seekOff);
-        m_InternalPosition = Tell();
+        m_InternalPosition = TellInternal();
     }
 
     uint64_t CDefaultFileStream::TellInternal()

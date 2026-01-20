@@ -1,4 +1,5 @@
 #include "FbxExporter.hpp"
+#include "VCore/Meshing/Color.hpp"
 #include "VCore/Misc/unordered_dense.h"
 #include <VCore/Export/IExporter.hpp>
 #include <VCore/Formats/SceneNode.hpp>
@@ -386,8 +387,6 @@ namespace VCore
 
         // Material polygon map.
         fast_vector<int> materials;
-        // fast_vector<int> colorIndex;
-        // ankerl::unordered_dense::map<uint32_t, uint32_t> colorMap;
 
         for (auto &&surface : p_Mesh->Surfaces)
         {
@@ -402,19 +401,11 @@ namespace VCore
                 normals.push_back(vertex.Normal.y);
                 normals.push_back(vertex.Normal.z);
 
-                // auto it = colorMap.find(vertex.Color);
-                // if(it == colorMap.end())
-                // {
-                //     it = colorMap.insert({vertex.Color, colors.size() / 4}).first;
-
-                CColor c(vertex.Color);
+                CColor c = CColor::CreateFromRGBA(vertex.Color);
                 colors.push_back(c.R / 255.f);
                 colors.push_back(c.G / 255.f);
                 colors.push_back(c.B / 255.f);
                 colors.push_back(1.f);
-                // }
-
-                // colorIndex.push_back(it->second);
             }
 
             auto it = m_AddedMaterials.find(surface->MaterialHandle);

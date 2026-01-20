@@ -245,6 +245,15 @@ namespace VCore
         return m_Storage->GetVoxel(relPos);
     }
 
+    bool CChunk::HasVoxel(const Math::Vec3i &p_v) const
+    {
+        if(!m_Storage)
+            return false;
+
+        Math::Vec3i relPos = p_v & Config::InnerChunkMask;
+        return Mask.GetRowFaces(relPos, 1) >> relPos.y;
+    }
+
     //////////////////////////////////////////////////
     // CByteChunk functions
     //////////////////////////////////////////////////

@@ -22,10 +22,11 @@
  * SOFTWARE.
  */
 
-#include <stdint.h>
+#include <cstdint>
 #include <VCore/Misc/Exceptions.hpp>
 #include <VCore/Meshing/MaterialManager.hpp>
 #include "QubicleBinaryFormat.hpp"
+#include "VCore/Formats/SceneNode.hpp"
 
 namespace VCore
 {
@@ -38,8 +39,6 @@ namespace VCore
         if(m_Header.Version[0] != 1 || m_Header.Version[1] != 1 || m_Header.Version[2] != 0 || m_Header.Version[3] != 0)
             throw CVoxelFormatException("Version: " + std::to_string(m_Header.Version[0]) + "." + std::to_string(m_Header.Version[1]) + "." + std::to_string(m_Header.Version[2]) + "." + std::to_string(m_Header.Version[3]) + " is not supported");
 
-        m_Materials.push_back(MaterialManager::GetMaterial(0));
-
         for (int i = 0; i < m_Header.MatrixCount; i++)
         {
             VoxelModel mesh = std::make_shared<CVoxelSpace>();
@@ -48,7 +47,6 @@ namespace VCore
             std::string name(nameLen + 1, '\0');
             m_DataStream->Read(&name[0], nameLen);
 
-            mesh->Name = name;
             auto size = ReadVector();
             auto pos = ReadVector();
 
@@ -58,22 +56,20 @@ namespace VCore
             // if(m_Header.ZAxisOrientation == 1)
             //     pos.z *= -1;
 
-            auto sceneNode = std::make_shared<CSceneNode>();
-            sceneNode->Position = pos;
-            sceneNode->Model = mesh;
-            m_SceneTree->AddChild(sceneNode);
+            auto sceneNode = new CSceneModelNode(nullptr, SceneTree->GetModels().size());
+            sceneNode->SetPosition(pos);
+            sceneNode->Name = name;
+            SceneTree->AddChild(sceneNode);
 
             if(m_Header.Compression == 0)
                 ReadUncompressed(mesh, size);
             else
                 ReadRLECompressed(mesh, size);
 
-            m_Models.push_back(mesh);
+            SceneTree->AddModel(mesh);
         }
 
         m_ColorIdx.clear();
-        for (auto &&m : m_Models)
-            m->Textures = m_Textures;
     }
 
     Math::Vec3i CQubicleBinaryFormat::ReadVector()
@@ -87,29 +83,29 @@ namespace VCore
         return ret;
     }
 
-    void CQubicleBinaryFormat::ReadUncompressed(VoxelModel mesh, const Math::Vec3i &_Size)
+    void CQubicleBinaryFormat::ReadUncompressed(VoxelModel p_Mesh, const Math::Vec3i &p_Size)
     {
-        for (uint32_t z = 0; z < (uint32_t)_Size.z; z++)
+        for (uint32_t z = 0; z < (uint32_t)p_Size.z; z++)
         {
-            for (uint32_t y = 0; y < (uint32_t)_Size.y; y++)
+            for (uint32_t y = 0; y < (uint32_t)p_Size.y; y++)
             {
-                for (uint32_t x = 0; x < (uint32_t)_Size.x; x++)
+                for (uint32_t x = 0; x < (uint32_t)p_Size.x; x++)
                 {
                     uint32_t color = m_DataStream->Read<int>();
-                    uint32_t cid = GetColorIdx(color);
-                    if(cid == 0xFFFFFFFF)
+                    uint32_t cid = ConvertColor(color);
+                    if(cid == 0)
                         continue;
 
                     auto pos = Math::Vec3f(x, y, z);
-                    mesh->Insert({pos, CVoxel(cid, 0)});
+                    p_Mesh->Insert({pos, CVoxel(cid, 0)});
                 }
             }
         }
     }
 
-    void CQubicleBinaryFormat::ReadRLECompressed(VoxelModel mesh, const Math::Vec3i &_Size)
+    void CQubicleBinaryFormat::ReadRLECompressed(VoxelModel p_Mesh, const Math::Vec3i &p_Size)
     {
-        for (uint32_t z = 0; z < (uint32_t)_Size.z; z++)
+        for (uint32_t z = 0; z < (uint32_t)p_Size.z; z++)
         {
             uint32_t index = 0;
 
@@ -129,16 +125,16 @@ namespace VCore
                     {
                         Math::Vec3i pos;
 
-                        pos.x = index % (uint32_t)_Size.x;
-                        pos.y = (uint32_t)(index / (uint32_t)_Size.x);
+                        pos.x = index % (uint32_t)p_Size.x;
+                        pos.y = (uint32_t)(index / (uint32_t)p_Size.x);
                         pos.z = z;
 
                         index++;
-                        cid = GetColorIdx(data);
-                        if(cid == 0xFFFFFFFF)
+                        cid = ConvertColor(data);
+                        if(cid == 0)
                             continue;
 
-                        mesh->Insert({pos, CVoxel(cid, 0)});
+                        p_Mesh->Insert({pos, CVoxel(cid, 0)});
                     }
                     
                 }
@@ -146,50 +142,32 @@ namespace VCore
                 {
                     Math::Vec3i pos;
 
-                    pos.x = index % (uint32_t)_Size.x;
-                    pos.y = (uint32_t)(index / (uint32_t)_Size.x);
+                    pos.x = index % (uint32_t)p_Size.x;
+                    pos.y = (uint32_t)(index / (uint32_t)p_Size.x);
                     pos.z = z;
 
                     index++;
-                    cid = GetColorIdx(data);
-                    if(cid == 0xFFFFFFFF)
+                    cid = ConvertColor(data);
+                    if(cid == 0)
                         continue;
 
-                    mesh->Insert({pos, CVoxel(cid, 0)});
+                    p_Mesh->Insert({pos, CVoxel(cid, 0)});
                 }
             }
         }
     }
 
-    uint32_t CQubicleBinaryFormat::GetColorIdx(uint32_t color)
+    uint32_t CQubicleBinaryFormat::ConvertColor(uint32_t p_Color)
     {
-        int ret = 0;
         CColor c;
         if(m_Header.ColorFormat == 0)
-            c.FromARGB(color);
+            c.FromRGBA(p_Color);
         else
-            c.FromABGR(color);
+            c.FromBGRA(p_Color);
 
         if(c.A == 0)
-            return -1;
+            return 0;
 
-        c.A = 255;
-        color = c.AsRGBA();
-        auto IT = m_ColorIdx.find(color);
-        if(IT == m_ColorIdx.end())
-        {
-            auto texIT = m_Textures.find(TextureType::DIFFIUSE);
-            if(texIT == m_Textures.end())
-                m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
-
-            m_Textures[TextureType::DIFFIUSE]->AddPixel(c);
-            ret = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;
-
-            m_ColorIdx.insert({color, ret});
-        }
-        else
-            ret = IT->second;
-
-        return ret;
+        return c.AsRGBA();
     }
 }

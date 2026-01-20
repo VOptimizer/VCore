@@ -35,6 +35,7 @@ namespace VCore
     {
         public:
             CVoxel() : m_Value(0xFFFFFFFF) { }
+            CVoxel(uint32_t p_Raw) : m_Value(p_Raw) {}
             CVoxel(uint32_t p_Color, uint32_t p_Material) : m_Value((p_Color & 0xFFFFFF) | ((p_Material & 0xFF) << 24)) { }
             CVoxel(const CVoxel &p_Other) { *this = p_Other; }
 

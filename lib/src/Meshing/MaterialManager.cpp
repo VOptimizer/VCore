@@ -75,7 +75,7 @@ namespace VCore
             return UCHAR_MAX;
         }
 
-        uint8_t FindMaterialSlot(const CMaterial &p_Material, uint8_t &p_Hash)
+        uint8_t FindMaterialSlot(const CMaterial &p_Material, uint64_t &p_Hash)
         {
             p_Hash = HashMaterial(p_Material);            
             // auto slot = FindMaterialSlot(p_Hash);
@@ -120,7 +120,7 @@ namespace VCore
 
         uint8_t AddOrGetMaterial(const CMaterial &p_Material)
         {
-            uint8_t hash;
+            uint64_t hash;
             auto slot = FindMaterialSlot(p_Material, hash);
             if(slot == UCHAR_MAX)
             {
@@ -146,7 +146,7 @@ namespace VCore
 
         uint8_t FindMaterialSlot(const CMaterial &p_Material)
         {
-            uint8_t hash;
+            uint64_t hash;
             return FindMaterialSlot(p_Material, hash);
         }
 

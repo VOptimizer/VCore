@@ -25,13 +25,13 @@
 #ifndef GREEDYMESHER_HPP
 #define GREEDYMESHER_HPP
 
-#include <vector>
 #include <VCore/Meshing/IMesher.hpp>
 #include <VCore/Memory/ObjectPool.hpp>
 #include <VCore/Meshing/Mesh/MeshBuilder.hpp>
 #include "../FaceMask.hpp"
 
 #include <atomic>
+#include <cstdint>
 
 namespace VCore
 {
@@ -49,7 +49,7 @@ namespace VCore
 
             virtual ~CGreedyMesher() { ClearTextures(); }
         protected:
-            using MaskCollection = ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>>;            
+            using MaskCollection = ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint64_t, CFaceMask::Mask>>;            
             struct MeshSlicerContext
             {
                 MeshSlicerContext(const VoxelModel &p_Model, const CBBox &p_ModelBBox, SurfaceFactory p_Factory) : Model(p_Model), Builder(p_Factory), ModelBBox(p_ModelBBox)
@@ -61,7 +61,7 @@ namespace VCore
                 CMeshBuilder Builder;
                 const CBBox &ModelBBox;
                 MaskCollection::iterator DepthIt;
-                ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>::iterator SliceIt;
+                ankerl::unordered_dense::map<uint64_t, CFaceMask::Mask>::iterator SliceIt;
                 Math::Vec3i Axis;
                 Math::Vec3i Position;
                 ankerl::unordered_dense::map<Math::Vec3i, MaskCollection, Math::Vec3iHasher> Chunks;
@@ -130,7 +130,7 @@ namespace VCore
             bool m_GenerateTexture;
             bool m_GenerateSingleChunks;
 
-            void GenerateQuad(CMeshBuilder &p_Result, Config::bitmask_t p_Faces, CFaceMask::Mask &p_Bits, int p_Width, int p_Depth, bool p_IsFront, const Math::Vec3i &p_Origin, const Math::Vec3i &p_Axis, const SChunkMeta &p_Chunk, const CVoxel& p_Voxel);
+            void GenerateQuad(CMeshBuilder &p_Result, Config::bitmask_t p_Faces, CFaceMask::Mask &p_Bits, int p_Width, int p_Depth, bool p_IsFront, const Math::Vec3i &p_Origin, const Math::Vec3i &p_Axis, const SChunkMeta &p_Chunk, const CVoxel& p_Voxel, uint8_t p_Ao);
     };
 }
 

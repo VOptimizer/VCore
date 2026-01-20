@@ -286,30 +286,30 @@ void GenerateMesh(const std::string &p_MesherType, const argh::parser &p_Cmdl, c
             const int MAX_COUNT = 10;
             int64_t average = 0;
 
-            // for (size_t i = 0; i < MAX_COUNT + 1; i++)
-            // {
-            //     auto startTime = std::chrono::high_resolution_clock::now();
-            //     // auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
-            //     (void)mesher->GenerateChunks(loader->GetModels()[0]);
-            //     // Mesher->GenerateChunks(Loader->GetModels()[0]);
-            //     auto endTime = std::chrono::high_resolution_clock::now();
+            for (size_t i = 0; i < MAX_COUNT + 1; i++)
+            {
+                auto startTime = std::chrono::high_resolution_clock::now();
+                // auto meshes = Mesher->GenerateScene(Loader->GetSceneTree());
+                (void)mesher->GenerateChunks(loader->SceneTree->GetModels()[0]);
+                // Mesher->GenerateChunks(Loader->GetModels()[0]);
+                auto endTime = std::chrono::high_resolution_clock::now();
 
-            //     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-            //     std::cout << "Time taken: " << duration.count() << " ms" << std::endl;
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+                std::cout << "Time taken: " << duration.count() << " ms" << std::endl;
 
-            //     average += duration.count();
-            // }
+                average += duration.count();
+            }
 
-            // std::cout << "Average " << (average / (float)MAX_COUNT) << " ms" << std::endl;
+            std::cout << "Average " << (average / (float)MAX_COUNT) << " ms" << std::endl;
 
-            auto startTime = std::chrono::high_resolution_clock::now();
-            auto renderTree = mesher->GenerateScene(loader->SceneTree);
-            auto endTime = std::chrono::high_resolution_clock::now();
+            // auto startTime = std::chrono::high_resolution_clock::now();
+            // auto renderTree = mesher->GenerateScene(loader->SceneTree);
+            // auto endTime = std::chrono::high_resolution_clock::now();
 
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-            std::cout << "Time taken: " << duration.count() << " ms" << std::endl;
+            // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+            // std::cout << "Time taken: " << duration.count() << " ms" << std::endl;
 
-            exporter->Save(f->OutputFile, renderTree);
+            // exporter->Save(f->OutputFile, renderTree);
         }
     }
 }

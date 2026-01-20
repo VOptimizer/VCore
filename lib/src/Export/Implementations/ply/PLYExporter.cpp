@@ -25,7 +25,8 @@
 #include <sstream>
 #include "PLYExporter.hpp"
 #include "../../../FileUtils.hpp"
-#include "VCore/Meshing/Color.hpp"
+#include <format>
+#include <VCore/Meshing/Color.hpp>
 
 namespace VCore
 {
@@ -77,7 +78,8 @@ namespace VCore
             for(uint64_t i = 0; i < surface->GetVertexCount(); i++)
             {
                 auto v = surface->GetVertex(i);
-                CColor c(v.Color);
+                CColor c;
+                c.FromRGBA(v.Color);
                 vertexList << v.Pos.x << " " << v.Pos.z << " " << v.Pos.y << " " << v.Normal.x << " " << v.Normal.z << " " << v.Normal.y << " " << static_cast<int>(c.R) << " " << static_cast<int>(c.G) << " " << static_cast<int>(c.B) << std::endl;
             }
             

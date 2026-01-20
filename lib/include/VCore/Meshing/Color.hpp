@@ -83,6 +83,14 @@ namespace VCore
                 A = (p_color & 0xFF000000) >> 24;
             }
 
+            inline void FromBGRA(uint32_t p_color)
+            {
+                B = p_color & 0xFF;
+                G = (p_color & 0xFF00) >> 8;
+                R = (p_color & 0xFF0000) >> 16;
+                A = (p_color & 0xFF000000) >> 24;
+            }
+
             inline static CColor CreateFromRGBA(uint32_t p_color)
             {
                 CColor c;

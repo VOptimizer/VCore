@@ -35,7 +35,6 @@
 #include <VCore/Meshing/Mesh/Mesh.hpp>
 #include <VCore/Math/Mat4x4.hpp>
 #include <VCore/Voxel/BBox.hpp>
-#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <utility>

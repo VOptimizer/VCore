@@ -26,24 +26,26 @@
 #include "FaceMask.hpp"
 #include "../Simd/Simd.hpp"
 #include "../Misc/Helper.hpp"
+#include "VCore/Math/Vector.hpp"
 #include <cmath>
 #include <VCore/Meshing/MaterialManager.hpp>
+#include <cstdint>
 
 namespace VCore
 {
-    ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>> CFaceMask::Generate(const VoxelModel &p_Model, const SChunkMeta &p_Chunk, const uint8_t p_Axis)
+    ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint64_t, CFaceMask::Mask>> CFaceMask::Generate(const VoxelModel &p_Model, const SChunkMeta &p_Chunk, const uint8_t p_Axis)
     {
         m_Model = p_Model;
         m_Chunk = p_Chunk;
 
-        // This logic calculates the index of one of the three other axis.
+        // This logic calculates the index of each of the three other axis.
         m_Axis = Math::TVector3<char>(p_Axis, (p_Axis + 1) % 3, (p_Axis + 2) % 3);
 
         InternalGenerate();
         return std::move(m_FacesMasks);
     }
 
-    ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, CFaceMask::Mask>> CFaceMask::Generate(const VoxelModel &p_Model, Math::Vec3i p_ChunkPos, const uint8_t p_Axis)
+    ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint64_t, CFaceMask::Mask>> CFaceMask::Generate(const VoxelModel &p_Model, Math::Vec3i p_ChunkPos, const uint8_t p_Axis)
     {
         m_Model = p_Model;
 
@@ -80,6 +82,7 @@ namespace VCore
         {          
             p_opaqueVoxels[i] = p_Chunk->Mask.GetRowFaces(subpos, m_Axis.y); // (_Chunk->m_Mask.GetRowFaces(subpos, m_Axis.y) >> 1) & 0xFFFFFFFF;
 
+            // Filters for transparent voxels.
             if(p_opaqueVoxels[i] && (m_TransparentMaterials.size() > 0))
             {
                 uint32_t bitCount = CountTrailingZeroBits(p_opaqueVoxels[i]);
@@ -91,9 +94,14 @@ namespace VCore
                     {
                         subposCopy.v[m_Axis.y] = bitCount + j;
                         auto voxel = p_Chunk->find(subposCopy);
+
+                        // Has this voxel a transparent material?
                         if(std::find(m_TransparentMaterials.begin(), m_TransparentMaterials.end(), voxel.GetMaterial()) != m_TransparentMaterials.end())
                         {
+                            // Removes the transparent voxel from the opaque ones.
                             p_opaqueVoxels[i] &= ~(1 << (bitCount + j));
+
+                            // Adds the voxel to the transparent ones.
                             p_transparentVoxels[i] |= (1 << (bitCount + j));
                         }
                     }
@@ -111,13 +119,14 @@ namespace VCore
 
     void CFaceMask::InternalGenerate()
     {
-        const CBBox &BBox = m_Chunk.InnerBBox;
-        const CBBox &TotalBBox = m_Chunk.TotalBBox;
+        const CBBox &bbox = m_Chunk.InnerBBox;
+        const CBBox &totalBBox = m_Chunk.TotalBBox;
 
         m_MaskCache = nullptr;
-        m_CachedKey = 0xFFFFFFFF;
+        m_CachedKey = 0x00000003FFFFFFFF;
 
-        // Finds all transparent materials.
+        // To differentiate between opaque and none opaque voxels, it's neccessary
+        // to filter for all materials, which had some kind of transparency enabled.
         for (uint8_t i = 0; i < Config::MaxMaterialSlots; i++)
         {
             auto material = MaterialManager::GetMaterial(i);
@@ -125,22 +134,21 @@ namespace VCore
                 m_TransparentMaterials.push_back(i);
         }
 
-        // for (int heightAxis = BBox.Beg.v[axis1]; heightAxis <= BBox.End.v[axis1]; heightAxis++)
-        for (int depthAxis = BBox.Beg.v[m_Axis.x]; depthAxis <= BBox.End.v[m_Axis.x]; depthAxis++)
+        for (int depthAxis = bbox.Beg.v[m_Axis.x]; depthAxis <= bbox.End.v[m_Axis.x]; depthAxis++)
         {
-            for (int widthAxis = BBox.Beg.v[m_Axis.z]; widthAxis <= BBox.End.v[m_Axis.z]; widthAxis += simdIntSize)
+            for (int widthAxis = bbox.Beg.v[m_Axis.z]; widthAxis <= bbox.End.v[m_Axis.z]; widthAxis += simdIntSize)
             {
                 // Calculates the remaining amount of elements
                 // in the voxel array.
-                const int count = ((BBox.End.v[m_Axis.z] - widthAxis) >= simdIntSize) ? simdIntSize : ((BBox.End.v[m_Axis.z] - widthAxis) + 1);
+                const int count = ((bbox.End.v[m_Axis.z] - widthAxis) >= simdIntSize) ? simdIntSize : ((bbox.End.v[m_Axis.z] - widthAxis) + 1);
 
-                // Global position of the current column.
+                // Global position of the current voxel column.
                 Math::Vec3i position;
                 position.v[m_Axis.x] = depthAxis;
-                position.v[m_Axis.y] = BBox.Beg.v[m_Axis.y];
+                position.v[m_Axis.y] = bbox.Beg.v[m_Axis.y];
                 position.v[m_Axis.z] = widthAxis;
 
-                // Position of the voxel in the current chunk.
+                // Position of the voxel column in the current chunk.
                 Math::Vec3i subpos = position & Config::InnerChunkMask;
 
                 // Contains the voxels column before and after as well as the current one.
@@ -162,7 +170,7 @@ namespace VCore
                     auto chunk = m_Chunk.Chunk;
 
                     // Checks if the position is outside of the current chunk and gets the neighbor chunk
-                    if((position.v[m_Axis.x] < TotalBBox.Beg.v[m_Axis.x]) || (position.v[m_Axis.x] >= TotalBBox.End.v[m_Axis.x]))
+                    if((position.v[m_Axis.x] < totalBBox.Beg.v[m_Axis.x]) || (position.v[m_Axis.x] >= totalBBox.End.v[m_Axis.x]))
                         chunk = m_Model->GetChunk(position);
 
                     if(chunk)
@@ -186,15 +194,16 @@ namespace VCore
         Simd::NativeI afterVoxelsSimd((int*)p_Voxels + (simdIntSize * 2), simdIntSize);
 
         // Cache reset
-        ankerl::unordered_dense::map<uint32_t, Mask> *masks = nullptr;
+        ankerl::unordered_dense::map<uint64_t, Mask> *masks = nullptr;
         m_CachedKey = 0xFFFFFFFF;
         m_MaskCache = nullptr;
 
+        // Visible faces, which are not covered by other voxels.
         Config::bitmask_t frontFaces[simdIntSize] = {};
         Config::bitmask_t backFaces[simdIntSize] = {};
 
         // With simd and bit manipulation, we find all faces which are not
-        // corvered. Since simd works on parallel data, we can check 32 * simdSize faces
+        // covered. Since simd works on parallel data, we can check 32 * simdSize faces
         // at the same time.
         ((beforeVoxelsSimd & voxelsSimd) ^ voxelsSimd).Store((int*)frontFaces, simdIntSize);
         ((afterVoxelsSimd & voxelsSimd) ^ voxelsSimd).Store((int*)backFaces, simdIntSize);
@@ -220,7 +229,74 @@ namespace VCore
         }
     }
 
-    void CFaceMask::FillSlice(Config::bitmask_t p_Faces, const Math::Vec3i &p_Subpos, const int p_Column, const bool p_Backface, ankerl::unordered_dense::map<uint32_t, Mask> &p_Masks)
+    inline uint8_t GenerateAO(uint8_t p_Side1, uint8_t p_Side2, uint8_t p_Corner)
+    {
+        if(p_Side1 && p_Side2)
+            return 0;
+
+        return 3 - (p_Side1 + p_Side2 + p_Corner);
+    }
+
+    uint8_t CFaceMask::CalculateAo(const Math::Vec3i &p_GlobalPos, const Math::Vec2i *p_Lookup)
+    {
+        uint8_t sides[3] = {};
+
+        for (int i = 0; i < 3; i++) 
+        {
+            auto copyGlobal = p_GlobalPos;
+            copyGlobal.v[m_Axis.y] += p_Lookup[i].y;
+            copyGlobal.v[m_Axis.z] += p_Lookup[i].x;
+
+            if(m_Chunk.TotalBBox.ContainsPoint(copyGlobal))
+                sides[i] = m_Chunk.Chunk->HasVoxel(copyGlobal);
+            else
+                sides[i] = m_Model->HasVoxel(copyGlobal);
+        }
+
+        return GenerateAO(sides[0], sides[1], sides[2]);
+    }
+
+    static const Math::Vec2i LEFT_BOTTOM_LOOKUP[] = {
+        Math::Vec2i(-1, 0), Math::Vec2i(0, -1), Math::Vec2i(-1, -1)
+    };
+
+    static const Math::Vec2i RIGHT_BOTTOM_LOOKUP[] = {
+        Math::Vec2i(1, 0), Math::Vec2i(0, -1), Math::Vec2i(1, -1)
+    };
+
+    static const Math::Vec2i LEFT_TOP_LOOKUP[] = {
+        Math::Vec2i(-1, 0), Math::Vec2i(0, 1), Math::Vec2i(-1, 1)
+    };
+
+    static const Math::Vec2i RIGHT_TOP_LOOKUP[] = {
+        Math::Vec2i(1, 0), Math::Vec2i(0, 1), Math::Vec2i(1, 1)
+    };
+
+    uint8_t CFaceMask::CalculateAo(const Math::Vec3i &p_Subpos, const bool p_Backface)
+    {
+        auto globalPos = m_Chunk.TotalBBox.Beg + p_Subpos;
+        
+        // Gets the voxel above the current surface, in normal direction.
+        globalPos.v[m_Axis.x] += p_Backface ? 1 : -1;
+
+        uint16_t ao = 0;
+
+        // Left-Bottom
+        ao = CalculateAo(globalPos, LEFT_BOTTOM_LOOKUP);
+
+        // Right-Bottom
+        ao |= CalculateAo(globalPos, RIGHT_BOTTOM_LOOKUP) << 2;
+
+        // Left-Top
+        ao |= CalculateAo(globalPos, LEFT_TOP_LOOKUP) << 4;
+
+        // Right-Top
+        ao |= CalculateAo(globalPos, RIGHT_TOP_LOOKUP) << 6;
+
+        return ao;
+    }
+
+    void CFaceMask::FillSlice(Config::bitmask_t p_Faces, const Math::Vec3i &p_Subpos, const int p_Column, const bool p_Backface, ankerl::unordered_dense::map<uint64_t, Mask> &p_Masks)
     {
         auto bitCount = CountTrailingZeroBits(p_Faces);
         auto subposCopy = p_Subpos;
@@ -236,9 +312,11 @@ namespace VCore
                 if(!voxel.IsInstantiated())
                     continue;
 
-                auto key = (uint32_t)voxel;
+                uint64_t key = (uint32_t)voxel;
                 if(GroupAfterMaterial)
                     key = voxel.GetMaterial();
+
+                key |= ((uint64_t)CalculateAo(subposCopy, p_Backface)) << 32;
 
                 // Checks if there is already a cached version.
                 if((key != m_CachedKey) || !m_MaskCache)

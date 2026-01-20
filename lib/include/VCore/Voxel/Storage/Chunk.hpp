@@ -36,6 +36,7 @@ namespace VCore
 {
     class CVoxelSpace;
 
+    // Stores voxels as bitmask in a column first manner for all axis.
     class CBitMaskChunk
     {
         public:
@@ -104,6 +105,8 @@ namespace VCore
              * @brief Returns a reference to the voxel.
              */
             CVoxel find(const Math::Vec3i &p_v) const;
+
+            bool HasVoxel(const Math::Vec3i &p_v) const;
 
             inline CBBox inner_bbox(const Math::Vec3i &p_Position) const
             {

@@ -157,6 +157,11 @@ namespace VCore
                 static const TVector3 LEFT;
                 static const TVector3 RIGHT;
 
+                template <typename H>
+                friend H AbslHashValue(H h, const TVector3& c) {
+                    return H::combine(std::move(h), c.x, c.y, c.z);
+                }
+
                 union
                 {
                     struct
@@ -470,6 +475,7 @@ namespace VCore
         };
 
         using Vec2f = TVector2<float>;
+        using Vec2i = TVector2<int>;
         using Vec2ui = TVector2<unsigned int>;
 
         using Vec3f = TVector3<float>;

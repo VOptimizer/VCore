@@ -25,6 +25,8 @@
 #include <stb_image.h>
 
 #include "GoxelFormat.hpp"
+#include "VCore/Formats/SceneNode.hpp"
+#include "VCore/Math/Vector.hpp"
 #include <cstring>
 #include <VCore/Misc/Exceptions.hpp>
 #include <VCore/Meshing/MaterialManager.hpp>
@@ -45,25 +47,28 @@ namespace VCore
         for (auto &&chunkData : m_Chunks)
         {
             auto chunkpos = GetChunkpos(chunkData.first);
-            if constexpr(Config::ChunkSize == 8)
-            {
-                for (int x = 0; x < 16; x += 8)
-                {
-                    for (int y = 0; y < 16; y += 8)
-                    {
-                        for (int z = 0; z < 16; z += 8)
-                        {
-                            CreateChunk(chunkpos + Math::Vec3i(x, y, z), m, parser);
-                        }
-                    }
-                }
-            }
-            else
-                CreateChunk(chunkpos, m, parser);
+            // if constexpr(Config::ChunkSize == 8)
+            // {
+            //     for (int x = 0; x < 16; x += 8)
+            //     {
+            //         for (int y = 0; y < 16; y += 8)
+            //         {
+            //             for (int z = 0; z < 16; z += 8)
+            //             {
+            //                 CreateChunk(chunkpos + Math::Vec3i(x, y, z), m, parser);
+            //             }
+            //         }
+            //     }
+            // }
+            // else
+            CreateChunk(chunkpos, m, parser);
         }
         
         if(m_Mode == FileMode::STREAMED)
             m->SetSource(new CGoxelStreamable(m_IOHandler, m_DataStream->GetFilePath(), std::move(m_BL16Offsets), std::move(m_Materials), std::move(m_Chunks), m_BeginX, m_EndX));
+        
+        SceneTree->AddChild(new CSceneModelNode(nullptr, 0));
+        SceneTree->AddModel(m);
 
         m_Chunks.clear();
         m_Materials.clear();
@@ -71,10 +76,15 @@ namespace VCore
 
     void CGoxelFormat::CreateChunk(const Math::Vec3i &p_ChunkPos, VoxelModel &p_Model, CGoxelModelParser &p_Parser)
     {
-        auto chunk = p_Model->GetChunk(p_ChunkPos);
+        int endx = (m_EndX - 16) & Config::ChunkPositionMask;
+        int startx = m_BeginX & Config::ChunkPositionMask;
+
+        auto realPos = Math::Vec3i((endx - startx) - (p_ChunkPos.x - startx) + startx, p_ChunkPos.y, p_ChunkPos.z);
+
+        auto chunk = p_Model->GetChunk(realPos);
         if(!chunk)
         {
-            chunk = p_Model->CreateOrGetChunk(p_ChunkPos);
+            chunk = p_Model->CreateOrGetChunk(realPos);
             if(m_Mode != FileMode::STREAMED)
                 p_Parser.FillChunk(p_ChunkPos, chunk);
         }

@@ -185,6 +185,8 @@ namespace VCore
              */
             iterator Find(const Math::Vec3i &p_v) const;
 
+            bool HasVoxel(const Math::Vec3i &p_v) const;
+
             /**
              * @return Gets a list of all chunks which has been modified.
              * @note Marks all chunks as processed.

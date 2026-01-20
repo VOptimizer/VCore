@@ -25,6 +25,8 @@
 #ifndef QUBICLEEXCHANGEFORMAT_HPP
 #define QUBICLEEXCHANGEFORMAT_HPP
 
+#include <VCore/Meshing/Color.hpp>
+#include <VCore/Misc/fast_vector.hpp>
 #include <VCore/Math/Mat4x4.hpp>
 #include <VCore/Formats/IVoxelFormat.hpp>
 
@@ -39,11 +41,11 @@ namespace VCore
         protected:
             void ParseFormat() override;
 
-            Math::Vec3i ReadVector();
             void ReadColors();
-            void ReadVoxels(VoxelModel mesh);
+            void ReadVoxels(VoxelModel p_Mesh);
 
             std::string ReadLine();
+            fast_vector<uint32_t> m_Colors;
     };
 }
 

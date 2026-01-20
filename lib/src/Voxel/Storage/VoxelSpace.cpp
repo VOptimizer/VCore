@@ -308,6 +308,17 @@ namespace VCore
         return CVoxelSpaceIterator(this, it->second->inner_bbox(it->first), {p_v, vox});
     }
 
+    bool CVoxelSpace::HasVoxel(const Math::Vec3i &p_v) const
+    {
+        const_cast<CVoxelSpace*>(this)->CheckLoadModel();
+        Math::Vec3i position = GetChunkpos(p_v);
+        auto it = m_Chunks.find(position);
+        if(it == m_Chunks.end())
+            return false;
+
+        return it->second->HasVoxel(p_v);
+    }
+
     CVoxelSpace::querylist CVoxelSpace::QueryDirtyChunks() const
     {
         const_cast<CVoxelSpace*>(this)->CheckLoadModel();

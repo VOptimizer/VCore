@@ -36,11 +36,7 @@ namespace VCore
             CKenshapeFormat() = default;
             ~CKenshapeFormat() = default;
         private:
-            uint32_t GetColorIdx(Kenshape _Content, int _ColorIdx);
-
-            void ParseFormat() override;   
-
-            std::map<uint32_t, uint32_t> m_ColorIdx;
+            void ParseFormat() override;
     };
 }
 

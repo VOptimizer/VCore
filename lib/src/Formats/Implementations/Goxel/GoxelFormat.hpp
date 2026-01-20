@@ -27,7 +27,7 @@
 
 #include <VCore/Formats/IVoxelFormat.hpp>
 #include <VCore/Misc/fast_vector.hpp>
-#include <string.h>
+#include <cstring>
 #include "GoxelStreamable.hpp"
 #include "GoxelModelParser.hpp"
 

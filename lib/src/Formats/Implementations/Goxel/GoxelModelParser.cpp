@@ -23,6 +23,9 @@
  */
 
 #include "GoxelModelParser.hpp"
+#include "VCore/Meshing/Color.hpp"
+#include "VCore/VConfig.hpp"
+#include <cstdlib>
 #include <stb_image.h>
 #include <VCore/Meshing/MaterialManager.hpp>
 
@@ -39,17 +42,19 @@ namespace VCore
 
     void CGoxelModelParser::FillChunk(const Math::Vec3i &p_Position, CChunk *p_Chunk)
     {
-        auto goxelPos = GetChunkpos(Math::Vec3i(abs(m_EndX - m_BeginX) - 1, 0, 0) - (p_Position - Math::Vec3i(m_BeginX, 0, 0)) + Math::Vec3i(m_BeginX, 0, 0));
         auto innerStartPos = p_Position & (GoxelChunkSize - 1);
 
         // TODO: 8 Chunk Path
-        for (int cx = goxelPos.x; cx < static_cast<int>(goxelPos.x + Config::ChunkSize); cx += GoxelChunkSize)
+        for (int cx = p_Position.x; cx < static_cast<int>(p_Position.x + Config::ChunkSize); cx += GoxelChunkSize)
         {
-            for (int cy = goxelPos.y; cy < static_cast<int>(goxelPos.y + Config::ChunkSize); cy += GoxelChunkSize)
+            for (int cy = p_Position.y; cy < static_cast<int>(p_Position.y + Config::ChunkSize); cy += GoxelChunkSize)
             {
-                for (int cz = goxelPos.z; cz < static_cast<int>(goxelPos.z + Config::ChunkSize); cz += GoxelChunkSize)
+                for (int cz = p_Position.z; cz < static_cast<int>(p_Position.z + Config::ChunkSize); cz += GoxelChunkSize)
                 {
-                    auto it = m_Chunks.find(Math::Vec3i((ChunkIterationSize - cx - goxelPos.x) + goxelPos.x, cy, cz));
+                    // Goxel chunk position. This is different from VCores chunk position. 
+                    // Since Goxel uses a left handed coordinate system, VCore uses a right handed one.
+                    auto key = Math::Vec3i(cx, cy, cz);
+                    auto it = m_Chunks.find(key);
                     if(it != m_Chunks.end())
                     {
                         for (auto &&chunkinfo : it->second)
@@ -72,8 +77,7 @@ namespace VCore
                                     {
                                         for (uint32_t x = innerStartPos.x; x < ChunkIterationSize; x++)
                                         {
-                                            // Goxel uses a left handed coordinate system, VCore uses a right handed one. So we need to convert the coordinates.
-                                            uint32_t p = imgData[(GoxelChunkSize - x - 1) + GoxelChunkSize * z + GoxelChunkSize * GoxelChunkSize * y];
+                                            uint32_t p = imgData[x + GoxelChunkSize * z + GoxelChunkSize * GoxelChunkSize * y];
                                             if((p & 0xFF000000) != 0)
                                             {
                                                 auto mat = m_Materials[chunkinfo.Material];
@@ -88,7 +92,8 @@ namespace VCore
                                                         matIdx = 0;
                                                 }
             
-                                                auto insertPos = Math::Vec3i(cx + x, cy + y, cz + z);
+                                                // Goxel uses a left handed coordinate system, VCore uses a right handed one. So we need to convert the coordinates.
+                                                auto insertPos = Math::Vec3i((Config::ChunkSize - 1) - ((cx - p_Position.x) + x), (cy - p_Position.y) + y, (cz - p_Position.z) + z);
                                                 p_Chunk->insert({insertPos, CVoxel(p, matIdx)});
                                             }
                                         }

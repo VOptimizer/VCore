@@ -25,6 +25,8 @@
 #ifndef QUBICLEFORMAT_HPP
 #define QUBICLEFORMAT_HPP
 
+#include "VCore/Formats/SceneNode.hpp"
+#include "VCore/Math/Vector.hpp"
 #include <VCore/Math/Mat4x4.hpp>
 #include <VCore/Formats/IVoxelFormat.hpp>
 
@@ -36,18 +38,24 @@ namespace VCore
             CQubicleFormat() = default;
             ~CQubicleFormat() = default;
         private:
-            std::map<uint32_t, uint32_t> m_ColorIdx;
             void ParseFormat() override;
 
-            void LoadNode();
-            void LoadModel();
-            void LoadMatrix();
-            void LoadCompound();
+            void LoadNode(CSceneNodeBase *p_Parent);
+            void LoadModel(CSceneNodeBase *p_Parent);
+            CSceneModelNode *LoadMatrix(CSceneNodeBase *p_Parent);
+            void LoadCompound(CSceneNodeBase *p_Parent);
 
-            uint32_t GetColorIdx(uint32_t color);
-            void AddVoxel(VoxelModel mesh, uint32_t color, Math::Vec3i pos);
+            template<class T>
+            Math::TVector3<T> ReadVector()
+            {
+                Math::TVector3<T> ret;
 
-            Math::Vec3i ReadVector();
+                ret.x = m_DataStream->Read<T>();
+                ret.y = m_DataStream->Read<T>();
+                ret.z = m_DataStream->Read<T>();
+
+                return ret;
+            }
     };
 }
 

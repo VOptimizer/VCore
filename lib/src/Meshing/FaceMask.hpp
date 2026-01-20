@@ -25,6 +25,7 @@
 #ifndef FACEMASK_HPP
 #define FACEMASK_HPP
 
+#include "VCore/Math/Vector.hpp"
 #include <cstddef>
 #include <VCore/Voxel/VoxelModel.hpp>
 #include <VCore/Misc/fast_vector.hpp>
@@ -46,9 +47,9 @@ namespace VCore
             /**
              * @brief Generates the face bit mask for the given chunk on the axis.
              */
-            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> Generate(const VoxelModel &p_Model, const SChunkMeta &p_Chunk, const uint8_t p_Axis);
+            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint64_t, Mask>> Generate(const VoxelModel &p_Model, const SChunkMeta &p_Chunk, const uint8_t p_Axis);
 
-            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> Generate(const VoxelModel &p_Model, Math::Vec3i p_ChunkPos, const uint8_t p_Axis);
+            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint64_t, Mask>> Generate(const VoxelModel &p_Model, Math::Vec3i p_ChunkPos, const uint8_t p_Axis);
 
             ~CFaceMask() = default;
 
@@ -62,7 +63,10 @@ namespace VCore
             void InternalGenerate();
             void FillVoxelBits(Config::bitmask_t *p_opaqueVoxels, Config::bitmask_t *p_transparentVoxels, const CChunk *p_Chunk, const Math::Vec3i &p_Position, const int p_Count);
             void GenerateMask(Config::bitmask_t *p_Voxels, const Math::Vec3i &p_Subpos, const int p_Count);
-            void FillSlice(Config::bitmask_t p_Faces, const Math::Vec3i &p_Subpos, const int p_Column, const bool p_Backface, ankerl::unordered_dense::map<uint32_t, Mask> &p_Masks);
+            void FillSlice(Config::bitmask_t p_Faces, const Math::Vec3i &p_Subpos, const int p_Column, const bool p_Backface, ankerl::unordered_dense::map<uint64_t, Mask> &p_Masks);
+
+            uint8_t CalculateAo(const Math::Vec3i &p_Subpos, const bool p_Backface);
+            uint8_t CalculateAo(const Math::Vec3i &p_GlobalPos, const Math::Vec2i *p_Lookup);
 
             VoxelModel m_Model;
             SChunkMeta m_Chunk;
@@ -72,9 +76,9 @@ namespace VCore
 
             fast_vector<int> m_TransparentMaterials;
             Mask *m_MaskCache;
-            uint32_t m_CachedKey;
+            uint64_t m_CachedKey;
 
-            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint32_t, Mask>> m_FacesMasks;
+            ankerl::unordered_dense::map<int, ankerl::unordered_dense::map<uint64_t, Mask>> m_FacesMasks;
     };
 } // namespace VCore
 

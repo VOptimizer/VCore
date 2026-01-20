@@ -55,23 +55,23 @@ namespace VCore
         public:
             IMesher() : m_Frustum(nullptr), m_SurfaceFactory(nullptr) {}
 
-            /**
-             * @brief Creates a new mesher instance.
-             */
-            template<class SurfaceType>
-            static Mesher Create(MesherTypes p_Type)
-            {
-                return Create(p_Type, [](void*) -> ISurface* {
-                    return new SurfaceType();
-                });
-            }
-
             static Mesher Create(MesherTypes p_Type, SurfaceFactory p_Factory)
             {
                 auto result = Create(p_Type);
                 result->SetSurfaceFactory(p_Factory);
 
                 return result;
+            }
+
+            /**
+             * @brief Creates a new mesher instance.
+             */
+            template<class SurfaceType>
+            static Mesher Create(MesherTypes p_Type)
+            {
+                return Create(p_Type, SurfaceFactory([](void*) -> ISurface* {
+                    return new SurfaceType();
+                }));
             }
 
             /**
@@ -82,7 +82,7 @@ namespace VCore
             /**
              * @return Returns the voxel mesh as triangulated vertices mesh.
              */
-            Mesh GenerateMesh(VoxelModel p_Model);
+            virtual Mesh GenerateMesh(VoxelModel p_Model);
 
             /**
              * @brief Sets a frustum, for culling.

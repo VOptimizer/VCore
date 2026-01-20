@@ -29,10 +29,10 @@
 #include <cstdint>
 #include <format>
 #include "GodotSceneExporter.hpp"
-#include "VCore/Formats/SceneNode.hpp"
-#include "VCore/Math/Vector.hpp"
-#include "VCore/Meshing/Color.hpp"
-#include "VCore/VConfig.hpp"
+#include <VCore/Formats/SceneNode.hpp>
+#include <VCore/Math/Vector.hpp>
+#include <VCore/Meshing/Color.hpp>
+#include <VCore/VConfig.hpp>
 #include "src/FileUtils.hpp"
 #include <VCore/Meshing/MaterialManager.hpp>
 #include <string>
@@ -188,7 +188,7 @@ namespace VCore
             WriteBytesAsString((uint8_t*)&vertex.Normal, sizeof(vertex.Normal));
             m_ESCNFile->Write(", ");
 
-            auto color = CColor(vertex.Color);
+            auto color = CColor::CreateFromRGBA(vertex.Color);
             color.A = 255 * (1.0f - mat->Transparency);
             WriteColorAsByteString(color);
 
@@ -322,7 +322,7 @@ namespace VCore
         for (uint64_t i = 0; i < p_Surface->GetVertexCount(); i++) 
         {
             auto vertex = p_Surface->GetVertex(i);
-            auto color = CColor(vertex.Color);
+            auto color = CColor::CreateFromRGBA(vertex.Color);
 
             color.A = 255 * (1.0f - mat->Transparency);
             WriteBytesAsString((uint8_t*)&color, sizeof(color));

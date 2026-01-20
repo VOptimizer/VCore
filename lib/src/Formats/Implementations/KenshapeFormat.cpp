@@ -23,6 +23,7 @@
  */
 
 #include "Kenshape.hpp"
+#include "VCore/Formats/SceneNode.hpp"
 #include "KenshapeFormat.hpp"
 #include <stb_image.h>
 #include <VCore/Misc/Exceptions.hpp>
@@ -71,10 +72,10 @@ namespace VCore
         {
             if(tile->ColorIdx != -1)
             {
-                uint32_t idx = GetColorIdx(Content, tile->ColorIdx);
+                uint32_t idx = Content->Colors[tile->ColorIdx].AsRGBA();
                 uint32_t backIdx = idx;
                 if(tile->ColorBack != -1)
-                    backIdx = GetColorIdx(Content, tile->ColorBack);
+                    backIdx = Content->Colors[tile->ColorBack].AsRGBA();
 
                 int blocks = tile->Depth - 1;
                 size_t z = (tile->DepthBack <= 0) ? (Pos.z - blocks) : (Pos.z - (tile->DepthBack - 1));
@@ -94,32 +95,9 @@ namespace VCore
             }
         }
 
-        auto sceneNode = std::make_shared<CSceneNode>();
-        m_SceneTree->AddChild(sceneNode);
-        sceneNode->Model = m;
+        auto sceneNode = new CSceneModelNode(nullptr, 0);
+        SceneTree->AddChild(sceneNode);
 
-        m->Textures = std::move(m_Textures);
-
-        m_Models.push_back(m);
-        m_ColorIdx.clear();
-    }
-
-    uint32_t CKenshapeFormat::GetColorIdx(Kenshape _Content, int _ColorIdx)
-    {
-        uint32_t idx;
-        if(m_ColorIdx.find(_ColorIdx) == m_ColorIdx.end())
-        {
-            auto texIT = m_Textures.find(TextureType::DIFFIUSE);
-            if(texIT == m_Textures.end())
-                m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
-
-            m_Textures[TextureType::DIFFIUSE]->AddPixel(_Content->Colors[_ColorIdx]);
-            idx = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;
-            m_ColorIdx[_ColorIdx] = idx;
-        }
-        else
-            idx = m_ColorIdx[_ColorIdx];
-
-        return idx;
+        SceneTree->AddModel(m);
     }
 }

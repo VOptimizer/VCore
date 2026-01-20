@@ -34,6 +34,7 @@
 
 #include "GreedyMesher.hpp"
 #include "../../Simd/Simd.hpp"
+#include "VCore/Voxel/Voxel.hpp"
 
 namespace VCore
 {
@@ -205,7 +206,7 @@ namespace VCore
         // }
     }
 
-    void CGreedyMesher::GenerateQuad(CMeshBuilder &p_Result, Config::bitmask_t p_Faces, CFaceMask::Mask &p_Bits, int p_Width, int p_Depth, bool p_IsFront, const Math::Vec3i &p_Origin, const Math::Vec3i &p_Axis, const SChunkMeta &p_Chunk, const CVoxel& p_Voxel)
+    void CGreedyMesher::GenerateQuad(CMeshBuilder &p_Result, Config::bitmask_t p_Faces, CFaceMask::Mask &p_Bits, int p_Width, int p_Depth, bool p_IsFront, const Math::Vec3i &p_Origin, const Math::Vec3i &p_Axis, const SChunkMeta &p_Chunk, const CVoxel& p_Voxel, uint8_t p_Ao)
     {
         uint8_t currentMaterial = 0xFF;
         auto voxmaterial = p_Voxel.GetMaterial();
@@ -287,11 +288,11 @@ namespace VCore
             size.v[p_Axis.y] = faceCount;
             size.v[p_Axis.z] = w;
 
-            Math::Vec3f du;
-            du.v[p_Axis.z] = size.v[p_Axis.z];
+            Math::Vec3f rightDirection;
+            rightDirection.v[p_Axis.z] = size.v[p_Axis.z];
 
-            Math::Vec3f dv;
-            dv.v[p_Axis.y] = size.v[p_Axis.y];
+            Math::Vec3f upDirection;
+            upDirection.v[p_Axis.y] = size.v[p_Axis.y];
 
             if(currentMaterial != voxmaterial)
             {
@@ -303,15 +304,39 @@ namespace VCore
             // if(hasTexture)
             //     uv = Math::Vec2f(((float)(_Voxel.Color + 0.5f)) / textureWidth, 0.5f);
 
-            uint32_t idx1 = p_Result.AddVertex(new SVertex(position - p_Origin, normal, color));
-            uint32_t idx2 = p_Result.AddVertex(new SVertex((position + du) - p_Origin, normal, color));
-            uint32_t idx3 = p_Result.AddVertex(new SVertex((position + dv) - p_Origin, normal, color));
-            uint32_t idx4 = p_Result.AddVertex(new SVertex((position + size) - p_Origin, normal, color));
+            uint8_t ao1 = p_Ao & 3;
+            uint8_t ao2 = (p_Ao >> 2) & 3;
+            uint8_t ao3 = (p_Ao >> 4) & 3;
+            uint8_t ao4 = (p_Ao >> 6) & 3;
+
+            bool needFlip = ao2 + ao3 < ao1 + ao4;
+
+            uint32_t idx1 = p_Result.AddVertex(new SVertex(position - p_Origin, normal, color, ao1));
+            uint32_t idx2 = p_Result.AddVertex(new SVertex((position + rightDirection) - p_Origin, normal, color, ao2));
+            uint32_t idx3 = p_Result.AddVertex(new SVertex((position + upDirection) - p_Origin, normal, color, ao3));
+            uint32_t idx4 = p_Result.AddVertex(new SVertex((position + size) - p_Origin, normal, color, ao4));
 
             if(p_IsFront)
-                p_Result.AddFace(idx1, idx2, idx3, idx4);
+            {
+                if(!needFlip)
+                    p_Result.AddFace(idx1, idx2, idx3, idx4);
+                else
+                {
+                    p_Result.AddFace(idx1, idx4, idx3);
+                    p_Result.AddFace(idx1, idx2, idx4);
+                }
+            }
             else
-                p_Result.AddFace(idx1, idx3, idx2, idx4);
+            {
+                if(!needFlip)
+                    p_Result.AddFace(idx1, idx3, idx2, idx4);
+                else
+                {
+                    p_Result.AddFace(idx1, idx4, idx2);
+                    p_Result.AddFace(idx1, idx3, idx4);
+
+                }
+            }
 
             heightPos += faceCount;
         }
@@ -372,19 +397,20 @@ namespace VCore
             {
                 for (auto &&key : depth.second)
                 {
-                    auto voxel = *(CVoxel*)&key.first;
+                    auto voxel = CVoxel(key.first & 0xFFFFFFFF);
+                    auto ao = (key.first >> 32);
 
                     for (uint32_t widthAxis = 0; widthAxis < Config::ChunkSize; widthAxis++)
                     {
                         auto faces = key.second.Bits[widthAxis];
 
                         if(faces)
-                            GenerateQuad(builder, faces, key.second, widthAxis, depth.first, true, p_Mesh->Origin, Math::Vec3i(axis, axis1, axis2), p_Chunk, voxel);
+                            GenerateQuad(builder, faces, key.second, widthAxis, depth.first, true, p_Mesh->Origin, Math::Vec3i(axis, axis1, axis2), p_Chunk, voxel, ao);
 
                         faces = key.second.Bits[widthAxis + Config::ChunkSize];
 
                         if(faces)
-                            GenerateQuad(builder, faces, key.second, widthAxis, depth.first + 1, false, p_Mesh->Origin, Math::Vec3i(axis, axis1, axis2), p_Chunk, voxel);
+                            GenerateQuad(builder, faces, key.second, widthAxis, depth.first + 1, false, p_Mesh->Origin, Math::Vec3i(axis, axis1, axis2), p_Chunk, voxel, ao);
                     }
                 }
             }
@@ -596,7 +622,7 @@ namespace VCore
                 dv.v[p_Context.Axis.y] = size.v[p_Context.Axis.y];
 
                 auto key = p_Context.SliceIt->first;
-                auto voxel = *(CVoxel*)&key;
+                auto voxel = CVoxel(key & 0xFFFFFFFF);//*(CVoxel*)&key;
                 if(currentMaterial != voxel.GetMaterial())
                 {
                     currentMaterial = voxel.GetMaterial();

@@ -22,10 +22,14 @@
  * SOFTWARE.
  */
 
-#include <sstream>
 #include <VCore/Misc/Exceptions.hpp>
 #include <VCore/Meshing/MaterialManager.hpp>
+#include <cstdint>
+#include <string>
 #include "QubicleExchangeFormat.hpp"
+#include "VCore/Formats/SceneNode.hpp"
+#include "VCore/Meshing/Color.hpp"
+#include "src/Misc/StringUtils.hpp"
 
 namespace VCore
 {
@@ -40,16 +44,14 @@ namespace VCore
         ReadLine();
 
         VoxelModel mesh = std::make_shared<CVoxelSpace>();
-        ReadVector();
+        ParseVector<int>(ReadLine());
         ReadColors();
         ReadVoxels(mesh);
 
-        auto sceneNode = std::make_shared<CSceneNode>();
-        sceneNode->Model = mesh;
-        m_SceneTree->AddChild(sceneNode);
-
-        mesh->Textures = m_Textures;
-        m_Models.push_back(mesh);
+        auto sceneNode = new CSceneModelNode(nullptr, 0);
+        SceneTree->AddChild(sceneNode);
+        SceneTree->AddModel(mesh);
+        m_Colors.clear();
     }
 
     std::string CQubicleExchangeFormat::ReadLine()
@@ -68,59 +70,35 @@ namespace VCore
         return ret;
     }
 
-    Math::Vec3i CQubicleExchangeFormat::ReadVector()
-    {
-        std::stringstream strm;
-        strm << ReadLine();
-
-        Math::Vec3i ret;
-
-        strm >> ret.x >> ret.y >> ret.z;
-
-        return ret;
-    }
-
     void CQubicleExchangeFormat::ReadColors()
     {
-        std::stringstream strm;
-        strm << ReadLine();
-
-        int count;
-        strm >> count;
-        strm.clear();
-
+        int count = std::stoi(ReadLine());
         for (int i = 0; i < count; i++)
         {
-            strm << ReadLine();
-            float r, g, b;
-
-            strm >> r >> g >> b;
-            strm.clear();
-
-            auto texIT = m_Textures.find(TextureType::DIFFIUSE);
-            if(texIT == m_Textures.end())
-                m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
-
-            m_Textures[TextureType::DIFFIUSE]->AddPixel(CColor(r * 255.0, g * 255.0, b * 255.0, 255.0));
+            auto c = ParseVector<float>(ReadLine());
+            m_Colors.push_back(CColor(c.x * 255.0, c.y * 255.0, c.z * 255.0, 255.0).AsRGBA());
         }
     }
 
-    void CQubicleExchangeFormat::ReadVoxels(VoxelModel mesh)
+    void CQubicleExchangeFormat::ReadVoxels(VoxelModel p_Mesh)
     {
         while (!m_DataStream->Eof())
         {
-            std::stringstream strm;
-            strm << ReadLine();
+            auto contents = Split(ReadLine(), ' ', 2);
+            if(contents.size() != 3)
+                continue;
 
-            uint32_t mask, cid;
+            Math::Vec3i pos = ParseVector<int>(contents[0]);
 
-            Math::Vec3i pos;
-            strm >> pos.x >> pos.y >> pos.z >> cid >> mask;
-
+            uint32_t mask = std::stoi(contents[2]), cid = std::stoi(contents[1]);
             if(mask == 0)
                 continue;
 
-            mesh->Insert({pos, CVoxel(cid, 0)});
+            uint32_t c = 0;
+            if(cid < m_Colors.size())
+                c = m_Colors[cid];
+
+            p_Mesh->Insert({pos, CVoxel(c, 0)});
         }
     }
 }

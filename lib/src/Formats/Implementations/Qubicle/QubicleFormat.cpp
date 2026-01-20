@@ -22,31 +22,17 @@
  * SOFTWARE.
  */
 
-
-#include <fstream>
-
-#include <iostream>
-#include <iomanip>
-
 #include <stb_image.h>
-#include <string.h>
+#include <cstring>
 #include <VCore/Misc/Exceptions.hpp>
 #include <VCore/Meshing/MaterialManager.hpp>
 #include "QubicleFormat.hpp"
-
-using namespace std;
+#include "VCore/Formats/SceneNode.hpp"
 
 namespace VCore
 {
     void CQubicleFormat::ParseFormat()
     {
-        m_Models.clear();
-        m_Materials.clear();
-        m_Materials.clear();
-        m_Textures.clear();
-
-        m_Materials.push_back(MaterialManager::GetMaterial(0));
-
         std::string Signature(4, '\0');
         m_DataStream->Read(&Signature[0], 4);
         Signature += "\0";
@@ -77,13 +63,10 @@ namespace VCore
         }
 
         m_DataStream->Seek(16);   //Timestamp?
-        LoadNode();
-
-        for (auto &&m : m_Models)
-            m->Textures = m_Textures;     
+        LoadNode(SceneTree.get());
     }
 
-    void CQubicleFormat::LoadNode()
+    void CQubicleFormat::LoadNode(CSceneNodeBase *p_Parent)
     {
         uint32_t type = m_DataStream->Read<uint32_t>();
         m_DataStream->Seek(sizeof(int));  // I dont know.
@@ -93,14 +76,19 @@ namespace VCore
         {
             case 0: // Matrix
             {
-                LoadMatrix();
+                LoadMatrix(p_Parent);
             }break;
 
             case 1: // Model
             {
-                LoadModel();
+                LoadModel(p_Parent);
             }break;
         
+            case 2: // Compound
+            {
+                LoadCompound(p_Parent);
+            }break;
+
             default:
             {
                 throw CVoxelFormatException("Unknown type: " + std::to_string(type));
@@ -109,18 +97,24 @@ namespace VCore
         }
     }
 
-    void CQubicleFormat::LoadModel()
+    void CQubicleFormat::LoadModel(CSceneNodeBase *p_Parent)
     {
-        uint32_t size = m_DataStream->Read<uint32_t>();
-        m_DataStream->Seek(size);
+        auto node = new CSceneNode(p_Parent);
+        p_Parent->AddChild(node);
+
+        uint32_t nameLen = m_DataStream->Read<uint32_t>();
+        std::string name(nameLen + 1, '\0');
+        m_DataStream->Read(&name[0], nameLen);
+        node->Name = name;
+
         m_DataStream->Seek(39);   // I dont know for which this chunk is for. It's always the same.
 
         uint32_t childCount = m_DataStream->Read<uint32_t>();
         for (uint32_t i = 0; i < childCount; i++)
-            LoadNode();        
+            LoadNode(node);        
     }
 
-    void CQubicleFormat::LoadMatrix()
+    CSceneModelNode *CQubicleFormat::LoadMatrix(CSceneNodeBase *p_Parent)
     {
         uint32_t nameLen = m_DataStream->Read<uint32_t>();
         std::string name(nameLen + 1, '\0');
@@ -129,18 +123,17 @@ namespace VCore
 
         VoxelModel mesh = std::make_shared<CVoxelSpace>();
 
-        mesh->Name = name;
-        auto size = ReadVector();
+        auto size = ReadVector<int>();
 
-        auto pos = ReadVector();
+        auto pos = ReadVector<int>();
         // auto halfSize = (size / 2.0);
         // pos += halfSize;
 
-        auto sceneNode = std::make_shared<CSceneNode>();
-        sceneNode->Position = pos;
-        sceneNode->Model = mesh;
-        m_SceneTree->AddChild(sceneNode);
-        m_DataStream->Seek(3 * sizeof(float));    //Pivot position.
+        auto sceneNode = new CSceneModelNode(p_Parent, SceneTree->GetModels().size());
+        sceneNode->SetPosition(pos);
+        p_Parent->AddChild(sceneNode);
+        // mesh->Origin = ReadVector<float>(); //Pivot position.
+        ReadVector<float>();
 
         uint32_t dataSize = m_DataStream->Read<uint32_t>();
 
@@ -166,12 +159,14 @@ namespace VCore
                 strmPos += sizeof(uint32_t);
 
                 CColor c;
-                c.FromARGB(data);
+                c.FromRGBA(data);
                 if(c.A == 2)    //RLE
                 {
                     memcpy(&data, Data + strmPos, sizeof(uint32_t));
                     strmPos += sizeof(uint32_t);
 
+                    CColor c2;
+                    c2.FromRGBA(data);
                     for (uint8_t j = 0; j < c.R; j++)
                     {
                         Math::Vec3i pos;
@@ -180,7 +175,8 @@ namespace VCore
                         pos.x = (uint32_t)(index / (uint32_t)size.z);
                         pos.y = y;
                         
-                        AddVoxel(mesh, data, pos);
+                        if(c2.A != 0)
+                            mesh->Insert({pos, CVoxel(data, 0)});
                         y++;
                     }
                     
@@ -194,7 +190,8 @@ namespace VCore
                     pos.x = (uint32_t)(index / (uint32_t)size.z);
                     pos.y = y;
                     
-                    AddVoxel(mesh, data, pos);
+                    if(c.A != 0)
+                        mesh->Insert({pos, CVoxel(data, 0)});
                     y++;
                 }
             }
@@ -203,61 +200,16 @@ namespace VCore
         }
         free(Data);
 
-        m_Models.push_back(mesh);
+        SceneTree->AddModel(mesh);
+
+        return sceneNode;
     }
 
-    void CQubicleFormat::LoadCompound()
+    void CQubicleFormat::LoadCompound(CSceneNodeBase *p_Parent)
     {
-
-    }
-
-    Math::Vec3i CQubicleFormat::ReadVector()
-    {
-        Math::Vec3i ret;
-
-        ret.x = m_DataStream->Read<int>();
-        ret.y = m_DataStream->Read<int>();
-        ret.z = m_DataStream->Read<int>();
-
-        return ret;
-    }
-
-    uint32_t CQubicleFormat::GetColorIdx(uint32_t color)
-    {
-        uint32_t ret = 0;
-        CColor c;
-        c.FromARGB(color);
-
-        if(c.A == 0)
-            return -1;
-
-        c.A = 255;
-        color = c.AsRGBA();
-
-        auto IT = m_ColorIdx.find(color);
-        if(IT == m_ColorIdx.end())
-        {
-            auto texIT = m_Textures.find(TextureType::DIFFIUSE);
-            if(texIT == m_Textures.end())
-                m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
-
-            m_Textures[TextureType::DIFFIUSE]->AddPixel(c);
-            ret = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;
-
-            m_ColorIdx.insert({color, ret});
-        }
-        else
-            ret = IT->second;
-
-        return ret;
-    }
-
-    void CQubicleFormat::AddVoxel(VoxelModel mesh, uint32_t color, Math::Vec3i pos)
-    {
-        uint32_t cid = GetColorIdx(color);
-        if(cid == 0xFFFFFFFF)
-            return;
-
-        mesh->Insert({pos, CVoxel(cid, 0)});
+        auto node = LoadMatrix(p_Parent);
+        uint32_t childCount = m_DataStream->Read<uint32_t>();
+        for (uint32_t i = 0; i < childCount; i++)
+            LoadNode(node);     
     }
 }

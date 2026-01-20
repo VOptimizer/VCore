@@ -29,12 +29,6 @@
 #include <VCore/Formats/SceneNode.hpp>
 #include <VCore/Voxel/Storage/VoxelSpace.hpp>
 
-#define VCORE_BUILD_NO_KENSHAPE_IMPORTER
-#define VCORE_BUILD_NO_QB_IMPORTER
-#define VCORE_BUILD_NO_QBT_IMPORTER
-#define VCORE_BUILD_NO_QEF_IMPORTER
-#define VCORE_BUILD_NO_QBCL_IMPORTER
-
 #ifndef VCORE_BUILD_NO_MAGICAVOXEL_IMPORTER
 #include "Implementations/MagicaVoxel/MagicaVoxelFormat.hpp"
 #endif

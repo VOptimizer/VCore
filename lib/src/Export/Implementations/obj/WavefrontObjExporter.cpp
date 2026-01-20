@@ -23,16 +23,13 @@
  */
 
 #include <cstdint>
-#include <cstdlib>
-#include <cstring>
 #include <VCore/Meshing/MaterialManager.hpp>
 #include "WavefrontObjExporter.hpp"
 #include "../../../FileUtils.hpp"
-#include "VCore/Math/Vector.hpp"
-#include "VCore/Meshing/Color.hpp"
-#include "VCore/Meshing/Texture.hpp"
-#include "VCore/Misc/FileStream.hpp"
-#include "VCore/Misc/unordered_dense.h"
+#include <VCore/Math/Vector.hpp>
+#include <VCore/Meshing/Texture.hpp>
+#include <VCore/Misc/FileStream.hpp>
+#include <VCore/Misc/unordered_dense.h>
 #include <format>
 #include <memory>
 #include <string>
@@ -187,7 +184,7 @@ namespace VCore
                     Math::Vec2ui position(pixelIndex % p2Size, pixelIndex / p2Size);
                     pixelIndex++;
 
-                    texture->AddPixel(CColor(color), position);
+                    texture->AddPixel(CColor::CreateFromRGBA(color), position);
                     it = uvMapping.insert({color, (Math::Vec2f(position.x, (p2Size - 1) - position.y) + Math::Vec2f(.5f, .5f)) / texture->GetSize()}).first;
                 }
 

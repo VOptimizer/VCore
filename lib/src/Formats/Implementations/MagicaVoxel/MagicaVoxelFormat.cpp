@@ -43,6 +43,8 @@
 #include <string>
 #include <string_view>
 #include <cstdio>
+#include <utility>
+#include "../../../Misc/StringUtils.hpp"
 
 namespace VCore
 {
@@ -111,39 +113,12 @@ namespace VCore
         }
     };
 
-    int ConvertRangeToInt(std::string_view::const_iterator p_Begin, std::string_view::const_iterator p_End)
-    {
-        int result = 0;
-        bool negative = false;
-        while (p_Begin != p_End) 
-        {
-            if(*p_Begin == '-')
-                negative = true;
-            else
-                result = result * 10 + (*p_Begin - '0');
-
-            p_Begin++;
-        }
-
-        return result * (negative ? -1 : 1);
-    }
-
     Math::Vec3i ParsePosition(std::string_view p_View)
     {
-        Math::Vec3i result;
-        auto spaceIt = std::find(p_View.begin(), p_View.end(), ' ');
-
-        result.x = ConvertRangeToInt(p_View.begin(), spaceIt);
-
+        Math::Vec3i result = ParseVector<int>(p_View);
+        
         // Scenetree always in OpenGL Y-UP Space
-        auto begin = spaceIt + 1;
-        spaceIt = std::find(begin, p_View.end(), ' ');
-        result.z = ConvertRangeToInt(begin, spaceIt);
-
-        begin = spaceIt + 1;
-        spaceIt = std::find(begin, p_View.end(), ' ');
-        result.y = ConvertRangeToInt(begin, spaceIt);
-
+        std::swap(result.y, result.z);
         return result;
     }
 

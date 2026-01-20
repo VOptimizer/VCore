@@ -43,14 +43,14 @@ namespace VCore
             int ColorBack;
             int DepthBack;
 
-            void Deserialize(CJSON &json)
+            void Deserialize(CJSON &p_Json)
             {
-                Shape = json.GetValue<int>("shape");
-                Angle = json.GetValue<float>("angle");
-                ColorIdx = json.GetValue<int>("color");
-                Depth = json.GetValue<int>("depth");
-                ColorBack = json.GetValue<int>("colorBack", -1);
-                DepthBack = json.GetValue<int>("depthBack", 0);
+                Shape = p_Json.GetValue<int>("shape");
+                Angle = p_Json.GetValue<float>("angle");
+                ColorIdx = p_Json.GetValue<int>("color");
+                Depth = p_Json.GetValue<int>("depth");
+                ColorBack = p_Json.GetValue<int>("colorBack", -1);
+                DepthBack = p_Json.GetValue<int>("depthBack", 0);
             }
 
             ~CTile() = default;
@@ -69,20 +69,20 @@ namespace VCore
             std::vector<Tile> Tiles;
             std::vector<CColor> Colors;
 
-            void Deserialize(CJSON &json)
+            void Deserialize(CJSON &p_Json)
             {
-                Title = json.GetValue<std::string>("title");
-                Author = json.GetValue<std::string>("author");
+                Title = p_Json.GetValue<std::string>("title");
+                Author = p_Json.GetValue<std::string>("author");
 
-                std::string SizeStr = json.GetValue<std::string>("size");
+                std::string SizeStr = p_Json.GetValue<std::string>("size");
                 CJSON tmp;
                 tmp.ParseObject(SizeStr);
                 Size.x = tmp.GetValue<float>("x");
                 Size.y = tmp.GetValue<float>("y");
                 Size.z = 16;
 
-                Tiles = json.GetValue<std::vector<Tile>>("tiles");
-                auto ColorsStrs = json.GetValue<std::vector<std::string>>("colors");
+                Tiles = p_Json.GetValue<std::vector<Tile>>("tiles");
+                auto ColorsStrs = p_Json.GetValue<std::vector<std::string>>("colors");
 
                 for (auto &&c : ColorsStrs)
                 {

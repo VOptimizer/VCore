@@ -23,10 +23,12 @@
  */
 
 #include <stb_image.h>
-#include <string.h>
+#include <cstring>
 #include <VCore/Misc/Exceptions.hpp>
 #include <VCore/Meshing/MaterialManager.hpp>
 #include "QubicleBinaryTreeFormat.hpp"
+#include "VCore/Formats/SceneNode.hpp"
+#include "VCore/Misc/fast_vector.hpp"
 
 namespace VCore
 {
@@ -41,19 +43,14 @@ namespace VCore
         if(major != 1 && minor != 0)
             throw CVoxelFormatException("Unsupported version!");
 
-        // m_Materials.push_back(MaterialManager::GetMaterial(0));
-
         m_DataStream->Seek(3 * sizeof(float));
         m_DataStream->Seek(8); // COLORMAP
         ReadColors();
 
         m_DataStream->Seek(8); // DATATREE
-        LoadNode();
+        LoadNode(SceneTree.get());
 
-        m_ColorIdx.clear();
-
-        for (auto &&m : m_Models)
-            m->Textures = m_Textures;        
+        m_Colors.clear();   
     }
 
     void CQubicleBinaryTreeFormat::ReadColors()
@@ -61,19 +58,10 @@ namespace VCore
         int count = m_DataStream->Read<int>();
         m_HasColormap = count > 0;
         for (int i = 0; i < count; i++)
-        {
-            CColor c;
-            c.FromARGB(m_DataStream->Read<uint32_t>());
-
-            auto texIT = m_Textures.find(TextureType::DIFFIUSE);
-            if(texIT == m_Textures.end())
-                m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
-
-            m_Textures[TextureType::DIFFIUSE]->AddPixel(c);
-        }
+            m_Colors.push_back(m_DataStream->Read<uint32_t>());
     }
 
-    void CQubicleBinaryTreeFormat::LoadNode()
+    void CQubicleBinaryTreeFormat::LoadNode(CSceneNodeBase *p_Parent)
     {
         uint32_t type = m_DataStream->Read<uint32_t>();
         uint32_t size = m_DataStream->Read<uint32_t>();
@@ -82,17 +70,17 @@ namespace VCore
         {
             case 0: // Matrix
             {
-                LoadMatrix();
+                LoadMatrix(p_Parent);
             }break;
 
             case 1: // Model
             {
-                LoadModel();
+                LoadModel(p_Parent);
             }break;
 
             case 2: // Compound
             {
-                LoadCompound();
+                LoadCompound(p_Parent);
             }break;
         
             default:
@@ -102,21 +90,20 @@ namespace VCore
         }
     }
 
-    void CQubicleBinaryTreeFormat::LoadModel()
+    void CQubicleBinaryTreeFormat::LoadModel(CSceneNodeBase *p_Parent)
     {
         uint32_t childCount = m_DataStream->Read<uint32_t>();
         for (uint32_t i = 0; i < childCount; i++)
-            LoadNode();
+            LoadNode(p_Parent);
     }
 
-    void CQubicleBinaryTreeFormat::LoadMatrix()
+    CSceneModelNode *CQubicleBinaryTreeFormat::LoadMatrix(CSceneNodeBase *p_Parent)
     {
         int nameLen = m_DataStream->Read<int>();
         std::string name(nameLen + 1, '\0');
         m_DataStream->Read(&name[0], nameLen);
 
         VoxelModel mesh = std::make_shared<CVoxelSpace>();
-        mesh->Name = name;
         auto pos = ReadVector();
 
         m_DataStream->Seek(6 * sizeof(int));
@@ -124,16 +111,16 @@ namespace VCore
         // auto halfSize = (mesh->GetSize() / 2.0);
         // pos += halfSize;
 
-        auto sceneNode = std::make_shared<CSceneNode>();
-        sceneNode->Position = pos;
-        sceneNode->Model = mesh;
-        m_SceneTree->AddChild(sceneNode);
+        auto sceneNode = new CSceneModelNode(p_Parent, SceneTree->GetModels().size());
+        sceneNode->SetPosition(pos);
+        sceneNode->Name = name;
+        p_Parent->AddChild(sceneNode);
 
         uint32_t dataSize = m_DataStream->Read<uint32_t>();
 
         int OutSize = 0;
 
-        std::vector<char> data(dataSize, 0);
+        fast_vector<char> data(dataSize, 0);
         m_DataStream->Read(&data[0], dataSize);
         char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
         int strmPos = 0;
@@ -148,88 +135,32 @@ namespace VCore
                     memcpy(&color, Data + strmPos, sizeof(uint32_t));
                     strmPos += sizeof(uint32_t);
 
-                    uint32_t cid;
-
                     if(m_HasColormap)
-                        cid = color & 0xFF;
-                    else
-                        cid = GetColorIdx(color);
+                    {
+                        if(color < m_Colors.size())
+                            color = m_Colors[color];
+                    }
 
-                    if(cid == 0xFFFFFFFF || ((color & 0xFF000000) >> 24) == 0)
+                    if(color == 0xFFFFFFFF || ((color & 0xFF000000) >> 24) == 0)
                         continue;
 
                     auto pos = Math::Vec3i(x, y, z);
-
-                    mesh->Insert({pos, CVoxel(cid, 0)});
+                    mesh->Insert({pos, CVoxel(color, 0)});
                 }
             }
         }
         free(Data);
 
-        m_Models.push_back(mesh);
+        SceneTree->AddModel(mesh);
+        return sceneNode;
     }
 
-    void CQubicleBinaryTreeFormat::LoadCompound()
+    void CQubicleBinaryTreeFormat::LoadCompound(CSceneNodeBase *p_Parent)
     {
-        int nameLen = m_DataStream->Read<int>();
-        std::string name(nameLen + 1, '\0');
-        m_DataStream->Read(&name[0], nameLen);
-
-        VoxelModel mesh = std::make_shared<CVoxelSpace>();
-        mesh->Name = name;
-        auto pos = ReadVector();
-
-        m_DataStream->Seek(6 * sizeof(int));
-        auto size = ReadVector();
-
-        // auto halfSize = (mesh->GetSize() / 2.0);
-        // pos += halfSize;
-
-        auto sceneNode = std::make_shared<CSceneNode>();
-        sceneNode->Position = pos;
-        sceneNode->Model = mesh;
-        m_SceneTree->AddChild(sceneNode);
-
-        uint32_t dataSize = m_DataStream->Read<uint32_t>();
-
-        int OutSize = 0;
-        std::vector<char> data(dataSize, 0);
-        m_DataStream->Read(&data[0], dataSize);
-        char *Data = stbi_zlib_decode_malloc(data.data(), dataSize, &OutSize);
-        int strmPos = 0;
-
-        for (uint32_t x = 0; x < (uint32_t)size.x; x++)
-        {
-            for (uint32_t z = 0; z < (uint32_t)size.z; z++)
-            {
-                for (uint32_t y = 0; y < (uint32_t)size.y; y++)
-                {
-                    uint32_t color;
-                    memcpy(&color, Data + strmPos, sizeof(uint32_t));
-                    strmPos += sizeof(uint32_t);
-
-                    uint32_t cid;
-
-                    if(m_HasColormap)
-                        cid = color & 0xFF;
-                    else
-                        cid = GetColorIdx(color);
-
-                    if(cid == 0xFFFFFFFF || ((color & 0xFF000000) >> 24) == 0)
-                        continue;
-
-                    auto pos = Math::Vec3f(x, y, z);
-                    mesh->Insert({pos, CVoxel(cid, 0)});
-                }
-            }
-        }
-        free(Data);
-
-        m_Models.push_back(mesh);
-
+        auto node = LoadMatrix(p_Parent);
         uint32_t childCount = m_DataStream->Read<uint32_t>();
         for (uint32_t i = 0; i < childCount; i++)
-            LoadNode();
+            LoadNode(node);
     }
 
     Math::Vec3i CQubicleBinaryTreeFormat::ReadVector()
@@ -239,36 +170,6 @@ namespace VCore
         ret.x = m_DataStream->Read<int>();
         ret.y = m_DataStream->Read<int>();
         ret.z = m_DataStream->Read<int>();
-
-        return ret;
-    }
-
-    uint32_t CQubicleBinaryTreeFormat::GetColorIdx(uint32_t color)
-    {
-        int ret = 0;
-        CColor c;
-        c.FromARGB(color);
-
-        if(c.A == 0)
-            return -1;
-
-        c.A = 255;
-        color = c.AsRGBA();
-
-        auto IT = m_ColorIdx.find(color);
-        if(IT == m_ColorIdx.end())
-        {
-            auto texIT = m_Textures.find(TextureType::DIFFIUSE);
-            if(texIT == m_Textures.end())
-                m_Textures[TextureType::DIFFIUSE] = std::make_shared<CTexture>();
-
-            m_Textures[TextureType::DIFFIUSE]->AddPixel(c);
-            ret = m_Textures[TextureType::DIFFIUSE]->GetSize().x - 1;
-
-            m_ColorIdx.insert({color, ret});
-        }
-        else
-            ret = IT->second;
 
         return ret;
     }

@@ -25,8 +25,11 @@
 #ifndef QUBICLEBINARYTREEFORMAT_HPP
 #define QUBICLEBINARYTREEFORMAT_HPP
 
+#include <VCore/Formats/SceneNode.hpp>
+#include <VCore/Misc/fast_vector.hpp>
 #include <VCore/Math/Mat4x4.hpp>
 #include <VCore/Formats/IVoxelFormat.hpp>
+#include <cstdint>
 
 namespace VCore
 {
@@ -37,18 +40,16 @@ namespace VCore
             ~CQubicleBinaryTreeFormat() = default;
 
         protected:
-            std::map<uint32_t, uint32_t> m_ColorIdx;
+            fast_vector<uint32_t> m_Colors;
             bool m_HasColormap;
 
             void ParseFormat() override;
             void ReadColors();
 
-            void LoadNode();
-            void LoadModel();
-            void LoadMatrix();
-            void LoadCompound();
-
-            uint32_t GetColorIdx(uint32_t color);
+            void LoadNode(CSceneNodeBase *p_Parent);
+            void LoadModel(CSceneNodeBase *p_Parent);
+            CSceneModelNode *LoadMatrix(CSceneNodeBase *p_Parent);
+            void LoadCompound(CSceneNodeBase *p_Parent);
 
             Math::Vec3i ReadVector();
     };
