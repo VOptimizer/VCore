@@ -247,7 +247,7 @@ namespace VCore
             copyGlobal.v[m_Axis.y] += p_Lookup[i].y;
             copyGlobal.v[m_Axis.z] += p_Lookup[i].x;
 
-            if(m_Chunk.TotalBBox.ContainsPoint(copyGlobal))
+            if(m_Chunk.TotalBBox.ContainsPoint(copyGlobal)) [[likely]]
                 sides[i] = m_Chunk.Chunk->HasVoxel(copyGlobal);
             else
                 sides[i] = m_Model->HasVoxel(copyGlobal);
