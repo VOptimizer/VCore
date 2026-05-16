@@ -111,7 +111,7 @@ namespace VCore
         return type;
     }
 
-    IExporter::IExporter() : ISceneTreeVisitor<Mesh>(), Settings(new CExportSettings())
+    IExporter::IExporter() : ISceneTreeVisitor<RenderSceneTree_t*>(), Settings(new CExportSettings())
     { }
 
     void IExporter::Save(IIOHandler *p_Handler, const std::string &p_Path, Mesh p_Mesh)
@@ -140,7 +140,7 @@ namespace VCore
         DeleteFileStream();
         m_IOHandler = p_Handler;
         m_Path = p_Path;
-        m_SceneTree = p_RenderTree;
+        m_SceneTree = p_RenderTree.get();
 
         WriteHeaderData(p_RenderTree->GetModels());
         if(SupportsSceneTree())
@@ -169,7 +169,7 @@ namespace VCore
 
     void IExporter::TraverseTree()
     {
-        ISceneTreeVisitor<Mesh>::TraverseTree();
+        ISceneTreeVisitor<RenderSceneTree_t*>::TraverseTree();
         m_NullModels.clear();
     }
 
@@ -203,7 +203,7 @@ namespace VCore
             }
         }
 
-        ISceneTreeVisitor<Mesh>::TraverseNode(p_Node);
+        ISceneTreeVisitor<RenderSceneTree_t*>::TraverseNode(p_Node);
     }
 
     void IExporter::WriteMeshes(const fast_vector<Mesh> &p_Meshes)

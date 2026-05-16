@@ -136,6 +136,16 @@ namespace VCore
                     return TVector2(x * p_scalar, y * p_scalar);
                 }
 
+                inline T &operator[](int idx)
+                {
+                    return v[idx];
+                }
+
+                inline const T &operator[](int idx) const
+                {
+                    return v[idx];
+                }
+
                 inline bool operator==(const TVector2 &p_vr) const
                 {
                     return x == p_vr.x && y == p_vr.y;
@@ -174,8 +184,8 @@ namespace VCore
                     T v[3];
                 };
 
-                TVector3() : x(0), y(0), z(0) {}
-                TVector3(T p_x, T p_y, T p_z) : x(p_x), y(p_y), z(p_z) {}
+                constexpr TVector3() : x(0), y(0), z(0) {}
+                constexpr TVector3(T p_x, T p_y, T p_z) : x(p_x), y(p_y), z(p_z) {}
                 TVector3(const TVector3 &p_v) : x(p_v.x), y(p_v.y), z(p_v.z) {}
 
                 template<class O>
@@ -320,6 +330,16 @@ namespace VCore
                     return TVector3(-x, -y, -z);
                 }
 
+                inline T &operator[](int idx)
+                {
+                    return v[idx];
+                }
+
+                inline const T &operator[](int idx) const
+                {
+                    return v[idx];
+                }
+
                 inline float dot(const TVector3 &p_vr) const
                 {
                     return x * p_vr.x + y * p_vr.y + z * p_vr.z;
@@ -406,8 +426,8 @@ namespace VCore
                     float v[4];
                 };
 
-                Vec4f() : x(0), y(0), z(0), w(0) {}
-                Vec4f(float p_x, float p_y, float p_z, float p_w) : x(p_x), y(p_y), z(p_z), w(p_w) {}
+                constexpr Vec4f() : x(0), y(0), z(0), w(0) {}
+                constexpr Vec4f(float p_x, float p_y, float p_z, float p_w) : x(p_x), y(p_y), z(p_z), w(p_w) {}
 
                 template<class T>
                 Vec4f(const TVector3<T> &p_v) : x(p_v.x), y(p_v.y), z(p_v.z), w(1.0) {}
@@ -469,6 +489,16 @@ namespace VCore
                 inline Vec4f operator*(float p_scalar) const
                 {
                     return Vec4f(x * p_scalar, y * p_scalar, z * p_scalar, w * p_scalar);
+                }
+
+                inline float &operator[](int idx)
+                {
+                    return v[idx];
+                }
+
+                inline const float &operator[](int idx) const
+                {
+                    return v[idx];
                 }
 
                 ~Vec4f() = default;

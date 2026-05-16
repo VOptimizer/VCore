@@ -136,7 +136,7 @@ namespace VCore
 
             virtual ~CSceneNodeBase() = default;
         protected:
-            void NotifyChildrenTranformDirty()
+            virtual void NotifyChildrenTranformDirty()
             {
                 m_TransformDirty = true;
                 for (auto &&child : *this) 
@@ -370,17 +370,6 @@ namespace VCore
 
             ~TSceneTree() override = default;
         protected:
-            struct ChildrenDeleter
-            {
-                void operator()(CSceneNode::Children* p_Children) const
-                {
-                    for (auto &&child : *p_Children)
-                        delete child;
-
-                    delete p_Children;
-                }
-            };
-
             fast_vector<T> m_Models;
             std::shared_ptr<CSceneNode::Children> m_Children;
     };
@@ -438,12 +427,12 @@ namespace VCore
     {
         public:
             ISceneTreeVisitor() = default;
-            ISceneTreeVisitor(const std::shared_ptr<TSceneTree<T>> &p_SceneTree) : m_SceneTree(p_SceneTree) {}
+            ISceneTreeVisitor(const T &p_SceneTree) : m_SceneTree(p_SceneTree) {}
 
             virtual ~ISceneTreeVisitor() = default;
         protected:
             /** Traverses the complete scene tree */
-            virtual void TraverseTree() { TraverseNode(m_SceneTree.get()); }
+            virtual void TraverseTree() { TraverseNode(m_SceneTree); }
 
             virtual void TraverseNode(const CSceneNodeBase *p_Node)
             {
@@ -456,7 +445,7 @@ namespace VCore
             virtual void EnterSceneNode(const CSceneNodeBase *p_Node) = 0;
             virtual void LeaveSceneNode(const CSceneNodeBase *p_Node) = 0;
 
-            std::shared_ptr<TSceneTree<T>> m_SceneTree;
+            T m_SceneTree;
     };
 
     using VoxelSceneTree_t = CVoxelSceneTree; //TSceneTree<VoxelModel>;

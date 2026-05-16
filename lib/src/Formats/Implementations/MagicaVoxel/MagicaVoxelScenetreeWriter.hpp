@@ -17,13 +17,13 @@
 
 namespace VCore 
 {
-    class CMagicaVoxelScenetreeWriter : public ISceneTreeVisitor<VoxelModel>
+    class CMagicaVoxelScenetreeWriter : public ISceneTreeVisitor<VoxelSceneTree_t*>
     {
         public:
             CMagicaVoxelScenetreeWriter(
-                const std::shared_ptr<TSceneTree<VoxelModel>> &p_SceneTree,
+                const VoxelSceneTree &p_SceneTree,
                 IFileStream *p_DataStream
-            ) : ISceneTreeVisitor<VoxelModel>(p_SceneTree), m_DataStream(p_DataStream), m_Dict(m_DataStream) {}
+            ) : ISceneTreeVisitor<VoxelSceneTree_t*>(p_SceneTree.get()), m_DataStream(p_DataStream), m_Dict(m_DataStream) {}
 
             ankerl::unordered_dense::map<uint32_t, fast_vector<uint32_t>> VoxelModelMap;
 
@@ -31,7 +31,7 @@ namespace VCore
         protected:
             void TraverseTree() override 
             { 
-                auto node = m_SceneTree.get();
+                auto node = m_SceneTree;
                 EnterSceneNode(node);
                 LeaveSceneNode(node);
             }
@@ -85,7 +85,7 @@ namespace VCore
 
                 m_DataStream->Write(m_NodeId);
                 m_DataStream->Write((int32_t)-1);
-                m_DataStream->Write((int32_t)(p_Node == m_SceneTree.get() ? -1 : 0));
+                m_DataStream->Write((int32_t)(p_Node == m_SceneTree ? -1 : 0));
                 m_DataStream->Write((int32_t)1);
 
                 m_DataStream->Write((int32_t)1);

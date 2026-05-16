@@ -53,7 +53,7 @@ namespace VCore
         USDZ
     };
 
-    class IExporter : public ISceneTreeVisitor<Mesh>
+    class IExporter : public ISceneTreeVisitor<RenderSceneTree_t*>
     {
         public:
             ExportSettings Settings;

@@ -151,7 +151,7 @@ namespace VCore
                     static constexpr uint32_t ChunkDataOffset = offsetof(Chunk, Next);
             };
 
-            /** Each block of memory is splitted into multiple storages, so that each thread can have it's own dedicated area. */
+            /** Each block of memory is split into multiple storages, so that each thread can have it's own dedicated area. */
             class CLocalStorage
             {
                 public:

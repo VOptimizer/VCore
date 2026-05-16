@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include "VCore/Math/Vector.hpp"
 #include "VCore/Voxel/Storage/Chunk.hpp"
 #include <VCore/Math/Mat4x4.hpp>
 #include <VCore/Voxel/Frustum.hpp>
@@ -33,6 +34,13 @@
 
 namespace VCore
 {
+    // struct ChunkCache
+    // {
+    //     std::pair<Math::Vec3i, CChunk*> Chunks[9]{};
+    // };
+
+    // thread_local ChunkCache g_Cache;
+
     struct FrustumQuery
     {
         const CFrustum *Frustum;
@@ -312,9 +320,23 @@ namespace VCore
     {
         const_cast<CVoxelSpace*>(this)->CheckLoadModel();
         Math::Vec3i position = GetChunkpos(p_v);
+
+        // int pos = 0;
+        // for (pos = 0; pos < 9; pos++) 
+        // {
+        //     if(!g_Cache.Chunks[pos].second)
+        //         break;
+
+        //     if(g_Cache.Chunks[pos].first == position)
+        //         return g_Cache.Chunks[pos].second;
+        // }
+
+
         auto it = m_Chunks.find(position);
         if(it == m_Chunks.end())
             return false;
+
+        // g_Cache.Chunks[pos] = *it;
 
         return it->second->HasVoxel(p_v);
     }

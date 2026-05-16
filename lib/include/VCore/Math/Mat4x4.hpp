@@ -26,6 +26,9 @@
 #define MAT4X4_HPP
 
 #include <VCore/Math/Vector.hpp>
+#include <cmath>
+#include <cstddef>
+#include <utility>
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -42,7 +45,7 @@ namespace VCore
                 Vec4f z;  // Third row
                 Vec4f w;  // Fourth row
 
-                Mat4x4() : x(1, 0, 0, 0), y(0, 1, 0, 0), z(0, 0, 1, 0), w(0, 0, 0, 1) {}
+                constexpr Mat4x4() : x(1, 0, 0, 0), y(0, 1, 0, 0), z(0, 0, 1, 0), w(0, 0, 0, 1) {}
                 Mat4x4(const Vec4f &x, const Vec4f &y, const Vec4f &z, const Vec4f &w) : x(x), y(y), z(z), w(w) {}
                 Mat4x4(const Mat4x4 &p_Mat) : x(p_Mat.x), y(p_Mat.y), z(p_Mat.z), w(p_Mat.w) {}
 
@@ -109,6 +112,27 @@ namespace VCore
                     return *this;
                 }
 
+                inline Math::Vec4f &operator[](int idx)
+                {
+                    switch (idx) 
+                    {
+                        case 0: return x;
+                        case 1: return y;
+                        case 2: return z;
+                        default: return w;
+                    }
+                }
+
+                inline const Math::Vec4f &operator[](int idx) const
+                {
+                    switch (idx) 
+                    {
+                        case 0: return x;
+                        case 1: return y;
+                        case 2: return z;
+                        default: return w;
+                    }
+                }
 
                 inline Mat4x4 operator+(const Mat4x4 &p_Mat)
                 {
@@ -214,6 +238,82 @@ namespace VCore
                     }
 
                     return rotation;
+                }
+
+                /** Inverse the matrix using Gauss-Jordan. */
+                inline Mat4x4 Inverse() const
+                {
+                    // These two matrices forming the augmented matrix.
+                    Mat4x4 inv;
+                    Mat4x4 matrix = *this;
+
+                    for (int col = 0; col < 4; col++) 
+                    {
+                        if(matrix[col][col] == 0)
+                        {
+                            auto pivot = col;
+
+                            // Find the biggest absolute number in the current column.
+                            for(int row = 0; row < 4; row++)
+                            {
+                                if(fabs(matrix[row][col]) > fabs(matrix[pivot][col]))
+                                    pivot = row;
+                            }
+
+                            // Singularity matrices, can't be inversed.
+                            if(pivot == col)
+                                return Mat4x4();
+
+                            // Swap the bigger row, with the current one.
+                            std::swap(matrix[col], matrix[pivot]);
+                            std::swap(inv[col], inv[pivot]);
+                        }
+
+                        if(col < 3) [[likely]]
+                        {
+                            // Eliminates all the numbers below the diagonal and
+                            // sets each coefficient in the column = 0.
+                            for(int row = col + 1; row < 4; row++)
+                            {
+                                float cof = matrix[row][col] / matrix[col][col];
+                                for(int i = 0; i < 4; i++)
+                                {
+                                    matrix[row][i] -= cof * matrix[col][i];
+                                    inv[row][i] -= cof * inv[col][i];
+                                }
+                                matrix[row][col] = 0;
+                            }
+                        }
+                    }
+
+                    // Sets elements along the diagonal to 1.0
+                    for(int row = 0; row < 4; row++)
+                    {
+                        float divisor = matrix[row][row];
+                        for (int col = 0; col < 4; col++) 
+                        {
+                            matrix[row][col] /= divisor;
+                            inv[row][col] /= divisor;
+                        }
+                        matrix[row][row] = 1.0;
+                    }
+
+                    // Eliminate all the numbers above the diagonal
+                    for (int row = 0; row < 4; row++) 
+                    {
+                        for(int col = row + 1; col < 4; col++)
+                        {
+                            float cof = matrix[row][col];
+                            for(int i = 0; i < 4; i++)
+                            {
+                                matrix[row][i] -= cof * matrix[col][i];
+                                inv[row][i] -= cof * inv[col][i];
+                            }
+                            matrix[row][col] = 0;
+                        }
+                    }
+
+                    return inv;
                 }
 
                 ~Mat4x4() {}
